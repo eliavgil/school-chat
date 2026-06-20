@@ -20,26 +20,26 @@ interface Message {
   createdAt: string
 }
 
-// Animated Silver Bot thinking indicator
+const EXAMPLE_QUESTIONS = [
+  "מתי הטיול השנתי?",
+  "כמה שיעורי מתמטיקה בני החסיר מתחילת השנה?",
+  "אני מאשר לביתי להעדר מחר מבית הספר, אנחנו נוסעים לחופשה משפחתית",
+]
+
 function SilverBotThinking() {
   return (
     <div className="flex justify-start">
       <div className="bg-white border border-blue-200 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm flex items-center gap-3 max-w-xs">
         <div className="relative w-10 h-10 flex-shrink-0">
-          {/* Bot face */}
           <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow">
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-              {/* Eyes */}
               <circle cx="7" cy="9" r="2" fill="white" />
-              <circle cx="15" cy="9" r="2" fill="white"/>
-              {/* Antenna */}
-              <line x1="11" y1="1" x2="11" y2="4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-              <circle cx="11" cy="1" r="1" fill="white"/>
-              {/* Mouth */}
-              <rect x="6" y="13" width="10" height="2" rx="1" fill="white" opacity="0.8"/>
+              <circle cx="15" cy="9" r="2" fill="white" />
+              <line x1="11" y1="1" x2="11" y2="4" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+              <circle cx="11" cy="1" r="1" fill="white" />
+              <rect x="6" y="13" width="10" height="2" rx="1" fill="white" opacity="0.8" />
             </svg>
           </div>
-          {/* Pulse ring */}
           <div className="absolute inset-0 rounded-xl border-2 border-blue-400 animate-ping opacity-30" />
         </div>
         <div>
@@ -58,17 +58,87 @@ function SilverBotThinking() {
   )
 }
 
-// Silver Bot avatar for responses
 function BotAvatar() {
   return (
     <div className="w-7 h-7 bg-gradient-to-br from-blue-400 to-blue-600 rounded-lg flex items-center justify-center shadow flex-shrink-0 mt-1">
       <svg width="16" height="16" viewBox="0 0 22 22" fill="none">
         <circle cx="7" cy="9" r="2" fill="white" />
-        <circle cx="15" cy="9" r="2" fill="white"/>
-        <line x1="11" y1="1" x2="11" y2="4" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-        <circle cx="11" cy="1" r="1" fill="white"/>
-        <rect x="6" y="13" width="10" height="2" rx="1" fill="white" opacity="0.8"/>
+        <circle cx="15" cy="9" r="2" fill="white" />
+        <line x1="11" y1="1" x2="11" y2="4" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
+        <circle cx="11" cy="1" r="1" fill="white" />
+        <rect x="6" y="13" width="10" height="2" rx="1" fill="white" opacity="0.8" />
       </svg>
+    </div>
+  )
+}
+
+// Welcome messages shown before any real messages
+function WelcomeMessages({
+  onDismiss,
+  onExample,
+}: {
+  onDismiss: () => void
+  onExample: (text: string) => void
+}) {
+  return (
+    <div className="space-y-3">
+      {/* Message 1: how it works */}
+      <div className="bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 text-sm text-gray-700 leading-relaxed">
+        <p>
+          שלום רב, כאן תוכלו לכתוב פניה למחנך בכל נושא.
+        </p>
+        <p className="mt-2">
+          כלל הפניות מגיעות למחנך והוא עונה עליהן בשעות העבודה המוגדרות לו לכך.
+        </p>
+        <p className="mt-2">
+          הפניות מגיעות תחילה ל<strong>סילבר בוט</strong>, בוט ייעודי שמוזן על ידי המחנך במידע הרלוונטי עבור תלמידי הכיתה.
+          במידה וסילבר בוט משוכנע שהוא יודע לענות תשובה נכונה, הוא יענה.
+          במידה ולא — הוא יעדכן שהמחנך יענה.
+        </p>
+        <p className="mt-2">
+          בכל מקרה, גם כאשר הבוט עונה, המחנך עובר על כל ההודעות.
+        </p>
+        <button
+          onClick={onDismiss}
+          className="mt-3 text-xs text-blue-500 underline hover:text-blue-700"
+        >
+          אל תראה הודעה זו יותר
+        </button>
+      </div>
+
+      {/* Message 2: what bot can handle */}
+      <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-700 shadow-sm">
+        <p className="font-semibold text-blue-700 mb-2">פניות שסילבר בוט יודע לענות או לטפל:</p>
+        <ul className="space-y-3">
+          <li>
+            <p className="text-gray-600">שאלות בנוגע לתאריכים ולו&quot;ז — למשל:</p>
+            <button
+              onClick={() => onExample(EXAMPLE_QUESTIONS[0])}
+              className="mt-1 text-blue-500 underline text-xs hover:text-blue-700 text-right"
+            >
+              {EXAMPLE_QUESTIONS[0]}
+            </button>
+          </li>
+          <li>
+            <p className="text-gray-600">שאלות בנוגע לציונים, העדרויות, איחורים וכד׳ (מתעדכן בתחילת כל שבוע) — למשל:</p>
+            <button
+              onClick={() => onExample(EXAMPLE_QUESTIONS[1])}
+              className="mt-1 text-blue-500 underline text-xs hover:text-blue-700 text-right"
+            >
+              {EXAMPLE_QUESTIONS[1]}
+            </button>
+          </li>
+          <li>
+            <p className="text-gray-600">אישורי הורים — להעדרויות, יציאה לפעילויות וכד׳ — לדוגמא:</p>
+            <button
+              onClick={() => onExample(EXAMPLE_QUESTIONS[2])}
+              className="mt-1 text-blue-500 underline text-xs hover:text-blue-700 text-right"
+            >
+              {EXAMPLE_QUESTIONS[2]}
+            </button>
+          </li>
+        </ul>
+      </div>
     </div>
   )
 }
@@ -83,11 +153,19 @@ export default function ParentChat() {
   const [loadError, setLoadError] = useState("")
   const [flagged, setFlagged] = useState<Record<string, boolean>>({})
   const [flagDismissed, setFlagDismissed] = useState<Record<string, boolean>>({})
+  const [showWelcome, setShowWelcome] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
   }, [status, router])
+
+  // Check localStorage for welcome dismissal
+  useEffect(() => {
+    const dismissed = localStorage.getItem("silver-welcome-dismissed")
+    setShowWelcome(dismissed !== "true")
+  }, [])
 
   useEffect(() => {
     if (!session) return
@@ -110,6 +188,16 @@ export default function ParentChat() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
   }, [messages, sending])
+
+  function dismissWelcome() {
+    localStorage.setItem("silver-welcome-dismissed", "true")
+    setShowWelcome(false)
+  }
+
+  function fillExample(text: string) {
+    setInput(text)
+    inputRef.current?.focus()
+  }
 
   async function sendMessage(e: React.FormEvent) {
     e.preventDefault()
@@ -146,21 +234,31 @@ export default function ParentChat() {
 
   return (
     <div className="flex flex-col h-screen max-w-2xl mx-auto" dir="rtl">
-      <header className="bg-blue-600 text-white p-4">
-        <div className="font-bold text-lg">שאל/י את המחנך</div>
-        <div className="text-sm opacity-80">תלמיד/ה: {student.name}</div>
+      {/* Header */}
+      <header className="bg-blue-600 text-white p-4 flex items-center gap-3">
+        {/* Placeholder teacher photo */}
+        <div className="w-10 h-10 rounded-full bg-blue-400 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 overflow-hidden border-2 border-white/40">
+          <svg viewBox="0 0 40 40" fill="none" className="w-full h-full">
+            <circle cx="20" cy="20" r="20" fill="#60a5fa" />
+            <circle cx="20" cy="15" r="7" fill="white" opacity="0.9" />
+            <ellipse cx="20" cy="34" rx="12" ry="9" fill="white" opacity="0.9" />
+          </svg>
+        </div>
+        <div>
+          <div className="font-bold text-lg leading-tight">פניות למחנך - אליאב גיל</div>
+          <div className="text-xs opacity-80">תלמיד/ה: {student.name}</div>
+        </div>
       </header>
 
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-        {messages.length === 0 && !sending && (
-          <p className="text-center text-gray-400 text-sm mt-8">
-            שלח/י הודעה כדי להתחיל
-          </p>
+        {showWelcome && (
+          <WelcomeMessages onDismiss={dismissWelcome} onExample={fillExample} />
         )}
 
         {messages.map((msg) => (
           <div key={msg.id} className="space-y-2">
-            {/* Parent message — right side */}
+            {/* Parent message */}
             <div className="flex justify-end">
               <div className="bg-blue-500 text-white rounded-2xl rounded-tr-sm px-4 py-2 max-w-xs">
                 <div>{msg.content}</div>
@@ -240,19 +338,20 @@ export default function ParentChat() {
           </div>
         ))}
 
-        {/* Bot thinking animation */}
         {sending && <SilverBotThinking />}
-
         <div ref={bottomRef} />
       </div>
 
+      {/* Input */}
       <form onSubmit={sendMessage} className="p-4 bg-white border-t flex gap-2">
         <input
+          ref={inputRef}
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="שאל/י שאלה..."
           className="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           disabled={sending}
+          dir="rtl"
         />
         <button
           type="submit"
