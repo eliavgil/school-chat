@@ -20,10 +20,43 @@ interface Message {
   createdAt: string
 }
 
-const EXAMPLE_QUESTIONS = [
-  "מתי הטיול השנתי?",
-  "כמה שיעורי מתמטיקה בני החסיר מתחילת השנה?",
-  "אני מאשר לביתי להעדר מחר מבית הספר, אנחנו נוסעים לחופשה משפחתית",
+// Sidebar categories and their quick-send items
+const SIDEBAR_SECTIONS = [
+  {
+    icon: "📅",
+    title: "היעדרות עתידית",
+    items: [
+      "אני רוצה לדווח על היעדרות עתידית של התלמיד",
+    ],
+  },
+  {
+    icon: "🗓️",
+    title: 'לו"ז ואירועים',
+    items: [
+      "מתי יום ההורים?",
+      "מתי הטיול השנתי?",
+      "מתי המבחנים הקרובים?",
+      "מהם מועדי הגשת המשימות הקרובים?",
+    ],
+  },
+  {
+    icon: "📋",
+    title: "טפסים ואישורים",
+    items: [
+      "אני צריך/ה אישור יציאה לפעילות חינוכית",
+      "אני רוצה לקבל טופס הצהרת בריאות",
+      "אני רוצה לברר לגבי תשלומים לבית הספר",
+    ],
+  },
+  {
+    icon: "ℹ️",
+    title: "נתונים וכללים",
+    items: [
+      "מהו קוד הלבוש של בית הספר?",
+      "מה מספר הטלפון של המורה לאנגלית?",
+      "האם ניתן לקבל סיוע פרטני במקצוע מסוים?",
+    ],
+  },
 ]
 
 function SilverBotThinking() {
@@ -72,7 +105,6 @@ function BotAvatar() {
   )
 }
 
-// Welcome messages shown before any real messages
 function WelcomeMessages({
   onDismiss,
   onExample,
@@ -80,66 +112,88 @@ function WelcomeMessages({
   onDismiss: () => void
   onExample: (text: string) => void
 }) {
+  const examples = [
+    "מתי הטיול השנתי?",
+    "כמה שיעורי מתמטיקה בני החסיר מתחילת השנה?",
+    "אני מאשר לביתי להעדר מחר מבית הספר, אנחנו נוסעים לחופשה משפחתית",
+  ]
   return (
     <div className="space-y-3">
-      {/* Message 1: how it works */}
       <div className="bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 text-sm text-gray-700 leading-relaxed">
-        <p>
-          שלום רב, כאן תוכלו לכתוב פניה למחנך בכל נושא.
-        </p>
-        <p className="mt-2">
-          כלל הפניות מגיעות למחנך והוא עונה עליהן בשעות העבודה המוגדרות לו לכך.
-        </p>
+        <p>שלום רב, כאן תוכלו לכתוב פניה למחנך בכל נושא.</p>
+        <p className="mt-2">כלל הפניות מגיעות למחנך והוא עונה עליהן בשעות העבודה המוגדרות לו לכך.</p>
         <p className="mt-2">
           הפניות מגיעות תחילה ל<strong>סילבר בוט</strong>, בוט ייעודי שמוזן על ידי המחנך במידע הרלוונטי עבור תלמידי הכיתה.
-          במידה וסילבר בוט משוכנע שהוא יודע לענות תשובה נכונה, הוא יענה.
-          במידה ולא — הוא יעדכן שהמחנך יענה.
+          במידה וסילבר בוט משוכנע שהוא יודע לענות תשובה נכונה, הוא יענה. במידה ולא — הוא יעדכן שהמחנך יענה.
         </p>
-        <p className="mt-2">
-          בכל מקרה, גם כאשר הבוט עונה, המחנך עובר על כל ההודעות.
-        </p>
-        <button
-          onClick={onDismiss}
-          className="mt-3 text-xs text-blue-500 underline hover:text-blue-700"
-        >
+        <p className="mt-2">בכל מקרה, גם כאשר הבוט עונה, המחנך עובר על כל ההודעות.</p>
+        <button onClick={onDismiss} className="mt-3 text-xs text-blue-500 underline hover:text-blue-700">
           אל תראה הודעה זו יותר
         </button>
       </div>
 
-      {/* Message 2: what bot can handle */}
       <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-700 shadow-sm">
-        <p className="font-semibold text-blue-700 mb-2">פניות שסילבר בוט יודע לענות או לטפל:</p>
+        <p className="font-semibold text-blue-700 mb-2">פניות שסילבר בוט יודע לענות:</p>
         <ul className="space-y-3">
-          <li>
-            <p className="text-gray-600">שאלות בנוגע לתאריכים ולו&quot;ז — למשל:</p>
-            <button
-              onClick={() => onExample(EXAMPLE_QUESTIONS[0])}
-              className="mt-1 text-blue-500 underline text-xs hover:text-blue-700 text-right"
-            >
-              {EXAMPLE_QUESTIONS[0]}
-            </button>
-          </li>
-          <li>
-            <p className="text-gray-600">שאלות בנוגע לציונים, העדרויות, איחורים וכד׳ (מתעדכן בתחילת כל שבוע) — למשל:</p>
-            <button
-              onClick={() => onExample(EXAMPLE_QUESTIONS[1])}
-              className="mt-1 text-blue-500 underline text-xs hover:text-blue-700 text-right"
-            >
-              {EXAMPLE_QUESTIONS[1]}
-            </button>
-          </li>
-          <li>
-            <p className="text-gray-600">אישורי הורים — להעדרויות, יציאה לפעילויות וכד׳ — לדוגמא:</p>
-            <button
-              onClick={() => onExample(EXAMPLE_QUESTIONS[2])}
-              className="mt-1 text-blue-500 underline text-xs hover:text-blue-700 text-right"
-            >
-              {EXAMPLE_QUESTIONS[2]}
-            </button>
-          </li>
+          {[
+            { label: 'שאלות בנוגע לתאריכים ולו"ז', example: examples[0] },
+            { label: "שאלות בנוגע לציונים, העדרויות, איחורים (מתעדכן תחילת כל שבוע)", example: examples[1] },
+            { label: "אישורי הורים להעדרויות ופעילויות", example: examples[2] },
+          ].map(({ label, example }) => (
+            <li key={example}>
+              <p className="text-gray-600">{label} — למשל:</p>
+              <button onClick={() => onExample(example)} className="mt-1 text-blue-500 underline text-xs hover:text-blue-700">
+                {example}
+              </button>
+            </li>
+          ))}
         </ul>
       </div>
     </div>
+  )
+}
+
+// Quick-actions sidebar
+function Sidebar({ onSend, disabled }: { onSend: (text: string) => void; disabled: boolean }) {
+  const [openSection, setOpenSection] = useState<string | null>(null)
+
+  return (
+    <aside className="w-60 flex-shrink-0 bg-white border-l border-gray-200 flex flex-col overflow-y-auto">
+      <div className="bg-gray-50 border-b border-gray-200 px-3 py-3">
+        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">שאלות ופעולות נפוצות</p>
+      </div>
+      <div className="flex-1 py-2">
+        {SIDEBAR_SECTIONS.map((section) => (
+          <div key={section.title} className="border-b border-gray-100 last:border-0">
+            <button
+              onClick={() => setOpenSection(openSection === section.title ? null : section.title)}
+              className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-right hover:bg-gray-50 transition-colors"
+            >
+              <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <span>{section.icon}</span>
+                <span>{section.title}</span>
+              </span>
+              <span className="text-gray-400 text-xs">{openSection === section.title ? "▲" : "▼"}</span>
+            </button>
+
+            {openSection === section.title && (
+              <div className="pb-2 px-2 space-y-1">
+                {section.items.map((item) => (
+                  <button
+                    key={item}
+                    onClick={() => { if (!disabled) onSend(item) }}
+                    disabled={disabled}
+                    className="w-full text-right text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 disabled:opacity-40 rounded-lg px-3 py-2 transition-colors leading-snug"
+                  >
+                    {item}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+    </aside>
   )
 }
 
@@ -161,7 +215,6 @@ export default function ParentChat() {
     if (status === "unauthenticated") router.push("/login")
   }, [status, router])
 
-  // Check localStorage for welcome dismissal
   useEffect(() => {
     const dismissed = localStorage.getItem("silver-welcome-dismissed")
     setShowWelcome(dismissed !== "true")
@@ -194,29 +247,26 @@ export default function ParentChat() {
     setShowWelcome(false)
   }
 
-  function fillExample(text: string) {
-    setInput(text)
-    inputRef.current?.focus()
-  }
-
-  async function sendMessage(e: React.FormEvent) {
-    e.preventDefault()
-    if (!input.trim() || !student || sending) return
-    const text = input
-    setInput("")
+  async function doSend(text: string) {
+    if (!text.trim() || !student || sending) return
     setSending(true)
-
     const res = await fetch("/api/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: text, studentId: student.id }),
     })
-
     if (res.ok) {
       const data = await res.json()
       setMessages((prev) => [...prev, data.message])
     }
     setSending(false)
+  }
+
+  async function sendMessage(e: React.FormEvent) {
+    e.preventDefault()
+    const text = input
+    setInput("")
+    await doSend(text)
   }
 
   async function flagMessage(messageId: string) {
@@ -233,134 +283,138 @@ export default function ParentChat() {
   if (!student) return <div className="p-8 text-center text-gray-400">טוען נתוני תלמיד...</div>
 
   return (
-    <div className="flex flex-col h-screen max-w-2xl mx-auto" dir="rtl">
-      {/* Header */}
-      <header className="bg-blue-600 text-white p-4 flex items-center gap-3">
-        {/* Placeholder teacher photo */}
-        <div className="w-10 h-10 rounded-full bg-blue-400 flex items-center justify-center text-white font-bold text-lg flex-shrink-0 overflow-hidden border-2 border-white/40">
-          <svg viewBox="0 0 40 40" fill="none" className="w-full h-full">
-            <circle cx="20" cy="20" r="20" fill="#60a5fa" />
-            <circle cx="20" cy="15" r="7" fill="white" opacity="0.9" />
-            <ellipse cx="20" cy="34" rx="12" ry="9" fill="white" opacity="0.9" />
-          </svg>
-        </div>
-        <div>
-          <div className="font-bold text-lg leading-tight">פניות למחנך - אליאב גיל</div>
-          <div className="text-xs opacity-80">תלמיד/ה: {student.name}</div>
-        </div>
-      </header>
+    <div className="flex h-screen" dir="rtl">
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-        {showWelcome && (
-          <WelcomeMessages onDismiss={dismissWelcome} onExample={fillExample} />
-        )}
+      {/* Sidebar — right in RTL */}
+      <Sidebar onSend={(text) => doSend(text)} disabled={sending} />
 
-        {messages.map((msg) => (
-          <div key={msg.id} className="space-y-2">
-            {/* Parent message */}
-            <div className="flex justify-end">
-              <div className="bg-blue-500 text-white rounded-2xl rounded-tr-sm px-4 py-2 max-w-xs">
-                <div>{msg.content}</div>
-                <div className="text-xs opacity-70 mt-1">
-                  {new Date(msg.createdAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
+      {/* Chat — left */}
+      <div className="flex flex-col flex-1 min-w-0">
+        {/* Header */}
+        <header className="bg-blue-600 text-white p-4 flex items-center gap-3 flex-shrink-0">
+          <div className="w-10 h-10 rounded-full bg-blue-400 flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-white/40">
+            <svg viewBox="0 0 40 40" fill="none" className="w-full h-full">
+              <circle cx="20" cy="20" r="20" fill="#60a5fa" />
+              <circle cx="20" cy="15" r="7" fill="white" opacity="0.9" />
+              <ellipse cx="20" cy="34" rx="12" ry="9" fill="white" opacity="0.9" />
+            </svg>
+          </div>
+          <div>
+            <div className="font-bold text-lg leading-tight">פניות למחנך - אליאב גיל</div>
+            <div className="text-xs opacity-80">תלמיד/ה: {student.name}</div>
+          </div>
+        </header>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+          {showWelcome && (
+            <WelcomeMessages
+              onDismiss={dismissWelcome}
+              onExample={(text) => { setInput(text); inputRef.current?.focus() }}
+            />
+          )}
+
+          {messages.map((msg) => (
+            <div key={msg.id} className="space-y-2">
+              <div className="flex justify-end">
+                <div className="bg-blue-500 text-white rounded-2xl rounded-tr-sm px-4 py-2 max-w-sm">
+                  <div>{msg.content}</div>
+                  <div className="text-xs opacity-70 mt-1">
+                    {new Date(msg.createdAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Bot response */}
-            {msg.botResponse && (
-              <div className="space-y-1">
-                <div className="flex justify-start items-start gap-2">
-                  <BotAvatar />
-                  <div className="bg-white border border-blue-200 rounded-2xl rounded-tl-sm px-4 py-3 max-w-xs shadow-sm">
-                    <div className="text-xs font-bold text-blue-600 mb-1">סילבר בוט</div>
-                    <div className="text-sm">{msg.botResponse}</div>
-                    {msg.dataAsOf && (
-                      <div className="text-xs text-gray-400 mt-1">
-                        נכון לתאריך {new Date(msg.dataAsOf).toLocaleDateString("he-IL")}
+              {msg.botResponse && (
+                <div className="space-y-1">
+                  <div className="flex justify-start items-start gap-2">
+                    <BotAvatar />
+                    <div className="bg-white border border-blue-200 rounded-2xl rounded-tl-sm px-4 py-3 max-w-sm shadow-sm">
+                      <div className="text-xs font-bold text-blue-600 mb-1">סילבר בוט</div>
+                      <div className="text-sm">{msg.botResponse}</div>
+                      {msg.dataAsOf && (
+                        <div className="text-xs text-gray-400 mt-1">
+                          נכון לתאריך {new Date(msg.dataAsOf).toLocaleDateString("he-IL")}
+                        </div>
+                      )}
+                      <div className="text-xs text-yellow-600 mt-2 border-t border-yellow-100 pt-1">
+                        ⚠️ תשובה זו ניתנה על ידי בינה מלאכותית ועלולה לכלול טעויות.
                       </div>
-                    )}
-                    <div className="text-xs text-yellow-600 mt-2 border-t border-yellow-100 pt-1">
-                      ⚠️ תשובה זו ניתנה על ידי בינה מלאכותית ועלולה לכלול טעויות.
                     </div>
                   </div>
-                </div>
 
-                {/* Flag question */}
-                {!flagDismissed[msg.id] && (
-                  <div className="mr-9 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 text-xs text-gray-600">
-                    <p className="mb-2">
-                      מחנך הכיתה עובר בכל מקרה על כל ההודעות.<br />
-                      האם לסמן למחנך כי יש חשש שנפלה טעות בתשובה של סילבר בוט?
-                    </p>
-                    {flagged[msg.id] ? (
-                      <p className="text-blue-600 font-medium">✓ סומן למחנך/ת לבדיקה</p>
-                    ) : (
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => { flagMessage(msg.id); setFlagDismissed(p => ({ ...p, [msg.id]: true })) }}
-                          className="bg-blue-500 text-white rounded-lg px-3 py-1 hover:bg-blue-600"
-                        >
-                          1 - בהחלט
-                        </button>
-                        <button
-                          onClick={() => setFlagDismissed(p => ({ ...p, [msg.id]: true }))}
-                          className="bg-gray-200 text-gray-600 rounded-lg px-3 py-1 hover:bg-gray-300"
-                        >
-                          2 - לא, אין צורך
-                        </button>
-                      </div>
-                    )}
+                  {!flagDismissed[msg.id] && (
+                    <div className="mr-9 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 text-xs text-gray-600">
+                      <p className="mb-2">
+                        מחנך הכיתה עובר בכל מקרה על כל ההודעות.<br />
+                        האם לסמן למחנך כי יש חשש שנפלה טעות בתשובה של סילבר בוט?
+                      </p>
+                      {flagged[msg.id] ? (
+                        <p className="text-blue-600 font-medium">✓ סומן למחנך/ת לבדיקה</p>
+                      ) : (
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => { flagMessage(msg.id); setFlagDismissed(p => ({ ...p, [msg.id]: true })) }}
+                            className="bg-blue-500 text-white rounded-lg px-3 py-1 hover:bg-blue-600"
+                          >
+                            1 - בהחלט
+                          </button>
+                          <button
+                            onClick={() => setFlagDismissed(p => ({ ...p, [msg.id]: true }))}
+                            className="bg-gray-200 text-gray-600 rounded-lg px-3 py-1 hover:bg-gray-300"
+                          >
+                            2 - לא, אין צורך
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {msg.teacherResponse && (
+                <div className="flex justify-start">
+                  <div className="bg-green-50 border border-green-300 rounded-2xl rounded-tl-sm px-4 py-2 max-w-sm shadow-sm">
+                    <div className="text-xs text-green-600 font-bold mb-1">מהמחנך/ת:</div>
+                    <div className="text-sm">{msg.teacherResponse}</div>
                   </div>
-                )}
-              </div>
-            )}
-
-            {/* Teacher response */}
-            {msg.teacherResponse && (
-              <div className="flex justify-start">
-                <div className="bg-green-50 border border-green-300 rounded-2xl rounded-tl-sm px-4 py-2 max-w-xs shadow-sm">
-                  <div className="text-xs text-green-600 font-bold mb-1">מהמחנך/ת:</div>
-                  <div className="text-sm">{msg.teacherResponse}</div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Forwarded */}
-            {msg.status === "FORWARDED" && !msg.teacherResponse && (
-              <div className="flex justify-start">
-                <div className="bg-gray-100 rounded-xl px-3 py-1 text-xs text-gray-500">
-                  ההודעה הועברה למחנך/ת לטיפול.
+              {msg.status === "FORWARDED" && !msg.teacherResponse && (
+                <div className="flex justify-start">
+                  <div className="bg-gray-100 rounded-xl px-3 py-1 text-xs text-gray-500">
+                    ההודעה הועברה למחנך/ת לטיפול.
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        ))}
+              )}
+            </div>
+          ))}
 
-        {sending && <SilverBotThinking />}
-        <div ref={bottomRef} />
+          {sending && <SilverBotThinking />}
+          <div ref={bottomRef} />
+        </div>
+
+        {/* Input */}
+        <form onSubmit={sendMessage} className="p-4 bg-white border-t flex gap-2 flex-shrink-0">
+          <input
+            ref={inputRef}
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="שאל/י שאלה..."
+            className="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            disabled={sending}
+            dir="rtl"
+          />
+          <button
+            type="submit"
+            disabled={sending || !input.trim()}
+            className="bg-blue-500 text-white rounded-full px-4 py-2 text-sm disabled:opacity-50"
+          >
+            {sending ? "שולח..." : "שלח"}
+          </button>
+        </form>
       </div>
-
-      {/* Input */}
-      <form onSubmit={sendMessage} className="p-4 bg-white border-t flex gap-2">
-        <input
-          ref={inputRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="שאל/י שאלה..."
-          className="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
-          disabled={sending}
-          dir="rtl"
-        />
-        <button
-          type="submit"
-          disabled={sending || !input.trim()}
-          className="bg-blue-500 text-white rounded-full px-4 py-2 text-sm disabled:opacity-50"
-        >
-          {sending ? "שולח..." : "שלח"}
-        </button>
-      </form>
     </div>
   )
 }
