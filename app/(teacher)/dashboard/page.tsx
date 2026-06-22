@@ -70,6 +70,8 @@ export default function TeacherDashboard() {
 
   useEffect(() => {
     fetchConversations()
+    fetchGlobalTasks()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   useEffect(() => {
@@ -227,12 +229,17 @@ export default function TeacherDashboard() {
                     <p className="text-stone-400 text-sm text-center mt-8">אין משימות פתוחות</p>
                   ) : (
                     allTasks.map((m) => (
-                      <div key={m.id} className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-2">
-                        {(m as any).student?.name && (
-                          <div className="text-xs text-stone-400 mb-1">{(m as any).student.name}</div>
+                      <div key={m.id} className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-2">
+                        {(m as any).student && (
+                          <button
+                            onClick={() => { setInnerTab("chat"); selectConversation((m as any).student.id, (m as any).student.name) }}
+                            className="text-xs font-semibold text-stone-600 hover:text-stone-900 interactive mb-1 block"
+                          >
+                            {(m as any).student.name} ←
+                          </button>
                         )}
                         <p className="text-sm text-stone-800">{m.content}</p>
-                        <button onClick={() => toggleAction(m.id, "untask")} className="text-xs text-amber-600 mt-1 hover:underline">
+                        <button onClick={() => toggleAction(m.id, "untask")} className="text-xs text-amber-600 mt-1.5 hover:underline interactive">
                           סמן כבוצע
                         </button>
                       </div>
