@@ -149,7 +149,7 @@ export default function StudentPage() {
     <div className="flex flex-col h-screen bg-[#faf9f6]" dir="rtl">
 
       {/* Header */}
-      <header className="bg-white border-b border-stone-200 px-4 py-3 flex-shrink-0">
+      <header className="bg-white border-b border-stone-200 px-4 py-3 flex-shrink-0 safe-top">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-orange-100 rounded-xl flex items-center justify-center">
@@ -216,7 +216,7 @@ export default function StudentPage() {
                           <span className="text-white text-xs font-bold">S</span>
                         </div>
                       )}
-                      <div className={`max-w-[80%] px-4 py-2.5 rounded-2xl text-sm whitespace-pre-wrap ${
+                      <div className={`max-w-[85%] px-4 py-2.5 rounded-2xl text-sm whitespace-pre-wrap break-words ${
                         m.role === "user"
                           ? "bg-stone-900 text-white rounded-tr-sm"
                           : "bg-stone-100 text-stone-800 rounded-tl-sm"

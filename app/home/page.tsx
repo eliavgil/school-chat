@@ -167,7 +167,7 @@ function StudentHome({ session, data }: { session: any; data: HomeData | null })
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60" />
 
       {/* Top bar */}
-      <header className="relative z-10 flex items-center justify-between px-5 pt-10 pb-2">
+      <header className="relative z-10 flex items-center justify-between px-5 pb-2 header-pt">
         <div>
           <p className="text-white/60 text-xs font-medium tracking-widest uppercase">
             {data?.classProfile?.schoolName ?? "כפר סילבר"}
@@ -339,7 +339,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
       <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/10 to-black/70" />
 
       {/* Top bar */}
-      <header className="relative z-10 flex items-center justify-between px-5 pt-10 pb-2">
+      <header className="relative z-10 flex items-center justify-between px-5 pb-2 header-pt">
         <div>
           <p className="text-white/50 text-xs font-medium tracking-widest uppercase">
             {data?.classProfile?.schoolName ?? "כפר סילבר"}
@@ -465,7 +465,7 @@ function ParentHome({ session, data }: { session: any; data: HomeData | null }) 
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-black/65" />
 
       {/* Top bar */}
-      <header className="relative z-10 flex items-center justify-between px-5 pt-10 pb-2">
+      <header className="relative z-10 flex items-center justify-between px-5 pb-2 header-pt">
         <div>
           <p className="text-white/50 text-xs font-medium tracking-widest uppercase">
             {data?.classProfile?.schoolName ?? "כפר סילבר"}

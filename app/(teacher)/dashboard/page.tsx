@@ -227,8 +227,8 @@ export default function TeacherDashboard() {
 
         {mainTab === "שיחות" && (
           <>
-            {/* Sidebar */}
-            <div className="w-80 bg-white border-l border-stone-200 flex flex-col flex-shrink-0">
+            {/* Sidebar — hidden on mobile when a conversation is open */}
+            <div className={`${selectedStudent ? "hidden md:flex" : "flex"} w-full md:w-80 bg-white border-l border-stone-200 flex-col flex-shrink-0`}>
               {/* Header */}
               <div className="bg-white border-b border-stone-200 px-4 py-3">
                 <div className="flex items-center justify-between">
@@ -337,8 +337,8 @@ export default function TeacherDashboard() {
               )}
             </div>
 
-            {/* Chat area */}
-            <div className="flex-1 flex flex-col overflow-hidden">
+            {/* Chat area — hidden on mobile when no conversation selected */}
+            <div className={`${!selectedStudent ? "hidden md:flex" : "flex"} flex-1 flex-col overflow-hidden`}>
               {!selectedStudent ? (
                 <div className="flex-1 flex items-center justify-center text-stone-400">
                   <div className="text-center">
@@ -348,9 +348,14 @@ export default function TeacherDashboard() {
                 </div>
               ) : (
                 <>
-                  <div className="bg-white border-b border-stone-200 px-6 py-3 flex-shrink-0">
-                    <div className="font-semibold text-stone-800">{selectedStudentName}</div>
-                    <div className="text-xs text-stone-400">{messages.length} הודעות</div>
+                  <div className="bg-white border-b border-stone-200 px-4 py-3 flex-shrink-0 flex items-center gap-3">
+                    <button onClick={() => setSelectedStudent(null)} className="md:hidden text-stone-400 hover:text-stone-700 interactive p-1">
+                      <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                    <div>
+                      <div className="font-semibold text-stone-800">{selectedStudentName}</div>
+                      <div className="text-xs text-stone-400">{messages.length} הודעות</div>
+                    </div>
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#faf9f6]">
@@ -434,7 +439,7 @@ export default function TeacherDashboard() {
                         {/* Reply input */}
                         {replyingTo === msg.id && (
                           <div className="flex justify-start mr-4">
-                            <div className="w-80 space-y-2">
+                            <div className="w-full max-w-sm space-y-2">
                               {/* Quick reply templates */}
                               <div className="flex flex-wrap gap-1">
                                 {QUICK_REPLIES.map(r => (

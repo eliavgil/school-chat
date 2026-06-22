@@ -262,6 +262,19 @@ export default function ParentChat() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: text, studentId: student.id }),
     })
+    if (res.status === 429) {
+      const data = await res.json()
+      const fakeMsg: Message = {
+        id: `rate-limit-${Date.now()}`,
+        content: text,
+        status: "BOT_ANSWERED",
+        botResponse: data.error ?? "הגעת למגבלת הבקשות. נסה שוב בעוד שעה.",
+        createdAt: new Date().toISOString(),
+      }
+      setMessages(prev => [...prev, fakeMsg])
+      setSending(false)
+      return
+    }
     if (!res.ok || !res.body) { setSending(false); return }
 
     const reader = res.body.getReader()
@@ -334,8 +347,10 @@ export default function ParentChat() {
     <div className="flex flex-1 overflow-hidden">
 
       {mainTab === "צ'אט" && <>
-      {/* Sidebar — right in RTL */}
-      <Sidebar onSend={(text) => doSend(text)} disabled={sending} />
+      {/* Sidebar — hidden on small screens */}
+      <div className="hidden md:flex">
+        <Sidebar onSend={(text) => doSend(text)} disabled={sending} />
+      </div>
 
       {/* Chat — left */}
       <div className="flex flex-col flex-1 min-w-0">
@@ -443,7 +458,8 @@ export default function ParentChat() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="שאל/י שאלה..."
-            className="flex-1 bg-stone-100 border-0 rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-300 text-stone-900 placeholder-stone-400"
+            className="flex-1 bg-stone-100 border-0 rounded-full px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-stone-300 text-stone-900 placeholder-stone-400"
+            style={{ fontSize: "16px" }}
             disabled={sending}
             dir="rtl"
           />

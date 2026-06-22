@@ -140,6 +140,11 @@ body {
   }
 }
 
+/* ── Safe-area helpers ──────────────────────────────────── */
+.safe-top    { padding-top: env(safe-area-inset-top, 0px); }
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom, 0px); }
+.header-pt   { padding-top: max(2.5rem, calc(env(safe-area-inset-top, 0px) + 0.75rem)); }
+
 /* ── Global polish ──────────────────────────────────────── */
 button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 a      { -webkit-tap-highlight-color: transparent; }
