@@ -1,9 +1,14 @@
 import type { Metadata } from "next"
-import { Geist } from "next/font/google"
+import { Heebo } from "next/font/google"
 import "./globals.css"
 import { Providers } from "./providers"
 
-const geist = Geist({ variable: "--font-geist-sans", subsets: ["latin"] })
+const heebo = Heebo({
+  subsets: ["hebrew", "latin"],
+  variable: "--font-heebo",
+  weight: ["300", "400", "500", "600", "700", "800"],
+  display: "swap",
+})
 
 export const metadata: Metadata = {
   title: "מערכת תקשורת הורים-מחנך",
@@ -12,8 +17,8 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="he" dir="rtl" className={geist.variable}>
-      <body className="min-h-screen bg-gray-50">
+    <html lang="he" dir="rtl" className={heebo.variable}>
+      <body className="min-h-screen bg-white">
         <Providers>{children}</Providers>
       </body>
     </html>

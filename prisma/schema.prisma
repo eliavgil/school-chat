@@ -14,12 +14,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?
-  access_token      String?
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?
+  id_token          String? @db.Text
   session_state     String?
   user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -43,37 +43,71 @@ model VerificationToken {
 }
 
 model User {
-  id             String          @id @default(cuid())
-  name           String?
-  email          String?         @unique
-  phone          String?         @unique
-  image          String?
-  emailVerified  DateTime?
-  role           Role            @default(PARENT)
-  createdAt      DateTime        @default(now())
-  classId        String?
-  accounts       Account[]
-  sentMessages   Message[]
-  parentStudents ParentStudent[]
-  sessions       Session[]
-  class          Class?          @relation(fields: [classId], references: [id])
+  id                  String          @id @default(cuid())
+  name                String?
+  email               String?         @unique
+  phone               String?
+  image               String?
+  emailVerified       DateTime?
+  role                Role            @default(PARENT)
+  accessStatus        AccessStatus    @default(PENDING)
+  requestedChildName  String?
+  parentType          String?         // "אבא" or "אמא"
+  createdAt           DateTime        @default(now())
+  classId             String?
+  studentId           String?         @unique  // for STUDENT role — links to Student record
+  accounts            Account[]
+  sentMessages        Message[]
+  parentStudents      ParentStudent[]
+  sessions            Session[]
+  class               Class?          @relation(fields: [classId], references: [id])
+  studentRecord       Student?        @relation(fields: [studentId], references: [id])
+}
+
+enum AccessStatus {
+  PENDING
+  APPROVED
+  DENIED
+}
+
+enum Role {
+  TEACHER
+  PARENT
+  STUDENT
+  ADMIN
+}
+
+model FeatureInterest {
+  id        String   @id @default(cuid())
+  userId    String
+  feature   String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, feature])
 }
 
 model Class {
-  id       String    @id @default(cuid())
-  name     String
-  students Student[]
-  teachers User[]
+  id                   String    @id @default(cuid())
+  name                 String
+  displayName          String    @default("")   // e.g. "י2 סילבר"
+  teacherDisplayName   String    @default("")   // e.g. "אליאב גיל"
+  schoolName           String    @default("")   // e.g. "כפר סילבר"
+  students             Student[]
+  teachers             User[]
 }
 
 model Student {
-  id       String          @id @default(cuid())
-  name     String
-  classId  String
-  messages Message[]
-  parents  ParentStudent[]
-  class    Class           @relation(fields: [classId], references: [id])
-  records  StudentRecord[]
+  id          String             @id @default(cuid())
+  name        String
+  idNumber    String?            @unique // ת.ז
+  classId     String
+  messages    Message[]
+  parents     ParentStudent[]
+  class       Class              @relation(fields: [classId], references: [id])
+  records     StudentRecord[]
+  grades      StudentGrade[]
+  attendance  StudentAttendance?
+  userAccount User?
 }
 
 model ParentStudent {
@@ -88,30 +122,48 @@ model ParentStudent {
 model Message {
   id                String        @id @default(cuid())
   createdAt         DateTime      @default(now())
-  content           String
+  content           String        @db.Text
   senderId          String
   studentId         String
   status            MessageStatus @default(PENDING)
-  botResponse       String?
+  botResponse       String?       @db.Text
   botAnsweredAt     DateTime?
   dataAsOf          DateTime?
-  teacherResponse   String?
+  teacherResponse   String?       @db.Text
   teacherAnsweredAt DateTime?
   skipReason        String?
   flaggedByParent   Boolean       @default(false)
+  teacherApproved   Boolean       @default(false)
+  teacherSeenAt     DateTime?
+  isTask            Boolean       @default(false)
   sender            User          @relation(fields: [senderId], references: [id])
   student           Student       @relation(fields: [studentId], references: [id])
 }
 
+enum MessageStatus {
+  PENDING
+  BOT_ANSWERED
+  TEACHER_ANSWERED
+  FORWARDED
+}
+
+// Legacy import system (kept for compatibility)
 model StudentRecord {
   id         String     @id @default(cuid())
   studentId  String
   date       DateTime
   recordType RecordType
-  details    String
+  details    String     @db.Text
   importId   String
   import     DataImport @relation(fields: [importId], references: [id])
   student    Student    @relation(fields: [studentId], references: [id])
+}
+
+enum RecordType {
+  ATTENDANCE
+  GRADE
+  SCHEDULE
+  OTHER
 }
 
 model DataImport {
@@ -122,22 +174,63 @@ model DataImport {
   records     StudentRecord[]
 }
 
-enum Role {
-  TEACHER
-  PARENT
-  ADMIN
+// ── New tables ──────────────────────────────────────────
+
+// Teacher directory (אלפון מורים)
+model Teacher {
+  id       String  @id @default(cuid())
+  name     String
+  phone    String?
+  mobile   String?
+  email    String?
+  city     String?
+  subjects String? // comma-separated
+  role     String?
 }
 
-enum MessageStatus {
-  PENDING
-  BOT_ANSWERED
-  TEACHER_ANSWERED
-  FORWARDED
+// Per-student per-subject grades with weighted average (ציונים שוטפים)
+model StudentGrade {
+  id              String   @id @default(cuid())
+  studentId       String
+  student         Student  @relation(fields: [studentId], references: [id])
+  subject         String   // e.g. "אזרחות"
+  teacherName     String?
+  gradeComponents Json     // array of {name, weight, score}
+  weightedAverage Float?
+  updatedAt       DateTime @default(now())
+
+  @@unique([studentId, subject])
 }
 
-enum RecordType {
-  ATTENDANCE
-  GRADE
-  SCHEDULE
-  OTHER
+// Attendance counters (מונה התנהגות)
+model StudentAttendance {
+  id                     String   @id @default(cuid())
+  studentId              String   @unique
+  student                Student  @relation(fields: [studentId], references: [id])
+  totalLessons           Int      @default(0)
+  absences               Int      @default(0)
+  justifiedAbsences      Int      @default(0)
+  tardiness              Int      @default(0)
+  justifiedTardiness     Int      @default(0)
+  updatedAt              DateTime @default(now())
+}
+
+// Class schedule (מערכת כיתתית)
+model ScheduleSlot {
+  id        String @id @default(cuid())
+  classId   String
+  dayHeb    String // ראשון, שני, ...
+  period    String // "1, 08:45 - 09:30"
+  content   String @db.Text // raw cell content (subject + teacher + room, may include splits)
+}
+
+// Calendar events — exams, trips, events (לוח מבחנים + לוח פעילויות)
+model CalendarEvent {
+  id          String   @id @default(cuid())
+  date        DateTime
+  month       String?
+  dayOfWeek   String?
+  grade       String?  // שכבה י, שכבה יא, etc. null = all
+  description String   @db.Text
+  sourceFile  String?  // which sheet this came from
 }

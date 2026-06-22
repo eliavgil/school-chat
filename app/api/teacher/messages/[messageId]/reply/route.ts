@@ -5,8 +5,9 @@ import { prisma } from "@/lib/db/prisma"
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { messageId: string } }
+  { params }: { params: Promise<{ messageId: string }> }
 ) {
+  const { messageId } = await params
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -23,7 +24,7 @@ export async function POST(
   }
 
   const message = await prisma.message.update({
-    where: { id: params.messageId },
+    where: { id: messageId },
     data: {
       teacherResponse: response,
       teacherAnsweredAt: new Date(),

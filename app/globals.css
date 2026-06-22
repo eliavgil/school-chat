@@ -1,26 +1,156 @@
 @import "tailwindcss";
 
+/* ── Brand font ─────────────────────────────────────────── */
+body {
+  font-family: var(--font-heebo, "Arial Hebrew", Arial, sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #faf9f6;
+  color: #1c1917;
+}
+
+/* ── Design tokens ──────────────────────────────────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg:          #faf9f6;
+  --bg-card:     #f0eeeb;
+  --bg-deep:     #e8e4de;
+  --text:        #1c1917;
+  --text-muted:  #78716c;
+  --text-faint:  #a8a29e;
+  --border:      #e5e1db;
+
+  /* Role accents */
+  --teacher:     #4338ca;
+  --parent:      #047857;
+  --student:     #c2410c;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ── Keyframes ──────────────────────────────────────────── */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+@keyframes fade-in-fast {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0);   }
+}
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.94); }
+  to   { opacity: 1; transform: scale(1);    }
+}
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50%       { background-position: 100% 50%; }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position:  200% 0; }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+/* ── Utilities ──────────────────────────────────────────── */
+@layer utilities {
+
+  /* Animations */
+  .animate-fade-in      { animation: fade-in      0.38s ease-out both; }
+  .animate-fade-in-fast { animation: fade-in-fast 0.2s  ease-out both; }
+  .animate-scale-in     { animation: scale-in     0.2s  ease-out both; }
+  .stagger-1  { animation-delay:  70ms; }
+  .stagger-2  { animation-delay: 140ms; }
+  .stagger-3  { animation-delay: 210ms; }
+  .stagger-4  { animation-delay: 280ms; }
+  .stagger-5  { animation-delay: 350ms; }
+
+  /* Press / hover */
+  .btn-press { transition: transform 0.1s ease, opacity 0.1s ease; }
+  .btn-press:active { transform: scale(0.96); opacity: 0.85; }
+
+  .card-lift { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+  .card-lift:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+
+  .interactive {
+    transition: background-color 0.15s ease, color 0.15s ease,
+                border-color 0.15s ease, box-shadow 0.15s ease,
+                transform 0.1s ease, opacity 0.15s ease;
+  }
+
+  /* Animated gradients (immersive pages) */
+  .bg-animated-orange {
+    background: linear-gradient(-45deg, #c2410c, #ea580c, #f97316, #d97706, #b45309, #92400e);
+    background-size: 400% 400%;
+    animation: gradient-shift 14s ease infinite;
+  }
+  .bg-animated-blue {
+    background: linear-gradient(-45deg, #1e3a8a, #1d4ed8, #2563eb, #0e7490, #0f172a, #1e40af);
+    background-size: 400% 400%;
+    animation: gradient-shift 14s ease infinite;
+  }
+  .bg-animated-green {
+    background: linear-gradient(-45deg, #14532d, #15803d, #16a34a, #0f766e, #065f46, #166534);
+    background-size: 400% 400%;
+    animation: gradient-shift 14s ease infinite;
+  }
+
+  /* Frosted glass */
+  .glass {
+    backdrop-filter: blur(12px) saturate(1.6);
+    -webkit-backdrop-filter: blur(12px) saturate(1.6);
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.20);
+  }
+  .glass-dark {
+    backdrop-filter: blur(16px) saturate(1.4);
+    -webkit-backdrop-filter: blur(16px) saturate(1.4);
+    background: rgba(0,0,0,0.30);
+    border: 1px solid rgba(255,255,255,0.10);
+  }
+
+  /* Warm card — Duna-style, no border */
+  .card {
+    background: #f0eeeb;
+    border-radius: 1rem;
+  }
+  .card-white {
+    background: #ffffff;
+    border-radius: 1rem;
+    border: 1px solid #e5e1db;
+  }
+
+  /* Skeleton */
+  .skeleton {
+    background: linear-gradient(90deg, #f0eeeb 25%, #e8e4de 50%, #f0eeeb 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+  }
+
+  /* Tabular numbers */
+  .nums {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* Warm painterly canvas background (login/landing) */
+  .bg-canvas {
+    background-color: #fdf6ec;
+    background-image:
+      radial-gradient(ellipse at 15% 15%, rgba(251, 191, 36, 0.35) 0%, transparent 55%),
+      radial-gradient(ellipse at 85% 10%, rgba(249, 115, 22, 0.25) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 90%, rgba(254, 215, 170, 0.45) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 60%, rgba(253, 186, 116, 0.20) 0%, transparent 45%),
+      radial-gradient(ellipse at 10% 75%, rgba(250, 204, 21, 0.20) 0%, transparent 40%);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ── Global polish ──────────────────────────────────────── */
+button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+a      { -webkit-tap-highlight-color: transparent; }
+
+:focus-visible {
+  outline: 2px solid rgba(99,102,241,0.55);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
+
+/* Warm scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d6d3d1; border-radius: 99px; }

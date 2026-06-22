@@ -1,8 +1,10 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useSession } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import BottomNav from "@/app/components/BottomNav"
+import ComingSoon from "@/app/components/ComingSoon"
 
 interface Student {
   id: string
@@ -62,7 +64,7 @@ const SIDEBAR_SECTIONS = [
 function SilverBotThinking() {
   return (
     <div className="flex justify-start">
-      <div className="bg-white border border-blue-200 rounded-2xl rounded-tl-sm px-4 py-3 shadow-sm flex items-center gap-3 max-w-xs">
+      <div className="bg-stone-100 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-3 max-w-xs">
         <div className="relative w-10 h-10 flex-shrink-0">
           <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl flex items-center justify-center shadow">
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
@@ -73,16 +75,16 @@ function SilverBotThinking() {
               <rect x="6" y="13" width="10" height="2" rx="1" fill="white" opacity="0.8" />
             </svg>
           </div>
-          <div className="absolute inset-0 rounded-xl border-2 border-blue-400 animate-ping opacity-30" />
+          <div className="absolute inset-0 rounded-xl border-2 border-stone-400 animate-ping opacity-30" />
         </div>
         <div>
-          <div className="text-blue-700 font-bold text-sm">סילבר בוט</div>
-          <div className="text-gray-500 text-xs flex items-center gap-1">
+          <div className="text-stone-700 font-bold text-sm">סילבר בוט</div>
+          <div className="text-stone-400 text-xs flex items-center gap-1">
             סילבר בוט בודק
             <span className="flex gap-0.5">
-              <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
-              <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
-              <span className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
+              <span className="w-1 h-1 bg-stone-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
+              <span className="w-1 h-1 bg-stone-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
+              <span className="w-1 h-1 bg-stone-400 rounded-full animate-bounce" style={{ animationDelay: "300ms" }} />
             </span>
           </div>
         </div>
@@ -119,7 +121,7 @@ function WelcomeMessages({
   ]
   return (
     <div className="space-y-3">
-      <div className="bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 text-sm text-gray-700 leading-relaxed">
+      <div className="bg-stone-100 rounded-2xl px-4 py-3 text-sm text-stone-700 leading-relaxed">
         <p>שלום רב, כאן תוכלו לכתוב פניה למחנך בכל נושא.</p>
         <p className="mt-2">כלל הפניות מגיעות למחנך והוא עונה עליהן בשעות העבודה המוגדרות לו לכך.</p>
         <p className="mt-2">
@@ -127,13 +129,13 @@ function WelcomeMessages({
           במידה וסילבר בוט משוכנע שהוא יודע לענות תשובה נכונה, הוא יענה. במידה ולא — הוא יעדכן שהמחנך יענה.
         </p>
         <p className="mt-2">בכל מקרה, גם כאשר הבוט עונה, המחנך עובר על כל ההודעות.</p>
-        <button onClick={onDismiss} className="mt-3 text-xs text-blue-500 underline hover:text-blue-700">
+        <button onClick={onDismiss} className="mt-3 text-xs text-stone-400 underline hover:text-stone-700">
           אל תראה הודעה זו יותר
         </button>
       </div>
 
-      <div className="bg-white border border-gray-200 rounded-2xl px-4 py-3 text-sm text-gray-700 shadow-sm">
-        <p className="font-semibold text-blue-700 mb-2">פניות שסילבר בוט יודע לענות:</p>
+      <div className="bg-white border border-stone-200 rounded-2xl px-4 py-3 text-sm text-stone-700">
+        <p className="font-semibold text-stone-800 mb-2">פניות שסילבר בוט יודע לענות:</p>
         <ul className="space-y-3">
           {[
             { label: 'שאלות בנוגע לתאריכים ולו"ז', example: examples[0] },
@@ -141,8 +143,8 @@ function WelcomeMessages({
             { label: "אישורי הורים להעדרויות ופעילויות", example: examples[2] },
           ].map(({ label, example }) => (
             <li key={example}>
-              <p className="text-gray-600">{label} — למשל:</p>
-              <button onClick={() => onExample(example)} className="mt-1 text-blue-500 underline text-xs hover:text-blue-700">
+              <p className="text-stone-500">{label} — למשל:</p>
+              <button onClick={() => onExample(example)} className="mt-1 text-stone-600 underline text-xs hover:text-stone-900">
                 {example}
               </button>
             </li>
@@ -158,22 +160,22 @@ function Sidebar({ onSend, disabled }: { onSend: (text: string) => void; disable
   const [openSection, setOpenSection] = useState<string | null>(null)
 
   return (
-    <aside className="w-60 flex-shrink-0 bg-white border-l border-gray-200 flex flex-col overflow-y-auto">
-      <div className="bg-gray-50 border-b border-gray-200 px-3 py-3">
-        <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">שאלות ופעולות נפוצות</p>
+    <aside className="w-60 flex-shrink-0 bg-white border-l border-stone-200 flex flex-col overflow-y-auto">
+      <div className="bg-stone-50 border-b border-stone-200 px-3 py-3">
+        <p className="text-xs font-bold text-stone-400 uppercase tracking-wide">שאלות ופעולות נפוצות</p>
       </div>
       <div className="flex-1 py-2">
         {SIDEBAR_SECTIONS.map((section) => (
-          <div key={section.title} className="border-b border-gray-100 last:border-0">
+          <div key={section.title} className="border-b border-stone-100 last:border-0">
             <button
               onClick={() => setOpenSection(openSection === section.title ? null : section.title)}
-              className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-right hover:bg-gray-50 transition-colors"
+              className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-right hover:bg-stone-50 transition-colors"
             >
-              <span className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <span className="flex items-center gap-2 text-sm font-medium text-stone-700">
                 <span>{section.icon}</span>
                 <span>{section.title}</span>
               </span>
-              <span className="text-gray-400 text-xs">{openSection === section.title ? "▲" : "▼"}</span>
+              <span className="text-stone-400 text-xs">{openSection === section.title ? "▲" : "▼"}</span>
             </button>
 
             {openSection === section.title && (
@@ -183,7 +185,7 @@ function Sidebar({ onSend, disabled }: { onSend: (text: string) => void; disable
                     key={item}
                     onClick={() => { if (!disabled) onSend(item) }}
                     disabled={disabled}
-                    className="w-full text-right text-xs text-blue-600 bg-blue-50 hover:bg-blue-100 disabled:opacity-40 rounded-lg px-3 py-2 transition-colors leading-snug"
+                    className="w-full text-right text-xs text-stone-700 bg-stone-100 hover:bg-stone-200 disabled:opacity-40 rounded-lg px-3 py-2 transition-colors leading-snug"
                   >
                     {item}
                   </button>
@@ -213,6 +215,9 @@ export default function ParentChat() {
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/login")
+    const user = session?.user as any
+    if (status === "authenticated" && (user?.role === "TEACHER" || user?.role === "ADMIN")) router.push("/dashboard")
+    if (status === "authenticated" && user?.accessStatus !== "APPROVED") router.push("/pending")
   }, [status, router])
 
   useEffect(() => {
@@ -278,35 +283,66 @@ export default function ParentChat() {
     setFlagged((prev) => ({ ...prev, [messageId]: true }))
   }
 
+  const [mainTab, setMainTab] = useState("צ'אט")
+
+  const parentNavTabs = [
+    {
+      label: "בית",
+      href: "/home",
+      icon: <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>,
+    },
+    {
+      label: "צ'אט",
+      href: "/chat",
+      icon: <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" /></svg>,
+    },
+    {
+      label: "טפסים",
+      comingSoon: true,
+      icon: <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>,
+    },
+  ]
+
   if (status === "loading") return <div className="p-8 text-center">טוען...</div>
   if (loadError) return <div className="p-8 text-center text-red-500">{loadError}</div>
   if (!student) return <div className="p-8 text-center text-gray-400">טוען נתוני תלמיד...</div>
 
   return (
-    <div className="flex h-screen" dir="rtl">
+    <div className="flex flex-col h-screen" dir="rtl">
+    <div className="flex flex-1 overflow-hidden">
 
+      {mainTab === "צ'אט" && <>
       {/* Sidebar — right in RTL */}
       <Sidebar onSend={(text) => doSend(text)} disabled={sending} />
 
       {/* Chat — left */}
       <div className="flex flex-col flex-1 min-w-0">
         {/* Header */}
-        <header className="bg-blue-600 text-white p-4 flex items-center gap-3 flex-shrink-0">
-          <div className="w-10 h-10 rounded-full bg-blue-400 flex items-center justify-center flex-shrink-0 overflow-hidden border-2 border-white/40">
-            <svg viewBox="0 0 40 40" fill="none" className="w-full h-full">
-              <circle cx="20" cy="20" r="20" fill="#60a5fa" />
-              <circle cx="20" cy="15" r="7" fill="white" opacity="0.9" />
-              <ellipse cx="20" cy="34" rx="12" ry="9" fill="white" opacity="0.9" />
+        <header className="bg-white border-b border-stone-200 px-4 py-3 flex items-center gap-3 flex-shrink-0">
+          <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#047857" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
             </svg>
           </div>
-          <div>
-            <div className="font-bold text-lg leading-tight">פניות למחנך - אליאב גיל</div>
-            <div className="text-xs opacity-80">תלמיד/ה: {student.name}</div>
+          <div className="flex-1 min-w-0">
+            <div className="font-semibold text-stone-900 text-sm leading-tight truncate">
+              {(() => {
+                const u = session?.user as any
+                const firstName = u?.name?.split(" ")[0] ?? ""
+                const type = u?.parentType ?? "הורה"
+                return `${firstName} · ${type} של ${student.name}`
+              })()}
+            </div>
+            <div className="text-xs text-stone-400 mt-0.5">פניות למחנך · סילבר בוט</div>
           </div>
+          <button onClick={() => signOut({ callbackUrl: "/login" })}
+            className="text-xs text-stone-400 hover:text-stone-700 interactive px-2 py-1">
+            יציאה
+          </button>
         </header>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#faf9f6]">
           {showWelcome && (
             <WelcomeMessages
               onDismiss={dismissWelcome}
@@ -317,7 +353,7 @@ export default function ParentChat() {
           {messages.map((msg) => (
             <div key={msg.id} className="space-y-2">
               <div className="flex justify-end">
-                <div className="bg-blue-500 text-white rounded-2xl rounded-tr-sm px-4 py-2 max-w-sm">
+                <div className="bg-stone-900 text-white rounded-2xl rounded-tr-sm px-4 py-2 max-w-sm">
                   <div>{msg.content}</div>
                   <div className="text-xs opacity-70 mt-1">
                     {new Date(msg.createdAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
@@ -329,53 +365,27 @@ export default function ParentChat() {
                 <div className="space-y-1">
                   <div className="flex justify-start items-start gap-2">
                     <BotAvatar />
-                    <div className="bg-white border border-blue-200 rounded-2xl rounded-tl-sm px-4 py-3 max-w-sm shadow-sm">
-                      <div className="text-xs font-bold text-blue-600 mb-1">סילבר בוט</div>
-                      <div className="text-sm">{msg.botResponse}</div>
+                    <div className="bg-stone-100 rounded-2xl rounded-tl-sm px-4 py-3 max-w-sm">
+                      <div className="text-xs font-bold text-stone-500 mb-1">סילבר בוט</div>
+                      <div className="text-sm whitespace-pre-wrap text-stone-800">{msg.botResponse}</div>
                       {msg.dataAsOf && (
-                        <div className="text-xs text-gray-400 mt-1">
+                        <div className="text-xs text-stone-400 mt-1">
                           נכון לתאריך {new Date(msg.dataAsOf).toLocaleDateString("he-IL")}
                         </div>
                       )}
-                      <div className="text-xs text-yellow-600 mt-2 border-t border-yellow-100 pt-1">
+                      <div className="text-xs text-amber-700 mt-2 border-t border-stone-200 pt-1">
                         ⚠️ תשובה זו ניתנה על ידי בינה מלאכותית ועלולה לכלול טעויות.
                       </div>
                     </div>
                   </div>
 
-                  {!flagDismissed[msg.id] && (
-                    <div className="mr-9 bg-blue-50 border border-blue-100 rounded-xl px-3 py-2 text-xs text-gray-600">
-                      <p className="mb-2">
-                        מחנך הכיתה עובר בכל מקרה על כל ההודעות.<br />
-                        האם לסמן למחנך כי יש חשש שנפלה טעות בתשובה של סילבר בוט?
-                      </p>
-                      {flagged[msg.id] ? (
-                        <p className="text-blue-600 font-medium">✓ סומן למחנך/ת לבדיקה</p>
-                      ) : (
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => { flagMessage(msg.id); setFlagDismissed(p => ({ ...p, [msg.id]: true })) }}
-                            className="bg-blue-500 text-white rounded-lg px-3 py-1 hover:bg-blue-600"
-                          >
-                            1 - בהחלט
-                          </button>
-                          <button
-                            onClick={() => setFlagDismissed(p => ({ ...p, [msg.id]: true }))}
-                            className="bg-gray-200 text-gray-600 rounded-lg px-3 py-1 hover:bg-gray-300"
-                          >
-                            2 - לא, אין צורך
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  )}
                 </div>
               )}
 
               {msg.teacherResponse && (
                 <div className="flex justify-start">
-                  <div className="bg-green-50 border border-green-300 rounded-2xl rounded-tl-sm px-4 py-2 max-w-sm shadow-sm">
-                    <div className="text-xs text-green-600 font-bold mb-1">מהמחנך/ת:</div>
+                  <div className="bg-emerald-50 border border-emerald-200 rounded-2xl rounded-tl-sm px-4 py-2 max-w-sm">
+                    <div className="text-xs text-emerald-700 font-bold mb-1">מהמחנך/ת:</div>
                     <div className="text-sm">{msg.teacherResponse}</div>
                   </div>
                 </div>
@@ -383,7 +393,7 @@ export default function ParentChat() {
 
               {msg.status === "FORWARDED" && !msg.teacherResponse && (
                 <div className="flex justify-start">
-                  <div className="bg-gray-100 rounded-xl px-3 py-1 text-xs text-gray-500">
+                  <div className="bg-stone-100 rounded-xl px-3 py-1 text-xs text-stone-500">
                     ההודעה הועברה למחנך/ת לטיפול.
                   </div>
                 </div>
@@ -396,25 +406,47 @@ export default function ParentChat() {
         </div>
 
         {/* Input */}
-        <form onSubmit={sendMessage} className="p-4 bg-white border-t flex gap-2 flex-shrink-0">
+        <form onSubmit={sendMessage} className="p-3 bg-white border-t border-stone-100 flex gap-2 flex-shrink-0">
           <input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="שאל/י שאלה..."
-            className="flex-1 border rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
+            className="flex-1 bg-stone-100 border-0 rounded-full px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-300 text-stone-900 placeholder-stone-400"
             disabled={sending}
             dir="rtl"
           />
           <button
             type="submit"
             disabled={sending || !input.trim()}
-            className="bg-blue-500 text-white rounded-full px-4 py-2 text-sm disabled:opacity-50"
+            className="bg-stone-900 text-white rounded-full px-4 py-2.5 text-sm disabled:opacity-40 hover:bg-stone-800 btn-press interactive"
           >
             {sending ? "שולח..." : "שלח"}
           </button>
         </form>
       </div>
+      </>}
+
+      {mainTab === "טפסים ומידע" && (
+        <ComingSoon
+          icon="📄"
+          title="טפסים ומידע"
+          description="הורדת טפסים, אישורים, תשלומים ומידע חשוב מבית הספר — הכל במקום אחד."
+          featureKey="parent-forms"
+          accentColor="bg-stone-900"
+          accentLight="bg-stone-100"
+          accentText="text-stone-700"
+        />
+      )}
+    </div>
+
+    <BottomNav
+      tabs={parentNavTabs}
+      activeColor="text-stone-900"
+      activeBg="bg-stone-100"
+      activeTab={mainTab}
+      onTabChange={setMainTab}
+    />
     </div>
   )
 }

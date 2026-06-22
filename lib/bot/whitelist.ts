@@ -1,26 +1,48 @@
-// Hard-coded category whitelist — only these topics get an auto-response.
-// Everything else goes straight to the teacher, no AI attempt.
-
-export type AllowedCategory = "attendance" | "grade" | "schedule"
+export type AllowedCategory =
+  | "ציונים"
+  | "נוכחות"
+  | "התנהגות"
+  | "מערכת שעות"
+  | "מבחנים"
+  | "אירועים"
+  | "מורים"
 
 export const ALLOWED_CATEGORIES: AllowedCategory[] = [
-  "attendance",
-  "grade",
-  "schedule",
+  "מערכת שעות",
+  "מבחנים",
+  "נוכחות",
+  "התנהגות",
+  "מורים",
+  "אירועים",
+  "ציונים",
 ]
 
 export const CATEGORY_KEYWORDS: Record<AllowedCategory, string[]> = {
-  attendance: [
+  "ציונים": [
+    "ציון", "ציונים", "ממוצע", "הערכה", "grade", "בוחן",
+  ],
+  "נוכחות": [
     "נוכחות", "נעדר", "נעדרת", "היעדרות", "העדרות", "העדרויות",
     "חיסור", "חיסורים", "חסר", "חסרה", "הגיע", "הגיעה", "נכח", "נכחה",
-    "attendance", "absent",
+    "absent", "attendance",
   ],
-  grade: [
-    "ציון", "ציונים", "מבחן", "בחינה", "ממוצע", "הערכה", "grade",
-    "test", "מתמטיקה", "אנגלית", "עברית", "מדע", "היסטוריה",
+  "התנהגות": [
+    "התנהגות", "איחור", "איחורים", "משמעת", "הערה", "הערות",
+    "behavior", "late", "tardiness",
   ],
-  schedule: [
-    "מערכת שעות", "לוח זמנים", "שעה", "שיעור", "הפסקה", "schedule",
-    "schedule", "מתי", "שיעורים", "תכנית",
+  "מערכת שעות": [
+    "מערכת שעות", "לוח זמנים", "שיעור", "שיעורים", "schedule", "תכנית שבועית",
+  ],
+  "מבחנים": [
+    "מבחן", "מבחנים", "בחינה", "בחינות", "מועד", "לוח מבחנים", "exam",
+  ],
+  "אירועים": [
+    "אירוע", "אירועים", "טיול", "פעילות", "חגיגה", "עצרת",
+    "הורים", "אסיפה", "פגישה", "מתי", "לוח",
+    "event", "trip",
+  ],
+  "מורים": [
+    "מורה", "מורים", "טלפון של", "פרטי", "מחנך", "מחנכת",
+    "teacher", "contact", "יצירת קשר",
   ],
 }
