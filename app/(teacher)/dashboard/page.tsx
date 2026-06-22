@@ -88,16 +88,19 @@ export default function TeacherDashboard() {
   }
 
   async function selectConversation(studentId: string, studentName: string) {
+    // Optimistic: switch immediately, clear old messages
     setSelectedStudent(studentId)
     setSelectedStudentName(studentName)
     setReplyingTo(null)
     setReplyText("")
-    const res = await fetch(`/api/teacher/messages?studentId=${studentId}`)
-    const data = await res.json()
-    setMessages(data.messages ?? [])
+    setMessages([])
+    // Mark unread as 0 instantly
     setConversations((prev) =>
       prev.map((c) => (c.studentId === studentId ? { ...c, unreadCount: 0 } : c))
     )
+    const res = await fetch(`/api/teacher/messages?studentId=${studentId}`)
+    const data = await res.json()
+    setMessages(data.messages ?? [])
   }
 
   async function sendReply() {
@@ -115,14 +118,29 @@ export default function TeacherDashboard() {
   }
 
   async function toggleAction(messageId: string, action: string) {
+    // Optimistic: update local state immediately
+    const isTask = action === "task"
+    const isUntask = action === "untask"
+    const isApprove = action === "approve"
+    const isUnapprove = action === "unapprove"
+    if (isTask || isUntask) {
+      setMessages(prev => prev.map(m => m.id === messageId ? { ...m, isTask: isTask } : m))
+      setGlobalTasks(prev => isUntask ? prev.filter(m => m.id !== messageId) : prev)
+    }
+    if (isApprove || isUnapprove) {
+      setMessages(prev => prev.map(m => m.id === messageId ? { ...m, teacherApproved: isApprove } : m))
+    }
+    // Fire API calls in parallel
     await fetch("/api/teacher/messages", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ messageId, action }),
     })
-    if (selectedStudent) await selectConversation(selectedStudent, selectedStudentName)
-    await fetchConversations()
-    if (innerTab === "tasks") await fetchGlobalTasks()
+    // Refresh in background without blocking
+    Promise.all([
+      fetchConversations(),
+      innerTab === "tasks" ? fetchGlobalTasks() : Promise.resolve(),
+    ])
   }
 
   async function fetchGlobalTasks() {
