@@ -53,6 +53,15 @@ const IconAssistant = () => (
   </svg>
 )
 
+const QUICK_REPLIES = [
+  "יצרנו קשר עם ההורה",
+  "הנושא בטיפול",
+  "תודה על הפנייה, נחזור אליך",
+  "אנא פנה ישירות לבית הספר",
+]
+
+type ConvFilter = "הכל" | "ממתין" | "נענה" | "משימות"
+
 export default function TeacherDashboard() {
   const { data: session, status } = useSession()
   const [conversations, setConversations] = useState<Conversation[]>([])
@@ -66,6 +75,10 @@ export default function TeacherDashboard() {
   const [innerTab, setInnerTab] = useState<"chat" | "tasks">("chat")
   const [globalTasks, setGlobalTasks] = useState<(Message & { studentName?: string })[]>([])
   const [mainTab, setMainTab] = useState("שיחות")
+  const [convFilter, setConvFilter] = useState<ConvFilter>("הכל")
+  const [showSummary, setShowSummary] = useState(false)
+  const [summaryText, setSummaryText] = useState("")
+  const [summaryLoading, setSummaryLoading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -150,6 +163,43 @@ export default function TeacherDashboard() {
     setGlobalTasks(tasks)
   }
 
+  async function fetchWeeklySummary() {
+    setSummaryLoading(true)
+    setSummaryText("")
+    setShowSummary(true)
+    try {
+      const res = await fetch("/api/teacher/summary")
+      if (!res.body) { setSummaryLoading(false); return }
+      const reader = res.body.getReader()
+      const decoder = new TextDecoder()
+      let buf = ""
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+        buf += decoder.decode(value, { stream: true })
+        const lines = buf.split("\n\n")
+        buf = lines.pop() ?? ""
+        for (const line of lines) {
+          if (!line.startsWith("data: ")) continue
+          try {
+            const json = JSON.parse(line.slice(6))
+            if (json.text) setSummaryText(prev => prev + json.text)
+          } catch {}
+        }
+      }
+    } catch {}
+    setSummaryLoading(false)
+  }
+
+  const taskStudentIds = new Set(globalTasks.map(t => (t as any).student?.id).filter(Boolean))
+  const filteredConversations = conversations.filter(c => {
+    if (convFilter === "הכל") return true
+    if (convFilter === "ממתין") return c.unreadCount > 0
+    if (convFilter === "נענה") return c.unreadCount === 0
+    if (convFilter === "משימות") return taskStudentIds.has(c.studentId)
+    return true
+  })
+
   const allTasks = globalTasks
   const totalUnread = conversations.reduce((s, c) => s + c.unreadCount, 0)
 
@@ -193,10 +243,16 @@ export default function TeacherDashboard() {
                       <div className="text-xs text-stone-400">{session?.user?.name}</div>
                     </div>
                   </div>
-                  <button onClick={() => signOut({ callbackUrl: "/login" })}
-                    className="text-xs text-stone-400 hover:text-stone-700 interactive px-2 py-1">
-                    יציאה
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button onClick={fetchWeeklySummary}
+                      className="text-xs text-indigo-600 hover:text-indigo-800 interactive px-2 py-1 rounded-lg hover:bg-indigo-50 border border-indigo-100" title="סיכום שבועי">
+                      סיכום
+                    </button>
+                    <button onClick={() => signOut({ callbackUrl: "/login" })}
+                      className="text-xs text-stone-400 hover:text-stone-700 interactive px-2 py-1">
+                      יציאה
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -217,8 +273,18 @@ export default function TeacherDashboard() {
               </div>
 
               {innerTab === "chat" && (
-                <div className="flex-1 overflow-y-auto">
-                  {conversations.map((c) => (
+                <div className="flex-1 overflow-y-auto flex flex-col">
+                  {/* Filter row */}
+                  <div className="flex gap-1 px-3 py-2 border-b border-stone-100 flex-shrink-0">
+                    {(["הכל", "ממתין", "נענה", "משימות"] as ConvFilter[]).map(f => (
+                      <button key={f} onClick={() => setConvFilter(f)}
+                        className={`text-xs px-2.5 py-1 rounded-full transition-colors ${convFilter === f ? "bg-stone-900 text-white" : "bg-stone-100 text-stone-500 hover:bg-stone-200"}`}>
+                        {f}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="flex-1 overflow-y-auto">
+                  {filteredConversations.map((c) => (
                     <button
                       key={c.studentId}
                       onClick={() => selectConversation(c.studentId, c.studentName)}
@@ -241,6 +307,7 @@ export default function TeacherDashboard() {
                       </div>
                     </button>
                   ))}
+                  </div>
                 </div>
               )}
 
@@ -367,22 +434,34 @@ export default function TeacherDashboard() {
                         {/* Reply input */}
                         {replyingTo === msg.id && (
                           <div className="flex justify-start mr-4">
-                            <div className="bg-white border border-stone-200 rounded-2xl px-3 py-2 flex gap-2 items-center w-80">
-                              <input
-                                autoFocus
-                                value={replyText}
-                                onChange={(e) => setReplyText(e.target.value)}
-                                onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendReply()}
-                                placeholder="כתוב תגובה..."
-                                className="flex-1 text-sm outline-none text-stone-900 placeholder-stone-400"
-                              />
-                              <button
-                                onClick={sendReply}
-                                disabled={sending || !replyText.trim()}
-                                className="bg-stone-900 text-white rounded-full w-8 h-8 flex items-center justify-center disabled:opacity-50 hover:bg-stone-800 btn-press interactive"
-                              >
-                                ➤
-                              </button>
+                            <div className="w-80 space-y-2">
+                              {/* Quick reply templates */}
+                              <div className="flex flex-wrap gap-1">
+                                {QUICK_REPLIES.map(r => (
+                                  <button key={r} onClick={() => setReplyText(r)}
+                                    className="text-xs bg-stone-100 hover:bg-stone-200 text-stone-600 rounded-full px-2.5 py-1 interactive transition-colors">
+                                    {r}
+                                  </button>
+                                ))}
+                              </div>
+                              <div className="bg-white border border-stone-200 rounded-2xl px-3 py-2 flex gap-2 items-center">
+                                <input
+                                  autoFocus
+                                  value={replyText}
+                                  onChange={(e) => setReplyText(e.target.value)}
+                                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendReply()}
+                                  placeholder="כתוב תגובה..."
+                                  className="flex-1 text-sm outline-none text-stone-900 placeholder-stone-400"
+                                  style={{ fontSize: "16px" }}
+                                />
+                                <button
+                                  onClick={sendReply}
+                                  disabled={sending || !replyText.trim()}
+                                  className="bg-stone-900 text-white rounded-full w-8 h-8 flex items-center justify-center disabled:opacity-50 hover:bg-stone-800 btn-press interactive"
+                                >
+                                  ➤
+                                </button>
+                              </div>
                             </div>
                           </div>
                         )}
@@ -421,6 +500,31 @@ export default function TeacherDashboard() {
         )}
 
       </div>
+
+      {/* Weekly summary modal */}
+      {showSummary && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowSummary(false)}>
+          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100">
+              <div className="font-semibold text-stone-900">סיכום שבועי</div>
+              <button onClick={() => setShowSummary(false)} className="text-stone-400 hover:text-stone-700 interactive text-xl leading-none">×</button>
+            </div>
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              {summaryLoading && !summaryText && (
+                <div className="flex items-center gap-2 text-stone-500 text-sm">
+                  <span className="animate-spin">⟳</span> מכין סיכום...
+                </div>
+              )}
+              {summaryText && (
+                <div className="text-sm text-stone-800 whitespace-pre-wrap leading-relaxed">
+                  {summaryText}
+                  {summaryLoading && <span className="inline-block w-0.5 h-3.5 bg-stone-400 animate-pulse ml-0.5 align-middle" />}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bottom navigation */}
       <BottomNav
