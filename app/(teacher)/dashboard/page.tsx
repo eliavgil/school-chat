@@ -129,7 +129,6 @@ export default function TeacherDashboard() {
     const res = await fetch("/api/teacher/messages")
     const data = await res.json()
     const tasks = (data.messages ?? []).filter((m: any) => m.isTask)
-    console.log("[tasks] total messages:", data.messages?.length, "tasks:", tasks.length)
     setGlobalTasks(tasks)
   }
 
