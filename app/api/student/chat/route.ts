@@ -7,6 +7,23 @@ import { buildStudentPrompt } from "@/lib/bot/student-prompt"
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+// ── In-memory rate limiting ───────────────────────────────────
+const rateLimitMap = new Map<string, { count: number; windowStart: number }>()
+const MAX_BOT_REQUESTS_PER_HOUR = 20
+const RATE_WINDOW_MS = 60 * 60 * 1000
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now()
+  const entry = rateLimitMap.get(userId)
+  if (!entry || now - entry.windowStart > RATE_WINDOW_MS) {
+    rateLimitMap.set(userId, { count: 1, windowStart: now })
+    return true
+  }
+  if (entry.count >= MAX_BOT_REQUESTS_PER_HOUR) return false
+  entry.count++
+  return true
+}
+
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -19,10 +36,49 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "No student record linked" }, { status: 403 })
   }
 
+  // Rate limit check
+  if (!checkRateLimit(session.user.id)) {
+    return NextResponse.json(
+      { error: "הגעת למגבלת הבקשות לשעה (20 בקשות). נסה שוב בעוד שעה." },
+      { status: 429 }
+    )
+  }
+
   const { question, isFirstMessage } = await req.json()
   if (!question?.trim()) return NextResponse.json({ error: "Empty question" }, { status: 400 })
 
   const studentId = user.studentId
+
+  // Cache check — exact match within 24h for this user
+  const oneDayAgo = new Date(Date.now() - 24 * 3600 * 1000)
+  const cached = await prisma.botCache.findFirst({
+    where: { userId: session.user.id, question, fromBot: "student", createdAt: { gte: oneDayAgo } },
+  })
+  if (cached) {
+    const encoder = new TextEncoder()
+    const cachedAnswer = cached.answer
+    const stream = new ReadableStream({
+      start(controller) {
+        // Stream cached response in chunks for consistent UX
+        const chunkSize = 20
+        let i = 0
+        const interval = setInterval(() => {
+          if (i >= cachedAnswer.length) {
+            clearInterval(interval)
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, fromCache: true })}\n\n`))
+            controller.close()
+            return
+          }
+          const chunk = cachedAnswer.slice(i, i + chunkSize)
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk })}\n\n`))
+          i += chunkSize
+        }, 20)
+      },
+    })
+    return new Response(stream, {
+      headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive" },
+    })
+  }
 
   // Fetch all data in parallel
   const [student, gradesRaw, attendance, scheduleRaw, calendarEvents, allGrades] = await Promise.all([
@@ -84,8 +140,10 @@ export async function POST(req: NextRequest) {
   }, isFirstMessage ?? false)
 
   const encoder = new TextEncoder()
+  const userId = session.user.id
   const stream = new ReadableStream({
     async start(controller) {
+      let fullText = ""
       try {
         const claudeStream = anthropic.messages.stream({
           model: "claude-sonnet-4-6",
@@ -94,8 +152,15 @@ export async function POST(req: NextRequest) {
         })
         for await (const chunk of claudeStream) {
           if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
+            fullText += chunk.delta.text
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`))
           }
+        }
+        // Save to cache (fire & forget)
+        if (fullText) {
+          prisma.botCache.create({
+            data: { userId, question, answer: fullText, fromBot: "student" },
+          }).catch(() => {})
         }
       } catch {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: true })}\n\n`))

@@ -234,3 +234,15 @@ model CalendarEvent {
   description String   @db.Text
   sourceFile  String?  // which sheet this came from
 }
+
+// Bot response cache — avoid repeat Claude calls for identical questions
+model BotCache {
+  id        String   @id @default(cuid())
+  userId    String
+  question  String   @db.Text
+  answer    String   @db.Text
+  fromBot   String   @default("student") // "student" | "parent"
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+}

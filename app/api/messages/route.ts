@@ -8,6 +8,23 @@ import Anthropic from "@anthropic-ai/sdk"
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
+// ── In-memory rate limiting ───────────────────────────────────
+const rateLimitMap = new Map<string, { count: number; windowStart: number }>()
+const MAX_BOT_REQUESTS_PER_HOUR = 20
+const RATE_WINDOW_MS = 60 * 60 * 1000
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now()
+  const entry = rateLimitMap.get(userId)
+  if (!entry || now - entry.windowStart > RATE_WINDOW_MS) {
+    rateLimitMap.set(userId, { count: 1, windowStart: now })
+    return true
+  }
+  if (entry.count >= MAX_BOT_REQUESTS_PER_HOUR) return false
+  entry.count++
+  return true
+}
+
 const UNCERTAINTY_MARKERS = [
   "לא ברור",
   "לא בטוח",
@@ -26,11 +43,48 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 })
   }
 
+  // Rate limit check
+  if (!checkRateLimit(session.user.id)) {
+    return NextResponse.json(
+      { error: "הגעת למגבלת הבקשות לשעה (20 בקשות). נסה שוב בעוד שעה." },
+      { status: 429 }
+    )
+  }
+
   const link = await prisma.parentStudent.findUnique({
     where: { userId_studentId: { userId: session.user.id, studentId } },
     include: { student: true },
   })
   if (!link) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+
+  // Cache check — exact match within 24h for same user+student
+  const oneDayAgo = new Date(Date.now() - 24 * 3600 * 1000)
+  const cached = await prisma.botCache.findFirst({
+    where: { userId: session.user.id, question: content, fromBot: "parent", createdAt: { gte: oneDayAgo } },
+  })
+  if (cached) {
+    const encoder = new TextEncoder()
+    const cachedAnswer = cached.answer
+    const stream = new ReadableStream({
+      start(controller) {
+        const chunkSize = 20
+        let i = 0
+        const interval = setInterval(() => {
+          if (i >= cachedAnswer.length) {
+            clearInterval(interval)
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, botAnswered: true, fromCache: true })}\n\n`))
+            controller.close()
+            return
+          }
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: cachedAnswer.slice(i, i + chunkSize) })}\n\n`))
+          i += chunkSize
+        }, 20)
+      },
+    })
+    return new Response(stream, {
+      headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive" },
+    })
+  }
 
   // Layer 1: category filter
   const categoryCheck = checkCategory(content)
@@ -108,6 +162,12 @@ export async function POST(req: NextRequest) {
         message = await prisma.message.create({
           data: { content, senderId: session.user.id, studentId, status: "BOT_ANSWERED", botResponse: fullText, botAnsweredAt: new Date(), dataAsOf },
         })
+        // Save to cache (fire & forget)
+        if (fullText) {
+          prisma.botCache.create({
+            data: { userId: session.user.id, question: content, answer: fullText, fromBot: "parent" },
+          }).catch(() => {})
+        }
       }
       controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, message, botAnswered: !isUncertain })}\n\n`))
       controller.close()

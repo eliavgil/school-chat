@@ -98,6 +98,12 @@ export default function StudentPage() {
     })
 
     if (res.status === 403) { setNoStudent(true); setLoading(false); return }
+    if (res.status === 429) {
+      const data = await res.json()
+      setMessages(prev => [...prev, { role: "bot", text: data.error ?? "הגעת למגבלת הבקשות. נסה שוב בעוד שעה." }])
+      setLoading(false)
+      return
+    }
     if (!res.body) { setLoading(false); return }
 
     const reader = res.body.getReader()
