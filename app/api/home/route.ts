@@ -37,7 +37,10 @@ export async function GET() {
   const todayHeb = DAY_TO_HEB[todayJS]
   const tomorrowHeb = DAY_TO_HEB[nextSchoolDay(todayJS)]
 
-  const [classProfile, upcomingEvents, openTasks, recentMessages, todaySchedule, tomorrowSchedule] = await Promise.all([
+  const EXAM_KEYWORDS = ["מבחן", "בוחן", "בגרות"]
+  const now30 = new Date(Date.now() + 30 * 24 * 3600 * 1000)
+
+  const [classProfile, upcomingEvents, openTasks, recentMessages, todaySchedule, tomorrowSchedule, upcomingExams, attendance] = await Promise.all([
     prisma.class.findUnique({
       where: { id: classId },
       select: { displayName: true, teacherDisplayName: true, schoolName: true },
@@ -76,6 +79,22 @@ export async function GET() {
           select: { period: true, content: true },
         })
       : Promise.resolve([]),
+    isStudent
+      ? prisma.calendarEvent.findMany({
+          where: {
+            date: { gte: new Date(), lte: now30 },
+            OR: EXAM_KEYWORDS.map(k => ({ description: { contains: k } })),
+          },
+          orderBy: { date: "asc" },
+          take: 10,
+        })
+      : Promise.resolve([]),
+    isStudent && user?.studentId
+      ? prisma.studentAttendance.findUnique({
+          where: { studentId: user.studentId },
+          select: { totalLessons: true, absences: true, justifiedAbsences: true },
+        })
+      : Promise.resolve(null),
   ])
 
   return NextResponse.json({
@@ -87,5 +106,7 @@ export async function GET() {
     tomorrowSchedule,
     todayHeb,
     tomorrowHeb,
+    upcomingExams,
+    attendance,
   })
 }

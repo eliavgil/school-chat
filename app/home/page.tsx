@@ -13,6 +13,7 @@ interface ClassProfile { displayName: string; teacherDisplayName: string; school
 interface CalendarEvent { id: string; date: string; description: string; grade: string | null }
 interface RecentMessage { id: string; content: string; createdAt: string; sender: { name: string }; student: { name: string } }
 interface ScheduleSlot { period: string; content: string }
+interface Attendance { totalLessons: number; absences: number; justifiedAbsences: number }
 interface HomeData {
   classProfile: ClassProfile | null
   upcomingEvents: CalendarEvent[]
@@ -22,6 +23,8 @@ interface HomeData {
   tomorrowSchedule: ScheduleSlot[]
   todayHeb: string
   tomorrowHeb: string
+  upcomingExams: CalendarEvent[]
+  attendance: Attendance | null
 }
 
 // ── Schedule helpers ───────────────────────────────────────
@@ -253,6 +256,45 @@ function StudentHome({ session, data }: { session: any; data: HomeData | null })
                 <span className="text-white/70 text-xs truncate">{e.description}</span>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Upcoming exams */}
+        {(data?.upcomingExams?.length ?? 0) > 0 && !showSchedule && (
+          <div className="mt-3 glass rounded-2xl px-4 py-3 animate-fade-in">
+            <p className="text-white/50 text-[10px] font-semibold mb-2 uppercase tracking-wide">מבחנים קרובים</p>
+            <div className="flex flex-wrap gap-2">
+              {data!.upcomingExams.map(e => (
+                <div key={e.id} className="bg-white/10 rounded-xl px-3 py-1.5 flex items-center gap-2">
+                  <span className="text-white/50 text-xs nums" dir="ltr">
+                    {new Date(e.date).toLocaleDateString("he-IL", { day: "numeric", month: "numeric" })}
+                  </span>
+                  <span className="text-white/80 text-xs font-medium truncate max-w-[120px]">{e.description}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Attendance */}
+        {data?.attendance && data.attendance.totalLessons > 0 && (
+          <div className="mt-3 glass rounded-2xl px-4 py-3 animate-fade-in">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-white/50 text-[10px] font-semibold uppercase tracking-wide">נוכחות</p>
+              <span className="text-white/70 text-xs">
+                {Math.round(((data.attendance.totalLessons - data.attendance.absences) / data.attendance.totalLessons) * 100)}%
+              </span>
+            </div>
+            <div className="h-1.5 bg-white/15 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-white/70 rounded-full transition-all"
+                style={{ width: `${Math.round(((data.attendance.totalLessons - data.attendance.absences) / data.attendance.totalLessons) * 100)}%` }}
+              />
+            </div>
+            <div className="flex justify-between mt-1.5">
+              <span className="text-white/35 text-[10px]">נעדרתי {data.attendance.absences} שיעורים</span>
+              <span className="text-white/35 text-[10px]">{data.attendance.totalLessons} שיעורים סה"כ</span>
+            </div>
           </div>
         )}
       </main>
