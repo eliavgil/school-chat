@@ -76,31 +76,51 @@ export async function POST(req: NextRequest) {
     dataAsOf,
   })
 
-  const claudeResponse = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 400,
-    messages: [{ role: "user", content: prompt }],
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream({
+    async start(controller) {
+      let fullText = ""
+      try {
+        const claudeStream = anthropic.messages.stream({
+          model: "claude-sonnet-4-6",
+          max_tokens: 400,
+          messages: [{ role: "user", content: prompt }],
+        })
+        for await (const chunk of claudeStream) {
+          if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
+            fullText += chunk.delta.text
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`))
+          }
+        }
+      } catch (e) {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: true })}\n\n`))
+        controller.close()
+        return
+      }
+
+      const isUncertain = UNCERTAINTY_MARKERS.some((m) => fullText.toLowerCase().includes(m))
+      let message
+      if (isUncertain) {
+        message = await prisma.message.create({
+          data: { content, senderId: session.user.id, studentId, status: "FORWARDED", skipReason: "הבוט זיהה אי-ודאות בנתונים", botResponse: fullText },
+        })
+      } else {
+        message = await prisma.message.create({
+          data: { content, senderId: session.user.id, studentId, status: "BOT_ANSWERED", botResponse: fullText, botAnsweredAt: new Date(), dataAsOf },
+        })
+      }
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, message, botAnswered: !isUncertain })}\n\n`))
+      controller.close()
+    },
   })
 
-  const botText =
-    claudeResponse.content[0].type === "text" ? claudeResponse.content[0].text : ""
-
-  console.log("CATEGORY:", category, "| GRADES COUNT:", grades?.length, "| BOT:", botText.slice(0, 200))
-  const isUncertain = UNCERTAINTY_MARKERS.some((m) => botText.toLowerCase().includes(m))
-  console.log("IS_UNCERTAIN:", isUncertain, "| MARKER:", UNCERTAINTY_MARKERS.find(m => botText.toLowerCase().includes(m)))
-
-  if (isUncertain) {
-    const message = await prisma.message.create({
-      data: { content, senderId: session.user.id, studentId, status: "FORWARDED", skipReason: "הבוט זיהה אי-ודאות בנתונים", botResponse: botText },
-    })
-    return NextResponse.json({ message, botAnswered: false })
-  }
-
-  const message = await prisma.message.create({
-    data: { content, senderId: session.user.id, studentId, status: "BOT_ANSWERED", botResponse: botText, botAnsweredAt: new Date(), dataAsOf },
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+    },
   })
-
-  return NextResponse.json({ message, botAnswered: true, botResponse: botText })
 }
 
 export async function GET(req: NextRequest) {

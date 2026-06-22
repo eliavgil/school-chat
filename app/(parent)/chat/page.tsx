@@ -209,6 +209,7 @@ export default function ParentChat() {
   const [loadError, setLoadError] = useState("")
   const [flagged, setFlagged] = useState<Record<string, boolean>>({})
   const [flagDismissed, setFlagDismissed] = useState<Record<string, boolean>>({})
+  const [streamingText, setStreamingText] = useState("")
   const [showWelcome, setShowWelcome] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -255,14 +256,35 @@ export default function ParentChat() {
   async function doSend(text: string) {
     if (!text.trim() || !student || sending) return
     setSending(true)
+    setStreamingText("")
     const res = await fetch("/api/messages", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: text, studentId: student.id }),
     })
-    if (res.ok) {
-      const data = await res.json()
-      setMessages((prev) => [...prev, data.message])
+    if (!res.ok || !res.body) { setSending(false); return }
+
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ""
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split("\n\n")
+      buffer = lines.pop() ?? ""
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue
+        try {
+          const json = JSON.parse(line.slice(6))
+          if (json.text) setStreamingText(prev => prev + json.text)
+          if (json.done) {
+            setMessages(prev => [...prev, json.message])
+            setStreamingText("")
+          }
+        } catch {}
+      }
     }
     setSending(false)
   }
@@ -401,7 +423,16 @@ export default function ParentChat() {
             </div>
           ))}
 
-          {sending && <SilverBotThinking />}
+          {sending && !streamingText && <SilverBotThinking />}
+          {streamingText && (
+            <div className="flex justify-start items-start gap-2">
+              <BotAvatar />
+              <div className="bg-stone-100 rounded-2xl rounded-tl-sm px-4 py-3 max-w-sm">
+                <div className="text-xs font-bold text-stone-500 mb-1">סילבר בוט</div>
+                <div className="text-sm text-stone-800 whitespace-pre-wrap">{streamingText}<span className="inline-block w-0.5 h-3.5 bg-stone-400 animate-pulse ml-0.5 align-middle" /></div>
+              </div>
+            </div>
+          )}
           <div ref={bottomRef} />
         </div>
 
