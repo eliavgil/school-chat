@@ -38,6 +38,8 @@ function BotThinking() {
   )
 }
 
+const CHAT_STORAGE_KEY = "student-chat-history"
+
 export default function StudentPage() {
   const { data: session, status } = useSession()
   const [mainTab, setMainTab] = useState("מידע")
@@ -47,8 +49,37 @@ export default function StudentPage() {
   const [streamingText, setStreamingText] = useState("")
   const [isFirst, setIsFirst] = useState(true)
   const [noStudent, setNoStudent] = useState(false)
+  const [historyLoaded, setHistoryLoaded] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Load history from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(CHAT_STORAGE_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved) as Message[]
+        const last50 = parsed.slice(-50)
+        setMessages(last50)
+        if (last50.length > 0) setIsFirst(false)
+      }
+    } catch {}
+    setHistoryLoaded(true)
+  }, [])
+
+  // Save to localStorage whenever messages change (after initial load)
+  useEffect(() => {
+    if (!historyLoaded) return
+    try {
+      localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(messages.slice(-50)))
+    } catch {}
+  }, [messages, historyLoaded])
+
+  function clearChat() {
+    setMessages([])
+    setIsFirst(true)
+    localStorage.removeItem(CHAT_STORAGE_KEY)
+  }
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }) }, [messages, loading])
 
@@ -123,9 +154,16 @@ export default function StudentPage() {
               <div className="text-xs text-stone-400">כיתה י2 סילבר · סילבר בוט</div>
             </div>
           </div>
-          <button onClick={() => signOut({ callbackUrl: "/login" })} className="text-xs text-stone-400 hover:text-stone-700 interactive px-2 py-1">
-            יציאה
-          </button>
+          <div className="flex items-center gap-1">
+            {messages.length > 0 && (
+              <button onClick={clearChat} className="text-xs text-stone-400 hover:text-stone-600 interactive px-2 py-1 rounded-lg hover:bg-stone-100" title="נקה שיחה">
+                נקה
+              </button>
+            )}
+            <button onClick={() => signOut({ callbackUrl: "/login" })} className="text-xs text-stone-400 hover:text-stone-700 interactive px-2 py-1">
+              יציאה
+            </button>
+          </div>
         </div>
       </header>
 
@@ -205,7 +243,7 @@ export default function StudentPage() {
                     onKeyDown={e => e.key === "Enter" && !e.shiftKey && send()}
                     placeholder="שאל/י שאלה..."
                     disabled={loading}
-                    className="flex-1 bg-stone-100 border-0 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-300 text-stone-900 placeholder-stone-400"
+                    className="flex-1 bg-stone-100 border-0 rounded-full px-4 py-2 text-base focus:outline-none focus:ring-2 focus:ring-stone-300 text-stone-900 placeholder-stone-400" style={{ fontSize: "16px" }}
                   />
                   <button onClick={() => send()} disabled={loading || !input.trim()}
                     className="bg-stone-900 text-white rounded-full w-9 h-9 flex items-center justify-center disabled:opacity-40 hover:bg-stone-800 flex-shrink-0 btn-press interactive">
