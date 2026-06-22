@@ -83,13 +83,33 @@ export async function POST(req: NextRequest) {
     })),
   }, isFirstMessage ?? false)
 
-  const msg = await anthropic.messages.create({
-    model: "claude-sonnet-4-6",
-    max_tokens: 1024,
-    messages: [{ role: "user", content: prompt }],
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        const claudeStream = anthropic.messages.stream({
+          model: "claude-sonnet-4-6",
+          max_tokens: 1024,
+          messages: [{ role: "user", content: prompt }],
+        })
+        for await (const chunk of claudeStream) {
+          if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`))
+          }
+        }
+      } catch {
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: true })}\n\n`))
+      }
+      controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`))
+      controller.close()
+    },
   })
 
-  const response = msg.content[0].type === "text" ? msg.content[0].text : ""
-
-  return NextResponse.json({ response })
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream",
+      "Cache-Control": "no-cache",
+      "Connection": "keep-alive",
+    },
+  })
 }

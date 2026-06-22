@@ -44,6 +44,7 @@ export default function StudentPage() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
+  const [streamingText, setStreamingText] = useState("")
   const [isFirst, setIsFirst] = useState(true)
   const [noStudent, setNoStudent] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -57,6 +58,7 @@ export default function StudentPage() {
     setInput("")
     setMessages(prev => [...prev, { role: "user", text: q }])
     setLoading(true)
+    setStreamingText("")
 
     const res = await fetch("/api/student/chat", {
       method: "POST",
@@ -64,14 +66,32 @@ export default function StudentPage() {
       body: JSON.stringify({ question: q, isFirstMessage: isFirst }),
     })
 
-    if (res.status === 403) {
-      setNoStudent(true)
-      setLoading(false)
-      return
-    }
+    if (res.status === 403) { setNoStudent(true); setLoading(false); return }
+    if (!res.body) { setLoading(false); return }
 
-    const data = await res.json()
-    setMessages(prev => [...prev, { role: "bot", text: data.response ?? "שגיאה — נסה שוב" }])
+    const reader = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ""
+    let fullText = ""
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split("\n\n")
+      buffer = lines.pop() ?? ""
+      for (const line of lines) {
+        if (!line.startsWith("data: ")) continue
+        try {
+          const json = JSON.parse(line.slice(6))
+          if (json.text) { fullText += json.text; setStreamingText(fullText) }
+          if (json.done) {
+            setMessages(prev => [...prev, { role: "bot", text: fullText || "שגיאה — נסה שוב" }])
+            setStreamingText("")
+          }
+        } catch {}
+      }
+    }
     setIsFirst(false)
     setLoading(false)
     setTimeout(() => inputRef.current?.focus(), 100)
@@ -162,7 +182,17 @@ export default function StudentPage() {
                     </div>
                   ))}
 
-                  {loading && <BotThinking />}
+                  {loading && !streamingText && <BotThinking />}
+                  {streamingText && (
+                    <div className="flex gap-2 items-start">
+                      <div className="w-7 h-7 bg-gradient-to-br from-orange-400 to-orange-600 rounded-lg flex items-center justify-center flex-shrink-0 mt-1 shadow">
+                        <span className="text-white text-xs font-bold">S</span>
+                      </div>
+                      <div className="max-w-[80%] px-4 py-2.5 rounded-2xl bg-stone-100 text-stone-800 rounded-tl-sm text-sm whitespace-pre-wrap">
+                        {streamingText}<span className="inline-block w-0.5 h-3.5 bg-stone-400 animate-pulse ml-0.5 align-middle" />
+                      </div>
+                    </div>
+                  )}
                   <div ref={bottomRef} />
                 </div>
 
