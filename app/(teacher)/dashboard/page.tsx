@@ -69,10 +69,12 @@ export default function TeacherDashboard() {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    fetchConversations()
-    fetchGlobalTasks()
+    if (status === "authenticated") {
+      fetchConversations()
+      fetchGlobalTasks()
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [status])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -126,7 +128,9 @@ export default function TeacherDashboard() {
   async function fetchGlobalTasks() {
     const res = await fetch("/api/teacher/messages")
     const data = await res.json()
-    setGlobalTasks((data.messages ?? []).filter((m: any) => m.isTask))
+    const tasks = (data.messages ?? []).filter((m: any) => m.isTask)
+    console.log("[tasks] total messages:", data.messages?.length, "tasks:", tasks.length)
+    setGlobalTasks(tasks)
   }
 
   const allTasks = globalTasks
