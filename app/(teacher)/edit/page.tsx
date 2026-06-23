@@ -263,15 +263,17 @@ function SyncEventsButton() {
     setStatus("syncing")
     try {
       const res = await fetch("/api/sync-events", { method: "POST" })
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error ?? "שגיאה")
+      const text = await res.text()
+      let data: any
+      try { data = JSON.parse(text) } catch { throw new Error(text.slice(0, 200)) }
+      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
       setCount(data.synced)
       setStatus("done")
       setTimeout(() => setStatus("idle"), 4000)
     } catch (e: any) {
       setErrMsg(e.message)
       setStatus("error")
-      setTimeout(() => setStatus("idle"), 5000)
+      setTimeout(() => setStatus("idle"), 8000)
     }
   }
 

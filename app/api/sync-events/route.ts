@@ -92,10 +92,10 @@ export async function POST() {
   }
 
   // Replace all events atomically
-  await prisma.$transaction([
-    prisma.calendarEvent.deleteMany(),
-    prisma.calendarEvent.createMany({ data: events }),
-  ])
+  await prisma.$transaction(async (tx) => {
+    await tx.calendarEvent.deleteMany()
+    if (events.length > 0) await tx.calendarEvent.createMany({ data: events })
+  })
 
   return NextResponse.json({ synced: events.length })
 }
