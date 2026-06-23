@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import ThemePicker from "@/app/components/ThemePicker"
 import {
   getPersonalEvents, addPersonalEvent, updatePersonalEvent, deletePersonalEvent,
@@ -190,7 +191,7 @@ function PersonalEventsEditor() {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-stone-400">אירועים אישיים — גלויים רק לך</p>
+      <p className="text-xs text-stone-400">תזכורות ואירועים אישיים — גלויים רק לך</p>
 
       {events.map(ev => (
         <div key={ev.id} className="bg-white border border-stone-200 rounded-xl px-4 py-3 flex items-start gap-3 group">
@@ -229,12 +230,12 @@ function PersonalEventsEditor() {
 
       {showAdd ? (
         <div className="bg-white border border-stone-200 rounded-xl px-4 py-4 space-y-3">
-          <div className="flex gap-3">
+          <div className="flex gap-3 flex-wrap">
             <input type="date" value={newDate} onChange={e => setNewDate(e.target.value)}
               className="bg-stone-100 border-0 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-300" />
-            <input placeholder="תיאור האירוע" value={newDesc} onChange={e => setNewDesc(e.target.value)}
+            <input placeholder="מה קורה?" value={newDesc} onChange={e => setNewDesc(e.target.value)}
               onKeyDown={e => e.key === "Enter" && add()}
-              className="flex-1 bg-stone-100 border-0 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-300" />
+              className="flex-1 min-w-40 bg-stone-100 border-0 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-stone-300" />
           </div>
           <div className="flex gap-2">
             <button onClick={add} disabled={!newDate || !newDesc}
@@ -245,7 +246,7 @@ function PersonalEventsEditor() {
       ) : (
         <button onClick={() => setShowAdd(true)}
           className="w-full border-2 border-dashed border-stone-200 rounded-xl py-3 text-sm text-stone-400 hover:border-stone-400 hover:text-stone-600 interactive transition-colors">
-          + הוסף אירוע אישי
+          + הוסף תזכורת
         </button>
       )}
     </div>
@@ -253,9 +254,15 @@ function PersonalEventsEditor() {
 }
 
 // ── Main page ─────────────────────────────────────────────
-export default function EditPage() {
+export default function StudentEditPage() {
   const router = useRouter()
-  const [tab, setTab] = useState<"schedule" | "events" | "theme" | "name">("name")
+  const { status } = useSession()
+  const [tab, setTab] = useState<"name" | "schedule" | "events" | "theme">("name")
+
+  if (status === "unauthenticated") {
+    router.replace("/")
+    return null
+  }
 
   return (
     <div className="min-h-screen bg-[var(--bg,#faf9f6)]" dir="rtl">
@@ -263,12 +270,12 @@ export default function EditPage() {
       <div className="bg-[var(--bg-card,white)] border-b border-stone-200 px-4 pt-5 pb-0 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-lg font-bold text-[var(--text,#1c1917)]">עריכה אישית</h1>
+            <h1 className="text-lg font-bold text-[var(--text,#1c1917)]">הגדרות אישיות</h1>
             <button onClick={() => router.back()} className="text-sm text-stone-400 hover:text-stone-700 interactive">← חזרה</button>
           </div>
-          <p className="text-xs text-stone-400 mb-3">שינויים אלו גלויים רק לך — לא משפיעים על משתמשים אחרים</p>
+          <p className="text-xs text-stone-400 mb-3">שינויים אלו גלויים רק לך — לא משפיעים על שאר הכיתה</p>
           <div className="flex gap-4 text-sm font-medium overflow-x-auto">
-            {([["name", "שם תצוגה"], ["schedule", "הערות מערכת"], ["events", "אירועים"], ["theme", "עיצוב"]] as const).map(([id, label]) => (
+            {([["name", "שם"], ["schedule", "מערכת"], ["events", "אירועים"], ["theme", "עיצוב"]] as const).map(([id, label]) => (
               <button key={id} onClick={() => setTab(id)}
                 className={`pb-3 border-b-2 transition-colors interactive whitespace-nowrap ${tab === id ? "border-stone-900 text-stone-900" : "border-transparent text-stone-400 hover:text-stone-700"}`}>
                 {label}

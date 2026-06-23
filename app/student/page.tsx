@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import BottomNav from "@/app/components/BottomNav"
 import ComingSoon from "@/app/components/ComingSoon"
+import { getPersonalDisplayName } from "@/app/components/personalStore"
 
 interface Message {
   role: "user" | "bot"
@@ -143,7 +144,9 @@ export default function StudentPage() {
 
   if (status === "loading") return null
 
-  const firstName = session?.user?.name?.split(" ")[0] ?? ""
+  const [personalName, setPersonalName] = useState("")
+  useEffect(() => { setPersonalName(getPersonalDisplayName()) }, [])
+  const firstName = personalName || (session?.user?.name?.split(" ")[0] ?? "")
 
   return (
     <div className="flex flex-col h-screen bg-[#faf9f6]" dir="rtl">
@@ -166,6 +169,9 @@ export default function StudentPage() {
                 נקה
               </button>
             )}
+            <a href="/student/edit" className="text-xs text-stone-400 hover:text-stone-700 interactive px-2 py-1 rounded-lg hover:bg-stone-100">
+              הגדרות
+            </a>
             <button onClick={() => signOut({ callbackUrl: "/login" })} className="text-xs text-stone-400 hover:text-stone-700 interactive px-2 py-1">
               יציאה
             </button>
