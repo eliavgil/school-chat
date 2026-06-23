@@ -176,8 +176,12 @@ function StudentHome({ session, data }: { session: any; data: HomeData | null })
             {data?.classProfile?.displayName ?? "י2 סילבר"} · שלום, {firstName}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <div className="text-white text-2xl font-light nums" dir="ltr">{timeStr}</div>
+          <Link href="/student/edit" title="עריכה אישית"
+            className="glass rounded-full px-3 py-1 text-white/70 text-xs hover:text-white btn-press interactive">
+            עריכה
+          </Link>
           <button onClick={() => signOut({ callbackUrl: "/login" })}
             className="glass rounded-full px-3 py-1 text-white/70 text-xs hover:text-white btn-press">
             יציאה
