@@ -7,6 +7,7 @@ import BottomNav from "@/app/components/BottomNav"
 import {
   getRemainingSchoolDays, getDaysUntilSummer, getNextVacation, getDaysUntilNextVacation,
 } from "@/lib/school-calendar"
+import { getPersonalEvents, getPersonalDisplayName } from "@/app/components/personalStore"
 
 // ── Types ─────────────────────────────────────────────────
 interface ClassProfile { displayName: string; teacherDisplayName: string; schoolName: string }
@@ -93,7 +94,13 @@ function useTick(ms = 1000) {
 function StudentHome({ session, data }: { session: any; data: HomeData | null }) {
   const now = useTick()
   const [showSchedule, setShowSchedule] = useState(false)
-  const firstName = session?.user?.name?.split(" ")[0] ?? ""
+  const [personalName, setPersonalName] = useState("")
+  const [personalEvents, setPersonalEvents] = useState<{ id: string; date: string; description: string }[]>([])
+  useEffect(() => {
+    setPersonalName(getPersonalDisplayName())
+    setPersonalEvents(getPersonalEvents())
+  }, [])
+  const firstName = personalName || (session?.user?.name?.split(" ")[0] ?? "")
 
   const todaySlots: ScheduleSlot[] = data?.todaySchedule ?? []
   const status = getLessonStatus(todaySlots, now)
@@ -249,19 +256,29 @@ function StudentHome({ session, data }: { session: any; data: HomeData | null })
           </div>
         )}
 
-        {/* Events */}
-        {(data?.upcomingEvents.length ?? 0) > 0 && !showSchedule && (
-          <div className="mt-3 glass rounded-2xl px-4 py-3 animate-fade-in stagger-5">
-            {data!.upcomingEvents.slice(0, 2).map(e => (
-              <div key={e.id} className="flex items-center gap-3 py-1">
-                <span className="text-white/40 text-xs nums" dir="ltr">
-                  {new Date(e.date).toLocaleDateString("he-IL", { day: "numeric", month: "numeric" })}
-                </span>
-                <span className="text-white/70 text-xs truncate">{e.description}</span>
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Events — shared + personal merged */}
+        {(() => {
+          const shared = data?.upcomingEvents ?? []
+          const today = new Date().toISOString().slice(0, 10)
+          const merged = [
+            ...shared,
+            ...personalEvents.filter(e => e.date >= today).map(e => ({ ...e, _personal: true })),
+          ].sort((a, b) => a.date.localeCompare(b.date))
+          if (!merged.length || showSchedule) return null
+          return (
+            <div className="mt-3 glass rounded-2xl px-4 py-3 animate-fade-in stagger-5">
+              {merged.slice(0, 3).map(e => (
+                <div key={e.id} className="flex items-center gap-3 py-1">
+                  <span className="text-white/40 text-xs nums" dir="ltr">
+                    {new Date(e.date).toLocaleDateString("he-IL", { day: "numeric", month: "numeric" })}
+                  </span>
+                  <span className="text-white/70 text-xs truncate">{e.description}</span>
+                  {(e as any)._personal && <span className="text-white/30 text-[10px] mr-auto">אישי</span>}
+                </div>
+              ))}
+            </div>
+          )
+        })()}
 
         {/* Upcoming exams */}
         {(data?.upcomingExams?.length ?? 0) > 0 && !showSchedule && (

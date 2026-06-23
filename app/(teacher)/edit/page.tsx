@@ -252,10 +252,93 @@ function PersonalEventsEditor() {
   )
 }
 
+// ── Global data manager (DB) ──────────────────────────────
+function GlobalDataManager() {
+  const [events, setEvents] = useState<{ id: string; date: string; description: string }[]>([])
+  const [slots, setSlots] = useState<{ id: string; dayHeb: string; period: string; content: string }[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/events").then(r => r.json()).catch(() => ({ events: [] })),
+      fetch("/api/schedule").then(r => r.json()).catch(() => ({ slots: [] })),
+    ]).then(([ev, sc]) => {
+      setEvents(ev.events ?? [])
+      setSlots(sc.slots ?? [])
+      setLoading(false)
+    })
+  }, [])
+
+  async function deleteEvent(id: string) {
+    if (!confirm("למחוק אירוע זה לכולם?")) return
+    await fetch("/api/events", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) })
+    setEvents(prev => prev.filter(e => e.id !== id))
+  }
+
+  async function deleteSlot(id: string) {
+    if (!confirm("למחוק שיעור זה לכולם?")) return
+    await fetch("/api/schedule", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) })
+    setSlots(prev => prev.filter(s => s.id !== id))
+  }
+
+  if (loading) return <p className="text-sm text-stone-400">טוען...</p>
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-700">
+        שינויים כאן משפיעים על <strong>כל המשתמשים</strong>
+      </div>
+
+      {/* Events */}
+      <div>
+        <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">אירועים במערכת</p>
+        {events.length === 0 && <p className="text-sm text-stone-400">אין אירועים</p>}
+        <div className="space-y-2">
+          {events.map(ev => (
+            <div key={ev.id} className="bg-white border border-stone-200 rounded-xl px-4 py-2.5 flex items-center gap-3 group">
+              <span className="text-xs text-stone-400 font-mono w-14">
+                {new Date(ev.date).toLocaleDateString("he-IL", { day: "numeric", month: "numeric" })}
+              </span>
+              <span className="text-sm text-stone-700 flex-1">{ev.description}</span>
+              <button onClick={() => deleteEvent(ev.id)}
+                className="opacity-0 group-hover:opacity-100 text-stone-300 hover:text-red-500 interactive p-1 rounded transition-opacity">
+                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Schedule slots */}
+      <div>
+        <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">מערכת שעות</p>
+        {slots.length === 0 && <p className="text-sm text-stone-400">אין שיעורים</p>}
+        <div className="space-y-1.5">
+          {slots.map(s => (
+            <div key={s.id} className="bg-white border border-stone-200 rounded-xl px-4 py-2 flex items-center gap-3 group">
+              <span className="text-xs text-stone-400 w-16">{s.dayHeb}</span>
+              <span className="text-xs text-stone-400 font-mono">{s.period.split(",")[0]}</span>
+              <span className="text-sm text-stone-700 flex-1 truncate">{s.content.split("  ")[0]}</span>
+              <button onClick={() => deleteSlot(s.id)}
+                className="opacity-0 group-hover:opacity-100 text-stone-300 hover:text-red-500 interactive p-1 rounded transition-opacity">
+                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────
 export default function EditPage() {
   const router = useRouter()
-  const [tab, setTab] = useState<"schedule" | "events" | "theme" | "name">("name")
+  const [tab, setTab] = useState<"schedule" | "events" | "theme" | "name" | "manage">("name")
 
   return (
     <div className="min-h-screen bg-[var(--bg,#faf9f6)]" dir="rtl">
@@ -268,7 +351,7 @@ export default function EditPage() {
           </div>
           <p className="text-xs text-stone-400 mb-3">שינויים אלו גלויים רק לך — לא משפיעים על משתמשים אחרים</p>
           <div className="flex gap-4 text-sm font-medium overflow-x-auto">
-            {([["name", "שם תצוגה"], ["schedule", "הערות מערכת"], ["events", "אירועים"], ["theme", "עיצוב"]] as const).map(([id, label]) => (
+            {([["name", "שם תצוגה"], ["schedule", "הערות מערכת"], ["events", "אירועים"], ["theme", "עיצוב"], ["manage", "ניהול מערכת"]] as const).map(([id, label]) => (
               <button key={id} onClick={() => setTab(id)}
                 className={`pb-3 border-b-2 transition-colors interactive whitespace-nowrap ${tab === id ? "border-stone-900 text-stone-900" : "border-transparent text-stone-400 hover:text-stone-700"}`}>
                 {label}
@@ -282,6 +365,7 @@ export default function EditPage() {
         {tab === "name" && <NameEditor />}
         {tab === "schedule" && <ScheduleNotesEditor />}
         {tab === "events" && <PersonalEventsEditor />}
+        {tab === "manage" && <GlobalDataManager />}
         {tab === "theme" && (
           <div className="bg-[var(--bg-card,white)] border border-stone-200 rounded-2xl overflow-hidden">
             <ThemePicker />
