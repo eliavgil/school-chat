@@ -94,12 +94,14 @@ function useTick(ms = 1000) {
 function StudentHome({ session, data }: { session: any; data: HomeData | null }) {
   const now = useTick()
   const [showSchedule, setShowSchedule] = useState(false)
-  const [personalName, setPersonalName] = useState("")
-  const [personalEvents, setPersonalEvents] = useState<{ id: string; date: string; description: string }[]>([])
-  useEffect(() => {
-    setPersonalName(getPersonalDisplayName())
-    setPersonalEvents(getPersonalEvents())
-  }, [])
+  const [personalName] = useState(() => {
+    if (typeof window === "undefined") return ""
+    return getPersonalDisplayName()
+  })
+  const [personalEvents] = useState(() => {
+    if (typeof window === "undefined") return []
+    return getPersonalEvents()
+  })
   const firstName = personalName || (session?.user?.name?.split(" ")[0] ?? "")
 
   const todaySlots: ScheduleSlot[] = data?.todaySchedule ?? []
