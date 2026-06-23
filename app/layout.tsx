@@ -31,6 +31,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="apple-touch-icon" href="/icon-192.svg" />
       </head>
       <body className="min-h-screen bg-white">
+        {/* Apply saved theme before first paint to avoid flash */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          try {
+            var t = localStorage.getItem('app-theme');
+            if (t && t !== 'stone') document.documentElement.setAttribute('data-theme', t);
+          } catch(e) {}
+        `}} />
         <Providers>{children}</Providers>
       </body>
     </html>

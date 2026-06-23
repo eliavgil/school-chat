@@ -212,8 +212,8 @@ export default function TeacherDashboard() {
   const navTabs = [
     { label: "בית",          href: "/home",      icon: <IconHome /> },
     { label: "שיחות",        href: "/dashboard", icon: <IconChat />, badge: totalUnread },
+    { label: "עריכה",        href: "/edit",      icon: <IconSettings /> },
     { label: "ניהול",        href: "/admin",     icon: <IconSettings /> },
-    { label: "ניתוח",        icon: <IconAnalytics />, comingSoon: true },
     { label: "עוזר",         icon: <IconAssistant />, comingSoon: true },
   ]
 

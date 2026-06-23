@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import ThemePicker from "@/app/components/ThemePicker"
 
 interface Settings {
   displayName: string
@@ -44,25 +45,27 @@ export default function ProfilePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6" dir="rtl">
+    <div className="min-h-screen bg-[#faf9f6] p-6" dir="rtl">
       <div className="max-w-md mx-auto">
-        <button onClick={() => router.back()} className="text-sm text-gray-500 hover:text-gray-700 mb-6 flex items-center gap-1">
+        <button onClick={() => router.back()} className="text-sm text-stone-400 hover:text-stone-700 mb-6 flex items-center gap-1 interactive">
           ← חזרה
         </button>
 
-        <h1 className="text-xl font-bold text-gray-800 mb-1">הגדרות כיתה</h1>
-        <p className="text-sm text-gray-500 mb-6">השינויים יופיעו בכל גרסאות האפליקציה — מחנך, הורים ותלמידים.</p>
+        <h1 className="text-xl font-bold text-stone-900 mb-1">הגדרות</h1>
+        <p className="text-sm text-stone-400 mb-6">השינויים יופיעו בכל גרסאות האפליקציה.</p>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 space-y-5">
+        {/* Class settings */}
+        <div className="bg-white rounded-2xl border border-stone-200 p-5 space-y-5 mb-4">
+          <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide">פרטי הכיתה</p>
           {fields.map(({ key, label, placeholder }) => (
             <div key={key}>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">{label}</label>
+              <label className="block text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1.5">{label}</label>
               <input
                 type="text"
                 value={settings[key]}
                 onChange={e => setSettings(prev => ({ ...prev, [key]: e.target.value }))}
                 placeholder={placeholder}
-                className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-transparent transition"
+                className="w-full bg-stone-100 border-0 rounded-xl px-4 py-2.5 text-sm text-stone-900 placeholder-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-300 transition"
               />
             </div>
           ))}
@@ -70,10 +73,15 @@ export default function ProfilePage() {
           <button
             onClick={save}
             disabled={saving}
-            className="w-full bg-blue-600 text-white rounded-xl py-3 text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors"
+            className="w-full bg-stone-900 text-white rounded-xl py-3 text-sm font-semibold hover:bg-stone-800 disabled:opacity-50 btn-press interactive"
           >
             {saved ? "✓ נשמר" : saving ? "שומר..." : "שמור שינויים"}
           </button>
+        </div>
+
+        {/* Theme picker */}
+        <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden">
+          <ThemePicker />
         </div>
       </div>
     </div>
