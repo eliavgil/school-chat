@@ -109,6 +109,56 @@ body {
   0%, 100% { background-position: 0% 50%; }
   50%       { background-position: 100% 50%; }
 }
+
+/* ── Beach landscape animations ──────────────────────────── */
+@keyframes sun-breathe {
+  0%, 100% { opacity: 0.55; }
+  50%       { opacity: 0.88; }
+}
+@keyframes sun-float {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-7px); }
+}
+@keyframes wave-far {
+  0%, 100% { transform: translateX(0); }
+  50%       { transform: translateX(22px); }
+}
+@keyframes wave-mid {
+  0%, 100% { transform: translateX(0); }
+  50%       { transform: translateX(-18px); }
+}
+@keyframes wave-near {
+  0%, 100% { transform: translateX(-12px); }
+  50%       { transform: translateX(12px); }
+}
+@keyframes palm-sway-l {
+  0%, 100% { transform: rotate(-2.5deg); }
+  50%       { transform: rotate(1.5deg); }
+}
+@keyframes palm-sway-r {
+  0%, 100% { transform: rotate(2.5deg); }
+  50%       { transform: rotate(-1.5deg); }
+}
+@keyframes cloud-drift {
+  0%, 100% { transform: translateX(0); }
+  50%       { transform: translateX(14px); }
+}
+@keyframes reflection-shimmer {
+  0%, 100% { opacity: 0.28; }
+  50%       { opacity: 0.65; }
+}
+@keyframes star-twinkle {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.12; }
+}
+@keyframes water-sparkle {
+  0%, 100% { opacity: 0; }
+  50%       { opacity: 0.9; }
+}
+@keyframes birds-soar {
+  0%   { transform: translate(-60px, 8px); }
+  100% { transform: translate(450px, -25px); }
+}
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }

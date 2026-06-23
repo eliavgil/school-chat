@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import BottomNav from "@/app/components/BottomNav"
+import { AnimatedLandscape } from "@/app/components/AnimatedLandscape"
 import {
   getRemainingSchoolDays, getDaysUntilSummer, getNextVacation, getDaysUntilNextVacation,
 } from "@/lib/school-calendar"
@@ -161,8 +162,8 @@ function StudentHome({ session, data }: { session: any; data: HomeData | null })
 
   return (
     <div className="flex flex-col h-screen" dir="rtl">
-      {/* Animated gradient background */}
-      <div className="absolute inset-0 bg-animated-orange" />
+      {/* Animated Thailand beach — sunset */}
+      <AnimatedLandscape variant="sunset" />
       {/* Dark vignette for readability */}
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60" />
 
@@ -335,7 +336,8 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
   return (
     <div className="flex flex-col h-screen" dir="rtl">
-      <div className="absolute inset-0 bg-animated-blue" />
+      {/* Animated Thailand beach — night */}
+      <AnimatedLandscape variant="night" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/10 to-black/70" />
 
       {/* Top bar */}
@@ -461,7 +463,8 @@ function ParentHome({ session, data }: { session: any; data: HomeData | null }) 
 
   return (
     <div className="flex flex-col h-screen" dir="rtl">
-      <div className="absolute inset-0 bg-animated-green" />
+      {/* Animated Thailand beach — tropical */}
+      <AnimatedLandscape variant="tropical" />
       <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/10 to-black/65" />
 
       {/* Top bar */}
