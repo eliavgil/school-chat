@@ -176,56 +176,12 @@ export async function importSchedule(sheets: SheetData[], classId: string) {
   return imported
 }
 
-// ── לוח מבחנים / לוח פעילויות (CSV rows) ─────────────────
+// ── לוח מבחנים / לוח פעילויות (CSV rows) — deprecated, use /api/sync-events ──
 export async function importCalendarRows(
-  rows: string[][],
-  sourceFile: string,
-  gradeFilter?: string // e.g. "שכבה י" — only import rows relevant to this grade
+  _rows: string[][],
+  _sourceFile: string,
+  _gradeFilter?: string
 ) {
-  // Delete existing events from this source
-  await prisma.calendarEvent.deleteMany({ where: { sourceFile } })
-
-  let imported = 0
-  let currentMonth = ""
-
-  for (const row of rows) {
-    if (cellStr(row[1])) currentMonth = cellStr(row[1])
-    const day = cellStr(row[2])
-    const dayOfWeek = cellStr(row[3])
-    if (!day || !currentMonth) continue
-
-    const dayNum = parseInt(day)
-    if (isNaN(dayNum)) continue
-
-    // Build approximate date (use current year as base)
-    const monthMap: Record<string, number> = {
-      "ספטמבר": 9, "אוקטובר": 10, "נובמבר": 11, "דצמבר": 12,
-      "ינואר": 1, "פברואר": 2, "מרס": 3, "אפריל": 4,
-      "מאי": 5, "יוני": 6, "יולי": 7, "אוגוסט": 8,
-    }
-    const monthNum = monthMap[currentMonth]
-    if (!monthNum) continue
-
-    const year = monthNum >= 9 ? 2025 : 2026
-    const date = new Date(year, monthNum - 1, dayNum)
-
-    // Columns: col1=month, col2=day, col3=dayOfWeek, col4=שכבה י, col5=שכבה יא, col6=שכבה יב
-    const gradeColumns: { grade: string; colIdx: number }[] = [
-      { grade: "שכבה י", colIdx: 4 },
-      { grade: "שכבה יא", colIdx: 5 },
-      { grade: "שכבה יב", colIdx: 6 },
-    ]
-
-    for (const { grade, colIdx } of gradeColumns) {
-      const description = cellStr(row[colIdx])
-      if (!description) continue
-      if (gradeFilter && grade !== gradeFilter && grade !== "כללי") continue
-
-      await prisma.calendarEvent.create({
-        data: { date, month: currentMonth, dayOfWeek, grade, description, sourceFile },
-      })
-      imported++
-    }
-  }
-  return imported
+  // This function is superseded by the Google Sheets sync (/api/sync-events).
+  return 0
 }

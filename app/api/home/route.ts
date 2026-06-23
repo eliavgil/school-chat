@@ -53,7 +53,15 @@ export async function GET() {
       select: { displayName: true, teacherDisplayName: true, schoolName: true },
     }),
     prisma.calendarEvent.findMany({
-      where: { date: { gte: new Date(), lte: now90 } },
+      where: {
+        date: { gte: new Date(), lte: now90 },
+        OR: [
+          { forAll: true },
+          ...(isTeacher ? [{ forTeacher: true }] : []),
+          ...(isStudent ? [{ forStudents: true }] : []),
+          ...(isParent  ? [{ forParents: true }] : []),
+        ],
+      },
       orderBy: { date: "asc" },
       take: 10,
     }),
@@ -72,14 +80,14 @@ export async function GET() {
           },
         })
       : Promise.resolve([]),
-    isStudent
+    (isStudent || isTeacher)
       ? prisma.scheduleSlot.findMany({
           where: { classId, dayHeb: todayHeb },
           orderBy: { period: "asc" },
           select: { period: true, content: true },
         })
       : Promise.resolve([]),
-    isStudent
+    (isStudent || isTeacher)
       ? prisma.scheduleSlot.findMany({
           where: { classId, dayHeb: tomorrowHeb },
           orderBy: { period: "asc" },
@@ -91,6 +99,11 @@ export async function GET() {
           where: {
             date: { gte: new Date(), lte: now30 },
             OR: EXAM_KEYWORDS.map(k => ({ description: { contains: k } })),
+            AND: [{ OR: [
+              { forAll: true },
+              ...(isStudent ? [{ forStudents: true }] : []),
+              ...(isParent  ? [{ forParents: true }] : []),
+            ]}],
           },
           orderBy: { date: "asc" },
           take: 10,

@@ -232,13 +232,17 @@ model ScheduleSlot {
 
 // Calendar events — exams, trips, events (לוח מבחנים + לוח פעילויות)
 model CalendarEvent {
-  id          String   @id @default(cuid())
-  date        DateTime
-  month       String?
-  dayOfWeek   String?
-  grade       String?  // שכבה י, שכבה יא, etc. null = all
-  description String   @db.Text
-  sourceFile  String?  // which sheet this came from
+  id           String   @id @default(cuid())
+  date         DateTime
+  description  String   @db.Text
+  type         String?
+  note         String?
+  forAll       Boolean  @default(false)
+  forTeacher   Boolean  @default(false)
+  forGradeTeam Boolean  @default(false)
+  forStudents  Boolean  @default(false)
+  forParents   Boolean  @default(false)
+  createdAt    DateTime @default(now())
 
   @@index([date])
 }

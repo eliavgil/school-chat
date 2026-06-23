@@ -199,13 +199,30 @@ function Sidebar({ onSend, disabled }: { onSend: (text: string) => void; disable
   )
 }
 
+const CHAT_CACHE_KEY = "chat-cache"
+
+function loadChatCache(): { student: Student; messages: Message[] } | null {
+  try {
+    const raw = localStorage.getItem(CHAT_CACHE_KEY)
+    if (!raw) return null
+    return JSON.parse(raw)
+  } catch { return null }
+}
+
 export default function ParentChat() {
   const { data: session, status } = useSession()
   const router = useRouter()
-  const [messages, setMessages] = useState<Message[]>([])
+
+  const [messages, setMessages] = useState<Message[]>(() => {
+    if (typeof window === "undefined") return []
+    return loadChatCache()?.messages ?? []
+  })
   const [input, setInput] = useState("")
   const [sending, setSending] = useState(false)
-  const [student, setStudent] = useState<Student | null>(null)
+  const [student, setStudent] = useState<Student | null>(() => {
+    if (typeof window === "undefined") return null
+    return loadChatCache()?.student ?? null
+  })
   const [loadError, setLoadError] = useState("")
   const [flagged, setFlagged] = useState<Record<string, boolean>>({})
   const [flagDismissed, setFlagDismissed] = useState<Record<string, boolean>>({})
@@ -228,21 +245,27 @@ export default function ParentChat() {
 
   useEffect(() => {
     if (!session) return
+    // Fetch student + messages in parallel
     fetch("/api/parent/students")
       .then((r) => r.json())
       .then((data) => {
-        if (data.students?.length > 0) setStudent(data.students[0])
-        else setLoadError("לא נמצאו תלמידים המקושרים לחשבונך. פנה/י למזכירות בית הספר.")
+        if (!data.students?.length) {
+          setLoadError("לא נמצאו תלמידים המקושרים לחשבונך. פנה/י למזכירות בית הספר.")
+          return
+        }
+        const s = data.students[0]
+        setStudent(s)
+        return fetch(`/api/messages?studentId=${s.id}`)
+          .then(r => r.json())
+          .then(d => {
+            const msgs = d.messages ?? []
+            setMessages(msgs)
+            // Cache for instant load next visit
+            try { localStorage.setItem(CHAT_CACHE_KEY, JSON.stringify({ student: s, messages: msgs })) } catch {}
+          })
       })
       .catch(() => setLoadError("שגיאה בטעינת נתונים."))
   }, [session])
-
-  useEffect(() => {
-    if (!student) return
-    fetch(`/api/messages?studentId=${student.id}`)
-      .then((r) => r.json())
-      .then((data) => setMessages(data.messages ?? []))
-  }, [student])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -254,7 +277,7 @@ export default function ParentChat() {
   }
 
   async function doSend(text: string) {
-    if (!text.trim() || !student || sending) return
+    if (!text.trim() || !student?.id || sending) return
     setSending(true)
     setStreamingText("")
     const res = await fetch("/api/messages", {
@@ -338,9 +361,8 @@ export default function ParentChat() {
     },
   ]
 
-  if (status === "loading") return <div className="p-8 text-center">טוען...</div>
-  if (loadError) return <div className="p-8 text-center text-red-500">{loadError}</div>
-  if (!student) return <div className="p-8 text-center text-gray-400">טוען נתוני תלמיד...</div>
+  if (status === "loading" && !student) return <div className="p-8 text-center text-white/50">טוען...</div>
+  if (loadError) return <div className="p-8 text-center text-red-400">{loadError}</div>
 
   return (
     <div className="flex flex-col h-screen" dir="rtl">
@@ -369,7 +391,7 @@ export default function ParentChat() {
                 const u = session?.user as any
                 const firstName = u?.name?.split(" ")[0] ?? ""
                 const type = u?.parentType ?? "הורה"
-                return `${firstName} · ${type} של ${student.name}`
+                return `${firstName} · ${type}${student ? ` של ${student.name}` : ""}`
               })()}
             </div>
             <div className="text-xs text-white/50 mt-0.5">פניות למחנך · סילבר בוט</div>

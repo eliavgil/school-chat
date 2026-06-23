@@ -406,17 +406,25 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
   const now  = useTick()
   const bgId = useBg("teacher")
   const [menuOpen, setMenuOpen] = useState(false)
-  const firstName = session?.user?.name?.split(" ")[0] ?? ""
+  const [personalName] = useState(() => {
+    if (typeof window === "undefined") return ""
+    return getPersonalDisplayName()
+  })
+  const firstName = personalName || (session?.user?.name?.split(" ")[0] ?? "")
   const isAdmin   = (session?.user as any)?.role === "ADMIN"
 
   const timeStr = now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })
   const dateStr = now.toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" })
 
-  const unreadCount  = data?.recentMessages.length ?? 0
+  const unreadCount   = data?.recentMessages.length ?? 0
+  const openTasks     = data?.openTasks ?? 0
+  const alertCount    = unreadCount + openTasks
   const remainingDays = getRemainingSchoolDays()
   const daysToSummer  = getDaysUntilSummer()
   const nextVac       = getNextVacation()
   const daysToVac     = getDaysUntilNextVacation()
+
+  const todaySlots = data?.todaySchedule ?? []
 
   return (
     <div className="flex flex-col h-screen" dir="rtl">
@@ -425,18 +433,20 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
       {/* ── Header ── */}
       <header className="relative z-20 flex items-center justify-between px-5 pb-2 header-pt flex-shrink-0" dir="ltr">
+        {/* Left: time */}
+        <div className="text-white text-2xl font-light nums">{timeStr}</div>
+        {/* Right: school info + hamburger */}
         <div className="flex items-center gap-3">
+          <div dir="rtl" className="text-right">
+            <p className="text-white/55 text-xs font-medium tracking-widest uppercase">{data?.classProfile?.schoolName ?? "כפר סילבר"}</p>
+            <p className="text-white/85 text-sm font-medium mt-0.5">{data?.classProfile?.displayName ?? ""} · שלום, {firstName}</p>
+          </div>
           <button onClick={() => setMenuOpen(true)}
             className="w-9 h-9 flex flex-col items-center justify-center gap-[5px] glass rounded-xl btn-press interactive">
             <span className="w-4 h-px bg-white/80 rounded-full block" />
             <span className="w-4 h-px bg-white/80 rounded-full block" />
             <span className="w-4 h-px bg-white/80 rounded-full block" />
           </button>
-          <div className="text-white text-2xl font-light nums">{timeStr}</div>
-        </div>
-        <div dir="rtl" className="text-right">
-          <p className="text-white/55 text-xs font-medium tracking-widest uppercase">{data?.classProfile?.schoolName ?? "כפר סילבר"}</p>
-          <p className="text-white/85 text-sm font-medium mt-0.5">{data?.classProfile?.displayName ?? ""} · שלום, {firstName}</p>
         </div>
       </header>
 
@@ -454,6 +464,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                 { label: "עמוד הבית",   href: "/home",      emoji: "🏠" },
                 { label: "שיחות הורים", href: "/dashboard", emoji: "💬" },
                 { label: "ניהול כיתה",  href: "/admin",     emoji: "⚙️" },
+                { label: "עריכה",        href: "/edit",      emoji: "✏️" },
                 ...(isAdmin ? [{ label: "הגדרות פרופיל", href: "/profile", emoji: "👤" }] : []),
               ].map(item => (
                 <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}
@@ -480,18 +491,29 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
         <div className="flex flex-col justify-center px-6 pt-2" style={{ minHeight: "calc(100svh - 70px)" }}>
           <p className="text-white/55 text-sm font-medium tracking-wide mb-3 animate-fade-in">{dateStr}</p>
 
-          {/* Unread count hero */}
+          {/* Combined count hero */}
           <div className="animate-fade-in stagger-1">
             <div className="text-white font-light nums leading-none" style={{ fontSize: "clamp(4.5rem, 20vw, 8rem)" }}>
-              {unreadCount}
+              {alertCount}
             </div>
-            <p className="text-white/65 text-xl font-light mt-2">
-              {unreadCount === 0 ? "אין הודעות חדשות" : unreadCount === 1 ? "הודעה חדשה מהורה" : "הודעות חדשות מהורים"}
-            </p>
+            <div className="flex items-center gap-3 mt-2 flex-wrap">
+              {unreadCount > 0 && (
+                <span className="text-white/65 text-lg font-light">
+                  {unreadCount === 1 ? "הודעה חדשה" : `${unreadCount} הודעות`} מהורים
+                </span>
+              )}
+              {unreadCount > 0 && openTasks > 0 && <span className="text-white/30">·</span>}
+              {openTasks > 0 && (
+                <span className="text-white/65 text-lg font-light">{openTasks} משימות פתוחות</span>
+              )}
+              {alertCount === 0 && (
+                <span className="text-white/65 text-xl font-light">הכל מסודר 👌</span>
+              )}
+            </div>
           </div>
 
-          {/* Parent chat widget — recent messages */}
-          <div className="mt-6 animate-fade-in stagger-2">
+          {/* Parent chat widget */}
+          <div className="mt-5 animate-fade-in stagger-2">
             {(data?.recentMessages.length ?? 0) > 0 ? (
               <div className="glass rounded-2xl overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
@@ -526,7 +548,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
           </div>
 
           {/* Quick action buttons */}
-          <div className="flex gap-3 mt-5 animate-fade-in stagger-3">
+          <div className="flex gap-3 mt-4 animate-fade-in stagger-3">
             <Link href="/dashboard"
               className="flex-1 glass rounded-2xl px-2 py-3 flex flex-col items-center gap-1.5 hover:bg-white/15 interactive btn-press transition-colors">
               <span className="text-2xl">💬</span>
@@ -537,14 +559,21 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
               <span className="text-2xl">⚙️</span>
               <span className="text-white/80 text-[11px] font-medium text-center">ניהול כיתה</span>
             </Link>
-            <Link href="/records"
+            <Link href="/records?autostart=true"
               className="flex-1 glass rounded-2xl px-2 py-3 flex flex-col items-center gap-1.5 hover:bg-white/15 interactive btn-press transition-colors">
               <span className="text-2xl">🎙️</span>
               <span className="text-white/80 text-[11px] font-medium text-center">נתונים<br/>להמשך</span>
             </Link>
           </div>
 
-          <div className="mt-8 flex justify-center opacity-40 animate-bounce">
+          {/* Events — above fold */}
+          {(data?.upcomingEvents.length ?? 0) > 0 && (
+            <div className="mt-4 animate-fade-in stagger-4">
+              <EventsCard merged={data!.upcomingEvents} editHref="/edit" />
+            </div>
+          )}
+
+          <div className="mt-6 flex justify-center opacity-40 animate-bounce">
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
@@ -554,9 +583,26 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
         {/* ── Below fold ── */}
         <div className="px-4 pb-10 space-y-3 max-w-sm mx-auto">
 
-          {/* Events */}
-          {(data?.upcomingEvents.length ?? 0) > 0 && (
-            <EventsCard merged={data!.upcomingEvents} editHref="/edit" />
+          {/* Today's schedule */}
+          {todaySlots.length > 0 && (
+            <div className="glass rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-white/50 text-[10px] font-semibold uppercase tracking-wide">מערכת שעות היום</p>
+                <Link href="/edit" className="text-white/35 text-[10px] hover:text-white/60 interactive">עריכה ←</Link>
+              </div>
+              <div className="space-y-1.5">
+                {todaySlots.map((s, i) => {
+                  const [period, ...rest] = s.period.split(",")
+                  const subject = s.content.split("  ")[0]
+                  return (
+                    <div key={i} className="flex items-center gap-3 py-1.5 border-b border-white/5 last:border-0">
+                      <span className="text-white/30 text-xs font-mono w-5 flex-shrink-0">{period}</span>
+                      <span className="text-white/75 text-sm truncate">{subject}</span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           )}
 
           {/* Countdowns */}

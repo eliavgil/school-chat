@@ -253,28 +253,65 @@ function PersonalEventsEditor() {
   )
 }
 
+// ── Sync from Google Sheets ───────────────────────────────
+function SyncEventsButton() {
+  const [status, setStatus] = useState<"idle" | "syncing" | "done" | "error">("idle")
+  const [count, setCount] = useState(0)
+  const [errMsg, setErrMsg] = useState("")
+
+  async function sync() {
+    setStatus("syncing")
+    try {
+      const res = await fetch("/api/sync-events", { method: "POST" })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? "שגיאה")
+      setCount(data.synced)
+      setStatus("done")
+      setTimeout(() => setStatus("idle"), 4000)
+    } catch (e: any) {
+      setErrMsg(e.message)
+      setStatus("error")
+      setTimeout(() => setStatus("idle"), 5000)
+    }
+  }
+
+  return (
+    <div className="bg-white/10 border border-white/15 rounded-2xl p-4">
+      <div className="flex items-center justify-between mb-2">
+        <div>
+          <p className="text-white font-medium text-sm">סנכרון ארועים מ-Google Sheets</p>
+          <p className="text-white/45 text-xs mt-0.5">מחליף את כל הארועים הקיימים</p>
+        </div>
+        <button
+          onClick={sync}
+          disabled={status === "syncing"}
+          className="bg-white/20 hover:bg-white/30 disabled:opacity-40 text-white text-sm px-4 py-2 rounded-xl interactive btn-press transition-colors flex items-center gap-2"
+        >
+          {status === "syncing" ? (
+            <><span className="animate-spin">⟳</span> מסנכרן...</>
+          ) : status === "done" ? (
+            <>✓ סונכרנו {count} ארועים</>
+          ) : status === "error" ? (
+            <>✕ שגיאה</>
+          ) : (
+            <>⟳ סנכרן עכשיו</>
+          )}
+        </button>
+      </div>
+      {status === "error" && <p className="text-red-300 text-xs mt-1">{errMsg}</p>}
+    </div>
+  )
+}
+
 // ── Global data manager (DB) ──────────────────────────────
 function GlobalDataManager() {
-  const [events, setEvents] = useState<{ id: string; date: string; description: string }[]>([])
   const [slots, setSlots] = useState<{ id: string; dayHeb: string; period: string; content: string }[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    Promise.all([
-      fetch("/api/events").then(r => r.json()).catch(() => ({ events: [] })),
-      fetch("/api/schedule").then(r => r.json()).catch(() => ({ slots: [] })),
-    ]).then(([ev, sc]) => {
-      setEvents(ev.events ?? [])
-      setSlots(sc.slots ?? [])
-      setLoading(false)
-    })
+    fetch("/api/schedule").then(r => r.json()).catch(() => ({ slots: [] }))
+      .then(sc => { setSlots(sc.slots ?? []); setLoading(false) })
   }, [])
-
-  async function deleteEvent(id: string) {
-    if (!confirm("למחוק אירוע זה לכולם?")) return
-    await fetch("/api/events", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) })
-    setEvents(prev => prev.filter(e => e.id !== id))
-  }
 
   async function deleteSlot(id: string) {
     if (!confirm("למחוק שיעור זה לכולם?")) return
@@ -282,48 +319,29 @@ function GlobalDataManager() {
     setSlots(prev => prev.filter(s => s.id !== id))
   }
 
-  if (loading) return <p className="text-sm text-stone-400">טוען...</p>
+  if (loading) return <p className="text-sm text-white/40">טוען...</p>
 
   return (
     <div className="space-y-6">
-      <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-xs text-amber-700">
+      <div className="bg-amber-900/30 border border-amber-500/30 rounded-xl px-4 py-3 text-xs text-amber-300">
         שינויים כאן משפיעים על <strong>כל המשתמשים</strong>
       </div>
 
-      {/* Events */}
-      <div>
-        <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">אירועים במערכת</p>
-        {events.length === 0 && <p className="text-sm text-stone-400">אין אירועים</p>}
-        <div className="space-y-2">
-          {events.map(ev => (
-            <div key={ev.id} className="bg-white border border-stone-200 rounded-xl px-4 py-2.5 flex items-center gap-3 group">
-              <span className="text-xs text-stone-400 font-mono w-14">
-                {new Date(ev.date).toLocaleDateString("he-IL", { day: "numeric", month: "numeric" })}
-              </span>
-              <span className="text-sm text-stone-700 flex-1">{ev.description}</span>
-              <button onClick={() => deleteEvent(ev.id)}
-                className="opacity-0 group-hover:opacity-100 text-stone-300 hover:text-red-500 interactive p-1 rounded transition-opacity">
-                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Sync events from Sheets */}
+      <SyncEventsButton />
 
       {/* Schedule slots */}
       <div>
-        <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">מערכת שעות</p>
-        {slots.length === 0 && <p className="text-sm text-stone-400">אין שיעורים</p>}
+        <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-2">מערכת שעות</p>
+        {slots.length === 0 && <p className="text-sm text-white/30">אין שיעורים</p>}
         <div className="space-y-1.5">
           {slots.map(s => (
-            <div key={s.id} className="bg-white border border-stone-200 rounded-xl px-4 py-2 flex items-center gap-3 group">
-              <span className="text-xs text-stone-400 w-16">{s.dayHeb}</span>
-              <span className="text-xs text-stone-400 font-mono">{s.period.split(",")[0]}</span>
-              <span className="text-sm text-stone-700 flex-1 truncate">{s.content.split("  ")[0]}</span>
+            <div key={s.id} className="bg-white/8 border border-white/10 rounded-xl px-4 py-2 flex items-center gap-3 group">
+              <span className="text-xs text-white/40 w-16">{s.dayHeb}</span>
+              <span className="text-xs text-white/40 font-mono">{s.period.split(",")[0]}</span>
+              <span className="text-sm text-white/70 flex-1 truncate">{s.content.split("  ")[0]}</span>
               <button onClick={() => deleteSlot(s.id)}
-                className="opacity-0 group-hover:opacity-100 text-stone-300 hover:text-red-500 interactive p-1 rounded transition-opacity">
+                className="opacity-0 group-hover:opacity-100 text-white/30 hover:text-red-400 interactive p-1 rounded transition-opacity">
                 <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                 </svg>

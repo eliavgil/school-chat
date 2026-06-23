@@ -15,33 +15,6 @@ export async function GET() {
   return NextResponse.json({ events })
 }
 
-export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id || !isTeacher(session)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-
-  const { date, description, grade } = await req.json()
-  if (!date || !description) return NextResponse.json({ error: "Missing fields" }, { status: 400 })
-
-  const event = await prisma.calendarEvent.create({
-    data: { date: new Date(date), description, grade: grade ?? null },
-  })
-  return NextResponse.json({ event })
-}
-
-export async function PATCH(req: NextRequest) {
-  const session = await getServerSession(authOptions)
-  if (!session?.user?.id || !isTeacher(session)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-
-  const { id, date, description, grade } = await req.json()
-  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 })
-
-  const event = await prisma.calendarEvent.update({
-    where: { id },
-    data: { ...(date && { date: new Date(date) }), ...(description && { description }), grade: grade ?? null },
-  })
-  return NextResponse.json({ event })
-}
-
 export async function DELETE(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id || !isTeacher(session)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

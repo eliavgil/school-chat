@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
     prisma.studentAttendance.findFirst({ where: { studentId } }),
     prisma.scheduleSlot.findMany({ where: { classId: link.student.classId }, orderBy: [{ dayHeb: "asc" }, { period: "asc" }] }),
     prisma.calendarEvent.findMany({
-      where: { OR: [{ grade: null }, { grade: "כללי" }, { grade: { contains: "י" } }] },
+      where: { OR: [{ forAll: true }, { forStudents: true }, { forParents: true }] },
       orderBy: { date: "asc" },
       take: 30,
     }),
@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
       let fullText = ""
       try {
         const claudeStream = anthropic.messages.stream({
-          model: "claude-sonnet-4-6",
+          model: "claude-haiku-4-5-20251001",
           max_tokens: 400,
           messages: [{ role: "user", content: prompt }],
         })

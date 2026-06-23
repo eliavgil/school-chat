@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 
 // ── Types ──────────────────────────────────────────────────
 interface TeacherRecord {
@@ -383,6 +383,7 @@ function VoiceModal({
 export default function RecordsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [records, setRecords] = useState<TeacherRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [showVoice, setShowVoice] = useState(false)
@@ -414,6 +415,11 @@ export default function RecordsPage() {
 
   useEffect(() => { if (status === "authenticated") load() }, [load, status])
   useEffect(() => { if (status === "unauthenticated") router.push("/login") }, [status, router])
+  useEffect(() => {
+    if (status === "authenticated" && searchParams.get("autostart") === "true") {
+      setShowVoice(true)
+    }
+  }, [status, searchParams])
 
   // Derive unique classes from saved records (for filter chips, once records exist)
   const recordClasses = Array.from(new Set(records.map(r => r.classLabel))).map(l => ({
