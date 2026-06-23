@@ -160,22 +160,22 @@ function Sidebar({ onSend, disabled }: { onSend: (text: string) => void; disable
   const [openSection, setOpenSection] = useState<string | null>(null)
 
   return (
-    <aside className="w-60 flex-shrink-0 bg-white border-l border-stone-200 flex flex-col overflow-y-auto">
-      <div className="bg-stone-50 border-b border-stone-200 px-3 py-3">
-        <p className="text-xs font-bold text-stone-400 uppercase tracking-wide">שאלות ופעולות נפוצות</p>
+    <aside className="w-60 flex-shrink-0 bg-black/30 backdrop-blur-md border-l border-white/10 flex flex-col overflow-y-auto">
+      <div className="border-b border-white/10 px-3 py-3">
+        <p className="text-xs font-bold text-white/40 uppercase tracking-wide">שאלות ופעולות נפוצות</p>
       </div>
       <div className="flex-1 py-2">
         {SIDEBAR_SECTIONS.map((section) => (
           <div key={section.title} className="border-b border-stone-100 last:border-0">
             <button
               onClick={() => setOpenSection(openSection === section.title ? null : section.title)}
-              className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-right hover:bg-stone-50 transition-colors"
+              className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-right hover:bg-white/5 transition-colors"
             >
-              <span className="flex items-center gap-2 text-sm font-medium text-stone-700">
+              <span className="flex items-center gap-2 text-sm font-medium text-white/70">
                 <span>{section.icon}</span>
                 <span>{section.title}</span>
               </span>
-              <span className="text-stone-400 text-xs">{openSection === section.title ? "▲" : "▼"}</span>
+              <span className="text-white/30 text-xs">{openSection === section.title ? "▲" : "▼"}</span>
             </button>
 
             {openSection === section.title && (
@@ -185,7 +185,7 @@ function Sidebar({ onSend, disabled }: { onSend: (text: string) => void; disable
                     key={item}
                     onClick={() => { if (!disabled) onSend(item) }}
                     disabled={disabled}
-                    className="w-full text-right text-xs text-stone-700 bg-stone-100 hover:bg-stone-200 disabled:opacity-40 rounded-lg px-3 py-2 transition-colors leading-snug"
+                    className="w-full text-right text-xs text-white/70 bg-white/8 hover:bg-white/15 disabled:opacity-40 rounded-lg px-3 py-2 transition-colors leading-snug"
                   >
                     {item}
                   </button>
@@ -344,6 +344,8 @@ export default function ParentChat() {
 
   return (
     <div className="flex flex-col h-screen" dir="rtl">
+    {/* Dark overlay so chat content stays readable over background */}
+    <div className="absolute inset-0 bg-black/55 -z-10" />
     <div className="flex flex-1 overflow-hidden">
 
       {mainTab === "צ'אט" && <>
@@ -355,14 +357,14 @@ export default function ParentChat() {
       {/* Chat — left */}
       <div className="flex flex-col flex-1 min-w-0">
         {/* Header */}
-        <header className="bg-white border-b border-stone-200 px-4 py-3 flex items-center gap-3 flex-shrink-0">
-          <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#047857" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+        <header className="bg-black/30 backdrop-blur-md border-b border-white/10 px-4 py-3 flex items-center gap-3 flex-shrink-0 header-pt">
+          <div className="w-9 h-9 rounded-xl bg-white/15 flex items-center justify-center flex-shrink-0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
               <path d="M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-semibold text-stone-900 text-sm leading-tight truncate">
+            <div className="font-semibold text-white text-sm leading-tight truncate">
               {(() => {
                 const u = session?.user as any
                 const firstName = u?.name?.split(" ")[0] ?? ""
@@ -370,16 +372,16 @@ export default function ParentChat() {
                 return `${firstName} · ${type} של ${student.name}`
               })()}
             </div>
-            <div className="text-xs text-stone-400 mt-0.5">פניות למחנך · סילבר בוט</div>
+            <div className="text-xs text-white/50 mt-0.5">פניות למחנך · סילבר בוט</div>
           </div>
           <button onClick={() => signOut({ callbackUrl: "/login" })}
-            className="text-xs text-stone-400 hover:text-stone-700 interactive px-2 py-1">
+            className="text-xs text-white/50 hover:text-white interactive px-2 py-1">
             יציאה
           </button>
         </header>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-[#faf9f6]">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-black/20 backdrop-blur-sm">
           {showWelcome && (
             <WelcomeMessages
               onDismiss={dismissWelcome}
@@ -452,13 +454,13 @@ export default function ParentChat() {
         </div>
 
         {/* Input */}
-        <form onSubmit={sendMessage} className="p-3 bg-white border-t border-stone-100 flex gap-2 flex-shrink-0">
+        <form onSubmit={sendMessage} className="p-3 bg-black/30 backdrop-blur-md border-t border-white/10 flex gap-2 flex-shrink-0">
           <input
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="שאל/י שאלה..."
-            className="flex-1 bg-stone-100 border-0 rounded-full px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-stone-300 text-stone-900 placeholder-stone-400"
+            className="flex-1 bg-white/10 border border-white/20 rounded-full px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-white/30 text-white placeholder-white/40"
             style={{ fontSize: "16px" }}
             disabled={sending}
             dir="rtl"
@@ -466,7 +468,7 @@ export default function ParentChat() {
           <button
             type="submit"
             disabled={sending || !input.trim()}
-            className="bg-stone-900 text-white rounded-full px-4 py-2.5 text-sm disabled:opacity-40 hover:bg-stone-800 btn-press interactive"
+            className="bg-white/20 backdrop-blur text-white rounded-full px-4 py-2.5 text-sm disabled:opacity-40 hover:bg-white/30 btn-press interactive"
           >
             {sending ? "שולח..." : "שלח"}
           </button>
@@ -489,10 +491,11 @@ export default function ParentChat() {
 
     <BottomNav
       tabs={parentNavTabs}
-      activeColor="text-stone-900"
-      activeBg="bg-stone-100"
+      activeColor="text-white"
+      activeBg="bg-white/20"
       activeTab={mainTab}
       onTabChange={setMainTab}
+      glassMode
     />
     </div>
   )

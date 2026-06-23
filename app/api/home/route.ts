@@ -6,7 +6,6 @@ import { prisma } from "@/lib/db/prisma"
 const DAY_TO_HEB = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"]
 
 function nextSchoolDay(jsDay: number): number {
-  // If Friday (5) → Sunday (0), Saturday (6) → Sunday (0)
   if (jsDay === 5) return 0
   if (jsDay === 6) return 0
   return (jsDay + 1) % 7
@@ -21,17 +20,20 @@ export async function GET() {
     select: { classId: true, role: true, studentId: true, parentStudents: { select: { studentId: true } } },
   })
 
+  const isStudent = user?.role === "STUDENT"
+  const isTeacher = user?.role === "TEACHER" || user?.role === "ADMIN"
+  const isParent  = !isStudent && !isTeacher
+
+  const parentStudentId = isParent ? (user?.parentStudents?.[0]?.studentId ?? null) : null
+
   const classId = user?.classId
-    ?? (user?.parentStudents?.[0]?.studentId
+    ?? (parentStudentId
       ? (await prisma.student.findFirst({
-          where: { id: user?.parentStudents?.[0]?.studentId },
+          where: { id: parentStudentId },
           select: { classId: true },
         }))?.classId
       : null)
     ?? "class-y"
-
-  const isStudent = user?.role === "STUDENT"
-  const isTeacher = user?.role === "TEACHER" || user?.role === "ADMIN"
 
   const todayJS = new Date().getDay()
   const todayHeb = DAY_TO_HEB[todayJS]
@@ -39,16 +41,21 @@ export async function GET() {
 
   const EXAM_KEYWORDS = ["מבחן", "בוחן", "בגרות"]
   const now30 = new Date(Date.now() + 30 * 24 * 3600 * 1000)
+  const now90 = new Date(Date.now() + 90 * 24 * 3600 * 1000)
 
-  const [classProfile, upcomingEvents, openTasks, recentMessages, todaySchedule, tomorrowSchedule, upcomingExams, attendance] = await Promise.all([
+  const [
+    classProfile, upcomingEvents, openTasks, recentMessages,
+    todaySchedule, tomorrowSchedule, upcomingExams, attendance,
+    parentAttendance, grades,
+  ] = await Promise.all([
     prisma.class.findUnique({
       where: { id: classId },
       select: { displayName: true, teacherDisplayName: true, schoolName: true },
     }),
     prisma.calendarEvent.findMany({
-      where: { date: { gte: new Date() } },
+      where: { date: { gte: new Date(), lte: now90 } },
       orderBy: { date: "asc" },
-      take: 5,
+      take: 10,
     }),
     isTeacher
       ? prisma.message.count({ where: { isTask: true } })
@@ -79,7 +86,7 @@ export async function GET() {
           select: { period: true, content: true },
         })
       : Promise.resolve([]),
-    isStudent
+    (isStudent || isParent)
       ? prisma.calendarEvent.findMany({
           where: {
             date: { gte: new Date(), lte: now30 },
@@ -95,9 +102,25 @@ export async function GET() {
           select: { totalLessons: true, absences: true, justifiedAbsences: true },
         })
       : Promise.resolve(null),
+    // Parent-specific: student attendance
+    isParent && parentStudentId
+      ? prisma.studentAttendance.findUnique({
+          where: { studentId: parentStudentId },
+          select: { totalLessons: true, absences: true, justifiedAbsences: true, tardiness: true, justifiedTardiness: true },
+        })
+      : Promise.resolve(null),
+    // Parent-specific: student grades
+    isParent && parentStudentId
+      ? prisma.studentGrade.findMany({
+          where: { studentId: parentStudentId },
+          orderBy: { updatedAt: "desc" },
+          select: { subject: true, weightedAverage: true, gradeComponents: true, teacherName: true },
+        })
+      : Promise.resolve([]),
   ])
 
   return NextResponse.json({
+    classId,
     classProfile,
     upcomingEvents,
     openTasks,
@@ -108,5 +131,7 @@ export async function GET() {
     tomorrowHeb,
     upcomingExams,
     attendance,
+    parentAttendance,
+    grades,
   })
 }

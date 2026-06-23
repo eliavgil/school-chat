@@ -60,6 +60,7 @@ model User {
   sentMessages        Message[]
   parentStudents      ParentStudent[]
   sessions            Session[]
+  teacherRecords      TeacherRecord[]
   class               Class?          @relation(fields: [classId], references: [id])
   studentRecord       Student?        @relation(fields: [studentId], references: [id])
 }
@@ -138,6 +139,9 @@ model Message {
   isTask            Boolean       @default(false)
   sender            User          @relation(fields: [senderId], references: [id])
   student           Student       @relation(fields: [studentId], references: [id])
+
+  @@index([teacherSeenAt, createdAt])
+  @@index([studentId])
 }
 
 enum MessageStatus {
@@ -222,6 +226,8 @@ model ScheduleSlot {
   dayHeb    String // ראשון, שני, ...
   period    String // "1, 08:45 - 09:30"
   content   String @db.Text // raw cell content (subject + teacher + room, may include splits)
+
+  @@index([classId, dayHeb])
 }
 
 // Calendar events — exams, trips, events (לוח מבחנים + לוח פעילויות)
@@ -233,6 +239,25 @@ model CalendarEvent {
   grade       String?  // שכבה י, שכבה יא, etc. null = all
   description String   @db.Text
   sourceFile  String?  // which sheet this came from
+
+  @@index([date])
+}
+
+// Teacher notes — voice-dictated or manual records per student
+model TeacherRecord {
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  teacherId   String
+  classId     String
+  classLabel  String
+  studentName String
+  category    String   // חיסור | איחור | הפרעה | אירוע חיובי | אחר
+  note        String?  @db.Text
+  source      String   @default("הכתבה קולית") // "הכתבה קולית" | "ידני"
+  teacher     User     @relation(fields: [teacherId], references: [id])
+
+  @@index([teacherId, createdAt])
+  @@index([classId])
 }
 
 // Bot response cache — avoid repeat Claude calls for identical questions

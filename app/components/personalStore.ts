@@ -63,3 +63,11 @@ export function getPersonalDisplayName(): string {
 export function setPersonalDisplayName(name: string) {
   localStorage.setItem("personal-display-name", name)
 }
+
+// ── Background ────────────────────────────────────────────
+export function getPersonalBackground(): string {
+  return localStorage.getItem("personal-background") ?? ""
+}
+export function setPersonalBackground(id: string) {
+  localStorage.setItem("personal-background", id)
+}

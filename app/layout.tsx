@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import { Heebo } from "next/font/google"
 import "./globals.css"
 import { Providers } from "./providers"
+import GlobalBackground from "./components/GlobalBackground"
 
 const heebo = Heebo({
   subsets: ["hebrew", "latin"],
@@ -30,7 +31,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <link rel="apple-touch-icon" href="/icon-192.svg" />
       </head>
-      <body className="min-h-screen bg-white">
+      <body className="min-h-screen bg-transparent">
         {/* Apply saved theme before first paint to avoid flash */}
         <script dangerouslySetInnerHTML={{ __html: `
           try {
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             if (t && t !== 'stone') document.documentElement.setAttribute('data-theme', t);
           } catch(e) {}
         `}} />
+        <GlobalBackground />
         <Providers>{children}</Providers>
       </body>
     </html>

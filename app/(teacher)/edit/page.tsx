@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import ThemePicker from "@/app/components/ThemePicker"
+import { BackgroundPicker } from "@/app/components/BackgroundPicker"
 import {
   getPersonalEvents, addPersonalEvent, updatePersonalEvent, deletePersonalEvent,
   getPersonalScheduleNotes, addPersonalScheduleNote, updatePersonalScheduleNote, deletePersonalScheduleNote,
@@ -338,22 +339,22 @@ function GlobalDataManager() {
 // ── Main page ─────────────────────────────────────────────
 export default function EditPage() {
   const router = useRouter()
-  const [tab, setTab] = useState<"schedule" | "events" | "theme" | "name" | "manage">("name")
+  const [tab, setTab] = useState<"name" | "events" | "design" | "manage">("name")
 
   return (
-    <div className="min-h-screen bg-[var(--bg,#faf9f6)]" dir="rtl">
+    <div className="min-h-screen bg-black/50 backdrop-blur-sm" dir="rtl">
       {/* Header */}
-      <div className="bg-[var(--bg-card,white)] border-b border-stone-200 px-4 pt-5 pb-0 sticky top-0 z-10">
+      <div className="bg-black/30 backdrop-blur-md border-b border-white/10 px-4 pt-5 pb-0 sticky top-0 z-10">
         <div className="max-w-2xl mx-auto">
           <div className="flex items-center justify-between mb-4">
-            <h1 className="text-lg font-bold text-[var(--text,#1c1917)]">עריכה אישית</h1>
-            <button onClick={() => router.back()} className="text-sm text-stone-400 hover:text-stone-700 interactive">← חזרה</button>
+            <h1 className="text-lg font-bold text-white">עריכה אישית</h1>
+            <button onClick={() => router.back()} className="text-sm text-white/50 hover:text-white interactive">← חזרה</button>
           </div>
-          <p className="text-xs text-stone-400 mb-3">שינויים אלו גלויים רק לך — לא משפיעים על משתמשים אחרים</p>
+          <p className="text-xs text-white/40 mb-3">שינויים אלו גלויים רק לך — לא משפיעים על משתמשים אחרים</p>
           <div className="flex gap-4 text-sm font-medium overflow-x-auto">
-            {([["name", "שם תצוגה"], ["schedule", "הערות מערכת"], ["events", "אירועים"], ["theme", "עיצוב"], ["manage", "ניהול מערכת"]] as const).map(([id, label]) => (
+            {([["name", "שם תצוגה"], ["events", "אירועים"], ["design", "עיצוב ורקע"], ["manage", "ניהול מערכת"]] as const).map(([id, label]) => (
               <button key={id} onClick={() => setTab(id)}
-                className={`pb-3 border-b-2 transition-colors interactive whitespace-nowrap ${tab === id ? "border-stone-900 text-stone-900" : "border-transparent text-stone-400 hover:text-stone-700"}`}>
+                className={`pb-3 border-b-2 transition-colors interactive whitespace-nowrap ${tab === id ? "border-white text-white" : "border-transparent text-white/40 hover:text-white/70"}`}>
                 {label}
               </button>
             ))}
@@ -363,12 +364,20 @@ export default function EditPage() {
 
       <div className="max-w-2xl mx-auto p-4">
         {tab === "name" && <NameEditor />}
-        {tab === "schedule" && <ScheduleNotesEditor />}
         {tab === "events" && <PersonalEventsEditor />}
         {tab === "manage" && <GlobalDataManager />}
-        {tab === "theme" && (
-          <div className="bg-[var(--bg-card,white)] border border-stone-200 rounded-2xl overflow-hidden">
-            <ThemePicker />
+        {tab === "design" && (
+          <div className="space-y-6">
+            <div>
+              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">תמונת רקע</p>
+              <BackgroundPicker />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">ערכת צבעים</p>
+              <div className="bg-[var(--bg-card,white)] border border-stone-200 rounded-2xl overflow-hidden">
+                <ThemePicker />
+              </div>
+            </div>
           </div>
         )}
       </div>

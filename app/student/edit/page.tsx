@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import ThemePicker from "@/app/components/ThemePicker"
+import { BackgroundPicker } from "@/app/components/BackgroundPicker"
 import {
   getPersonalEvents, addPersonalEvent, updatePersonalEvent, deletePersonalEvent,
   getPersonalScheduleNotes, addPersonalScheduleNote, updatePersonalScheduleNote, deletePersonalScheduleNote,
@@ -257,7 +258,7 @@ function PersonalEventsEditor() {
 export default function StudentEditPage() {
   const router = useRouter()
   const { status } = useSession()
-  const [tab, setTab] = useState<"name" | "schedule" | "events" | "theme">("name")
+  const [tab, setTab] = useState<"name" | "events" | "design">("name")
 
   if (status === "unauthenticated") {
     router.replace("/")
@@ -275,7 +276,7 @@ export default function StudentEditPage() {
           </div>
           <p className="text-xs text-stone-400 mb-3">שינויים אלו גלויים רק לך — לא משפיעים על שאר הכיתה</p>
           <div className="flex gap-4 text-sm font-medium overflow-x-auto">
-            {([["name", "שם"], ["schedule", "מערכת"], ["events", "אירועים"], ["theme", "עיצוב"]] as const).map(([id, label]) => (
+            {([["name", "שם"], ["events", "אירועים"], ["design", "עיצוב ורקע"]] as const).map(([id, label]) => (
               <button key={id} onClick={() => setTab(id)}
                 className={`pb-3 border-b-2 transition-colors interactive whitespace-nowrap ${tab === id ? "border-stone-900 text-stone-900" : "border-transparent text-stone-400 hover:text-stone-700"}`}>
                 {label}
@@ -287,11 +288,19 @@ export default function StudentEditPage() {
 
       <div className="max-w-2xl mx-auto p-4">
         {tab === "name" && <NameEditor />}
-        {tab === "schedule" && <ScheduleNotesEditor />}
         {tab === "events" && <PersonalEventsEditor />}
-        {tab === "theme" && (
-          <div className="bg-[var(--bg-card,white)] border border-stone-200 rounded-2xl overflow-hidden">
-            <ThemePicker />
+        {tab === "design" && (
+          <div className="space-y-6">
+            <div>
+              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">תמונת רקע</p>
+              <BackgroundPicker />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">ערכת צבעים</p>
+              <div className="bg-[var(--bg-card,white)] border border-stone-200 rounded-2xl overflow-hidden">
+                <ThemePicker />
+              </div>
+            </div>
           </div>
         )}
       </div>
