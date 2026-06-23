@@ -1,5 +1,6 @@
 "use client"
 
+import { Suspense } from "react"
 import { useState, useEffect, useRef, useCallback } from "react"
 import { useSession } from "next-auth/react"
 import Link from "next/link"
@@ -380,7 +381,7 @@ function VoiceModal({
 }
 
 // ── Main Page ──────────────────────────────────────────────
-export default function RecordsPage() {
+function RecordsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -606,4 +607,8 @@ export default function RecordsPage() {
       )}
     </div>
   )
+}
+
+export default function RecordsPageWrapper() {
+  return <Suspense><RecordsPage /></Suspense>
 }
