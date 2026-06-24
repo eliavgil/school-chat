@@ -21,12 +21,18 @@ interface GradeComponent { name: string; weight: number; score: number }
 interface Grade { subject: string; weightedAverage: number | null; gradeComponents: GradeComponent[]; teacherName: string | null }
 interface ParentAttendance { totalLessons: number; absences: number; justifiedAbsences: number; tardiness: number; justifiedTardiness: number }
 
+interface TeacherTask { id: string; description: string; responsible: string | null; deadline: string | null; done: boolean; createdAt: string }
+interface ClassStudent { id: string; name: string }
+
 interface HomeData {
   classId: string
   classProfile: ClassProfile | null
   upcomingEvents: CalendarEvent[]
   openTasks: number
   recentMessages: RecentMessage[]
+  recentTasks: RecentMessage[]
+  teacherTasks: TeacherTask[]
+  classStudents: ClassStudent[]
   todaySchedule: ScheduleSlot[]
   tomorrowSchedule: ScheduleSlot[]
   todayHeb: string
@@ -256,7 +262,7 @@ function StudentHome({ session, data }: { session: any; data: HomeData | null })
               {[
                 { label: "עמוד הבית", href: "/home", emoji: "🏠" },
                 { label: "בוט לימוד", href: "/student", emoji: "🤖" },
-                { label: "הגדרות אישיות", href: "/student/edit", emoji: "⚙️" },
+                { label: "הגדרות אישיות", href: "/manage", emoji: "⚙️" },
               ].map(item => (
                 <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 px-3 py-3 rounded-xl text-white/80 hover:text-white hover:bg-white/10 interactive transition-colors text-sm">
@@ -331,7 +337,7 @@ function StudentHome({ session, data }: { session: any; data: HomeData | null })
             <div className="glass rounded-2xl overflow-hidden group/sched">
               <div className="flex items-center justify-between px-4 py-2.5">
                 <span className="text-white/80 text-sm font-medium">מערכת — יום {data?.todayHeb}</span>
-                <Link href="/student/edit" onClick={e => e.stopPropagation()}
+                <Link href="/manage" onClick={e => e.stopPropagation()}
                   className="opacity-0 group-hover/sched:opacity-100 transition-opacity w-6 h-6 flex items-center justify-center glass rounded-lg">
                   <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -357,7 +363,7 @@ function StudentHome({ session, data }: { session: any; data: HomeData | null })
           )}
 
           {/* Events */}
-          {mergedEvents.length > 0 && <EventsCard merged={mergedEvents} editHref="/student/edit" />}
+          {mergedEvents.length > 0 && <EventsCard merged={mergedEvents} editHref="/manage" />}
 
           {/* Countdowns with fun animations */}
           <div className="space-y-2 pt-2">
@@ -400,12 +406,16 @@ function StudentHome({ session, data }: { session: any; data: HomeData | null })
 }
 
 // ══════════════════════════════════════════════════════════
-// TEACHER HOME — immersive, same layout as student
+// TEACHER HOME
 // ══════════════════════════════════════════════════════════
 function TeacherHome({ session, data }: { session: any; data: HomeData | null }) {
   const now  = useTick()
   const bgId = useBg("teacher")
   const [menuOpen, setMenuOpen] = useState(false)
+  const [studentNotes, setStudentNotes] = useState<Record<string, string>>(() => {
+    if (typeof window === "undefined") return {}
+    try { return JSON.parse(localStorage.getItem("teacher-student-notes") ?? "{}") } catch { return {} }
+  })
   const [personalName] = useState(() => {
     if (typeof window === "undefined") return ""
     return getPersonalDisplayName()
@@ -416,15 +426,30 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
   const timeStr = now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })
   const dateStr = now.toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" })
 
-  const unreadCount   = data?.recentMessages.length ?? 0
-  const openTasks     = data?.openTasks ?? 0
-  const alertCount    = unreadCount + openTasks
+  const unreadCount  = data?.recentMessages.length ?? 0
+  const openTasks    = data?.openTasks ?? 0
+  const teacherTasks = data?.teacherTasks ?? []
+  const classStudents = data?.classStudents ?? []
   const remainingDays = getRemainingSchoolDays()
   const daysToSummer  = getDaysUntilSummer()
   const nextVac       = getNextVacation()
   const daysToVac     = getDaysUntilNextVacation()
 
-  const todaySlots = data?.todaySchedule ?? []
+  const todaySlots  = data?.todaySchedule ?? []
+  const recentMsgs  = data?.recentMessages ?? []
+
+  function saveNote(studentId: string, val: string) {
+    const updated = { ...studentNotes, [studentId]: val }
+    setStudentNotes(updated)
+    try { localStorage.setItem("teacher-student-notes", JSON.stringify(updated)) } catch {}
+  }
+
+  const LINKS = [
+    { label: "מענים אישיים",        href: "/teacher/accommodations", emoji: "🧩" },
+    { label: "מעקב רגשי-חברתי",     href: "/teacher/emotional",      emoji: "💙" },
+    { label: "מורה מקצועי",          href: "/teacher/subject",        emoji: "📚" },
+    { label: "ריכוז שכבה",           href: "/teacher/grade-hub",      emoji: "🏫" },
+  ]
 
   return (
     <div className="flex flex-col h-screen" dir="rtl">
@@ -433,13 +458,16 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
       {/* ── Header ── */}
       <header className="relative z-20 flex items-center justify-between px-5 pb-2 header-pt flex-shrink-0" dir="ltr">
-        {/* Left: time */}
-        <div className="text-white text-2xl font-light nums">{timeStr}</div>
-        {/* Right: school info + hamburger */}
+        {/* Left: date + time */}
+        <div className="flex flex-col">
+          <p className="text-white/50 text-[11px] font-medium">{dateStr}</p>
+          <div className="text-white text-2xl font-light nums leading-tight">{timeStr}</div>
+        </div>
+        {/* Right: school + class + hamburger */}
         <div className="flex items-center gap-3">
           <div dir="rtl" className="text-right">
             <p className="text-white/55 text-xs font-medium tracking-widest uppercase">{data?.classProfile?.schoolName ?? "כפר סילבר"}</p>
-            <p className="text-white/85 text-sm font-medium mt-0.5">{data?.classProfile?.displayName ?? ""} · שלום, {firstName}</p>
+            <p className="text-white/85 text-sm font-medium mt-0.5">{firstName} · {data?.classProfile?.displayName ?? ""}</p>
           </div>
           <button onClick={() => setMenuOpen(true)}
             className="w-9 h-9 flex flex-col items-center justify-center gap-[5px] glass rounded-xl btn-press interactive">
@@ -450,7 +478,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
         </div>
       </header>
 
-      {/* ── Slide-in menu (right side) ── */}
+      {/* ── Slide-in menu ── */}
       {menuOpen && (
         <>
           <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
@@ -461,15 +489,19 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
             </div>
             <nav className="flex-1 px-4 py-4 space-y-1">
               {[
-                { label: "עמוד הבית",   href: "/home",      emoji: "🏠" },
-                { label: "שיחות הורים", href: "/dashboard", emoji: "💬" },
-                { label: "ניהול כיתה",  href: "/admin",     emoji: "⚙️" },
-                { label: "עריכה",        href: "/edit",      emoji: "✏️" },
-                ...(isAdmin ? [{ label: "הגדרות פרופיל", href: "/profile", emoji: "👤" }] : []),
+                { label: "עמוד הבית",        href: "/home",      emoji: "🏠" },
+                { label: "שיחות הורים",       href: "/dashboard", emoji: "💬" },
+                { label: "משימות",            href: "/teacher/tasks", emoji: "✅" },
+                { label: "מענים אישיים",      href: "/teacher/accommodations", emoji: "🧩" },
+                { label: "מעקב רגשי-חברתי",  href: "/teacher/emotional",      emoji: "💙" },
+                { label: "מורה מקצועי",       href: "/teacher/subject",        emoji: "📚" },
+                { label: "ריכוז שכבה",        href: "/teacher/grade-hub",      emoji: "🏫" },
+                { label: "הגדרות",            href: "/manage",    emoji: "⚙️" },
+                ...(isAdmin ? [{ label: "פרופיל", href: "/profile", emoji: "👤" }] : []),
               ].map(item => (
                 <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-3 px-3 py-3 rounded-xl text-white/80 hover:text-white hover:bg-white/10 interactive transition-colors text-sm">
-                  <span className="text-lg">{item.emoji}</span>
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/80 hover:text-white hover:bg-white/10 interactive transition-colors text-sm">
+                  <span className="text-base">{item.emoji}</span>
                   <span>{item.label}</span>
                 </Link>
               ))}
@@ -487,126 +519,171 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
       {/* ── Scrollable content ── */}
       <main className="relative z-10 flex-1 overflow-y-auto">
 
-        {/* ── Above fold: hero ── */}
-        <div className="flex flex-col justify-center px-6 pt-2" style={{ minHeight: "calc(100svh - 70px)" }}>
-          <p className="text-white/55 text-sm font-medium tracking-wide mb-3 animate-fade-in">{dateStr}</p>
+        {/* ── Above fold ── */}
+        <div className="flex flex-col px-4 pt-2 gap-2.5" style={{ minHeight: "calc(100svh - 70px)" }}>
 
-          {/* Combined count hero */}
-          <div className="animate-fade-in stagger-1">
-            <div className="text-white font-light nums leading-none" style={{ fontSize: "clamp(4.5rem, 20vw, 8rem)" }}>
-              {alertCount}
+          {/* Recording button — always visible at top */}
+          <Link href="/records?autostart=true"
+            className="glass rounded-2xl px-4 py-2.5 flex items-center gap-3 hover:bg-white/15 interactive btn-press transition-colors animate-fade-in">
+            <span className="text-lg">🎙️</span>
+            <div className="flex-1">
+              <div className="text-white/80 text-sm font-medium">הכתבה קולית</div>
+              <div className="text-white/35 text-[10px]">הקלטת נתונים לתלמידים</div>
             </div>
-            <div className="flex items-center gap-3 mt-2 flex-wrap">
-              {unreadCount > 0 && (
-                <span className="text-white/65 text-lg font-light">
-                  {unreadCount === 1 ? "הודעה חדשה" : `${unreadCount} הודעות`} מהורים
-                </span>
+            <span className="text-white/30 text-xs">←</span>
+          </Link>
+
+          {/* Row: Tasks + Parent chat */}
+          <div className="flex gap-2.5 animate-fade-in stagger-1">
+
+            <Link href="/teacher/tasks"
+              className="flex-1 glass rounded-2xl p-3 btn-press interactive hover:bg-white/10 transition-colors min-w-0">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-white/55 text-[10px] font-semibold uppercase tracking-wide">משימות</span>
+                <span className="text-white font-semibold text-sm nums">{teacherTasks.length}</span>
+              </div>
+              {teacherTasks.length > 0 ? (
+                <div className="space-y-1">
+                  {teacherTasks.slice(0, 2).map(t => (
+                    <div key={t.id} className="flex items-start gap-1.5">
+                      <div className="w-1 h-1 rounded-full bg-amber-400 mt-1.5 flex-shrink-0" />
+                      <div className="text-white/70 text-[11px] leading-tight line-clamp-1">{t.description}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-white/30 text-[11px]">אין משימות</p>
               )}
-              {unreadCount > 0 && openTasks > 0 && <span className="text-white/30">·</span>}
-              {openTasks > 0 && (
-                <span className="text-white/65 text-lg font-light">{openTasks} משימות פתוחות</span>
+            </Link>
+
+            <Link href="/dashboard"
+              className="flex-1 glass rounded-2xl p-3 btn-press interactive hover:bg-white/10 transition-colors min-w-0">
+              <div className="flex items-center justify-between mb-1.5">
+                <span className="text-white/55 text-[10px] font-semibold uppercase tracking-wide">שיח הורים</span>
+                <div className="flex gap-1.5 items-center">
+                  {openTasks > 0 && <span className="bg-amber-400/80 text-black text-[9px] font-bold rounded-full px-1.5">{openTasks}</span>}
+                  {unreadCount > 0 && <span className="bg-blue-400/80 text-black text-[9px] font-bold rounded-full px-1.5">{unreadCount}</span>}
+                </div>
+              </div>
+              {recentMsgs.length > 0 ? (
+                <div className="space-y-1">
+                  {recentMsgs.slice(0, 2).map(m => (
+                    <div key={m.id} className="flex items-start gap-1.5">
+                      <div className="w-1 h-1 rounded-full bg-blue-400 mt-1.5 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <div className="text-white/70 text-[11px] leading-tight line-clamp-1">{m.content}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-white/30 text-[11px]">אין הודעות</p>
               )}
-              {alertCount === 0 && (
-                <span className="text-white/65 text-xl font-light">הכל מסודר 👌</span>
-              )}
-            </div>
+            </Link>
           </div>
 
-          {/* Parent chat widget */}
-          <div className="mt-5 animate-fade-in stagger-2">
-            {(data?.recentMessages.length ?? 0) > 0 ? (
-              <div className="glass rounded-2xl overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
-                  <span className="text-white/70 text-xs font-semibold uppercase tracking-wide">שיח הורים אחרון</span>
-                  <Link href="/dashboard" className="text-white/45 text-xs hover:text-white/80 interactive">כל השיחות ←</Link>
+          {/* Main row: Schedule (tall, left) + Events & buttons (right) */}
+          <div className="flex gap-2.5 items-start animate-fade-in stagger-2 flex-1">
+
+            {/* Left: Today's schedule — takes 55% width, shows all lessons */}
+            <Link href="/teacher/schedule"
+              className="glass rounded-2xl overflow-hidden hover:bg-white/10 interactive btn-press transition-colors"
+              style={{ width: "55%" }}>
+              <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
+                <span className="text-white/55 text-[10px] font-semibold uppercase tracking-wide">מערכת היום</span>
+                <span className="text-white/25 text-[10px]">←</span>
+              </div>
+              <div className="divide-y divide-white/5">
+                {todaySlots.length > 0 ? todaySlots.slice(0, 9).map((s, i) => {
+                  const [period] = s.period.split(",")
+                  const subject  = s.content.split(/\s{2,}/)[0]
+                  return (
+                    <div key={i} className="flex items-center gap-2 px-3 py-1.5">
+                      <span className="text-white/30 text-[10px] font-mono w-3 flex-shrink-0">{period}</span>
+                      <span className="text-white/70 text-[11px] truncate">{subject}</span>
+                    </div>
+                  )
+                }) : (
+                  <div className="px-3 py-3 text-white/25 text-[11px]">אין שיעורים היום</div>
+                )}
+              </div>
+            </Link>
+
+            {/* Right column: Events (3 items) + 2×2 feature buttons */}
+            <div className="flex flex-col gap-2 flex-1 min-w-0">
+
+              {/* Events */}
+              <Link href="/teacher/calendar"
+                className="glass rounded-2xl overflow-hidden hover:bg-white/10 interactive btn-press transition-colors">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
+                  <span className="text-white/55 text-[10px] font-semibold uppercase tracking-wide">ארועים</span>
+                  <span className="text-white/25 text-[10px]">←</span>
                 </div>
-                {data!.recentMessages.slice(0, 3).map(m => (
-                  <Link key={m.id} href="/dashboard"
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 interactive border-b border-white/5 last:border-0 transition-colors">
-                    <div className="w-8 h-8 rounded-full bg-white/15 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">
-                      {m.sender.name?.[0] ?? "?"}
+                <div className="divide-y divide-white/5">
+                  {(data?.upcomingEvents.length ?? 0) > 0 ? data!.upcomingEvents.slice(0, 3).map(ev => (
+                    <div key={ev.id} className="flex items-center gap-2 px-3 py-1.5">
+                      <div className="text-white/35 text-[10px] font-mono flex-shrink-0">
+                        {new Date(ev.date).toLocaleDateString("he-IL", { day: "numeric", month: "numeric" })}
+                      </div>
+                      <div className="text-white/65 text-[11px] truncate">{ev.description}</div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-white/90 text-xs font-semibold">{m.student.name}</div>
-                      <div className="text-white/50 text-xs truncate mt-0.5">{m.content}</div>
-                    </div>
-                    <div className="w-2 h-2 bg-blue-400 rounded-full flex-shrink-0" />
+                  )) : (
+                    <div className="px-3 py-2 text-white/25 text-[11px]">אין אירועים</div>
+                  )}
+                </div>
+              </Link>
+
+              {/* 2×2 feature buttons */}
+              <div className="grid grid-cols-2 gap-2">
+                {LINKS.map(l => (
+                  <Link key={l.href} href={l.href}
+                    className="glass rounded-2xl py-2.5 px-1 flex flex-col items-center gap-1 hover:bg-white/15 interactive btn-press transition-colors">
+                    <span className="text-lg">{l.emoji}</span>
+                    <span className="text-white/65 text-[9px] font-medium text-center leading-tight">{l.label}</span>
                   </Link>
                 ))}
               </div>
-            ) : (
-              <Link href="/dashboard"
-                className="glass rounded-2xl px-5 py-4 flex items-center gap-4 btn-press interactive hover:bg-white/10 transition-colors">
-                <span className="text-3xl">💬</span>
-                <div className="flex-1">
-                  <div className="text-white/85 font-medium">שיחות הורים</div>
-                  <div className="text-white/45 text-sm mt-0.5">אין הודעות חדשות</div>
-                </div>
-                <span className="text-white/40 text-lg">←</span>
-              </Link>
-            )}
-          </div>
-
-          {/* Quick action buttons */}
-          <div className="flex gap-3 mt-4 animate-fade-in stagger-3">
-            <Link href="/dashboard"
-              className="flex-1 glass rounded-2xl px-2 py-3 flex flex-col items-center gap-1.5 hover:bg-white/15 interactive btn-press transition-colors">
-              <span className="text-2xl">💬</span>
-              <span className="text-white/80 text-[11px] font-medium text-center">שיחות</span>
-            </Link>
-            <Link href="/admin"
-              className="flex-1 glass rounded-2xl px-2 py-3 flex flex-col items-center gap-1.5 hover:bg-white/15 interactive btn-press transition-colors">
-              <span className="text-2xl">⚙️</span>
-              <span className="text-white/80 text-[11px] font-medium text-center">ניהול כיתה</span>
-            </Link>
-            <Link href="/records?autostart=true"
-              className="flex-1 glass rounded-2xl px-2 py-3 flex flex-col items-center gap-1.5 hover:bg-white/15 interactive btn-press transition-colors">
-              <span className="text-2xl">🎙️</span>
-              <span className="text-white/80 text-[11px] font-medium text-center">נתונים<br/>להמשך</span>
-            </Link>
-          </div>
-
-          {/* Events — above fold */}
-          {(data?.upcomingEvents.length ?? 0) > 0 && (
-            <div className="mt-4 animate-fade-in stagger-4">
-              <EventsCard merged={data!.upcomingEvents} editHref="/edit" />
             </div>
-          )}
+          </div>
 
-          <div className="mt-6 flex justify-center opacity-40 animate-bounce">
-            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={1.5}>
+          <div className="mb-2 flex justify-center opacity-30">
+            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
           </div>
         </div>
 
         {/* ── Below fold ── */}
-        <div className="px-4 pb-10 space-y-3 max-w-sm mx-auto">
+        <div className="px-4 pb-10 space-y-4 max-w-lg mx-auto">
 
-          {/* Today's schedule */}
-          {todaySlots.length > 0 && (
-            <div className="glass rounded-2xl p-4">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-white/50 text-[10px] font-semibold uppercase tracking-wide">מערכת שעות היום</p>
-                <Link href="/edit" className="text-white/35 text-[10px] hover:text-white/60 interactive">עריכה ←</Link>
+          {/* Student list with notes */}
+          {classStudents.length > 0 && (
+            <div className="glass rounded-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                <p className="text-white/60 text-sm font-medium">תלמידי הכיתה</p>
+                <span className="text-white/30 text-xs">{classStudents.length} תלמידים</span>
               </div>
-              <div className="space-y-1.5">
-                {todaySlots.map((s, i) => {
-                  const [period, ...rest] = s.period.split(",")
-                  const subject = s.content.split("  ")[0]
-                  return (
-                    <div key={i} className="flex items-center gap-3 py-1.5 border-b border-white/5 last:border-0">
-                      <span className="text-white/30 text-xs font-mono w-5 flex-shrink-0">{period}</span>
-                      <span className="text-white/75 text-sm truncate">{subject}</span>
+              <div className="divide-y divide-white/5">
+                {classStudents.map(s => (
+                  <div key={s.id} className="flex items-center gap-3 px-4 py-2.5">
+                    <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-white/50 text-xs font-medium flex-shrink-0">
+                      {s.name.slice(0, 1)}
                     </div>
-                  )
-                })}
+                    <span className="text-white/80 text-sm w-28 flex-shrink-0">{s.name}</span>
+                    <input
+                      value={studentNotes[s.id] ?? ""}
+                      onChange={e => saveNote(s.id, e.target.value)}
+                      placeholder="הערה..."
+                      className="flex-1 bg-transparent text-white/50 text-xs placeholder:text-white/20 focus:outline-none focus:text-white/80 min-w-0"
+                    />
+                  </div>
+                ))}
               </div>
             </div>
           )}
 
           {/* Countdowns */}
-          <div className="space-y-2 pt-2">
+          <div className="space-y-2">
             <p className="text-white/30 text-[10px] font-semibold uppercase tracking-widest text-center">ספירה לאחור</p>
 
             {nextVac && daysToVac > 0 && (
@@ -616,26 +693,26 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                   <div className="text-white/50 text-xs mb-0.5">ימים עד</div>
                   <div className="text-white text-sm font-medium">{nextVac.name}</div>
                 </div>
-                <div className="text-white text-4xl font-light nums" style={{ animation: "countdown-pulse 1s ease-in-out infinite" }}>{daysToVac}</div>
+                <div className="text-white text-4xl font-light nums">{daysToVac}</div>
               </div>
             )}
 
             <div className="glass rounded-2xl px-4 py-4 flex items-center gap-4">
-              <div className="text-3xl" style={{ animation: "sun-float 3s ease-in-out infinite" }}>🏖️</div>
+              <div className="text-3xl">🏖️</div>
               <div className="flex-1">
                 <div className="text-white/50 text-xs mb-0.5">ימים עד</div>
                 <div className="text-white text-sm font-medium">החופש הגדול</div>
               </div>
-              <div className="text-white text-4xl font-light nums" style={{ animation: "countdown-pulse 1.3s ease-in-out infinite" }}>{daysToSummer}</div>
+              <div className="text-white text-4xl font-light nums">{daysToSummer}</div>
             </div>
 
             <div className="glass rounded-2xl px-4 py-4 flex items-center gap-4">
-              <div className="text-3xl" style={{ animation: "book-bounce 2.5s ease-in-out infinite" }}>📝</div>
+              <div className="text-3xl">📝</div>
               <div className="flex-1">
                 <div className="text-white/50 text-xs mb-0.5">ימי לימוד</div>
                 <div className="text-white text-sm font-medium">שנותרו השנה</div>
               </div>
-              <div className="text-white text-4xl font-light nums" style={{ animation: "countdown-pulse 1.6s ease-in-out infinite" }}>{remainingDays}</div>
+              <div className="text-white text-4xl font-light nums">{remainingDays}</div>
             </div>
           </div>
 
@@ -745,7 +822,7 @@ function ParentHome({ session, data }: { session: any; data: HomeData | null }) 
               {[
                 { label: "עמוד הבית",   href: "/home",         emoji: "🏠" },
                 { label: "צ׳אט עם המחנך", href: "/chat",       emoji: "💬" },
-                { label: "הגדרות אישיות", href: "/parent/edit", emoji: "⚙️" },
+                { label: "הגדרות אישיות", href: "/manage", emoji: "⚙️" },
               ].map(item => (
                 <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 px-3 py-3 rounded-xl text-white/80 hover:text-white hover:bg-white/10 interactive transition-colors text-sm">
