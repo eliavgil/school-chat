@@ -1,22 +1,25 @@
 "use client"
 
+import { AnimatedLandscape } from "./AnimatedLandscape"
+
 export interface BgOption {
   id: string
   label: string
   emoji: string
   type: "photo" | "animated" | "solid"
-  // photo only
+  // photo
   url?: string
   thumbUrl?: string
-  anim?: "light-rays" | "stars" | "mist" | "shimmer" | "heat" | "snow" | "leaves" | "bubbles" | "rain" | "fireflies" | "aurora"
+  anim?: "light-rays" | "stars" | "mist" | "shimmer" | "heat" | "snow" | "leaves" | "bubbles" | "rain"
   kbFrom?: string
   kbTo?: string
   overlay?: string
-  // solid only
+  // animated — maps to AnimatedLandscape variant
+  landscapeVariant?: "sunset" | "night" | "tropical"
+  // solid — plain color or gradient
   solidColor?: string
-  // animated only — CSS gradient background
   gradientCss?: string
-  gradientAnim?: string  // keyframe name
+  gradientAnim?: string
 }
 
 // ── Photos ────────────────────────────────────────────────────────────────────
@@ -86,44 +89,51 @@ const PHOTO_OPTIONS: BgOption[] = [
   },
 ]
 
-// ── Animated (CSS only) ───────────────────────────────────────────────────────
+// ── Animated scenes (SVG) ─────────────────────────────────────────────────────
 const ANIMATED_OPTIONS: BgOption[] = [
   {
-    id: "aurora", label: "זוהר צפוני", emoji: "🌈", type: "animated",
-    anim: "aurora",
-    gradientCss: "linear-gradient(135deg, #0a0a2e, #0d3b1e, #1a0a2e)",
-    gradientAnim: "aurora-shift",
+    id: "beach-sunset", label: "חוף שקיעה", emoji: "🌅", type: "animated",
+    landscapeVariant: "sunset",
     thumbUrl: "",
   },
   {
-    id: "sunset-gradient", label: "שקיעה", emoji: "🌅", type: "animated",
-    anim: "shimmer",
-    gradientCss: "linear-gradient(160deg, #1a0533, #7b2d00, #c45c00, #1a0533)",
-    gradientAnim: "sunset-pulse",
+    id: "beach-night", label: "חוף לילה", emoji: "🌙", type: "animated",
+    landscapeVariant: "night",
     thumbUrl: "",
   },
   {
-    id: "deep-ocean", label: "ים עמוק", emoji: "🐋", type: "animated",
-    anim: "bubbles",
-    gradientCss: "linear-gradient(180deg, #000d1a, #001a33, #002244, #001a33)",
-    gradientAnim: "ocean-pulse",
-    thumbUrl: "",
-  },
-  {
-    id: "galaxy", label: "גלקסיה", emoji: "🌀", type: "animated",
-    anim: "stars",
-    gradientCss: "linear-gradient(135deg, #0a001a, #1a0033, #000d26, #0a001a)",
-    gradientAnim: "galaxy-spin",
+    id: "beach-tropical", label: "חוף טרופי", emoji: "🌴", type: "animated",
+    landscapeVariant: "tropical",
     thumbUrl: "",
   },
 ]
 
-// ── Solid colors ──────────────────────────────────────────────────────────────
+// ── Solid colors + gradients ──────────────────────────────────────────────────
 const SOLID_OPTIONS: BgOption[] = [
   { id: "solid-navy",   label: "כחול כהה",   emoji: "🔵", type: "solid", solidColor: "#0f172a" },
   { id: "solid-forest", label: "ירוק יער",   emoji: "🟢", type: "solid", solidColor: "#14532d" },
   { id: "solid-purple", label: "סגול עמוק",  emoji: "🟣", type: "solid", solidColor: "#3b0764" },
   { id: "solid-stone",  label: "אפור חם",    emoji: "⚫", type: "solid", solidColor: "#292524" },
+  {
+    id: "grad-aurora", label: "זוהר צפוני", emoji: "🌈", type: "solid",
+    gradientCss: "linear-gradient(135deg, #0a0a2e, #0d3b1e, #1a0a2e)",
+    gradientAnim: "aurora-shift",
+  },
+  {
+    id: "grad-sunset", label: "שקיעה", emoji: "🌅", type: "solid",
+    gradientCss: "linear-gradient(160deg, #1a0533, #7b2d00, #c45c00, #1a0533)",
+    gradientAnim: "sunset-pulse",
+  },
+  {
+    id: "grad-ocean", label: "ים עמוק", emoji: "🐋", type: "solid",
+    gradientCss: "linear-gradient(180deg, #000d1a, #001a33, #002244, #001a33)",
+    gradientAnim: "ocean-pulse",
+  },
+  {
+    id: "grad-galaxy", label: "גלקסיה", emoji: "🌀", type: "solid",
+    gradientCss: "linear-gradient(135deg, #0a001a, #1a0033, #000d26, #0a001a)",
+    gradientAnim: "galaxy-spin",
+  },
 ]
 
 export const BG_OPTIONS: BgOption[] = [
@@ -138,7 +148,7 @@ export const ROLE_DEFAULTS: Record<string, string> = {
   parent:  "tropical-forest",
 }
 
-// ── Animation overlays ────────────────────────────────────────────────────────
+// ── Photo overlay animations ──────────────────────────────────────────────────
 function AnimOverlay({ anim }: { anim: BgOption["anim"] }) {
   if (anim === "stars") return (
     <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 1 }}>
@@ -153,56 +163,31 @@ function AnimOverlay({ anim }: { anim: BgOption["anim"] }) {
       ))}
     </div>
   )
-
-  if (anim === "aurora") return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
-      {[0, 1, 2].map(i => (
-        <div key={i} className="absolute"
-          style={{
-            top: `${10 + i * 15}%`, left: "-10%", right: "-10%",
-            height: "25%",
-            background: [
-              "linear-gradient(90deg, transparent, rgba(0,255,128,0.08), rgba(100,0,255,0.06), transparent)",
-              "linear-gradient(90deg, transparent, rgba(0,200,255,0.07), rgba(0,255,100,0.05), transparent)",
-              "linear-gradient(90deg, transparent, rgba(150,0,255,0.06), rgba(0,255,180,0.04), transparent)",
-            ][i],
-            filter: "blur(15px)",
-            animation: `aurora-wave ${8 + i * 3}s ${i * 2}s ease-in-out infinite alternate`,
-          }} />
-      ))}
-    </div>
-  )
-
   if (anim === "bubbles") return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
       {[...Array(10)].map((_, i) => (
         <div key={i} className="absolute rounded-full border border-white/10"
           style={{
             width: 4 + (i % 4) * 3, height: 4 + (i % 4) * 3,
-            left: `${(i * 37 + 5) % 95}%`,
-            bottom: "-5%",
+            left: `${(i * 37 + 5) % 95}%`, bottom: "-5%",
             opacity: 0.3 + (i % 3) * 0.1,
             animation: `bubble-rise ${6 + (i % 5)}s ${i * 0.8}s ease-in infinite`,
           }} />
       ))}
     </div>
   )
-
   if (anim === "rain") return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
       {[...Array(20)].map((_, i) => (
         <div key={i} className="absolute bg-white/10"
           style={{
             width: 1, height: 8 + (i % 4) * 4,
-            left: `${(i * 41 + 3) % 100}%`,
-            top: "-5%",
-            borderRadius: 1,
+            left: `${(i * 41 + 3) % 100}%`, top: "-5%", borderRadius: 1,
             animation: `rain-fall ${0.6 + (i % 5) * 0.2}s ${(i * 0.15) % 1}s linear infinite`,
           }} />
       ))}
     </div>
   )
-
   if (anim === "light-rays") return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
       {[...Array(4)].map((_, i) => (
@@ -216,7 +201,6 @@ function AnimOverlay({ anim }: { anim: BgOption["anim"] }) {
       ))}
     </div>
   )
-
   if (anim === "mist") return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
       {[...Array(3)].map((_, i) => (
@@ -231,17 +215,14 @@ function AnimOverlay({ anim }: { anim: BgOption["anim"] }) {
       ))}
     </div>
   )
-
   if (anim === "shimmer") return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
       <div className="absolute inset-0" style={{
         background: "linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.04) 50%, transparent 70%)",
-        animation: "shimmer-wave 4s ease-in-out infinite",
-        backgroundSize: "200% 200%",
+        animation: "shimmer-wave 4s ease-in-out infinite", backgroundSize: "200% 200%",
       }} />
     </div>
   )
-
   if (anim === "heat") return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
       {[...Array(3)].map((_, i) => (
@@ -254,7 +235,6 @@ function AnimOverlay({ anim }: { anim: BgOption["anim"] }) {
       ))}
     </div>
   )
-
   if (anim === "snow") return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
       {[...Array(20)].map((_, i) => (
@@ -268,7 +248,6 @@ function AnimOverlay({ anim }: { anim: BgOption["anim"] }) {
       ))}
     </div>
   )
-
   if (anim === "leaves") return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 1 }}>
       {[...Array(8)].map((_, i) => (
@@ -283,22 +262,6 @@ function AnimOverlay({ anim }: { anim: BgOption["anim"] }) {
       ))}
     </div>
   )
-
-  if (anim === "fireflies") return (
-    <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 1 }}>
-      {[...Array(12)].map((_, i) => (
-        <div key={i} className="absolute rounded-full"
-          style={{
-            width: 3, height: 3,
-            left: `${(i * 53 + 7) % 90}%`, top: `${(i * 37 + 20) % 75}%`,
-            background: "rgba(180,255,100,0.9)",
-            boxShadow: "0 0 6px 2px rgba(180,255,100,0.4)",
-            animation: `firefly ${3 + (i % 4)}s ${i * 0.5}s ease-in-out infinite`,
-          }} />
-      ))}
-    </div>
-  )
-
   return null
 }
 
@@ -306,7 +269,6 @@ function AnimOverlay({ anim }: { anim: BgOption["anim"] }) {
 interface Props { bgId?: string; customUrl?: string }
 
 export function NatureBackground({ bgId, customUrl }: Props) {
-  // Custom uploaded image
   if (bgId === "custom" && customUrl) {
     return (
       <div className="absolute inset-0 overflow-hidden">
@@ -319,25 +281,27 @@ export function NatureBackground({ bgId, customUrl }: Props) {
 
   const bg = BG_OPTIONS.find(b => b.id === bgId) ?? BG_OPTIONS[0]
 
-  // Solid color
+  // Solid / gradient
   if (bg.type === "solid") {
-    return (
-      <div className="absolute inset-0" style={{ background: bg.solidColor }} />
-    )
-  }
-
-  // Animated CSS gradient
-  if (bg.type === "animated") {
-    return (
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute inset-0"
-          style={{
+    if (bg.gradientCss) {
+      return (
+        <div className="absolute inset-0">
+          <div className="absolute inset-0" style={{
             background: bg.gradientCss,
             backgroundSize: "400% 400%",
             animation: `${bg.gradientAnim} 12s ease infinite`,
           }} />
-        {bg.anim && <AnimOverlay anim={bg.anim} />}
-        <div className="absolute inset-0 bg-black/20" style={{ zIndex: 2 }} />
+        </div>
+      )
+    }
+    return <div className="absolute inset-0" style={{ background: bg.solidColor }} />
+  }
+
+  // Animated SVG landscape
+  if (bg.type === "animated" && bg.landscapeVariant) {
+    return (
+      <div className="absolute inset-0 overflow-hidden">
+        <AnimatedLandscape variant={bg.landscapeVariant} />
       </div>
     )
   }

@@ -11,19 +11,28 @@ const CATEGORIES = [
   { key: "custom",   label: "שלי" },
 ]
 
-// Thumbnail for animated options — rendered as a gradient preview div
-function AnimThumb({ gradientCss }: { gradientCss?: string }) {
+// Thumbnail for animated landscape scenes
+const LANDSCAPE_THUMBS: Record<string, string> = {
+  "beach-sunset":   "linear-gradient(180deg, #0d0824 0%, #7b1055 40%, #d94f1b 70%, #f7b733 85%, #0a4b6e 100%)",
+  "beach-night":    "linear-gradient(180deg, #010409 0%, #050d1a 45%, #0e2044 75%, #05080f 100%)",
+  "beach-tropical": "linear-gradient(180deg, #052e16 0%, #065f46 40%, #059669 70%, #0d9488 100%)",
+}
+function AnimThumb({ id }: { id: string }) {
   return (
-    <div className="w-full h-full" style={{
-      background: gradientCss ?? "linear-gradient(135deg, #0a0a2e, #0d3b1e)",
-      backgroundSize: "200% 200%",
-    }} />
+    <div className="w-full h-full relative overflow-hidden" style={{ background: LANDSCAPE_THUMBS[id] ?? "#0a0a2e" }}>
+      {/* Simplified wave hint */}
+      <div className="absolute bottom-0 left-0 right-0 h-1/3 opacity-40"
+        style={{ background: "linear-gradient(180deg, transparent, rgba(10,75,110,0.8))" }} />
+    </div>
   )
 }
 
-// Thumbnail for solid options
-function SolidThumb({ color }: { color?: string }) {
-  return <div className="w-full h-full" style={{ background: color }} />
+// Thumbnail for solid / gradient options
+function SolidThumb({ bg }: { bg: any }) {
+  const style = bg.gradientCss
+    ? { background: bg.gradientCss, backgroundSize: "200% 200%" }
+    : { background: bg.solidColor }
+  return <div className="w-full h-full" style={style} />
 }
 
 export function BackgroundPicker() {
@@ -122,8 +131,8 @@ export function BackgroundPicker() {
               {bg.type === "photo" && bg.thumbUrl && (
                 <img src={bg.thumbUrl} alt={bg.label} className="w-full h-full object-cover" />
               )}
-              {bg.type === "animated" && <AnimThumb gradientCss={bg.gradientCss} />}
-              {bg.type === "solid"    && <SolidThumb color={bg.solidColor} />}
+              {bg.type === "animated" && <AnimThumb id={bg.id} />}
+              {bg.type === "solid"    && <SolidThumb bg={bg} />}
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent" />
               <div className="absolute bottom-2 right-2 left-2 flex items-center gap-1.5">
