@@ -46,7 +46,7 @@ export async function GET() {
   const [
     classProfile, upcomingEvents, openTasks, recentMessages,
     todaySchedule, tomorrowSchedule, upcomingExams, attendance,
-    parentAttendance, grades,
+    parentAttendance, grades, recentTasks, teacherTasks, classStudents,
   ] = await Promise.all([
     prisma.class.findUnique({
       where: { id: classId },
@@ -72,7 +72,7 @@ export async function GET() {
       ? prisma.message.findMany({
           where: { teacherSeenAt: null },
           orderBy: { createdAt: "desc" },
-          take: 5,
+          take: 3,
           select: {
             id: true, content: true, createdAt: true,
             sender: { select: { name: true } },
@@ -130,6 +130,35 @@ export async function GET() {
           select: { subject: true, weightedAverage: true, gradeComponents: true, teacherName: true },
         })
       : Promise.resolve([]),
+    // Teacher: 3 most recent chat tasks
+    isTeacher
+      ? prisma.message.findMany({
+          where: { isTask: true },
+          orderBy: { createdAt: "desc" },
+          take: 3,
+          select: {
+            id: true, content: true, createdAt: true,
+            sender: { select: { name: true } },
+            student: { select: { name: true } },
+          },
+        })
+      : Promise.resolve([]),
+    // Teacher: teacher-entered tasks (open only, recent 3)
+    isTeacher
+      ? prisma.teacherTask.findMany({
+          where: { classId, done: false },
+          orderBy: { createdAt: "desc" },
+          take: 3,
+        })
+      : Promise.resolve([]),
+    // Teacher: class students for below-fold list
+    isTeacher
+      ? prisma.student.findMany({
+          where: { classId },
+          orderBy: { name: "asc" },
+          select: { id: true, name: true },
+        })
+      : Promise.resolve([]),
   ])
 
   return NextResponse.json({
@@ -138,6 +167,9 @@ export async function GET() {
     upcomingEvents,
     openTasks,
     recentMessages,
+    recentTasks,
+    teacherTasks,
+    classStudents,
     todaySchedule,
     tomorrowSchedule,
     todayHeb,

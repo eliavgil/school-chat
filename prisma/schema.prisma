@@ -98,17 +98,19 @@ model Class {
 }
 
 model Student {
-  id          String             @id @default(cuid())
-  name        String
-  idNumber    String?            @unique // ת.ז
-  classId     String
-  messages    Message[]
-  parents     ParentStudent[]
-  class       Class              @relation(fields: [classId], references: [id])
-  records     StudentRecord[]
-  grades      StudentGrade[]
-  attendance  StudentAttendance?
-  userAccount User?
+  id              String                 @id @default(cuid())
+  name            String
+  idNumber        String?                @unique // ת.ז
+  classId         String
+  messages        Message[]
+  parents         ParentStudent[]
+  class           Class                  @relation(fields: [classId], references: [id])
+  records         StudentRecord[]
+  grades          StudentGrade[]
+  attendance      StudentAttendance?
+  userAccount     User?
+  accommodations  StudentAccommodation[]
+  emotionalNotes  EmotionalNote[]
 }
 
 model ParentStudent {
@@ -274,4 +276,55 @@ model BotCache {
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+// ── Teacher-entered tasks (not from chat) ─────────────────
+model TeacherTask {
+  id          String    @id @default(cuid())
+  classId     String
+  description String    @db.Text
+  responsible String?
+  deadline    DateTime?
+  note        String?   @db.Text
+  done        Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([classId, done])
+}
+
+// ── Student personal accommodations ──────────────────────
+model StudentAccommodation {
+  id          String   @id @default(cuid())
+  studentId   String
+  classId     String
+  type        String   // "private_lesson" | "therapy" | "special_activity" | "other"
+  description String   @db.Text
+  provider    String?
+  subject     String?
+  dayHeb      String?
+  timeSlot    String?
+  note        String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  student     Student  @relation(fields: [studentId], references: [id])
+
+  @@index([classId])
+  @@index([studentId])
+}
+
+// ── Emotional-social tracking ─────────────────────────────
+model EmotionalNote {
+  id        String   @id @default(cuid())
+  studentId String
+  classId   String
+  type      String   @default("teacher") // "teacher" | "parent" | "survey"
+  content   String   @db.Text
+  score     Int?     // 1–5 wellbeing score
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  student   Student  @relation(fields: [studentId], references: [id])
+
+  @@index([classId, date])
+  @@index([studentId])
 }
