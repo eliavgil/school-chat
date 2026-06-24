@@ -211,118 +211,124 @@ function ScheduleNotesEditor() {
 // ────────────────────────────────────────────────────────────
 // Teacher: Import tab
 // ────────────────────────────────────────────────────────────
-interface ImportJob { type: string; label: string; accept?: string; isUrl?: boolean; isSheets?: boolean }
+const CLASS_OPTIONS = ["י1","י2","י3","י4","י5","י6","י7"]
+const CLASS_ID_MAP: Record<string, string> = {
+  "י1":"class-y1","י2":"class-y2","י3":"class-y3","י4":"class-y4",
+  "י5":"class-y5","י6":"class-y6","י7":"class-y7",
+}
 
-const IMPORT_JOBS: ImportJob[] = [
-  { type: "sync-events",      label: "אירועים (Google Sheets)",       isSheets: true },
-  { type: "grades",           label: "ציונים שוטפים",                accept: ".xlsx,.xls" },
-  { type: "attendance",       label: "מונה התנהגות",                  accept: ".xlsx,.xls" },
-  { type: "schedule",         label: "מערכת שעות כיתתית",            accept: ".xlsx,.xls" },
-  { type: "teachers",         label: "אלפון מורים",                   accept: ".xlsx,.xls" },
-  { type: "calendar-url",     label: "לוח מבחנים (Google Sheets)",   isUrl: true },
+interface FileJob { type: string; label: string; emoji: string }
+const FILE_JOBS: FileJob[] = [
+  { type: "grades",    label: "ציונים שוטפים",       emoji: "📊" },
+  { type: "attendance",label: "מונה התנהגות",         emoji: "📋" },
+  { type: "schedule",  label: "מערכת שעות כיתה",     emoji: "🏫" },
+  { type: "homeroom-schedule", label: "מערכת שעות מחנך", emoji: "👩‍🏫" },
 ]
 
 function ImportTab() {
-  const [results, setResults]     = useState<Record<string, string>>({})
-  const [loading, setLoading]     = useState<Record<string, boolean>>({})
-  const [urlValues, setUrlValues] = useState<Record<string, string>>({})
-  const [classId, setClassId]     = useState("class-y")
+  const [classLabel, setClassLabel] = useState("י1")
+  const classId = CLASS_ID_MAP[classLabel] ?? "class-y1"
 
-  async function syncSheets() {
-    setLoading(l => ({ ...l, "sync-events": true }))
-    setResults(r => ({ ...r, "sync-events": "" }))
+  const [mainLoading, setMainLoading] = useState(false)
+  const [mainResult,  setMainResult]  = useState<{ ok: boolean; text: string } | null>(null)
+
+  const [fileLoading, setFileLoading] = useState<Record<string, boolean>>({})
+  const [fileResults, setFileResults] = useState<Record<string, string>>({})
+
+  async function syncMain() {
+    setMainLoading(true)
+    setMainResult(null)
     try {
-      const res = await fetch("/api/sync-events", { method: "POST" })
-      const text = await res.text()
-      let data: any
-      try { data = JSON.parse(text) } catch { throw new Error(text.slice(0, 200)) }
-      if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`)
-      setResults(r => ({ ...r, "sync-events": `✓ סונכרנו ${data.synced} ארועים` }))
+      const res = await fetch("/api/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ target: "all" }) })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error ?? `HTTP ${res.status}`)
+      const total = Object.values(d.results as Record<string, number | string>)
+        .filter(v => typeof v === "number").reduce((s: number, v) => s + (v as number), 0)
+      setMainResult({ ok: true, text: `סונכרנו ${total} רשומות` })
     } catch (e: any) {
-      setResults(r => ({ ...r, "sync-events": `✗ ${e.message}` }))
+      setMainResult({ ok: false, text: e.message })
     }
-    setLoading(l => ({ ...l, "sync-events": false }))
+    setMainLoading(false)
   }
 
-  async function runImport(job: ImportJob, file: File | null, sheetUrl?: string) {
-    setLoading(l => ({ ...l, [job.type]: true }))
-    setResults(r => ({ ...r, [job.type]: "" }))
+  async function runFileImport(job: FileJob, file: File) {
+    setFileLoading(l => ({ ...l, [job.type]: true }))
+    setFileResults(r => ({ ...r, [job.type]: "" }))
     try {
       const fd = new FormData()
-      fd.append("type", job.type); fd.append("classId", classId)
-      if (file) fd.append("file", file)
-      if (sheetUrl) fd.append("sheetUrl", sheetUrl)
+      fd.append("type", job.type === "homeroom-schedule" ? "schedule" : job.type)
+      fd.append("classId", classId)
+      fd.append("file", file)
       const d = await fetch("/api/admin/import", { method: "POST", body: fd }).then(r => r.json())
-      setResults(r => ({ ...r, [job.type]: d.ok ? `✓ יובאו ${d.count} רשומות` : `✗ ${d.error}` }))
-    } catch { setResults(r => ({ ...r, [job.type]: "✗ שגיאת רשת" })) }
-    setLoading(l => ({ ...l, [job.type]: false }))
+      setFileResults(r => ({ ...r, [job.type]: d.ok ? `✓ ${d.count} רשומות` : `✗ ${d.error}` }))
+    } catch {
+      setFileResults(r => ({ ...r, [job.type]: "✗ שגיאת רשת" }))
+    }
+    setFileLoading(l => ({ ...l, [job.type]: false }))
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div className="bg-amber-900/30 border border-amber-500/25 rounded-xl px-4 py-3 text-xs text-amber-300">
         ייבוא נתונים משפיע על <strong>כל המשתמשים</strong>
       </div>
 
-      {/* Class ID */}
+      {/* Class selector */}
       <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3">
-        <label className="text-sm text-white/60 flex-shrink-0">מזהה כיתה:</label>
-        <input value={classId} onChange={e => setClassId(e.target.value)}
-          className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white/30" dir="ltr" />
+        <label className="text-sm text-white/60 flex-shrink-0">כיתה:</label>
+        <select value={classLabel} onChange={e => setClassLabel(e.target.value)}
+          className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white/30">
+          {CLASS_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
+        </select>
       </div>
 
-      {/* Import rows */}
-      {IMPORT_JOBS.map(job => (
-        <div key={job.type} className="bg-white/8 border border-white/10 rounded-2xl p-4">
-          <div className="flex items-center justify-between mb-3">
-            <span className="font-medium text-white text-sm">{job.label}</span>
-            {results[job.type] && (
-              <span className={`text-xs font-medium ${results[job.type].startsWith("✓") ? "text-green-400" : "text-red-400"}`}>
-                {results[job.type]}
-              </span>
-            )}
-          </div>
-
-          {/* Google Sheets sync button */}
-          {job.isSheets && (
-            <button onClick={syncSheets} disabled={loading[job.type]}
-              className="w-full bg-white/15 hover:bg-white/25 disabled:opacity-40 text-white text-sm py-2.5 rounded-xl interactive btn-press transition-colors flex items-center justify-center gap-2">
-              {loading[job.type] ? <><span className="animate-spin inline-block">⟳</span> מסנכרן...</> : "⟳ סנכרן עכשיו"}
-            </button>
-          )}
-
-          {/* URL input */}
-          {job.isUrl && (
-            <div className="flex gap-2">
-              <input type="url" placeholder="https://docs.google.com/spreadsheets/..."
-                value={urlValues[job.type] || ""} onChange={e => setUrlValues(v => ({ ...v, [job.type]: e.target.value }))}
-                className="flex-1 bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/30" dir="ltr" />
-              <button onClick={() => runImport(job, null, urlValues[job.type])}
-                disabled={loading[job.type] || !urlValues[job.type]}
-                className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-xl text-sm disabled:opacity-40 btn-press interactive">
-                {loading[job.type] ? "..." : "ייבא"}
-              </button>
-            </div>
-          )}
-
-          {/* File upload */}
-          {!job.isSheets && !job.isUrl && (
-            <label className="cursor-pointer block">
-              <div className="border-2 border-dashed border-white/15 rounded-xl py-4 text-center hover:border-white/30 transition-colors">
-                {loading[job.type]
-                  ? <span className="text-white/50 text-sm">מייבא...</span>
-                  : <>
-                    <span className="text-white/50 text-sm">גרור קובץ לכאן או </span>
-                    <span className="text-white/80 text-sm font-medium underline">בחר קובץ</span>
-                    <p className="text-white/30 text-xs mt-1">{job.accept}</p>
-                  </>}
-              </div>
-              <input type="file" accept={job.accept} className="hidden" disabled={loading[job.type]}
-                onChange={e => { const f = e.target.files?.[0]; if (f) { runImport(job, f); e.target.value = "" } }} />
-            </label>
-          )}
+      {/* ── Main sync button ── */}
+      <div className="bg-white/8 border border-white/15 rounded-2xl p-5 space-y-3">
+        <div>
+          <p className="text-white font-semibold text-base">סנכרון קובץ ראשי</p>
+          <p className="text-white/40 text-xs mt-1">ארועים · מבחנים · מענים אישיים · פרטים אישיים תלמידים · מורים</p>
         </div>
-      ))}
+        <button onClick={syncMain} disabled={mainLoading}
+          className="w-full bg-white/20 hover:bg-white/30 active:scale-95 disabled:opacity-50 text-white font-semibold text-base py-4 rounded-2xl interactive btn-press transition-all flex items-center justify-center gap-3">
+          {mainLoading
+            ? <><span className="animate-spin inline-block text-xl">⟳</span> מסנכרן...</>
+            : <><span className="text-xl">🔄</span> סנכרן עכשיו</>}
+        </button>
+        {mainResult && (
+          <p className={`text-sm text-center font-medium ${mainResult.ok ? "text-green-400" : "text-red-400"}`}>
+            {mainResult.ok ? "✓" : "✗"} {mainResult.text}
+          </p>
+        )}
+      </div>
+
+      {/* ── Separate file imports ── */}
+      <p className="text-white/35 text-xs font-semibold uppercase tracking-widest px-1">ייבוא קבצים נפרדים</p>
+      <div className="space-y-3">
+        {FILE_JOBS.map(job => (
+          <div key={job.type} className="bg-white/5 border border-white/10 rounded-2xl p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span className="text-lg">{job.emoji}</span>
+                <span className="text-white/85 text-sm font-medium">{job.label}</span>
+              </div>
+              {fileResults[job.type] && (
+                <span className={`text-xs font-medium ${fileResults[job.type].startsWith("✓") ? "text-green-400" : "text-red-400"}`}>
+                  {fileResults[job.type]}
+                </span>
+              )}
+            </div>
+            <label className="cursor-pointer block">
+              <div className="border-2 border-dashed border-white/15 rounded-xl py-3 text-center hover:border-white/30 transition-colors">
+                {fileLoading[job.type]
+                  ? <span className="text-white/50 text-sm">מייבא...</span>
+                  : <><span className="text-white/50 text-sm">בחר קובץ </span><span className="text-white/70 text-xs">.xlsx</span></>}
+              </div>
+              <input type="file" accept=".xlsx,.xls" className="hidden" disabled={fileLoading[job.type]}
+                onChange={e => { const f = e.target.files?.[0]; if (f) { runFileImport(job, f); e.target.value = "" } }} />
+            </label>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -602,7 +608,7 @@ function UsersTab() {
 // ────────────────────────────────────────────────────────────
 // Main page
 // ────────────────────────────────────────────────────────────
-type TeacherTab = "settings" | "import" | "schedule" | "users"
+type TeacherTab = "settings" | "import" | "users"
 type UserTab    = "settings" | "events" | "notes" | "design"
 
 export default function ManagePage() {
@@ -611,7 +617,7 @@ export default function ManagePage() {
   const role = (session?.user as any)?.role as string | undefined
   const isTeacher = role === "TEACHER" || role === "ADMIN"
 
-  const [teacherTab, setTeacherTab] = useState<TeacherTab>("settings")
+  const [teacherTab, setTeacherTab] = useState<TeacherTab>("import")
   const [userTab, setUserTab]       = useState<UserTab>("settings")
   const [pendingCount, setPendingCount] = useState(0)
 
@@ -630,9 +636,8 @@ export default function ManagePage() {
   if (!session) { router.replace("/"); return null }
 
   const teacherTabs: [TeacherTab, string][] = [
-    ["settings", "הגדרות"],
     ["import",   "ייבוא נתונים"],
-    ["schedule", "מערכת שעות"],
+    ["settings", "הגדרות"],
     ["users",    "משתמשים"],
   ]
 
@@ -694,7 +699,6 @@ export default function ManagePage() {
           </>
         )}
         {isTeacher && teacherTab === "import"    && <ImportTab />}
-        {isTeacher && teacherTab === "schedule"  && <ScheduleTab />}
         {isTeacher && teacherTab === "users"     && <UsersTab />}
 
         {!isTeacher && userTab === "settings"   && (
