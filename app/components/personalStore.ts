@@ -71,3 +71,11 @@ export function getPersonalBackground(): string {
 export function setPersonalBackground(id: string) {
   localStorage.setItem("personal-background", id)
 }
+
+// ── Custom background image (stored as data URL) ──────────
+export function getCustomBgUrl(): string {
+  return localStorage.getItem("personal-bg-custom-url") ?? ""
+}
+export function setCustomBgUrl(dataUrl: string) {
+  localStorage.setItem("personal-bg-custom-url", dataUrl)
+}

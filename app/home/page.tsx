@@ -8,7 +8,7 @@ import { NatureBackground } from "@/app/components/NatureBackground"
 import {
   getRemainingSchoolDays, getDaysUntilSummer, getNextVacation, getDaysUntilNextVacation,
 } from "@/lib/school-calendar"
-import { getPersonalEvents, getPersonalDisplayName, getPersonalBackground } from "@/app/components/personalStore"
+import { getPersonalEvents, getPersonalDisplayName, getPersonalBackground, getCustomBgUrl } from "@/app/components/personalStore"
 import { ROLE_DEFAULTS } from "@/app/components/NatureBackground"
 
 // ── Types ─────────────────────────────────────────────────
@@ -108,12 +108,19 @@ function useBg(role: "student" | "teacher" | "parent") {
     if (typeof window === "undefined") return ROLE_DEFAULTS[role]
     return getPersonalBackground() || ROLE_DEFAULTS[role]
   })
+  const [customUrl, setCustomUrl] = useState(() => {
+    if (typeof window === "undefined") return ""
+    return getCustomBgUrl()
+  })
   useEffect(() => {
-    const handler = (e: Event) => setBgId((e as CustomEvent).detail)
+    const handler = (e: Event) => {
+      setBgId((e as CustomEvent).detail)
+      setCustomUrl(getCustomBgUrl())
+    }
     window.addEventListener("bg-changed", handler)
     return () => window.removeEventListener("bg-changed", handler)
   }, [])
-  return bgId
+  return { bgId, customUrl }
 }
 
 // ── Reusable events card with expand + edit ───────────────
@@ -162,7 +169,7 @@ function EventsCard({ merged, editHref }: {
 // ══════════════════════════════════════════════════════════
 function StudentHome({ session, data }: { session: any; data: HomeData | null }) {
   const now = useTick()
-  const bgId = useBg("student")
+  const { bgId, customUrl } = useBg("student")
   const [menuOpen, setMenuOpen] = useState(false)
   const [personalName] = useState(() => {
     if (typeof window === "undefined") return ""
@@ -229,7 +236,7 @@ function StudentHome({ session, data }: { session: any; data: HomeData | null })
 
   return (
     <div className="flex flex-col h-screen" dir="rtl">
-      <NatureBackground bgId={bgId} />
+      <NatureBackground bgId={bgId} customUrl={customUrl} />
       <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/10 to-black/70" />
 
       {/* ── Header ── */}
@@ -410,7 +417,7 @@ function StudentHome({ session, data }: { session: any; data: HomeData | null })
 // ══════════════════════════════════════════════════════════
 function TeacherHome({ session, data }: { session: any; data: HomeData | null }) {
   const now  = useTick()
-  const bgId = useBg("teacher")
+  const { bgId, customUrl } = useBg("teacher")
   const [menuOpen, setMenuOpen] = useState(false)
   const [studentNotes, setStudentNotes] = useState<Record<string, string>>(() => {
     if (typeof window === "undefined") return {}
@@ -453,7 +460,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
   return (
     <div className="flex flex-col h-screen" dir="rtl">
-      <NatureBackground bgId={bgId} />
+      <NatureBackground bgId={bgId} customUrl={customUrl} />
       <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/10 to-black/70" />
 
       {/* ── Header ── */}
@@ -776,7 +783,7 @@ function CalendarModal({ items, title, onClose }: {
 
 function ParentHome({ session, data }: { session: any; data: HomeData | null }) {
   const now = useTick()
-  const bgId = useBg("parent")
+  const { bgId, customUrl } = useBg("parent")
   const [menuOpen, setMenuOpen] = useState(false)
   const [calModal, setCalModal] = useState<{ title: string; items: CalendarEvent[] } | null>(null)
   const [personalName] = useState(() => {
@@ -794,7 +801,7 @@ function ParentHome({ session, data }: { session: any; data: HomeData | null }) 
 
   return (
     <div className="flex flex-col h-screen" dir="rtl">
-      <NatureBackground bgId={bgId} />
+      <NatureBackground bgId={bgId} customUrl={customUrl} />
       <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/10 to-black/70" />
 
       {calModal && <CalendarModal title={calModal.title} items={calModal.items} onClose={() => setCalModal(null)} />}
