@@ -244,6 +244,10 @@ export default function TeacherDashboard() {
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
+                    <a href="/home"
+                      className="text-xs text-stone-400 hover:text-stone-700 interactive px-2 py-1 rounded-lg hover:bg-stone-50 flex items-center gap-1">
+                      🏠 בית
+                    </a>
                     <button onClick={fetchWeeklySummary}
                       className="text-xs text-indigo-600 hover:text-indigo-800 interactive px-2 py-1 rounded-lg hover:bg-indigo-50 border border-indigo-100" title="סיכום שבועי">
                       סיכום
