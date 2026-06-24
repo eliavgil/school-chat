@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from "react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
-import BottomNav from "@/app/components/BottomNav"
 import ComingSoon from "@/app/components/ComingSoon"
 
 interface Message {
@@ -203,135 +202,136 @@ export default function TeacherDashboard() {
   const allTasks = globalTasks
   const totalUnread = conversations.reduce((s, c) => s + c.unreadCount, 0)
 
-  const IconHome = () => (
-    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-    </svg>
-  )
-
-  const navTabs = [
-    { label: "בית",          href: "/home",      icon: <IconHome /> },
-    { label: "שיחות",        href: "/dashboard", icon: <IconChat />, badge: totalUnread },
-    { label: "עריכה",        href: "/edit",      icon: <IconSettings /> },
-    { label: "ניהול",        href: "/admin",     icon: <IconSettings /> },
-    { label: "עוזר",         icon: <IconAssistant />, comingSoon: true },
-  ]
-
   if (status === "loading") return null
 
   return (
-    <div className="flex flex-col h-screen bg-[#faf9f6]" dir="rtl">
+    <div className="flex flex-col h-screen" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)" }} dir="rtl">
+
+      {/* Top header */}
+      <div className="flex-shrink-0 bg-black/30 backdrop-blur-md border-b border-white/10 px-4 header-pt pb-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <a href="/home" className="w-9 h-9 glass rounded-xl flex items-center justify-center text-white/70 hover:text-white interactive btn-press transition-colors">
+              🏠
+            </a>
+            <div>
+              <div className="font-semibold text-white text-sm">לוח מחנך</div>
+              <div className="text-white/40 text-xs">{session?.user?.name}</div>
+            </div>
+          </div>
+          {/* Main tabs */}
+          <div className="flex gap-1">
+            {["שיחות", "ניתוח", "עוזר"].map((label, i) => {
+              const full = ["שיחות", "ניתוח נתונים", "עוזר אישי"][i]
+              const isActive = mainTab === full
+              return (
+                <button key={label} onClick={() => setMainTab(full)}
+                  className={`text-xs px-3 py-1.5 rounded-xl transition-all interactive btn-press ${isActive ? "bg-white/20 text-white font-medium" : "text-white/40 hover:text-white/70"}`}>
+                  {label}
+                  {label === "שיחות" && totalUnread > 0 && (
+                    <span className="mr-1 bg-indigo-500 text-white text-[10px] rounded-full px-1">{totalUnread}</span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+          <div className="flex items-center gap-2">
+            <button onClick={fetchWeeklySummary}
+              className="glass rounded-xl px-3 py-1.5 text-white/60 hover:text-white text-xs interactive btn-press transition-colors">
+              סיכום
+            </button>
+            <button onClick={() => signOut({ callbackUrl: "/login" })}
+              className="text-white/30 hover:text-white/70 text-xs interactive px-1">
+              יציאה
+            </button>
+          </div>
+        </div>
+      </div>
 
       {/* Main content */}
       <div className="flex flex-1 overflow-hidden">
 
         {mainTab === "שיחות" && (
           <>
-            {/* Sidebar — hidden on mobile when a conversation is open */}
-            <div className={`${selectedStudent ? "hidden md:flex" : "flex"} w-full md:w-80 bg-white border-l border-stone-200 flex-col flex-shrink-0`}>
-              {/* Header */}
-              <div className="bg-white border-b border-stone-200 px-4 py-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 bg-indigo-100 rounded-xl flex items-center justify-center">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4338ca" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/>
-                      </svg>
-                    </div>
-                    <div>
-                      <div className="font-semibold text-stone-900 text-sm">לוח מחנך</div>
-                      <div className="text-xs text-stone-400">{session?.user?.name}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <a href="/home"
-                      className="text-xs text-stone-400 hover:text-stone-700 interactive px-2 py-1 rounded-lg hover:bg-stone-50 flex items-center gap-1">
-                      🏠 בית
-                    </a>
-                    <button onClick={fetchWeeklySummary}
-                      className="text-xs text-indigo-600 hover:text-indigo-800 interactive px-2 py-1 rounded-lg hover:bg-indigo-50 border border-indigo-100" title="סיכום שבועי">
-                      סיכום
-                    </button>
-                    <button onClick={() => signOut({ callbackUrl: "/login" })}
-                      className="text-xs text-stone-400 hover:text-stone-700 interactive px-2 py-1">
-                      יציאה
-                    </button>
-                  </div>
-                </div>
-              </div>
-
+            {/* Sidebar */}
+            <div className={`${selectedStudent ? "hidden md:flex" : "flex"} w-full md:w-80 flex-col flex-shrink-0 border-l border-white/10`}>
               {/* Inner tabs */}
-              <div className="flex border-b border-stone-200">
-                <button
-                  onClick={() => setInnerTab("chat")}
-                  className={`flex-1 py-2.5 text-sm font-medium interactive ${innerTab === "chat" ? "border-b-2 border-stone-900 text-stone-900" : "text-stone-400"}`}
-                >
-                  שיחות{totalUnread > 0 && <span className="bg-stone-900 text-white rounded-full px-1.5 py-0.5 text-xs mr-1">({totalUnread})</span>}
+              <div className="flex gap-1 px-3 pt-3 pb-2 flex-shrink-0">
+                <button onClick={() => setInnerTab("chat")}
+                  className={`flex-1 py-2 text-sm font-medium rounded-xl transition-all interactive ${innerTab === "chat" ? "bg-white/15 text-white" : "text-white/40 hover:text-white/60"}`}>
+                  שיחות{totalUnread > 0 && <span className="bg-indigo-500 text-white rounded-full px-1.5 py-0.5 text-xs mr-1">{totalUnread}</span>}
                 </button>
-                <button
-                  onClick={() => { setInnerTab("tasks"); fetchGlobalTasks() }}
-                  className={`flex-1 py-2.5 text-sm font-medium interactive ${innerTab === "tasks" ? "border-b-2 border-stone-900 text-stone-900" : "text-stone-400"}`}
-                >
-                  משימות{totalTasks > 0 && <span className="text-stone-400 text-xs mr-1">({totalTasks})</span>}
+                <button onClick={() => { setInnerTab("tasks"); fetchGlobalTasks() }}
+                  className={`flex-1 py-2 text-sm font-medium rounded-xl transition-all interactive ${innerTab === "tasks" ? "bg-white/15 text-white" : "text-white/40 hover:text-white/60"}`}>
+                  משימות{totalTasks > 0 && <span className="text-white/40 text-xs mr-1">({totalTasks})</span>}
                 </button>
               </div>
 
               {innerTab === "chat" && (
                 <div className="flex-1 overflow-y-auto flex flex-col">
                   {/* Filter row */}
-                  <div className="flex gap-1 px-3 py-2 border-b border-stone-100 flex-shrink-0">
+                  <div className="flex gap-1 px-3 pb-2 flex-shrink-0">
                     {(["הכל", "ממתין", "נענה", "משימות"] as ConvFilter[]).map(f => (
                       <button key={f} onClick={() => setConvFilter(f)}
-                        className={`text-xs px-2.5 py-1 rounded-full transition-colors ${convFilter === f ? "bg-stone-900 text-white" : "bg-stone-100 text-stone-500 hover:bg-stone-200"}`}>
+                        className={`text-xs px-2.5 py-1 rounded-full transition-colors interactive ${convFilter === f ? "bg-white/20 text-white" : "text-white/30 hover:text-white/60"}`}>
                         {f}
                       </button>
                     ))}
                   </div>
-                  <div className="flex-1 overflow-y-auto">
-                  {filteredConversations.map((c) => (
-                    <button
-                      key={c.studentId}
-                      onClick={() => selectConversation(c.studentId, c.studentName)}
-                      className={`w-full text-right px-4 py-3 border-b border-stone-100 hover:bg-stone-50 transition-colors ${selectedStudent === c.studentId ? "bg-stone-100" : ""}`}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div>
-                          {c.parentLabels.length > 0 && (
-                            <div className="text-xs text-stone-400">{c.parentLabels.join(" · ")}</div>
-                          )}
-                          <div className="font-medium text-sm text-stone-800">{c.studentName}</div>
-                        </div>
-                        {c.unreadCount > 0 && (
-                          <span className="bg-stone-900 text-white rounded-full px-2 py-0.5 text-xs mt-0.5">{c.unreadCount}</span>
-                        )}
-                      </div>
-                      <div className="text-xs text-stone-400 mt-0.5 truncate">{c.lastMessage.content}</div>
-                      <div className="text-xs text-stone-300 mt-0.5">
-                        {new Date(c.lastMessage.createdAt).toLocaleDateString("he-IL")}
-                      </div>
-                    </button>
-                  ))}
+                  <div className="flex-1 overflow-y-auto px-3 space-y-1.5">
+                    {filteredConversations.map((c) => {
+                      const initials = c.studentName.slice(0, 2)
+                      const isSelected = selectedStudent === c.studentId
+                      return (
+                        <button
+                          key={c.studentId}
+                          onClick={() => selectConversation(c.studentId, c.studentName)}
+                          className={`w-full text-right rounded-2xl px-3 py-3 transition-all interactive btn-press ${isSelected ? "bg-white/20 shadow-lg" : "glass hover:bg-white/12"}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-indigo-500/30 border border-indigo-400/30 flex items-center justify-center text-indigo-200 text-xs font-bold flex-shrink-0">
+                              {initials}
+                            </div>
+                            <div className="flex-1 min-w-0 text-right">
+                              <div className="flex items-center justify-between">
+                                <div className="font-medium text-sm text-white">{c.studentName}</div>
+                                {c.unreadCount > 0 && (
+                                  <span className="bg-indigo-500 text-white rounded-full px-2 py-0.5 text-xs">{c.unreadCount}</span>
+                                )}
+                              </div>
+                              {c.parentLabels.length > 0 && (
+                                <div className="text-xs text-white/40">{c.parentLabels.join(" · ")}</div>
+                              )}
+                              <div className="text-xs text-white/30 truncate mt-0.5">{c.lastMessage.content}</div>
+                            </div>
+                          </div>
+                        </button>
+                      )
+                    })}
+                    {filteredConversations.length === 0 && (
+                      <div className="text-center text-white/30 text-sm py-10">אין שיחות</div>
+                    )}
                   </div>
                 </div>
               )}
 
               {innerTab === "tasks" && (
-                <div className="flex-1 overflow-y-auto p-3">
+                <div className="flex-1 overflow-y-auto px-3 py-2 space-y-2">
                   {allTasks.length === 0 ? (
-                    <p className="text-stone-400 text-sm text-center mt-8">אין משימות פתוחות</p>
+                    <p className="text-white/30 text-sm text-center mt-8">אין משימות פתוחות</p>
                   ) : (
                     allTasks.map((m) => (
-                      <div key={m.id} className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-2">
+                      <div key={m.id} className="glass rounded-2xl p-3 border border-amber-400/20 bg-amber-500/10">
                         {(m as any).student && (
                           <button
                             onClick={() => { setInnerTab("chat"); selectConversation((m as any).student.id, (m as any).student.name) }}
-                            className="text-xs font-semibold text-stone-600 hover:text-stone-900 interactive mb-1 block"
+                            className="text-xs font-semibold text-amber-300 hover:text-amber-100 interactive mb-1 block"
                           >
                             {(m as any).student.name} ←
                           </button>
                         )}
-                        <p className="text-sm text-stone-800">{m.content}</p>
-                        <button onClick={() => toggleAction(m.id, "untask")} className="text-xs text-amber-600 mt-1.5 hover:underline interactive">
+                        <p className="text-sm text-white/80">{m.content}</p>
+                        <button onClick={() => toggleAction(m.id, "untask")} className="text-xs text-amber-400 mt-1.5 hover:underline interactive">
                           סמן כבוצע
                         </button>
                       </div>
@@ -341,37 +341,40 @@ export default function TeacherDashboard() {
               )}
             </div>
 
-            {/* Chat area — hidden on mobile when no conversation selected */}
+            {/* Chat area */}
             <div className={`${!selectedStudent ? "hidden md:flex" : "flex"} flex-1 flex-col overflow-hidden`}>
               {!selectedStudent ? (
-                <div className="flex-1 flex items-center justify-center text-stone-400">
-                  <div className="text-center">
-                    <div className="text-4xl mb-3">💬</div>
-                    <div>בחר שיחה מהרשימה</div>
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center space-y-3">
+                    <div className="w-16 h-16 glass rounded-3xl flex items-center justify-center text-3xl mx-auto">💬</div>
+                    <div className="text-white/40 text-sm">בחר שיחה מהרשימה</div>
                   </div>
                 </div>
               ) : (
                 <>
-                  <div className="bg-white border-b border-stone-200 px-4 py-3 flex-shrink-0 flex items-center gap-3">
-                    <button onClick={() => setSelectedStudent(null)} className="md:hidden text-stone-400 hover:text-stone-700 interactive p-1">
+                  <div className="bg-black/20 backdrop-blur-sm border-b border-white/10 px-4 py-3 flex-shrink-0 flex items-center gap-3">
+                    <button onClick={() => setSelectedStudent(null)} className="md:hidden text-white/50 hover:text-white interactive p-1">
                       <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7"/></svg>
                     </button>
+                    <div className="w-8 h-8 rounded-full bg-indigo-500/30 border border-indigo-400/30 flex items-center justify-center text-indigo-200 text-xs font-bold">
+                      {selectedStudentName.slice(0, 2)}
+                    </div>
                     <div>
-                      <div className="font-semibold text-stone-800">{selectedStudentName}</div>
-                      <div className="text-xs text-stone-400">{messages.length} הודעות</div>
+                      <div className="font-semibold text-white">{selectedStudentName}</div>
+                      <div className="text-xs text-white/40">{messages.length} הודעות</div>
                     </div>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#faf9f6]">
+                  <div className="flex-1 overflow-y-auto p-4 space-y-3">
                     {messages.map((msg) => (
                       <div key={msg.id} className="space-y-1">
                         {/* Parent message */}
                         <div className="flex justify-end">
                           <div className="max-w-sm">
-                            <div className="bg-stone-900 text-white rounded-2xl rounded-tr-sm px-4 py-2">
-                              <div className="text-xs text-stone-400 mb-1">{msg.sender.name}</div>
+                            <div className="bg-indigo-600/70 backdrop-blur-sm border border-indigo-500/30 text-white rounded-2xl rounded-tr-sm px-4 py-2">
+                              <div className="text-xs text-indigo-300 mb-1">{msg.sender.name}</div>
                               <div className="text-sm">{msg.content}</div>
-                              <div className="text-xs text-stone-500 mt-1 text-left">
+                              <div className="text-xs text-indigo-300/60 mt-1 text-left">
                                 {new Date(msg.createdAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
                               </div>
                             </div>
@@ -382,25 +385,25 @@ export default function TeacherDashboard() {
                         {msg.botResponse && (
                           <div className="flex justify-start">
                             <div className="max-w-sm">
-                              <div className="bg-stone-100 rounded-2xl rounded-tl-sm px-4 py-2">
-                                <div className="text-xs text-stone-500 font-medium mb-1">סילבר בוט</div>
-                                <div className="text-sm text-stone-800 whitespace-pre-wrap">{msg.botResponse}</div>
+                              <div className="glass rounded-2xl rounded-tl-sm px-4 py-2">
+                                <div className="text-xs text-white/50 font-medium mb-1">✨ סילבר בוט</div>
+                                <div className="text-sm text-white/85 whitespace-pre-wrap">{msg.botResponse}</div>
                                 <div className="flex items-center justify-between mt-2">
-                                  <div className="text-xs text-stone-300">
+                                  <div className="text-xs text-white/25">
                                     {msg.botAnsweredAt && new Date(msg.botAnsweredAt).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })}
                                   </div>
                                   <div className="flex gap-2">
                                     <button
                                       onClick={() => toggleAction(msg.id, msg.teacherApproved ? "unapprove" : "approve")}
                                       title={msg.teacherApproved ? "בטל אישור" : "אשר תשובה"}
-                                      className={`text-sm px-2 py-0.5 rounded-full transition-colors ${msg.teacherApproved ? "bg-stone-900 text-white" : "bg-stone-200 text-stone-400 hover:bg-stone-300"}`}
+                                      className={`text-sm px-2 py-0.5 rounded-full transition-colors ${msg.teacherApproved ? "bg-green-500/40 text-green-200 border border-green-400/30" : "bg-white/10 text-white/30 hover:bg-white/20"}`}
                                     >
                                       ✓
                                     </button>
                                     <button
                                       onClick={() => toggleAction(msg.id, msg.isTask ? "untask" : "task")}
                                       title={msg.isTask ? "הסר ממשימות" : "הוסף למשימות"}
-                                      className={`text-sm px-2 py-0.5 rounded-full transition-colors ${msg.isTask ? "bg-amber-400 text-white" : "bg-stone-200 text-stone-400 hover:bg-amber-100"}`}
+                                      className={`text-sm px-2 py-0.5 rounded-full transition-colors ${msg.isTask ? "bg-amber-500/40 text-amber-200 border border-amber-400/30" : "bg-white/10 text-white/30 hover:bg-amber-500/20"}`}
                                     >
                                       ★
                                     </button>
@@ -408,7 +411,7 @@ export default function TeacherDashboard() {
                                 </div>
                               </div>
                               {!msg.teacherResponse && (
-                                <button onClick={() => setReplyingTo(msg.id)} className="text-xs text-stone-400 mt-1 mr-2 hover:text-stone-700 interactive">
+                                <button onClick={() => setReplyingTo(msg.id)} className="text-xs text-white/30 mt-1 mr-2 hover:text-white/70 interactive">
                                   הגב
                                 </button>
                               )}
@@ -419,10 +422,10 @@ export default function TeacherDashboard() {
                         {/* Forwarded */}
                         {!msg.botResponse && msg.status === "FORWARDED" && (
                           <div className="flex justify-start">
-                            <div className="bg-stone-100 rounded-2xl rounded-tl-sm px-4 py-2 text-xs text-stone-500">
+                            <div className="glass rounded-2xl rounded-tl-sm px-4 py-2 text-xs text-white/50">
                               הועבר לטיפול ידני
                               {!msg.teacherResponse && (
-                                <button onClick={() => setReplyingTo(msg.id)} className="mr-3 text-stone-700 hover:underline interactive">
+                                <button onClick={() => setReplyingTo(msg.id)} className="mr-3 text-white/70 hover:underline interactive">
                                   הגב
                                 </button>
                               )}
@@ -433,9 +436,9 @@ export default function TeacherDashboard() {
                         {/* Teacher response */}
                         {msg.teacherResponse && (
                           <div className="flex justify-start">
-                            <div className="max-w-sm bg-white border border-stone-200 rounded-2xl rounded-tl-sm px-4 py-2">
-                              <div className="text-xs text-indigo-600 font-medium mb-1">המחנך/ת</div>
-                              <div className="text-sm text-stone-800">{msg.teacherResponse}</div>
+                            <div className="max-w-sm glass rounded-2xl rounded-tl-sm px-4 py-2 border border-teal-400/20 bg-teal-500/10">
+                              <div className="text-xs text-teal-300 font-medium mb-1">המחנך/ת</div>
+                              <div className="text-sm text-white/80">{msg.teacherResponse}</div>
                             </div>
                           </div>
                         )}
@@ -444,29 +447,28 @@ export default function TeacherDashboard() {
                         {replyingTo === msg.id && (
                           <div className="flex justify-start mr-4">
                             <div className="w-full max-w-sm space-y-2">
-                              {/* Quick reply templates */}
                               <div className="flex flex-wrap gap-1">
                                 {QUICK_REPLIES.map(r => (
                                   <button key={r} onClick={() => setReplyText(r)}
-                                    className="text-xs bg-stone-100 hover:bg-stone-200 text-stone-600 rounded-full px-2.5 py-1 interactive transition-colors">
+                                    className="text-xs glass hover:bg-white/15 text-white/60 rounded-full px-2.5 py-1 interactive transition-colors">
                                     {r}
                                   </button>
                                 ))}
                               </div>
-                              <div className="bg-white border border-stone-200 rounded-2xl px-3 py-2 flex gap-2 items-center">
+                              <div className="glass rounded-2xl px-3 py-2 flex gap-2 items-center border border-white/15">
                                 <input
                                   autoFocus
                                   value={replyText}
                                   onChange={(e) => setReplyText(e.target.value)}
                                   onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendReply()}
                                   placeholder="כתוב תגובה..."
-                                  className="flex-1 text-sm outline-none text-stone-900 placeholder-stone-400"
+                                  className="flex-1 text-sm outline-none text-white placeholder-white/30 bg-transparent"
                                   style={{ fontSize: "16px" }}
                                 />
                                 <button
                                   onClick={sendReply}
                                   disabled={sending || !replyText.trim()}
-                                  className="bg-stone-900 text-white rounded-full w-8 h-8 flex items-center justify-center disabled:opacity-50 hover:bg-stone-800 btn-press interactive"
+                                  className="bg-indigo-500 hover:bg-indigo-400 text-white rounded-full w-8 h-8 flex items-center justify-center disabled:opacity-40 btn-press interactive transition-colors"
                                 >
                                   ➤
                                 </button>
@@ -490,9 +492,9 @@ export default function TeacherDashboard() {
             title="ניתוח נתוני תלמידים"
             description="ניתוח לימודי, חברתי ורגשי של תלמידי הכיתה. זיהוי דפוסים, התראות מוקדמות ותובנות מבוססות AI."
             featureKey="teacher-analytics"
-            accentColor="bg-stone-900"
-            accentLight="bg-stone-100"
-            accentText="text-stone-700"
+            accentColor="bg-indigo-600"
+            accentLight="bg-indigo-500/20"
+            accentText="text-indigo-300"
           />
         )}
 
@@ -502,9 +504,9 @@ export default function TeacherDashboard() {
             title="עוזר אישי למחנך"
             description="ניהול משימות, תזכורות חכמות, הכנת מסמכים ודוחות — הכל בשיחה טבעית."
             featureKey="teacher-assistant"
-            accentColor="bg-stone-900"
-            accentLight="bg-stone-100"
-            accentText="text-stone-700"
+            accentColor="bg-indigo-600"
+            accentLight="bg-indigo-500/20"
+            accentText="text-indigo-300"
           />
         )}
 
@@ -512,41 +514,28 @@ export default function TeacherDashboard() {
 
       {/* Weekly summary modal */}
       {showSummary && (
-        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setShowSummary(false)}>
-          <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100">
-              <div className="font-semibold text-stone-900">סיכום שבועי</div>
-              <button onClick={() => setShowSummary(false)} className="text-stone-400 hover:text-stone-700 interactive text-xl leading-none">×</button>
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setShowSummary(false)}>
+          <div className="glass rounded-3xl shadow-2xl max-w-lg w-full max-h-[80vh] flex flex-col border border-white/15" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+              <div className="font-semibold text-white">✨ סיכום שבועי</div>
+              <button onClick={() => setShowSummary(false)} className="text-white/40 hover:text-white interactive text-xl leading-none">×</button>
             </div>
             <div className="flex-1 overflow-y-auto px-5 py-4">
               {summaryLoading && !summaryText && (
-                <div className="flex items-center gap-2 text-stone-500 text-sm">
+                <div className="flex items-center gap-2 text-white/50 text-sm">
                   <span className="animate-spin">⟳</span> מכין סיכום...
                 </div>
               )}
               {summaryText && (
-                <div className="text-sm text-stone-800 whitespace-pre-wrap leading-relaxed">
+                <div className="text-sm text-white/80 whitespace-pre-wrap leading-relaxed">
                   {summaryText}
-                  {summaryLoading && <span className="inline-block w-0.5 h-3.5 bg-stone-400 animate-pulse ml-0.5 align-middle" />}
+                  {summaryLoading && <span className="inline-block w-0.5 h-3.5 bg-white/40 animate-pulse ml-0.5 align-middle" />}
                 </div>
               )}
             </div>
           </div>
         </div>
       )}
-
-      {/* Bottom navigation */}
-      <BottomNav
-        tabs={navTabs}
-        activeColor="text-stone-900"
-        activeBg="bg-stone-100"
-        activeTab={mainTab}
-        onTabChange={(label) => {
-          if (label === "שיחות" || label === "ניתוח נתונים" || label === "עוזר אישי") {
-            setMainTab(label)
-          }
-        }}
-      />
     </div>
   )
 }
