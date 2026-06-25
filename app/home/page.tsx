@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, useRef } from "react"
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import BottomNav from "@/app/components/BottomNav"
@@ -419,6 +419,10 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
   const now  = useTick()
   const { bgId, customUrl } = useBg("teacher")
   const [menuOpen, setMenuOpen] = useState(false)
+  const [page, setPage] = useState(0)
+  const [dragging, setDragging] = useState(false)
+  const [dragDelta, setDragDelta] = useState(0)
+  const touchStart = useRef<{ x: number; y: number } | null>(null)
   const [studentNotes, setStudentNotes] = useState<Record<string, string>>(() => {
     if (typeof window === "undefined") return {}
     try { return JSON.parse(localStorage.getItem("teacher-student-notes") ?? "{}") } catch { return {} }
@@ -444,6 +448,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
   const todaySlots  = data?.todaySchedule ?? []
   const recentMsgs  = data?.recentMessages ?? []
+  const NUM_PAGES = 3
 
   function saveNote(studentId: string, val: string) {
     const updated = { ...studentNotes, [studentId]: val }
@@ -458,6 +463,49 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
     { label: "ריכוז שכבה",           href: "/teacher/grade-hub",      emoji: "🏫" },
   ]
 
+  // Swipe handlers — distinguish horizontal (page) from vertical (scroll)
+  function onTouchStart(e: React.TouchEvent) {
+    touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY }
+    setDragging(false)
+    setDragDelta(0)
+  }
+
+  function onTouchMove(e: React.TouchEvent) {
+    if (!touchStart.current) return
+    const dx = e.touches[0].clientX - touchStart.current.x
+    const dy = e.touches[0].clientY - touchStart.current.y
+    // Only hijack if clearly more horizontal than vertical
+    if (!dragging && Math.abs(dx) < 8 && Math.abs(dy) < 8) return
+    if (!dragging) {
+      if (Math.abs(dx) > Math.abs(dy) * 1.5) {
+        setDragging(true)
+      } else {
+        touchStart.current = null // let vertical scroll happen
+        return
+      }
+    }
+    if (dragging) {
+      // RTL: swipe right → next page (lower index), swipe left → prev page (higher index)
+      const clampedDelta = Math.max(-120, Math.min(120, dx))
+      setDragDelta(clampedDelta)
+    }
+  }
+
+  function onTouchEnd() {
+    if (!dragging) return
+    // RTL: swipe right (positive dx) = go right in LTR terms = previous page in RTL = page+1
+    if (dragDelta < -40 && page < NUM_PAGES - 1) setPage(p => p + 1)
+    if (dragDelta > 40  && page > 0)             setPage(p => p - 1)
+    setDragging(false)
+    setDragDelta(0)
+    touchStart.current = null
+  }
+
+  // translateX: page 0 = 0%, page 1 = -100%, page 2 = -200%; drag adds live offset
+  const baseTranslate = -page * 100
+  const dragPercent   = dragging ? (dragDelta / window.innerWidth) * 100 : 0
+  const translateX    = `calc(${baseTranslate}% + ${dragDelta}px)`
+
   return (
     <div className="flex flex-col h-screen" dir="rtl">
       <NatureBackground bgId={bgId} customUrl={customUrl} />
@@ -465,12 +513,10 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
       {/* ── Header ── */}
       <header className="relative z-20 flex items-center justify-between px-5 pb-2 header-pt flex-shrink-0" dir="ltr">
-        {/* Left: date + time */}
         <div className="flex flex-col">
           <p className="text-white/50 text-[11px] font-medium">{dateStr}</p>
           <div className="text-white text-2xl font-light nums leading-tight">{timeStr}</div>
         </div>
-        {/* Right: school + class + hamburger */}
         <div className="flex items-center gap-3">
           <div dir="rtl" className="text-right">
             <p className="text-white/55 text-xs font-medium tracking-widest uppercase">{data?.classProfile?.schoolName ?? "כפר סילבר"}</p>
@@ -523,204 +569,222 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
         </>
       )}
 
-      {/* ── Scrollable content ── */}
-      <main className="relative z-10 flex-1 overflow-y-auto">
+      {/* ── Page tabs indicator ── */}
+      <div className="relative z-10 flex justify-center gap-2 pb-1 flex-shrink-0">
+        {[{ label: "היום", emoji: "🏠" }, { label: "כיתה", emoji: "👥" }, { label: "ספירה", emoji: "📅" }].map((tab, i) => (
+          <button key={i} onClick={() => setPage(i)}
+            className={`flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-medium transition-all ${
+              page === i ? "bg-white/20 text-white" : "text-white/35 hover:text-white/60"
+            }`}>
+            <span>{tab.emoji}</span>
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </div>
 
-        {/* ── Above fold ── */}
-        <div className="flex flex-col px-4 pt-2 gap-2.5" style={{ minHeight: "calc(100svh - 70px)" }}>
+      {/* ── Swipeable pages container ── */}
+      <main
+        className="relative z-10 flex-1 overflow-hidden"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
+        {/* Sliding track — 3 pages side by side */}
+        <div
+          className="flex h-full"
+          style={{
+            width: `${NUM_PAGES * 100}%`,
+            transform: `translateX(${translateX})`,
+            transition: dragging ? "none" : "transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)",
+          }}
+        >
 
-          {/* Recording button — always visible at top */}
-          <Link href="/records?autostart=true"
-            className="glass rounded-2xl px-4 py-2.5 flex items-center gap-3 hover:bg-white/15 interactive btn-press transition-colors animate-fade-in">
-            <span className="text-lg">🎙️</span>
-            <div className="flex-1">
-              <div className="text-white/80 text-sm font-medium">הכתבה קולית</div>
-              <div className="text-white/35 text-[10px]">הקלטת נתונים לתלמידים</div>
-            </div>
-            <span className="text-white/30 text-xs">←</span>
-          </Link>
+          {/* ── PAGE 1: היום ── */}
+          <div className="overflow-y-auto" style={{ width: `${100 / NUM_PAGES}%` }}>
+            <div className="flex flex-col px-4 pt-2 pb-10 gap-2.5">
 
-          {/* Row: Tasks + Parent chat */}
-          <div className="flex gap-2.5 animate-fade-in stagger-1">
-
-            <Link href="/teacher/tasks"
-              className="flex-1 glass rounded-2xl p-3 btn-press interactive hover:bg-white/10 transition-colors min-w-0">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-white/55 text-[10px] font-semibold uppercase tracking-wide">משימות</span>
-                <span className="text-white font-semibold text-sm nums">{teacherTasks.length}</span>
-              </div>
-              {teacherTasks.length > 0 ? (
-                <div className="space-y-1">
-                  {teacherTasks.slice(0, 2).map(t => (
-                    <div key={t.id} className="flex items-start gap-1.5">
-                      <div className="w-1 h-1 rounded-full bg-amber-400 mt-1.5 flex-shrink-0" />
-                      <div className="text-white/70 text-[11px] leading-tight line-clamp-1">{t.description}</div>
-                    </div>
-                  ))}
+              <Link href="/records?autostart=true"
+                className="glass rounded-2xl px-4 py-2.5 flex items-center gap-3 hover:bg-white/15 interactive btn-press transition-colors animate-fade-in">
+                <span className="text-lg">🎙️</span>
+                <div className="flex-1">
+                  <div className="text-white/80 text-sm font-medium">הכתבה קולית</div>
+                  <div className="text-white/35 text-[10px]">הקלטת נתונים לתלמידים</div>
                 </div>
-              ) : (
-                <p className="text-white/30 text-[11px]">אין משימות</p>
-              )}
-            </Link>
-
-            <Link href="/dashboard"
-              className="flex-1 glass rounded-2xl p-3 btn-press interactive hover:bg-white/10 transition-colors min-w-0">
-              <div className="flex items-center justify-between mb-1.5">
-                <span className="text-white/55 text-[10px] font-semibold uppercase tracking-wide">שיח הורים</span>
-                <div className="flex gap-1.5 items-center">
-                  {openTasks > 0 && <span className="bg-amber-400/80 text-black text-[9px] font-bold rounded-full px-1.5">{openTasks}</span>}
-                  {unreadCount > 0 && <span className="bg-blue-400/80 text-black text-[9px] font-bold rounded-full px-1.5">{unreadCount}</span>}
-                </div>
-              </div>
-              {recentMsgs.length > 0 ? (
-                <div className="space-y-1">
-                  {recentMsgs.slice(0, 2).map(m => (
-                    <div key={m.id} className="flex items-start gap-1.5">
-                      <div className="w-1 h-1 rounded-full bg-blue-400 mt-1.5 flex-shrink-0" />
-                      <div className="min-w-0">
-                        <div className="text-white/70 text-[11px] leading-tight line-clamp-1">{m.content}</div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-white/30 text-[11px]">אין הודעות</p>
-              )}
-            </Link>
-          </div>
-
-          {/* Main row: Schedule (tall, left) + Events & buttons (right) */}
-          <div className="flex gap-2.5 items-start animate-fade-in stagger-2 flex-1">
-
-            {/* Left: Today's schedule — takes 55% width, shows all lessons */}
-            <Link href="/teacher/schedule"
-              className="glass rounded-2xl overflow-hidden hover:bg-white/10 interactive btn-press transition-colors"
-              style={{ width: "55%" }}>
-              <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
-                <span className="text-white/55 text-[10px] font-semibold uppercase tracking-wide">מערכת היום</span>
-                <span className="text-white/25 text-[10px]">←</span>
-              </div>
-              <div className="divide-y divide-white/5">
-                {todaySlots.length > 0 ? todaySlots.slice(0, 9).map((s, i) => {
-                  const [period] = s.period.split(",")
-                  const subject  = s.content.split(/\s{2,}/)[0]
-                  return (
-                    <div key={i} className="flex items-center gap-2 px-3 py-1.5">
-                      <span className="text-white/30 text-[10px] font-mono w-3 flex-shrink-0">{period}</span>
-                      <span className="text-white/70 text-[11px] truncate">{subject}</span>
-                    </div>
-                  )
-                }) : (
-                  <div className="px-3 py-3 text-white/25 text-[11px]">אין שיעורים היום</div>
-                )}
-              </div>
-            </Link>
-
-            {/* Right column: Events (3 items) + 2×2 feature buttons */}
-            <div className="flex flex-col gap-2 flex-1 min-w-0">
-
-              {/* Events */}
-              <Link href="/teacher/calendar"
-                className="glass rounded-2xl overflow-hidden hover:bg-white/10 interactive btn-press transition-colors">
-                <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
-                  <span className="text-white/55 text-[10px] font-semibold uppercase tracking-wide">ארועים</span>
-                  <span className="text-white/25 text-[10px]">←</span>
-                </div>
-                <div className="divide-y divide-white/5">
-                  {(data?.upcomingEvents.length ?? 0) > 0 ? data!.upcomingEvents.slice(0, 3).map(ev => (
-                    <div key={ev.id} className="flex items-center gap-2 px-3 py-1.5">
-                      <div className="text-white/35 text-[10px] font-mono flex-shrink-0">
-                        {new Date(ev.date).toLocaleDateString("he-IL", { day: "numeric", month: "numeric" })}
-                      </div>
-                      <div className="text-white/65 text-[11px] truncate">{ev.description}</div>
-                    </div>
-                  )) : (
-                    <div className="px-3 py-2 text-white/25 text-[11px]">אין אירועים</div>
-                  )}
-                </div>
+                <span className="text-white/30 text-xs">←</span>
               </Link>
 
-              {/* 2×2 feature buttons */}
-              <div className="grid grid-cols-2 gap-2">
-                {LINKS.map(l => (
-                  <Link key={l.href} href={l.href}
-                    className="glass rounded-2xl py-2.5 px-1 flex flex-col items-center gap-1 hover:bg-white/15 interactive btn-press transition-colors">
-                    <span className="text-lg">{l.emoji}</span>
-                    <span className="text-white/65 text-[9px] font-medium text-center leading-tight">{l.label}</span>
-                  </Link>
-                ))}
-              </div>
-
-            </div>
-          </div>
-
-          <div className="mb-2 flex justify-center opacity-30">
-            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
-          </div>
-        </div>
-
-        {/* ── Below fold ── */}
-        <div className="px-4 pb-10 space-y-4 max-w-lg mx-auto">
-
-          {/* Student list with notes */}
-          {classStudents.length > 0 && (
-            <div className="glass rounded-2xl overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-                <p className="text-white/60 text-sm font-medium">תלמידי הכיתה</p>
-                <span className="text-white/30 text-xs">{classStudents.length} תלמידים</span>
-              </div>
-              <div className="divide-y divide-white/5">
-                {classStudents.map(s => (
-                  <div key={s.id} className="flex items-center gap-3 px-4 py-2.5">
-                    <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-white/50 text-xs font-medium flex-shrink-0">
-                      {s.name.slice(0, 1)}
-                    </div>
-                    <span className="text-white/80 text-sm w-28 flex-shrink-0">{s.name}</span>
-                    <input
-                      value={studentNotes[s.id] ?? ""}
-                      onChange={e => saveNote(s.id, e.target.value)}
-                      placeholder="הערה..."
-                      className="flex-1 bg-transparent text-white/50 text-xs placeholder:text-white/20 focus:outline-none focus:text-white/80 min-w-0"
-                    />
+              <div className="flex gap-2.5">
+                <Link href="/teacher/tasks"
+                  className="flex-1 glass rounded-2xl p-3 btn-press interactive hover:bg-white/10 transition-colors min-w-0">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-white/55 text-[10px] font-semibold uppercase tracking-wide">משימות</span>
+                    <span className="text-white font-semibold text-sm nums">{teacherTasks.length}</span>
                   </div>
-                ))}
+                  {teacherTasks.length > 0 ? (
+                    <div className="space-y-1">
+                      {teacherTasks.slice(0, 2).map(t => (
+                        <div key={t.id} className="flex items-start gap-1.5">
+                          <div className="w-1 h-1 rounded-full bg-amber-400 mt-1.5 flex-shrink-0" />
+                          <div className="text-white/70 text-[11px] leading-tight line-clamp-1">{t.description}</div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-white/30 text-[11px]">אין משימות</p>
+                  )}
+                </Link>
+
+                <Link href="/dashboard"
+                  className="flex-1 glass rounded-2xl p-3 btn-press interactive hover:bg-white/10 transition-colors min-w-0">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-white/55 text-[10px] font-semibold uppercase tracking-wide">שיח הורים</span>
+                    <div className="flex gap-1.5 items-center">
+                      {openTasks > 0 && <span className="bg-amber-400/80 text-black text-[9px] font-bold rounded-full px-1.5">{openTasks}</span>}
+                      {unreadCount > 0 && <span className="bg-blue-400/80 text-black text-[9px] font-bold rounded-full px-1.5">{unreadCount}</span>}
+                    </div>
+                  </div>
+                  {recentMsgs.length > 0 ? (
+                    <div className="space-y-1">
+                      {recentMsgs.slice(0, 2).map(m => (
+                        <div key={m.id} className="flex items-start gap-1.5">
+                          <div className="w-1 h-1 rounded-full bg-blue-400 mt-1.5 flex-shrink-0" />
+                          <div className="min-w-0">
+                            <div className="text-white/70 text-[11px] leading-tight line-clamp-1">{m.content}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-white/30 text-[11px]">אין הודעות</p>
+                  )}
+                </Link>
               </div>
+
+              <div className="flex gap-2.5 items-start">
+                <Link href="/teacher/schedule"
+                  className="glass rounded-2xl overflow-hidden hover:bg-white/10 interactive btn-press transition-colors"
+                  style={{ width: "55%" }}>
+                  <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
+                    <span className="text-white/55 text-[10px] font-semibold uppercase tracking-wide">מערכת היום</span>
+                    <span className="text-white/25 text-[10px]">←</span>
+                  </div>
+                  <div className="divide-y divide-white/5">
+                    {todaySlots.length > 0 ? todaySlots.slice(0, 9).map((s, i) => {
+                      const [period] = s.period.split(",")
+                      const subject  = s.content.split(/\s{2,}/)[0]
+                      return (
+                        <div key={i} className="flex items-center gap-2 px-3 py-1.5">
+                          <span className="text-white/30 text-[10px] font-mono w-3 flex-shrink-0">{period}</span>
+                          <span className="text-white/70 text-[11px] truncate">{subject}</span>
+                        </div>
+                      )
+                    }) : (
+                      <div className="px-3 py-3 text-white/25 text-[11px]">אין שיעורים היום</div>
+                    )}
+                  </div>
+                </Link>
+
+                <div className="flex flex-col gap-2 flex-1 min-w-0">
+                  <Link href="/teacher/calendar"
+                    className="glass rounded-2xl overflow-hidden hover:bg-white/10 interactive btn-press transition-colors">
+                    <div className="flex items-center justify-between px-3 py-2 border-b border-white/10">
+                      <span className="text-white/55 text-[10px] font-semibold uppercase tracking-wide">ארועים</span>
+                      <span className="text-white/25 text-[10px]">←</span>
+                    </div>
+                    <div className="divide-y divide-white/5">
+                      {(data?.upcomingEvents.length ?? 0) > 0 ? data!.upcomingEvents.slice(0, 3).map(ev => (
+                        <div key={ev.id} className="flex items-center gap-2 px-3 py-1.5">
+                          <div className="text-white/35 text-[10px] font-mono flex-shrink-0">
+                            {new Date(ev.date).toLocaleDateString("he-IL", { day: "numeric", month: "numeric" })}
+                          </div>
+                          <div className="text-white/65 text-[11px] truncate">{ev.description}</div>
+                        </div>
+                      )) : (
+                        <div className="px-3 py-2 text-white/25 text-[11px]">אין אירועים</div>
+                      )}
+                    </div>
+                  </Link>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {LINKS.map(l => (
+                      <Link key={l.href} href={l.href}
+                        className="glass rounded-2xl py-2.5 px-1 flex flex-col items-center gap-1 hover:bg-white/15 interactive btn-press transition-colors">
+                        <span className="text-lg">{l.emoji}</span>
+                        <span className="text-white/65 text-[9px] font-medium text-center leading-tight">{l.label}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
             </div>
-          )}
+          </div>
 
-          {/* Countdowns */}
-          <div className="space-y-2">
-            <p className="text-white/30 text-[10px] font-semibold uppercase tracking-widest text-center">ספירה לאחור</p>
+          {/* ── PAGE 2: כיתה ── */}
+          <div className="overflow-y-auto" style={{ width: `${100 / NUM_PAGES}%` }}>
+            <div className="px-4 pt-2 pb-10 space-y-3">
+              {classStudents.length > 0 ? (
+                <div className="glass rounded-2xl overflow-hidden">
+                  <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                    <p className="text-white/60 text-sm font-medium">תלמידי הכיתה</p>
+                    <span className="text-white/30 text-xs">{classStudents.length} תלמידים</span>
+                  </div>
+                  <div className="divide-y divide-white/5">
+                    {classStudents.map(s => (
+                      <div key={s.id} className="flex items-center gap-3 px-4 py-2.5">
+                        <div className="w-7 h-7 rounded-full bg-white/10 flex items-center justify-center text-white/50 text-xs font-medium flex-shrink-0">
+                          {s.name.slice(0, 1)}
+                        </div>
+                        <span className="text-white/80 text-sm w-28 flex-shrink-0">{s.name}</span>
+                        <input
+                          value={studentNotes[s.id] ?? ""}
+                          onChange={e => saveNote(s.id, e.target.value)}
+                          placeholder="הערה..."
+                          className="flex-1 bg-transparent text-white/50 text-xs placeholder:text-white/20 focus:outline-none focus:text-white/80 min-w-0"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="glass rounded-2xl px-4 py-8 text-center text-white/30 text-sm">אין תלמידים</div>
+              )}
+            </div>
+          </div>
 
-            {nextVac && daysToVac > 0 && (
+          {/* ── PAGE 3: ספירה ── */}
+          <div className="overflow-y-auto" style={{ width: `${100 / NUM_PAGES}%` }}>
+            <div className="px-4 pt-2 pb-10 space-y-3">
+              <p className="text-white/30 text-[10px] font-semibold uppercase tracking-widest text-center pt-1">ספירה לאחור</p>
+
+              {nextVac && daysToVac > 0 && (
+                <div className="glass rounded-2xl px-4 py-4 flex items-center gap-4">
+                  <div className="text-3xl" style={{ animation: "wiggle 2s ease-in-out infinite" }}>☕</div>
+                  <div className="flex-1">
+                    <div className="text-white/50 text-xs mb-0.5">ימים עד</div>
+                    <div className="text-white text-sm font-medium">{nextVac.name}</div>
+                  </div>
+                  <div className="text-white text-4xl font-light nums">{daysToVac}</div>
+                </div>
+              )}
+
               <div className="glass rounded-2xl px-4 py-4 flex items-center gap-4">
-                <div className="text-3xl" style={{ animation: "wiggle 2s ease-in-out infinite" }}>☕</div>
+                <div className="text-3xl">🏖️</div>
                 <div className="flex-1">
                   <div className="text-white/50 text-xs mb-0.5">ימים עד</div>
-                  <div className="text-white text-sm font-medium">{nextVac.name}</div>
+                  <div className="text-white text-sm font-medium">החופש הגדול</div>
                 </div>
-                <div className="text-white text-4xl font-light nums">{daysToVac}</div>
+                <div className="text-white text-4xl font-light nums">{daysToSummer}</div>
               </div>
-            )}
 
-            <div className="glass rounded-2xl px-4 py-4 flex items-center gap-4">
-              <div className="text-3xl">🏖️</div>
-              <div className="flex-1">
-                <div className="text-white/50 text-xs mb-0.5">ימים עד</div>
-                <div className="text-white text-sm font-medium">החופש הגדול</div>
+              <div className="glass rounded-2xl px-4 py-4 flex items-center gap-4">
+                <div className="text-3xl">📝</div>
+                <div className="flex-1">
+                  <div className="text-white/50 text-xs mb-0.5">ימי לימוד</div>
+                  <div className="text-white text-sm font-medium">שנותרו השנה</div>
+                </div>
+                <div className="text-white text-4xl font-light nums">{remainingDays}</div>
               </div>
-              <div className="text-white text-4xl font-light nums">{daysToSummer}</div>
-            </div>
-
-            <div className="glass rounded-2xl px-4 py-4 flex items-center gap-4">
-              <div className="text-3xl">📝</div>
-              <div className="flex-1">
-                <div className="text-white/50 text-xs mb-0.5">ימי לימוד</div>
-                <div className="text-white text-sm font-medium">שנותרו השנה</div>
-              </div>
-              <div className="text-white text-4xl font-light nums">{remainingDays}</div>
             </div>
           </div>
 
