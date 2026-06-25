@@ -63,7 +63,10 @@ type ConvFilter = "הכל" | "ממתין" | "נענה" | "משימות"
 
 export default function TeacherDashboard() {
   const { data: session, status } = useSession()
-  const [conversations, setConversations] = useState<Conversation[]>([])
+  const [conversations, setConversations] = useState<Conversation[]>(() => {
+    if (typeof window === "undefined") return []
+    try { return JSON.parse(localStorage.getItem("teacher-convs-cache") ?? "[]") } catch { return [] }
+  })
   const [convsLoading, setConvsLoading] = useState(true)
   const [msgsLoading, setMsgsLoading] = useState(false)
   const [totalTasks, setTotalTasks] = useState(0)
@@ -103,6 +106,7 @@ export default function TeacherDashboard() {
     setConversations(convs)
     setTotalTasks(data.totalTasks ?? 0)
     setConvsLoading(false)
+    try { localStorage.setItem("teacher-convs-cache", JSON.stringify(convs)) } catch {}
     // Preload all conversations in background — one request for all students
     if (convs.length > 0) {
       const ids = convs.map(c => c.studentId).join(",")
