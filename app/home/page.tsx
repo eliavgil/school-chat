@@ -540,7 +540,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
     touchStart.current = null
   }
 
-  const translateX = `calc(${-page * 100}% + ${dragDelta}px)`
+  const translateX = `calc(${-page * 100}vw + ${dragDelta}px)`
 
   return (
     <div className="flex flex-col h-screen" dir="rtl">
@@ -628,14 +628,14 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
         <div
           className="flex h-full"
           style={{
-            width: `${NUM_PAGES * 100}%`,
+            width: `${NUM_PAGES * 100}vw`,
             transform: `translateX(${translateX})`,
             transition: dragging ? "none" : "transform 0.3s cubic-bezier(0.25,0.46,0.45,0.94)",
           }}
         >
 
           {/* ══ PAGE 1: בית ══ */}
-          <div className="overflow-y-auto" style={{ width: `${100 / NUM_PAGES}%` }}>
+          <div className="overflow-y-auto" style={{ width: "100vw" }}>
             <div className="flex flex-col px-4 pt-2 pb-10 gap-3">
 
               {/* Parent chat */}
@@ -724,7 +724,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
           </div>
 
           {/* ══ PAGE 2: מערכות ══ */}
-          <div className="overflow-y-auto" style={{ width: `${100 / NUM_PAGES}%` }}>
+          <div className="overflow-y-auto" style={{ width: "100vw" }}>
             <div className="px-4 pt-2 pb-10 space-y-3">
 
               {/* Big time display */}
@@ -838,7 +838,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
           </div>
 
           {/* ══ PAGE 3: תפריט ══ */}
-          <div className="overflow-y-auto" style={{ width: `${100 / NUM_PAGES}%` }}>
+          <div className="overflow-y-auto" style={{ width: "100vw" }}>
             <div className="px-4 pt-3 pb-10">
               <div className="grid grid-cols-2 gap-3">
                 {MENU_LINKS.map(l => (
@@ -861,7 +861,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
           </div>
 
           {/* ══ PAGE 4: ניהול כיתה ══ */}
-          <div className="overflow-y-auto" style={{ width: `${100 / NUM_PAGES}%` }}>
+          <div className="overflow-y-auto" style={{ width: "100vw" }}>
             <div className="px-4 pt-2 pb-10 space-y-3">
 
               {/* 2-col student grid */}
