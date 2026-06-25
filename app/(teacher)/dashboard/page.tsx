@@ -65,6 +65,8 @@ type ConvFilter = "הכל" | "ממתין" | "נענה" | "משימות"
 export default function TeacherDashboard() {
   const { data: session, status } = useSession()
   const [conversations, setConversations] = useState<Conversation[]>([])
+  const [convsLoading, setConvsLoading] = useState(true)
+  const [msgsLoading, setMsgsLoading] = useState(false)
   const [totalTasks, setTotalTasks] = useState(0)
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
   const [selectedStudentName, setSelectedStudentName] = useState("")
@@ -94,10 +96,12 @@ export default function TeacherDashboard() {
   }, [messages])
 
   async function fetchConversations() {
+    setConvsLoading(true)
     const res = await fetch("/api/teacher/conversations")
     const data = await res.json()
     setConversations(data.conversations ?? [])
     setTotalTasks(data.totalTasks ?? 0)
+    setConvsLoading(false)
   }
 
   async function selectConversation(studentId: string, studentName: string) {
@@ -107,6 +111,7 @@ export default function TeacherDashboard() {
     setReplyingTo(null)
     setReplyText("")
     setMessages([])
+    setMsgsLoading(true)
     // Mark unread as 0 instantly
     setConversations((prev) =>
       prev.map((c) => (c.studentId === studentId ? { ...c, unreadCount: 0 } : c))
@@ -114,6 +119,7 @@ export default function TeacherDashboard() {
     const res = await fetch(`/api/teacher/messages?studentId=${studentId}`)
     const data = await res.json()
     setMessages(data.messages ?? [])
+    setMsgsLoading(false)
   }
 
   async function sendReply() {
@@ -157,10 +163,9 @@ export default function TeacherDashboard() {
   }
 
   async function fetchGlobalTasks() {
-    const res = await fetch("/api/teacher/messages")
+    const res = await fetch("/api/teacher/messages?tasks=true")
     const data = await res.json()
-    const tasks = (data.messages ?? []).filter((m: any) => m.isTask)
-    setGlobalTasks(tasks)
+    setGlobalTasks(data.messages ?? [])
   }
 
   async function fetchWeeklySummary() {
@@ -284,6 +289,15 @@ export default function TeacherDashboard() {
                     ))}
                   </div>
                   <div className="flex-1 overflow-y-auto">
+                  {convsLoading && conversations.length === 0 && (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="px-4 py-3 border-b border-stone-100">
+                        <div className="h-3 bg-stone-100 rounded-full w-24 mb-2 skeleton" />
+                        <div className="h-3 bg-stone-100 rounded-full w-40 skeleton" />
+                        <div className="h-2.5 bg-stone-100 rounded-full w-32 mt-2 skeleton" />
+                      </div>
+                    ))
+                  )}
                   {filteredConversations.map((c) => (
                     <button
                       key={c.studentId}
@@ -359,6 +373,18 @@ export default function TeacherDashboard() {
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#faf9f6]">
+                    {msgsLoading && (
+                      <div className="space-y-3">
+                        {[1, 0, 1, 0, 1].map((right, i) => (
+                          <div key={i} className={`flex ${right ? "justify-end" : "justify-start"}`}>
+                            <div className={`rounded-2xl px-4 py-3 space-y-1.5 skeleton ${right ? "w-48" : "w-56"}`}>
+                              <div className="h-2.5 bg-stone-200 rounded-full w-full" />
+                              <div className="h-2.5 bg-stone-200 rounded-full w-3/4" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {messages.map((msg) => (
                       <div key={msg.id} className="space-y-1">
                         {/* Parent message */}

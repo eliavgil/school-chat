@@ -11,26 +11,29 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const studentId = searchParams.get("studentId")
 
+  const tasksOnly = searchParams.get("tasks") === "true"
+
   if (!studentId) {
-    // Fallback: return all messages (old behaviour)
     const messages = await prisma.message.findMany({
+      where: tasksOnly ? { isTask: true } : undefined,
       orderBy: { createdAt: "desc" },
-      include: { sender: { select: { name: true, email: true } }, student: { select: { name: true } } },
+      include: { sender: { select: { name: true, email: true } }, student: { select: { id: true, name: true } } },
     })
     return NextResponse.json({ messages })
   }
 
-  const messages = await prisma.message.findMany({
-    where: { studentId },
-    orderBy: { createdAt: "asc" },
-    include: { sender: { select: { name: true, email: true } } },
-  })
-
-  // Mark all unseen messages as seen
-  await prisma.message.updateMany({
-    where: { studentId, teacherSeenAt: null },
-    data: { teacherSeenAt: new Date() },
-  })
+  // Fetch messages and mark-as-seen in parallel
+  const [messages] = await Promise.all([
+    prisma.message.findMany({
+      where: { studentId },
+      orderBy: { createdAt: "asc" },
+      include: { sender: { select: { name: true, email: true } } },
+    }),
+    prisma.message.updateMany({
+      where: { studentId, teacherSeenAt: null },
+      data: { teacherSeenAt: new Date() },
+    }),
+  ])
 
   return NextResponse.json({ messages })
 }
