@@ -103,13 +103,13 @@ export default function TeacherDashboard() {
     setConversations(convs)
     setTotalTasks(data.totalTasks ?? 0)
     setConvsLoading(false)
-    // Preload first conversation in background so tapping it feels instant
-    const first = convs[0]
-    if (first) {
-      fetch(`/api/teacher/messages?studentId=${first.studentId}`)
+    // Preload all conversations in background — one request for all students
+    if (convs.length > 0) {
+      const ids = convs.map(c => c.studentId).join(",")
+      fetch(`/api/teacher/messages/bulk?studentIds=${ids}`)
         .then(r => r.json())
         .then(d => {
-          if (d.messages) setMessagesCache(prev => ({ ...prev, [first.studentId]: d.messages }))
+          if (d.byStudent) setMessagesCache(prev => ({ ...prev, ...d.byStudent }))
         })
         .catch(() => {})
     }
