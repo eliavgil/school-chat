@@ -620,6 +620,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
       {/* ── Swipeable pages ── */}
       <main
+        dir="ltr"
         className="relative z-10 flex-1 overflow-hidden"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
@@ -636,7 +637,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
         >
 
           {/* ══ PAGE 1: בית ══ */}
-          <div className="overflow-y-auto" style={{ width: "100vw" }}>
+          <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
             <div className="flex flex-col px-4 pt-2 pb-10 gap-3">
 
               {/* Parent chat */}
@@ -725,7 +726,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
           </div>
 
           {/* ══ PAGE 2: מערכות ══ */}
-          <div className="overflow-y-auto" style={{ width: "100vw" }}>
+          <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
             <div className="px-4 pt-2 pb-10 space-y-3">
 
               {/* Big time display */}
@@ -839,7 +840,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
           </div>
 
           {/* ══ PAGE 3: תפריט ══ */}
-          <div className="overflow-y-auto" style={{ width: "100vw" }}>
+          <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
             <div className="px-4 pt-3 pb-10">
               <div className="grid grid-cols-2 gap-3">
                 {MENU_LINKS.map(l => (
@@ -862,7 +863,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
           </div>
 
           {/* ══ PAGE 4: ניהול כיתה ══ */}
-          <div className="overflow-y-auto" style={{ width: "100vw" }}>
+          <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
             <div className="px-4 pt-2 pb-10 space-y-3">
 
               {/* 2-col student grid */}
