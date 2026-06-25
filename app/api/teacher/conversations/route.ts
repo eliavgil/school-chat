@@ -7,22 +7,32 @@ export async function GET() {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const students = await prisma.student.findMany({
-    include: {
-      messages: {
-        orderBy: { createdAt: "desc" },
-        include: { sender: { select: { name: true, email: true } } },
+  const [students, unreadCounts] = await Promise.all([
+    prisma.student.findMany({
+      where: { messages: { some: {} } },
+      include: {
+        messages: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          include: { sender: { select: { name: true, email: true } } },
+        },
+        parents: {
+          include: { user: { select: { name: true, parentType: true } } },
+        },
       },
-      parents: {
-        include: { user: { select: { name: true, parentType: true } } },
-      },
-    },
-  })
+    }),
+    prisma.message.groupBy({
+      by: ["studentId"],
+      where: { teacherSeenAt: null },
+      _count: { id: true },
+    }),
+  ])
+
+  const unreadMap = Object.fromEntries(unreadCounts.map((r) => [r.studentId, r._count.id]))
 
   const conversations = students
-    .filter((s) => s.messages.length > 0)
     .map((s) => {
-      const unreadCount = s.messages.filter((m) => !m.teacherSeenAt).length
+      const unreadCount = unreadMap[s.id] ?? 0
       const lastMessage = s.messages[0]
 
       const parentLabels = s.parents.map(({ user }) => {
