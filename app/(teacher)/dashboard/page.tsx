@@ -64,6 +64,8 @@ type ConvFilter = "הכל" | "ממתין" | "נענה" | "משימות"
 export default function TeacherDashboard() {
   const { data: session, status } = useSession()
   const [conversations, setConversations] = useState<Conversation[]>([])
+  const [convsLoading, setConvsLoading] = useState(true)
+  const [msgsLoading, setMsgsLoading] = useState(false)
   const [totalTasks, setTotalTasks] = useState(0)
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
   const [selectedStudentName, setSelectedStudentName] = useState("")
@@ -93,10 +95,12 @@ export default function TeacherDashboard() {
   }, [messages])
 
   async function fetchConversations() {
+    setConvsLoading(true)
     const res = await fetch("/api/teacher/conversations")
     const data = await res.json()
     setConversations(data.conversations ?? [])
     setTotalTasks(data.totalTasks ?? 0)
+    setConvsLoading(false)
   }
 
   async function selectConversation(studentId: string, studentName: string) {
@@ -106,6 +110,7 @@ export default function TeacherDashboard() {
     setReplyingTo(null)
     setReplyText("")
     setMessages([])
+    setMsgsLoading(true)
     // Mark unread as 0 instantly
     setConversations((prev) =>
       prev.map((c) => (c.studentId === studentId ? { ...c, unreadCount: 0 } : c))
@@ -113,6 +118,7 @@ export default function TeacherDashboard() {
     const res = await fetch(`/api/teacher/messages?studentId=${studentId}`)
     const data = await res.json()
     setMessages(data.messages ?? [])
+    setMsgsLoading(false)
   }
 
   async function sendReply() {
@@ -156,10 +162,9 @@ export default function TeacherDashboard() {
   }
 
   async function fetchGlobalTasks() {
-    const res = await fetch("/api/teacher/messages")
+    const res = await fetch("/api/teacher/messages?tasks=true")
     const data = await res.json()
-    const tasks = (data.messages ?? []).filter((m: any) => m.isTask)
-    setGlobalTasks(tasks)
+    setGlobalTasks(data.messages ?? [])
   }
 
   async function fetchWeeklySummary() {
@@ -279,6 +284,19 @@ export default function TeacherDashboard() {
                     ))}
                   </div>
                   <div className="flex-1 overflow-y-auto px-3 space-y-1.5">
+                    {convsLoading && conversations.length === 0 && (
+                      Array.from({ length: 5 }).map((_, i) => (
+                        <div key={i} className="glass rounded-2xl px-3 py-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-full bg-white/10" />
+                            <div className="flex-1 space-y-2">
+                              <div className="h-2.5 bg-white/15 rounded-full w-28" />
+                              <div className="h-2 bg-white/10 rounded-full w-40" />
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
                     {filteredConversations.map((c) => {
                       const initials = c.studentName.slice(0, 2)
                       const isSelected = selectedStudent === c.studentId
@@ -308,7 +326,7 @@ export default function TeacherDashboard() {
                         </button>
                       )
                     })}
-                    {filteredConversations.length === 0 && (
+                    {!convsLoading && filteredConversations.length === 0 && (
                       <div className="text-center text-white/30 text-sm py-10">אין שיחות</div>
                     )}
                   </div>
@@ -366,6 +384,18 @@ export default function TeacherDashboard() {
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                    {msgsLoading && (
+                      <div className="space-y-3">
+                        {[1, 0, 1, 0, 1].map((right, i) => (
+                          <div key={i} className={`flex ${right ? "justify-end" : "justify-start"}`}>
+                            <div className={`glass rounded-2xl px-4 py-3 space-y-1.5 ${right ? "w-48" : "w-56"}`}>
+                              <div className="h-2.5 bg-white/15 rounded-full w-full" />
+                              <div className="h-2.5 bg-white/10 rounded-full w-3/4" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {messages.map((msg) => (
                       <div key={msg.id} className="space-y-1">
                         {/* Parent message */}
