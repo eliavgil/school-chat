@@ -626,6 +626,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
         onTouchEnd={onTouchEnd}
       >
         <div
+          dir="ltr"
           className="flex h-full"
           style={{
             width: `${NUM_PAGES * 100}vw`,
