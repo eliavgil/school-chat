@@ -1025,7 +1025,7 @@ export default function HomePage() {
     if (typeof window === "undefined") return null
     return loadCachedHomeData()
   })
-  const role = (session?.user as any)?.role ?? "PARENT"
+  const role = (session?.user as any)?.role as string | undefined
 
   const fetchData = useCallback(async () => {
     const res = await fetch("/api/home")
@@ -1038,8 +1038,8 @@ export default function HomePage() {
 
   useEffect(() => { if (status !== "loading") fetchData() }, [fetchData, status])
 
-  // Show skeleton only if no cached data AND still loading auth
-  if (status === "loading" && !data) return <LoadingSkeleton />
+  // Block render until role is known — avoids flash of wrong role
+  if (status === "loading" || !role) return <LoadingSkeleton />
 
   if (role === "STUDENT") return <StudentHome session={session} data={data} />
   if (role === "TEACHER" || role === "ADMIN") return <TeacherHome session={session} data={data} />
