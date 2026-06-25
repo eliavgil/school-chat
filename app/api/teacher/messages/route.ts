@@ -22,11 +22,12 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ messages })
   }
 
-  // Fetch messages and mark-as-seen in parallel
+  // Fetch last 100 messages and mark-as-seen in parallel
   const [messages] = await Promise.all([
     prisma.message.findMany({
       where: { studentId },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
+      take: 100,
       include: { sender: { select: { name: true, email: true } } },
     }),
     prisma.message.updateMany({
@@ -35,7 +36,7 @@ export async function GET(req: NextRequest) {
     }),
   ])
 
-  return NextResponse.json({ messages })
+  return NextResponse.json({ messages: messages.reverse() })
 }
 
 // PATCH /api/teacher/messages — approve bot answer or mark as task

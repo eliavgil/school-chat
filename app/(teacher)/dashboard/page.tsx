@@ -75,6 +75,7 @@ export default function TeacherDashboard() {
   const [sending, setSending] = useState(false)
   const [innerTab, setInnerTab] = useState<"chat" | "tasks">("chat")
   const [globalTasks, setGlobalTasks] = useState<(Message & { studentName?: string })[]>([])
+  const [messagesCache, setMessagesCache] = useState<Record<string, Message[]>>({})
   const [mainTab, setMainTab] = useState("שיחות")
   const [convFilter, setConvFilter] = useState<ConvFilter>("הכל")
   const [showSummary, setShowSummary] = useState(false)
@@ -98,26 +99,44 @@ export default function TeacherDashboard() {
     setConvsLoading(true)
     const res = await fetch("/api/teacher/conversations")
     const data = await res.json()
-    setConversations(data.conversations ?? [])
+    const convs: Conversation[] = data.conversations ?? []
+    setConversations(convs)
     setTotalTasks(data.totalTasks ?? 0)
     setConvsLoading(false)
+    // Preload first conversation in background so tapping it feels instant
+    const first = convs[0]
+    if (first) {
+      fetch(`/api/teacher/messages?studentId=${first.studentId}`)
+        .then(r => r.json())
+        .then(d => {
+          if (d.messages) setMessagesCache(prev => ({ ...prev, [first.studentId]: d.messages }))
+        })
+        .catch(() => {})
+    }
   }
 
   async function selectConversation(studentId: string, studentName: string) {
-    // Optimistic: switch immediately, clear old messages
     setSelectedStudent(studentId)
     setSelectedStudentName(studentName)
     setReplyingTo(null)
     setReplyText("")
-    setMessages([])
-    setMsgsLoading(true)
-    // Mark unread as 0 instantly
+    // Show cached messages instantly — no loading skeleton if already visited
+    const cached = messagesCache[studentId]
+    if (cached) {
+      setMessages(cached)
+      setMsgsLoading(false)
+    } else {
+      setMessages([])
+      setMsgsLoading(true)
+    }
     setConversations((prev) =>
       prev.map((c) => (c.studentId === studentId ? { ...c, unreadCount: 0 } : c))
     )
     const res = await fetch(`/api/teacher/messages?studentId=${studentId}`)
     const data = await res.json()
-    setMessages(data.messages ?? [])
+    const fresh = data.messages ?? []
+    setMessages(fresh)
+    setMessagesCache((prev) => ({ ...prev, [studentId]: fresh }))
     setMsgsLoading(false)
   }
 
