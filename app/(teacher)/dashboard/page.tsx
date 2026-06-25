@@ -67,7 +67,10 @@ export default function TeacherDashboard() {
     if (typeof window === "undefined") return []
     try { return JSON.parse(localStorage.getItem("teacher-convs-cache") ?? "[]") } catch { return [] }
   })
-  const [convsLoading, setConvsLoading] = useState(true)
+  const [convsLoading, setConvsLoading] = useState(() => {
+    if (typeof window === "undefined") return true
+    try { return !localStorage.getItem("teacher-convs-cache") } catch { return true }
+  })
   const [msgsLoading, setMsgsLoading] = useState(false)
   const [totalTasks, setTotalTasks] = useState(0)
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null)
