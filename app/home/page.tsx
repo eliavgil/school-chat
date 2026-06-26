@@ -9,7 +9,8 @@ import VoiceButton from "@/app/home/VoiceButton"
 import {
   getRemainingSchoolDays, getDaysUntilSummer, getNextVacation, getDaysUntilNextVacation,
 } from "@/lib/school-calendar"
-import { getPersonalEvents, getPersonalDisplayName, getPersonalBackground, getCustomBgUrl } from "@/app/components/personalStore"
+import { getPersonalEvents, getPersonalDisplayName, getPersonalBackground, getCustomBgUrl, getQuoteCategories } from "@/app/components/personalStore"
+import { getDailyQuote, getCategoryEmoji, type Quote } from "@/lib/quotes"
 import { ROLE_DEFAULTS } from "@/app/components/NatureBackground"
 
 // ── Types ─────────────────────────────────────────────────
@@ -432,6 +433,10 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
     if (typeof window === "undefined") return ""
     return getPersonalDisplayName()
   })
+  const [dailyQuote] = useState<Quote | null>(() => {
+    if (typeof window === "undefined") return null
+    return getDailyQuote(getQuoteCategories())
+  })
   const firstName = personalName || (session?.user?.name?.split(" ")[0] ?? "")
   const isAdmin   = (session?.user as any)?.role === "ADMIN"
 
@@ -705,13 +710,20 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                 )}
               </Link>
 
-              {/* Quote placeholder */}
-              <div className="glass rounded-2xl px-4 py-3 border border-dashed border-white/10 flex items-center gap-3">
-                <span className="text-xl">💡</span>
-                <div className="flex-1">
-                  <div className="text-white/40 text-xs italic">ציטוט יומי — בקרוב</div>
+              {/* Daily quote */}
+              {dailyQuote && (
+                <div className="glass rounded-2xl px-4 py-3">
+                  <div className="flex items-start gap-3">
+                    <span className="text-base flex-shrink-0 mt-0.5">{getCategoryEmoji(dailyQuote.category)}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white/75 text-sm leading-relaxed">{dailyQuote.text}</p>
+                      {dailyQuote.author && (
+                        <p className="text-white/30 text-[11px] mt-1">— {dailyQuote.author}</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Voice assistant */}
               <VoiceButton />

@@ -606,6 +606,60 @@ function UsersTab() {
 }
 
 // ────────────────────────────────────────────────────────────
+// Quote category picker
+// ────────────────────────────────────────────────────────────
+import { CATEGORIES, getCategoryEmoji, type QuoteCategory } from "@/lib/quotes"
+import { getQuoteCategories, setQuoteCategories } from "@/app/components/personalStore"
+
+function QuoteCategoryEditor() {
+  const [selected, setSelected] = useState<QuoteCategory[]>([])
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => { setSelected(getQuoteCategories()) }, [])
+
+  function toggle(cat: QuoteCategory) {
+    setSelected(prev =>
+      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
+    )
+    setSaved(false)
+  }
+
+  function save() {
+    const cats = selected.length > 0 ? selected : (CATEGORIES as QuoteCategory[])
+    setQuoteCategories(cats)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  return (
+    <div className="space-y-3">
+      <p className="text-xs text-white/40">בחר קטגוריות — הציטוט היומי יגיע מהקטגוריות שבחרת</p>
+      <div className="grid grid-cols-2 gap-2">
+        {(CATEGORIES as QuoteCategory[]).map(cat => {
+          const on = selected.includes(cat)
+          return (
+            <button key={cat} onClick={() => toggle(cat)}
+              className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm transition-all btn-press interactive ${
+                on
+                  ? "bg-white/15 border-white/30 text-white"
+                  : "bg-white/5 border-white/10 text-white/45 hover:bg-white/10"
+              }`}>
+              <span>{getCategoryEmoji(cat)}</span>
+              <span>{cat}</span>
+              {on && <span className="mr-auto text-white/50 text-xs">✓</span>}
+            </button>
+          )
+        })}
+      </div>
+      <button onClick={save}
+        className="w-full bg-white/15 hover:bg-white/25 text-white text-sm py-2.5 rounded-xl transition-colors btn-press interactive">
+        {saved ? "✓ נשמר — יעודכן בפעם הבאה" : "שמור"}
+      </button>
+    </div>
+  )
+}
+
+// ────────────────────────────────────────────────────────────
 // Main page
 // ────────────────────────────────────────────────────────────
 type TeacherTab = "settings" | "import" | "users"
@@ -696,6 +750,10 @@ export default function ManagePage() {
             <p className="text-xs text-white/30">שינויים אלו גלויים רק לך</p>
             <NameEditor />
             <div className="pt-2"><DesignEditor /></div>
+            <div className="pt-2">
+              <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">ציטוט יומי — קטגוריות</p>
+              <QuoteCategoryEditor />
+            </div>
           </>
         )}
         {isTeacher && teacherTab === "import"    && <ImportTab />}
@@ -705,6 +763,10 @@ export default function ManagePage() {
           <>
             <p className="text-xs text-white/30">שינויים אלו גלויים רק לך</p>
             <NameEditor />
+            <div className="pt-2">
+              <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">ציטוט יומי — קטגוריות</p>
+              <QuoteCategoryEditor />
+            </div>
           </>
         )}
         {!isTeacher && userTab === "events"     && <PersonalEventsEditor />}

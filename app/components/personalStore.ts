@@ -79,3 +79,17 @@ export function getCustomBgUrl(): string {
 export function setCustomBgUrl(dataUrl: string) {
   localStorage.setItem("personal-bg-custom-url", dataUrl)
 }
+
+// ── Quote categories ───────────────────────────────────────
+import type { QuoteCategory } from "@/lib/quotes"
+const DEFAULT_QUOTE_CATS: QuoteCategory[] = ["חינוך", "הומור", "הידעת"]
+export function getQuoteCategories(): QuoteCategory[] {
+  try {
+    const stored = localStorage.getItem("quote-categories")
+    if (!stored) return DEFAULT_QUOTE_CATS
+    return JSON.parse(stored)
+  } catch { return DEFAULT_QUOTE_CATS }
+}
+export function setQuoteCategories(cats: QuoteCategory[]) {
+  localStorage.setItem("quote-categories", JSON.stringify(cats))
+}
