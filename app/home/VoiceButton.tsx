@@ -8,10 +8,16 @@ type State = "idle" | "listening" | "processing" | "done" | "error"
 export default function VoiceButton() {
   const router = useRouter()
   const [state, setState] = useState<State>("idle")
+  const stateRef = useRef<State>("idle")
   const [reply, setReply] = useState("")
   const [transcript, setTranscript] = useState("")
   const replyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const recognitionRef = useRef<any>(null)
+
+  function setS(s: State) {
+    stateRef.current = s
+    setState(s)
+  }
 
   useEffect(() => {
     return () => {
@@ -22,17 +28,17 @@ export default function VoiceButton() {
 
   function showReply(text: string, durationMs = 5000) {
     setReply(text)
-    setState("done")
+    setS("done")
     if (replyTimer.current) clearTimeout(replyTimer.current)
     replyTimer.current = setTimeout(() => {
-      setState("idle")
+      setS("idle")
       setReply("")
       setTranscript("")
     }, durationMs)
   }
 
   async function sendCommand(text: string) {
-    setState("processing")
+    setS("processing")
     setTranscript(text)
     try {
       const res = await fetch("/api/voice", {
@@ -46,9 +52,9 @@ export default function VoiceButton() {
         setTimeout(() => router.push(data.action.route), 900)
       }
     } catch {
-      setState("error")
+      setS("error")
       setReply("שגיאה בחיבור")
-      replyTimer.current = setTimeout(() => { setState("idle"); setReply(""); setTranscript("") }, 3000)
+      replyTimer.current = setTimeout(() => { setS("idle"); setReply(""); setTranscript("") }, 3000)
     }
   }
 
@@ -65,20 +71,24 @@ export default function VoiceButton() {
     rec.maxAlternatives = 1
     recognitionRef.current = rec
 
-    rec.onstart  = () => setState("listening")
+    rec.onstart  = () => setS("listening")
     rec.onresult = (e: any) => sendCommand(e.results[0][0].transcript)
-    rec.onerror  = () => {
-      setState("error")
+    rec.onerror  = (e: any) => {
+      if (e.error === "no-speech") {
+        setS("idle")
+        return
+      }
+      setS("error")
       setReply("לא הצלחתי לשמוע")
-      replyTimer.current = setTimeout(() => { setState("idle"); setReply("") }, 2500)
+      replyTimer.current = setTimeout(() => { setS("idle"); setReply("") }, 2500)
     }
-    rec.onend = () => { if (state === "listening") setState("idle") }
+    rec.onend = () => { if (stateRef.current === "listening") setS("idle") }
     rec.start()
   }
 
   function handlePress() {
-    if (state === "listening") { recognitionRef.current?.stop(); return }
-    if (state === "idle" || state === "error") startListening()
+    if (stateRef.current === "listening") { recognitionRef.current?.stop(); return }
+    if (stateRef.current === "idle" || stateRef.current === "error") startListening()
   }
 
   const isListening   = state === "listening"

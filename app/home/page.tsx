@@ -704,9 +704,6 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                 </div>
               </Link>
 
-              {/* Voice assistant */}
-              <VoiceButton />
-
               {/* Quote placeholder */}
               <div className="glass rounded-2xl px-4 py-3 border border-dashed border-white/10 flex items-center gap-3">
                 <span className="text-xl">💡</span>
@@ -714,6 +711,9 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                   <div className="text-white/40 text-xs italic">ציטוט יומי — בקרוב</div>
                 </div>
               </div>
+
+              {/* Voice assistant */}
+              <VoiceButton />
 
             </div>
           </div>
