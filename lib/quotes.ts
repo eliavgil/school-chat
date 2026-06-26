@@ -177,6 +177,17 @@ export function getCategoryEmoji(cat: QuoteCategory) {
   return CATEGORY_EMOJI[cat]
 }
 
+function seededShuffle<T>(arr: T[], seed: number): T[] {
+  const out = [...arr]
+  let s = seed
+  for (let i = out.length - 1; i > 0; i--) {
+    s = (s * 1664525 + 1013904223) & 0xffffffff
+    const j = Math.abs(s) % (i + 1)
+    ;[out[i], out[j]] = [out[j], out[i]]
+  }
+  return out
+}
+
 export function getDailyQuote(enabledCategories: QuoteCategory[], offset = 0): Quote | null {
   const pool = enabledCategories.length > 0
     ? ALL_QUOTES.filter(q => enabledCategories.includes(q.category))
@@ -185,5 +196,6 @@ export function getDailyQuote(enabledCategories: QuoteCategory[], offset = 0): Q
   if (pool.length === 0) return null
 
   const dayIndex = Math.floor(Date.now() / (1000 * 60 * 60 * 24))
-  return pool[(dayIndex + offset) % pool.length]
+  const shuffled = seededShuffle(pool, dayIndex)
+  return shuffled[offset % shuffled.length]
 }
