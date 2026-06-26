@@ -47,6 +47,10 @@ export default function VoiceButton() {
         body: JSON.stringify({ text }),
       })
       const data = await res.json()
+      if (!res.ok) {
+        showReply(data.reply ?? data.error ?? `שגיאה ${res.status}`, 5000)
+        return
+      }
       showReply(data.reply ?? "בוצע")
       if (data.action?.type === "navigate" && data.action.route) {
         setTimeout(() => router.push(data.action.route), 900)

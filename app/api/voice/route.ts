@@ -83,18 +83,25 @@ export async function POST(req: NextRequest) {
 
   const today = new Date().toISOString().slice(0, 10)
 
-  const response = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 400,
-    system: `אתה עוזר קולי חכם לאפליקציית ניהול כיתה למחנכים.
+  let response: Anthropic.Message
+  try {
+    response = await client.messages.create({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 400,
+      system: `אתה עוזר קולי חכם לאפליקציית ניהול כיתה למחנכים.
 תאריך היום: ${today}
 
 כשמורה נותן פקודה קולית — הבן אותה, בצע את הפעולה המתאימה, והחזר תשובה קצרה וידידותית בעברית (משפט אחד-שניים) שמסבירה מה הבנת ומה ביצעת.
 
 אם אינך בטוח מה המורה רצה — שאל שאלה קצרה.`,
-    messages: [{ role: "user", content: text }],
-    tools: TOOLS,
-  })
+      messages: [{ role: "user", content: text }],
+      tools: TOOLS,
+    })
+  } catch (err: any) {
+    const msg = err?.message ?? "שגיאה בשירות הבינה המלאכותית"
+    console.error("[voice] Anthropic error:", err?.status, msg)
+    return NextResponse.json({ reply: msg, action: null }, { status: 200 })
+  }
 
   const toolUse = response.content.find(b => b.type === "tool_use") as Anthropic.ToolUseBlock | undefined
   const textBlock = response.content.find(b => b.type === "text") as Anthropic.TextBlock | undefined
