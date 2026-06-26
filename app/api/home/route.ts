@@ -55,12 +55,13 @@ export async function GET() {
     prisma.calendarEvent.findMany({
       where: {
         date: { gte: new Date(), lte: now90 },
-        OR: [
-          { forAll: true },
-          ...(isTeacher ? [{ forTeacher: true }] : []),
-          ...(isStudent ? [{ forStudents: true }] : []),
-          ...(isParent  ? [{ forParents: true }] : []),
-        ],
+        ...(isTeacher ? {} : {
+          OR: [
+            { forAll: true },
+            ...(isStudent ? [{ forStudents: true }] : []),
+            ...(isParent  ? [{ forParents: true }] : []),
+          ],
+        }),
       },
       orderBy: { date: "asc" },
       take: 5,
