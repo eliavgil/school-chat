@@ -10,26 +10,7 @@ function isTeacher(session: any) {
   return session?.user?.role === "TEACHER" || session?.user?.role === "ADMIN"
 }
 
-async function getClassId(userId: string) {
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { classId: true } })
-  return user?.classId ?? "class-y"
-}
-
 const TOOLS: Anthropic.Tool[] = [
-  {
-    name: "create_task",
-    description: "יצירת משימה חדשה ברשימת המשימות של המחנך",
-    input_schema: {
-      type: "object" as const,
-      properties: {
-        description: { type: "string", description: "תיאור המשימה" },
-        responsible: { type: "string", description: "שם האחראי (אופציונלי)" },
-        deadline: { type: "string", description: "תאריך יעד בפורמט YYYY-MM-DD (אופציונלי)" },
-        note: { type: "string", description: "הערה נוספת (אופציונלי)" },
-      },
-      required: ["description"],
-    },
-  },
   {
     name: "create_event",
     description: "יצירת ארוע חדש בלוח השנה",
@@ -38,12 +19,6 @@ const TOOLS: Anthropic.Tool[] = [
       properties: {
         description: { type: "string", description: "תיאור הארוע" },
         date: { type: "string", description: "תאריך בפורמט YYYY-MM-DD" },
-        type: {
-          type: "string",
-          enum: ["event", "meeting", "exam", "trip", "holiday"],
-          description: "סוג הארוע",
-        },
-        note: { type: "string", description: "הערה (אופציונלי)" },
       },
       required: ["description", "date"],
     },
@@ -56,7 +31,7 @@ const TOOLS: Anthropic.Tool[] = [
       properties: {
         page: {
           type: "string",
-          enum: ["home", "schedule", "calendar", "tasks", "dashboard"],
+          enum: ["home", "schedule", "calendar", "dashboard"],
           description: "הדף לפתוח",
         },
       },
@@ -69,8 +44,33 @@ const PAGE_ROUTES: Record<string, string> = {
   home: "/home",
   schedule: "/teacher/schedule",
   calendar: "/teacher/calendar",
-  tasks: "/home",
   dashboard: "/dashboard",
+}
+
+const PAGE_NAMES: Record<string, string> = {
+  home: "דף הבית",
+  schedule: "מערכת שעות",
+  calendar: "לוח שנה",
+  dashboard: "הודעות",
+}
+
+async function getFollowUpReply(
+  text: string,
+  firstResponse: Anthropic.Message,
+  toolUseId: string,
+  fallback: string
+): Promise<string> {
+  const follow = await client.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 150,
+    messages: [
+      { role: "user", content: text },
+      { role: "assistant", content: firstResponse.content },
+      { role: "user", content: [{ type: "tool_result", tool_use_id: toolUseId, content: "success" }] },
+    ],
+    tools: TOOLS,
+  })
+  return (follow.content.find(b => b.type === "text") as Anthropic.TextBlock | undefined)?.text ?? fallback
 }
 
 export async function POST(req: NextRequest) {
@@ -96,7 +96,6 @@ export async function POST(req: NextRequest) {
     tools: TOOLS,
   })
 
-  // Find tool use block
   const toolUse = response.content.find(b => b.type === "tool_use") as Anthropic.ToolUseBlock | undefined
   const textBlock = response.content.find(b => b.type === "text") as Anthropic.TextBlock | undefined
 
@@ -106,75 +105,24 @@ export async function POST(req: NextRequest) {
   if (toolUse) {
     const input = toolUse.input as any
 
-    if (toolUse.name === "create_task") {
-      const classId = await getClassId(session.user.id)
-      const task = await prisma.teacherTask.create({
-        data: {
-          classId,
-          description: input.description,
-          responsible: input.responsible ?? null,
-          deadline: input.deadline ? new Date(input.deadline) : null,
-          note: input.note ?? null,
-        },
-      })
-      actionResult = { type: "create_task", created: task }
-
-      // Get Claude's reply with context of what was done
-      if (!reply) {
-        const follow = await client.messages.create({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 150,
-          messages: [
-            { role: "user", content: text },
-            { role: "assistant", content: response.content },
-            {
-              role: "user",
-              content: [{ type: "tool_result", tool_use_id: toolUse.id, content: "success" }],
-            },
-          ],
-          tools: TOOLS,
-        })
-        reply = (follow.content.find(b => b.type === "text") as Anthropic.TextBlock | undefined)?.text ?? `משימה נוצרה: ${input.description}`
-      }
-    }
-
     if (toolUse.name === "create_event") {
       const event = await prisma.calendarEvent.create({
         data: {
           date: new Date(input.date),
           description: input.description,
-          type: input.type ?? null,
-          note: input.note ?? null,
-          forTeacher: true,
-          forStudents: false,
-          forParents: false,
-          forAll: false,
         },
       })
       actionResult = { type: "create_event", created: event }
 
       if (!reply) {
-        const follow = await client.messages.create({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 150,
-          messages: [
-            { role: "user", content: text },
-            { role: "assistant", content: response.content },
-            {
-              role: "user",
-              content: [{ type: "tool_result", tool_use_id: toolUse.id, content: "success" }],
-            },
-          ],
-          tools: TOOLS,
-        })
-        reply = (follow.content.find(b => b.type === "text") as Anthropic.TextBlock | undefined)?.text ?? `ארוע נוצר: ${input.description}`
+        reply = await getFollowUpReply(text, response, toolUse.id, `ארוע נוצר: ${input.description}`)
       }
     }
 
     if (toolUse.name === "navigate") {
       const route = PAGE_ROUTES[input.page] ?? "/home"
       actionResult = { type: "navigate", route }
-      if (!reply) reply = `עובר ל${input.page === "schedule" ? "מערכת שעות" : input.page === "calendar" ? "לוח שנה" : "דף הבית"}...`
+      if (!reply) reply = `עובר ל${PAGE_NAMES[input.page] ?? "דף הבית"}...`
     }
   }
 
