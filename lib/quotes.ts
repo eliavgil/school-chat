@@ -177,7 +177,7 @@ export function getCategoryEmoji(cat: QuoteCategory) {
   return CATEGORY_EMOJI[cat]
 }
 
-export function getDailyQuote(enabledCategories: QuoteCategory[]): Quote | null {
+export function getDailyQuote(enabledCategories: QuoteCategory[], offset = 0): Quote | null {
   const pool = enabledCategories.length > 0
     ? ALL_QUOTES.filter(q => enabledCategories.includes(q.category))
     : ALL_QUOTES
@@ -185,5 +185,5 @@ export function getDailyQuote(enabledCategories: QuoteCategory[]): Quote | null 
   if (pool.length === 0) return null
 
   const dayIndex = Math.floor(Date.now() / (1000 * 60 * 60 * 24))
-  return pool[dayIndex % pool.length]
+  return pool[(dayIndex + offset) % pool.length]
 }

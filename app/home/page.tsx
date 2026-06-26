@@ -433,10 +433,9 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
     if (typeof window === "undefined") return ""
     return getPersonalDisplayName()
   })
-  const [dailyQuote] = useState<Quote | null>(() => {
-    if (typeof window === "undefined") return null
-    return getDailyQuote(getQuoteCategories())
-  })
+  const [quoteOffset, setQuoteOffset] = useState(0)
+  const quoteCategories = typeof window !== "undefined" ? getQuoteCategories() : []
+  const dailyQuote = getDailyQuote(quoteCategories, quoteOffset)
   const firstName = personalName || (session?.user?.name?.split(" ")[0] ?? "")
   const isAdmin   = (session?.user as any)?.role === "ADMIN"
 
@@ -712,7 +711,10 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
               {/* Daily quote */}
               {dailyQuote && (
-                <div className="glass rounded-2xl px-4 py-3">
+                <button
+                  onClick={() => setQuoteOffset(o => o + 1)}
+                  className="glass rounded-2xl px-4 py-3 w-full text-right active:scale-[0.98] transition-transform"
+                >
                   <div className="flex items-start gap-3">
                     <span className="text-base flex-shrink-0 mt-0.5">{getCategoryEmoji(dailyQuote.category)}</span>
                     <div className="flex-1 min-w-0">
@@ -721,8 +723,11 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                         <p className="text-white/30 text-[11px] mt-1">— {dailyQuote.author}</p>
                       )}
                     </div>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="text-white/20 flex-shrink-0 mt-1">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6"/>
+                    </svg>
                   </div>
-                </div>
+                </button>
               )}
 
               {/* Voice assistant */}
