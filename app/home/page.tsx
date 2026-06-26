@@ -496,12 +496,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
   }
 
   const NUM_PAGES = 4
-  const TABS = [
-    { label: "בית",    emoji: "🏠" },
-    { label: "מערכות", emoji: "📅" },
-    { label: "תפריט",  emoji: "☰"  },
-    { label: "כיתה",   emoji: "👥" },
-  ]
+  const NUM_LABELS = ["בית", "יומן", "תפריט", "כיתה"] // kept for accessibility/future use
   const MENU_LINKS = [
     { label: "מענים אישיים",     href: "/teacher/accommodations", emoji: "🧩", soon: false },
     { label: "מעקב רגשי-חברתי",  href: "/teacher/emotional",      emoji: "💙", soon: false },
@@ -553,21 +548,17 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
       <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/10 to-black/70" />
 
       {/* ── Header ── */}
-      <header className="relative z-20 flex items-center justify-between px-5 pb-2 header-pt flex-shrink-0" dir="ltr">
-        <div className="flex flex-col">
-          <p className="text-white/50 text-[11px] font-medium">{dateStr}</p>
-          <div className="text-white text-2xl font-light nums leading-tight">{timeStr}</div>
-        </div>
-        <div className="flex items-center gap-3">
-          <div dir="rtl" className="text-right">
-            <p className="text-white/55 text-xs font-medium tracking-widest uppercase">{data?.classProfile?.schoolName ?? "כפר סילבר"}</p>
-            <p className="text-white/85 text-sm font-medium mt-0.5">{firstName} · {data?.classProfile?.displayName ?? ""}</p>
+      <header className="relative z-20 flex items-center justify-between px-4 pb-1.5 header-pt flex-shrink-0" dir="ltr">
+        <p className="text-white/45 text-[11px] font-medium">{dateStr}</p>
+        <div className="flex items-center gap-2.5">
+          <div dir="rtl" className="text-right leading-tight">
+            <p className="text-white/80 text-[12px] font-medium">{firstName} · {data?.classProfile?.displayName ?? ""}</p>
           </div>
           <button onClick={() => setMenuOpen(true)}
-            className="w-9 h-9 flex flex-col items-center justify-center gap-[5px] glass rounded-xl btn-press interactive">
-            <span className="w-4 h-px bg-white/80 rounded-full block" />
-            <span className="w-4 h-px bg-white/80 rounded-full block" />
-            <span className="w-4 h-px bg-white/80 rounded-full block" />
+            className="w-7 h-7 flex items-center justify-center glass rounded-lg btn-press interactive">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="text-white/80">
+              <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
           </button>
         </div>
       </header>
@@ -611,16 +602,27 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
       )}
 
       {/* ── Page tabs ── */}
-      <div className="relative z-10 flex justify-center gap-1 pb-1 flex-shrink-0 px-2">
-        {TABS.map((tab, i) => (
+      <div className="relative z-10 flex items-center justify-center gap-1 pb-1.5 flex-shrink-0 px-4">
+        {([
+          { i: 0, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12L12 3l9 9M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"/></svg> },
+          { i: 1, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
+          { i: 2, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg> },
+          { i: 3, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path strokeLinecap="round" strokeLinejoin="round" d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg> },
+        ] as const).map(({ i, icon }) => (
           <button key={i} onClick={() => setPage(i)}
-            className={`flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium transition-all ${
-              page === i ? "bg-white/20 text-white" : "text-white/35 hover:text-white/60"
+            className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all btn-press ${
+              page === i ? "bg-white/20 text-white" : "text-white/30 hover:text-white/60"
             }`}>
-            <span>{tab.emoji}</span>
-            <span>{tab.label}</span>
+            {icon}
           </button>
         ))}
+        <Link href="/manage"
+          className="w-9 h-9 flex items-center justify-center rounded-xl text-white/30 hover:text-white/60 hover:bg-white/10 transition-all interactive">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+            <circle cx="12" cy="12" r="3"/>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
+          </svg>
+        </Link>
       </div>
 
       {/* ── Swipeable pages ── */}
