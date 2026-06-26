@@ -20,7 +20,7 @@ export default function VoiceButton() {
     }
   }, [])
 
-  function showReply(text: string, durationMs = 4000) {
+  function showReply(text: string, durationMs = 5000) {
     setReply(text)
     setState("done")
     if (replyTimer.current) clearTimeout(replyTimer.current)
@@ -43,7 +43,7 @@ export default function VoiceButton() {
       const data = await res.json()
       showReply(data.reply ?? "בוצע")
       if (data.action?.type === "navigate" && data.action.route) {
-        setTimeout(() => router.push(data.action.route), 800)
+        setTimeout(() => router.push(data.action.route), 900)
       }
     } catch {
       setState("error")
@@ -59,56 +59,43 @@ export default function VoiceButton() {
       showReply("הדפדפן אינו תומך בזיהוי קול", 3000)
       return
     }
-
     const rec = new SpeechRecognition()
     rec.lang = "he-IL"
     rec.interimResults = false
     rec.maxAlternatives = 1
     recognitionRef.current = rec
 
-    rec.onstart = () => setState("listening")
-    rec.onresult = (e: any) => {
-      const text = e.results[0][0].transcript
-      sendCommand(text)
-    }
-    rec.onerror = () => {
+    rec.onstart  = () => setState("listening")
+    rec.onresult = (e: any) => sendCommand(e.results[0][0].transcript)
+    rec.onerror  = () => {
       setState("error")
       setReply("לא הצלחתי לשמוע")
       replyTimer.current = setTimeout(() => { setState("idle"); setReply("") }, 2500)
     }
-    rec.onend = () => {
-      if (state === "listening") setState("idle")
-    }
-
+    rec.onend = () => { if (state === "listening") setState("idle") }
     rec.start()
   }
 
   function handlePress() {
-    if (state === "listening") {
-      recognitionRef.current?.stop()
-      return
-    }
-    if (state === "idle" || state === "error") {
-      startListening()
-    }
+    if (state === "listening") { recognitionRef.current?.stop(); return }
+    if (state === "idle" || state === "error") startListening()
   }
 
-  const isActive = state === "listening" || state === "processing"
+  const isListening   = state === "listening"
+  const isProcessing  = state === "processing"
 
   return (
-    <div className="fixed bottom-20 left-4 z-50 flex flex-col items-start gap-2" dir="rtl">
+    <div className="flex flex-col items-center gap-3 pt-2 pb-1">
 
-      {/* Reply bubble */}
-      {(reply || transcript) && (
-        <div className="max-w-[220px] animate-in fade-in slide-in-from-bottom-2 duration-200">
-          {transcript && state === "processing" && (
-            <div className="bg-white/10 rounded-2xl px-3 py-2 mb-1.5 text-white/50 text-xs text-right">
-              "{transcript}"
-            </div>
+      {/* Reply / transcript bubble */}
+      {(reply || (transcript && isProcessing)) && (
+        <div className="max-w-xs w-full animate-in fade-in slide-in-from-bottom-2 duration-300 text-center">
+          {transcript && isProcessing && (
+            <p className="text-white/40 text-xs mb-1">"{transcript}"</p>
           )}
           {reply && (
-            <div className={`rounded-2xl px-3 py-2 text-sm text-right shadow-lg ${
-              state === "error" ? "bg-red-500/30 text-red-200" : "bg-white/20 text-white"
+            <div className={`inline-block rounded-2xl px-4 py-2 text-sm shadow-lg ${
+              state === "error" ? "bg-red-500/25 text-red-200" : "bg-white/15 text-white"
             }`}>
               {reply}
             </div>
@@ -116,41 +103,49 @@ export default function VoiceButton() {
         </div>
       )}
 
-      {/* Mic button */}
-      <button
-        onPointerDown={handlePress}
-        disabled={state === "processing"}
-        className={`w-12 h-12 rounded-full flex items-center justify-center shadow-lg transition-all duration-200 select-none touch-none ${
-          state === "listening"
-            ? "bg-red-500 scale-110 shadow-red-500/40 shadow-xl"
-            : state === "processing"
-            ? "bg-white/20 cursor-wait"
-            : state === "done"
-            ? "bg-white/25"
-            : "bg-white/15 hover:bg-white/25 active:scale-95"
-        }`}
-        aria-label="פקודה קולית"
-      >
-        {state === "processing" ? (
-          <svg className="animate-spin w-5 h-5 text-white/70" fill="none" viewBox="0 0 24 24">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-          </svg>
-        ) : (
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-            className={isActive ? "text-white" : "text-white/70"}>
-            <path strokeLinecap="round" strokeLinejoin="round"
-              d="M12 1a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V4a3 3 0 0 1 3-3z"/>
-            <path strokeLinecap="round" strokeLinejoin="round"
-              d="M19 10a7 7 0 0 1-14 0M12 19v4M8 23h8"/>
-          </svg>
+      {/* Large round mic button */}
+      <div className="relative flex items-center justify-center">
+        {/* Outer glow ring when listening */}
+        {isListening && (
+          <span className="absolute w-24 h-24 rounded-full bg-red-400/20 animate-ping" />
         )}
+        <button
+          onPointerDown={handlePress}
+          disabled={isProcessing}
+          className={`relative w-16 h-16 rounded-full flex items-center justify-center shadow-xl transition-all duration-300 select-none touch-none border ${
+            isListening
+              ? "bg-red-500 border-red-400/60 scale-110 shadow-red-500/40"
+              : isProcessing
+              ? "bg-white/10 border-white/15 cursor-wait"
+              : state === "done"
+              ? "bg-white/20 border-white/30"
+              : "bg-white/10 border-white/20 hover:bg-white/20 hover:border-white/35 active:scale-95"
+          }`}
+          aria-label="פקודה קולית"
+        >
+          {isProcessing ? (
+            <svg className="animate-spin w-6 h-6 text-white/60" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
+            </svg>
+          ) : (
+            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}
+              className={isListening ? "text-white" : "text-white/65"}>
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M12 1a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V4a3 3 0 0 1 3-3z"/>
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M19 10a7 7 0 0 1-14 0M12 19v4M8 23h8"/>
+            </svg>
+          )}
+        </button>
+      </div>
 
-        {/* Pulse ring when listening */}
-        {state === "listening" && (
-          <span className="absolute inset-0 rounded-full bg-red-500 animate-ping opacity-30" />
-        )}
-      </button>
+      {/* Label */}
+      <p className={`text-xs transition-colors duration-200 ${
+        isListening ? "text-red-300" : "text-white/30"
+      }`}>
+        {isListening ? "מאזין..." : isProcessing ? "מעבד..." : state === "done" ? "" : "לחץ לפקודה קולית"}
+      </p>
     </div>
   )
 }

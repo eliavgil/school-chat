@@ -437,13 +437,16 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
             ))}
           </div>
         )}
+
+        {/* Voice assistant */}
+        <div className="mt-4 animate-fade-in stagger-4">
+          <VoiceButton />
+        </div>
       </main>
 
       <div className="relative z-10">
         <BottomNav tabs={navTabs} activeColor="text-white" activeBg="bg-white/20" glassMode />
       </div>
-
-      <VoiceButton />
     </div>
   )
 }
