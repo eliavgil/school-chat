@@ -5,6 +5,7 @@ import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
 import BottomNav from "@/app/components/BottomNav"
 import { NatureBackground } from "@/app/components/NatureBackground"
+import VoiceButton from "@/app/home/VoiceButton"
 import {
   getRemainingSchoolDays, getDaysUntilSummer, getNextVacation, getDaysUntilNextVacation,
 } from "@/lib/school-calendar"
@@ -703,16 +704,8 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                 </div>
               </Link>
 
-              {/* Recording */}
-              <Link href="/records?autostart=true"
-                className="glass rounded-2xl px-4 py-3 flex items-center gap-3 hover:bg-white/15 interactive btn-press transition-colors">
-                <span className="text-xl">🎙️</span>
-                <div className="flex-1">
-                  <div className="text-white/85 text-sm font-medium">הכתבה קולית</div>
-                  <div className="text-white/35 text-[10px]">הקלטת נתונים לתלמידים</div>
-                </div>
-                <span className="text-white/30 text-xs">←</span>
-              </Link>
+              {/* Voice assistant */}
+              <VoiceButton />
 
               {/* Quote placeholder */}
               <div className="glass rounded-2xl px-4 py-3 border border-dashed border-white/10 flex items-center gap-3">
