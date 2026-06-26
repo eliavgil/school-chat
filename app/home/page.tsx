@@ -722,28 +722,6 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
           <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
             <div className="px-4 pt-2 pb-10 space-y-3">
 
-              {/* Big time display */}
-              <div className="glass rounded-2xl px-5 py-4 flex items-center justify-between">
-                <div>
-                  <div className="text-white text-4xl font-light nums leading-none">{timeStr}</div>
-                  <div className="text-white/45 text-sm mt-1">{dateStr}</div>
-                </div>
-                {lessonStatus.type === "in-class" && (
-                  <div className="text-right">
-                    <div className="text-white/60 text-xs">בשיעור</div>
-                    <div className="text-white text-sm font-medium">{(lessonStatus as any).slot?.subject}</div>
-                    <div className="text-white/40 text-xs">{fmtMins((lessonStatus as any).minsLeft)} נותרו</div>
-                  </div>
-                )}
-                {lessonStatus.type === "break" && (
-                  <div className="text-right">
-                    <div className="text-white/60 text-xs">הפסקה</div>
-                    <div className="text-white text-sm font-medium">{(lessonStatus as any).next?.subject}</div>
-                    <div className="text-white/40 text-xs">בעוד {fmtMins((lessonStatus as any).minsUntil)}</div>
-                  </div>
-                )}
-              </div>
-
               {/* Teacher schedule */}
               <div className="glass rounded-2xl overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
@@ -776,7 +754,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                   <Link href="/teacher/calendar" className="text-white/30 text-[11px] interactive">כולם ←</Link>
                 </div>
                 <div className="divide-y divide-white/5">
-                  {upcomingEvents.length > 0 ? upcomingEvents.slice(0, 10).map(ev => (
+                  {upcomingEvents.length > 0 ? upcomingEvents.map(ev => (
                     <div key={ev.id} className="flex items-center gap-3 px-4 py-2">
                       <div className="text-white/35 text-[10px] font-mono w-10 flex-shrink-0">
                         {new Date(ev.date).toLocaleDateString("he-IL", { day: "numeric", month: "numeric" })}

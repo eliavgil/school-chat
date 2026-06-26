@@ -63,7 +63,7 @@ export async function GET() {
         ],
       },
       orderBy: { date: "asc" },
-      take: 10,
+      take: 5,
     }),
     isTeacher
       ? prisma.message.count({ where: { isTask: true } })
