@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
+import Link from "next/link"
 
 type State = "idle" | "listening" | "processing"
 
@@ -123,7 +124,15 @@ export default function VoiceButton() {
 
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
-              <span className="text-white/50 text-xs">עוזר קולי</span>
+              <div className="flex items-center gap-2">
+                <span className="text-white/50 text-xs">עוזר קולי</span>
+                <Link
+                  href="/voice-help"
+                  className="text-[10px] text-white/30 hover:text-white/55 bg-white/8 hover:bg-white/12 rounded-full px-2 py-0.5 transition-colors"
+                >
+                  הוראות הפעלה
+                </Link>
+              </div>
               <button onClick={handleClose} className="text-white/30 hover:text-white/60 transition-colors p-1">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
                   <path d="M18 6 6 18M6 6l12 12"/>
