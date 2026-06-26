@@ -459,7 +459,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
       if (!b.deadline) return -1
       return new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
     })
-    .slice(0, 7)
+    .slice(0, 6)
 
   // Schedule: parsed slots with current/next detection
   const parsedSlots: ParsedSlot[] = todaySlots
@@ -681,27 +681,28 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                     <span className="text-white/40 text-xs">{sortedTasks.length} פתוחות</span>
                   )}
                 </div>
-                <div className="divide-y divide-white/5">
-                  {sortedTasks.length > 0 ? sortedTasks.map(t => {
-                    const dl = fmtDeadline(t.deadline)
-                    return (
-                      <div key={t.id} className="flex items-center gap-2.5 px-4 py-2.5">
-                        <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dl?.urgent ? "bg-red-400" : "bg-amber-400"}`} />
-                        <div className="flex-1 min-w-0">
-                          <div className="text-white/80 text-[12px] leading-tight line-clamp-1">{t.description}</div>
-                          {t.responsible && <div className="text-white/35 text-[10px]">{t.responsible}</div>}
+                {sortedTasks.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-px p-2">
+                    {sortedTasks.map(t => {
+                      const dl = fmtDeadline(t.deadline)
+                      return (
+                        <div key={t.id} className="flex items-start gap-2 bg-white/5 rounded-xl px-3 py-2.5">
+                          <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1 ${dl?.urgent ? "bg-red-400" : "bg-amber-400"}`} />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-white/80 text-[11px] leading-snug line-clamp-2">{t.description}</div>
+                            {dl && (
+                              <div className={`text-[10px] mt-0.5 font-medium ${dl.urgent ? "text-red-400" : "text-white/35"}`}>
+                                {dl.text}
+                              </div>
+                            )}
+                          </div>
                         </div>
-                        {dl && (
-                          <span className={`text-[10px] font-medium flex-shrink-0 ${dl.urgent ? "text-red-400" : "text-white/40"}`}>
-                            {dl.text}
-                          </span>
-                        )}
-                      </div>
-                    )
-                  }) : (
-                    <div className="px-4 py-3 text-white/25 text-xs">אין משימות פתוחות</div>
-                  )}
-                </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="px-4 py-3 text-white/25 text-xs">אין משימות פתוחות</div>
+                )}
               </Link>
 
               {/* Quote placeholder */}

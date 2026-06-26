@@ -149,7 +149,7 @@ export async function GET() {
       ? prisma.teacherTask.findMany({
           where: { classId, done: false },
           orderBy: { createdAt: "desc" },
-          take: 3,
+          take: 6,
         })
       : Promise.resolve([]),
     // Teacher: class students for below-fold list
