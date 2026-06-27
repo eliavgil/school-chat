@@ -41,7 +41,7 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
 export async function sendPushToClassMembers(
   classId: string,
   payload: PushPayload,
-  roles: ("PARENT" | "STUDENT" | "TEACHER")[] = ["PARENT", "STUDENT"]
+  roles: ("PARENT" | "STUDENT" | "TEACHER" | "ADMIN")[] = ["PARENT", "STUDENT"]
 ) {
   const users = await prisma.user.findMany({
     where: { classId, role: { in: roles } },

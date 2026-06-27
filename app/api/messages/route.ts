@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
       title: `הודעה חדשה מ${senderName} 💬`,
       body: `${link.student.name}: ${content.slice(0, 80)}`,
       url: "/dashboard",
-    }, ["TEACHER"]).catch(() => {})
+    }, ["TEACHER", "ADMIN"]).catch(() => {})
     return NextResponse.json({ message, botAnswered: false })
   }
 
@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
           title: `הודעה ממתינה לתגובתך 💬`,
           body: `${senderName} שאל על ${link.student.name}: ${content.slice(0, 70)}`,
           url: "/dashboard",
-        }, ["TEACHER"]).catch(() => {})
+        }, ["TEACHER", "ADMIN"]).catch(() => {})
       } else {
         message = await prisma.message.create({
           data: { content, senderId: session.user.id, studentId, status: "BOT_ANSWERED", botResponse: fullText, botAnsweredAt: new Date(), dataAsOf },
@@ -188,7 +188,7 @@ export async function POST(req: NextRequest) {
           title: `הודעה חדשה מ${senderName} 💬`,
           body: `${link.student.name}: ${content.slice(0, 80)}`,
           url: "/dashboard",
-        }, ["TEACHER"]).catch(() => {})
+        }, ["TEACHER", "ADMIN"]).catch(() => {})
       }
       controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, message, botAnswered: !isUncertain })}\n\n`))
       controller.close()
