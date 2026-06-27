@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import ThemePicker from "@/app/components/ThemePicker"
+import PushManager from "@/app/components/PushManager"
 import { BackgroundPicker } from "@/app/components/BackgroundPicker"
 import {
   getPersonalEvents, addPersonalEvent, updatePersonalEvent, deletePersonalEvent,
@@ -660,6 +661,49 @@ function QuoteCategoryEditor() {
 }
 
 // ────────────────────────────────────────────────────────────
+// Notify class (teacher only)
+// ────────────────────────────────────────────────────────────
+function NotifyClassButton() {
+  const [msg, setMsg] = useState("")
+  const [sending, setSending] = useState(false)
+  const [sent, setSent] = useState(false)
+
+  async function send() {
+    if (!msg.trim()) return
+    setSending(true)
+    await fetch("/api/push/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ body: msg.trim() }),
+    })
+    setSent(true)
+    setMsg("")
+    setSending(false)
+    setTimeout(() => setSent(false), 3000)
+  }
+
+  return (
+    <div className="space-y-2">
+      <textarea
+        value={msg}
+        onChange={e => setMsg(e.target.value)}
+        placeholder="הודעה לכל הכיתה..."
+        rows={2}
+        dir="rtl"
+        className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm text-white placeholder-white/30 outline-none focus:border-white/30 resize-none"
+      />
+      <button
+        onClick={send}
+        disabled={!msg.trim() || sending}
+        className="w-full bg-white/15 hover:bg-white/25 disabled:opacity-40 text-white text-sm py-2 rounded-xl transition-colors"
+      >
+        {sent ? "✓ נשלח!" : sending ? "שולח..." : "שלח הודעה לכיתה"}
+      </button>
+    </div>
+  )
+}
+
+// ────────────────────────────────────────────────────────────
 // Main page
 // ────────────────────────────────────────────────────────────
 type TeacherTab = "settings" | "import" | "users"
@@ -754,6 +798,14 @@ export default function ManagePage() {
               <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">ציטוט יומי — קטגוריות</p>
               <QuoteCategoryEditor />
             </div>
+            <div className="pt-2 border-t border-white/10 mt-2">
+              <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">הודעות Push</p>
+              <PushManager />
+              <div className="mt-3">
+                <p className="text-xs text-white/40 mb-2">שלח הודעה לכל הכיתה</p>
+                <NotifyClassButton />
+              </div>
+            </div>
           </>
         )}
         {isTeacher && teacherTab === "import"    && <ImportTab />}
@@ -766,6 +818,10 @@ export default function ManagePage() {
             <div className="pt-2">
               <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">ציטוט יומי — קטגוריות</p>
               <QuoteCategoryEditor />
+            </div>
+            <div className="pt-2 border-t border-white/10 mt-2">
+              <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">הודעות Push</p>
+              <PushManager />
             </div>
           </>
         )}

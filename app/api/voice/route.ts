@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db/prisma"
 import Anthropic from "@anthropic-ai/sdk"
+import { sendPushToClassMembers } from "@/lib/push"
 
 const client = new Anthropic()
 
@@ -125,9 +126,19 @@ export async function POST(req: NextRequest) {
 
     if (toolUse.name === "create_event") {
       const event = await prisma.calendarEvent.create({
-        data: { date: new Date(input.date), description: input.description },
+        data: {
+          date: new Date(input.date),
+          description: input.description,
+          forAll: true,
+        },
       })
       actionResult = { type: "create_event", created: event }
+      // Notify class members in background
+      sendPushToClassMembers(classId, {
+        title: "אירוע חדש בלוח 📅",
+        body: `${input.description} — ${input.date}`,
+        url: "/home",
+      }).catch(() => {})
     }
 
     if (toolUse.name === "create_task") {

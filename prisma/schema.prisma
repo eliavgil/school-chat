@@ -43,26 +43,40 @@ model VerificationToken {
 }
 
 model User {
-  id                  String          @id @default(cuid())
+  id                  String             @id @default(cuid())
   name                String?
-  email               String?         @unique
+  email               String?            @unique
   phone               String?
   image               String?
   emailVerified       DateTime?
-  role                Role            @default(PARENT)
-  accessStatus        AccessStatus    @default(PENDING)
+  role                Role               @default(PARENT)
+  accessStatus        AccessStatus       @default(PENDING)
   requestedChildName  String?
-  parentType          String?         // "אבא" or "אמא"
-  createdAt           DateTime        @default(now())
+  parentType          String?            // "אבא" or "אמא"
+  createdAt           DateTime           @default(now())
   classId             String?
-  studentId           String?         @unique  // for STUDENT role — links to Student record
+  studentId           String?            @unique  // for STUDENT role — links to Student record
   accounts            Account[]
   sentMessages        Message[]
   parentStudents      ParentStudent[]
   sessions            Session[]
   teacherRecords      TeacherRecord[]
-  class               Class?          @relation(fields: [classId], references: [id])
-  studentRecord       Student?        @relation(fields: [studentId], references: [id])
+  pushSubscriptions   PushSubscription[]
+  class               Class?             @relation(fields: [classId], references: [id])
+  studentRecord       Student?           @relation(fields: [studentId], references: [id])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  endpoint  String   @db.Text
+  p256dh    String   @db.Text
+  auth      String   @db.Text
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, endpoint])
+  @@index([userId])
 }
 
 enum AccessStatus {
