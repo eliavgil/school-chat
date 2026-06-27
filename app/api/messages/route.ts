@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db/prisma"
 import { checkCategory } from "@/lib/bot/filter"
 import { buildPrompt } from "@/lib/bot/prompt"
 import Anthropic from "@anthropic-ai/sdk"
+import { sendPushToClassMembers } from "@/lib/push"
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
@@ -92,6 +93,13 @@ export async function POST(req: NextRequest) {
     const message = await prisma.message.create({
       data: { content, senderId: session.user.id, studentId, status: "FORWARDED", skipReason: categoryCheck.reason },
     })
+    // Notify teacher — this message needs a manual reply
+    const senderName = (session.user as any).name ?? "הורה"
+    sendPushToClassMembers(link.student.classId, {
+      title: `הודעה חדשה מ${senderName} 💬`,
+      body: `${link.student.name}: ${content.slice(0, 80)}`,
+      url: "/dashboard",
+    }, ["TEACHER"]).catch(() => {})
     return NextResponse.json({ message, botAnswered: false })
   }
 
@@ -158,6 +166,13 @@ export async function POST(req: NextRequest) {
         message = await prisma.message.create({
           data: { content, senderId: session.user.id, studentId, status: "FORWARDED", skipReason: "הבוט זיהה אי-ודאות בנתונים", botResponse: fullText },
         })
+        // Notify teacher — bot wasn't sure, needs manual reply
+        const senderName = (session.user as any).name ?? "הורה"
+        sendPushToClassMembers(link.student.classId, {
+          title: `הודעה ממתינה לתגובתך 💬`,
+          body: `${senderName} שאל על ${link.student.name}: ${content.slice(0, 70)}`,
+          url: "/dashboard",
+        }, ["TEACHER"]).catch(() => {})
       } else {
         message = await prisma.message.create({
           data: { content, senderId: session.user.id, studentId, status: "BOT_ANSWERED", botResponse: fullText, botAnsweredAt: new Date(), dataAsOf },
