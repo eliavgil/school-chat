@@ -12,6 +12,36 @@ function urlBase64ToUint8Array(base64: string) {
   return arr
 }
 
+function TestPushButton() {
+  const [state, setState] = useState<"idle" | "sending" | "ok" | "err">("idle")
+  const [errMsg, setErrMsg] = useState("")
+
+  async function test() {
+    setState("sending")
+    try {
+      const res = await fetch("/api/push/test", { method: "POST" })
+      const data = await res.json()
+      if (data.success) setState("ok")
+      else { setErrMsg(data.error ?? "שגיאה"); setState("err") }
+    } catch (e: any) {
+      setErrMsg(e?.message ?? "שגיאה"); setState("err")
+    }
+    setTimeout(() => setState("idle"), 4000)
+  }
+
+  return (
+    <div>
+      <button
+        onClick={test}
+        disabled={state === "sending"}
+        className="text-xs text-white/40 hover:text-white/60 underline underline-offset-2 disabled:opacity-40 transition-colors"
+      >
+        {state === "sending" ? "שולח..." : state === "ok" ? "✓ נשלח — בדוק בטלפון" : state === "err" ? `שגיאה: ${errMsg}` : "שלח הודעת בדיקה"}
+      </button>
+    </div>
+  )
+}
+
 export default function PushManager() {
   const [status, setStatus] = useState<"idle" | "subscribed" | "denied" | "unsupported">("idle")
   const [sub, setSub] = useState<PushSubscription | null>(null)
@@ -74,21 +104,24 @@ export default function PushManager() {
   }
 
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-sm text-white/70">
-        {status === "subscribed" ? "הודעות פעילות" : "הודעות Push"}
-      </span>
-      <button
-        onClick={status === "subscribed" ? unsubscribe : subscribe}
-        disabled={loading}
-        className={`text-xs px-3 py-1.5 rounded-full transition-all disabled:opacity-40 ${
-          status === "subscribed"
-            ? "bg-white/10 text-white/50 hover:bg-white/15"
-            : "bg-white/20 text-white hover:bg-white/30"
-        }`}
-      >
-        {loading ? "..." : status === "subscribed" ? "בטל" : "הפעל"}
-      </button>
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-white/70">
+          {status === "subscribed" ? "הודעות פעילות" : "הודעות Push"}
+        </span>
+        <button
+          onClick={status === "subscribed" ? unsubscribe : subscribe}
+          disabled={loading}
+          className={`text-xs px-3 py-1.5 rounded-full transition-all disabled:opacity-40 ${
+            status === "subscribed"
+              ? "bg-white/10 text-white/50 hover:bg-white/15"
+              : "bg-white/20 text-white hover:bg-white/30"
+          }`}
+        >
+          {loading ? "..." : status === "subscribed" ? "בטל" : "הפעל"}
+        </button>
+      </div>
+      {status === "subscribed" && <TestPushButton />}
     </div>
   )
 }
