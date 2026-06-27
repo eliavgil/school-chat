@@ -169,7 +169,7 @@ export async function POST(req: NextRequest) {
         })
         // Notify teacher — bot wasn't sure, needs manual reply
         const senderName = (session.user as any).name ?? "הורה"
-        sendPushToClassMembers(link.student.classId, {
+        await sendPushToClassMembers(link.student.classId, {
           title: `הודעה ממתינה לתגובתך 💬`,
           body: `${senderName} שאל על ${link.student.name}: ${content.slice(0, 70)}`,
           url: "/dashboard",
@@ -185,7 +185,7 @@ export async function POST(req: NextRequest) {
           }).catch(() => {})
         }
         const senderName = (session.user as any).name ?? "הורה"
-        sendPushToClassMembers(link.student.classId, {
+        await sendPushToClassMembers(link.student.classId, {
           title: `הודעה חדשה מ${senderName} 💬`,
           body: `${link.student.name}: ${content.slice(0, 80)}`,
           url: "/dashboard",
