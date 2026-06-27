@@ -183,6 +183,12 @@ export async function POST(req: NextRequest) {
             data: { userId: session.user.id, question: content, answer: fullText, fromBot: "parent" },
           }).catch(() => {})
         }
+        const senderName = (session.user as any).name ?? "הורה"
+        sendPushToClassMembers(link.student.classId, {
+          title: `הודעה חדשה מ${senderName} 💬`,
+          body: `${link.student.name}: ${content.slice(0, 80)}`,
+          url: "/dashboard",
+        }, ["TEACHER"]).catch(() => {})
       }
       controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, message, botAnswered: !isUncertain })}\n\n`))
       controller.close()
