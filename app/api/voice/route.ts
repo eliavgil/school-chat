@@ -160,9 +160,11 @@ export async function POST(req: NextRequest) {
       if (!reply) reply = `עובר ל${PAGE_NAMES[input.page] ?? "דף הבית"}...`
     }
 
-    // Get follow-up reply if Claude didn't already say something
+    // Always add tool_result so history stays valid for future turns
+    messages.push({ role: "user", content: [{ type: "tool_result", tool_use_id: toolUse.id, content: toolResultContent }] })
+
+    // Only make a follow-up call if Claude didn't already include a text reply
     if (!reply) {
-      messages.push({ role: "user", content: [{ type: "tool_result", tool_use_id: toolUse.id, content: toolResultContent }] })
       try {
         const follow = await client.messages.create({
           model: "claude-haiku-4-5-20251001",
