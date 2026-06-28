@@ -239,8 +239,8 @@ function StudentHome({ session, data }: { session: any; data: HomeData | null })
 
   return (
     <div className="flex flex-col h-screen" dir="rtl">
-      <NatureBackground bgId={bgId} customUrl={customUrl} />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/10 to-black/70" />
+      <div className="fixed inset-0" style={{ zIndex: -2 }}><NatureBackground bgId={bgId} customUrl={customUrl} /></div>
+      <div className="fixed inset-0 pointer-events-none bg-gradient-to-b from-black/50 via-black/10 to-black/70" style={{ zIndex: -1 }} />
 
       {/* ── Header ── */}
       <header className="relative z-20 flex items-center justify-between px-5 pb-2 header-pt flex-shrink-0" dir="ltr">
@@ -549,8 +549,8 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
   return (
     <div className="flex flex-col h-screen" dir="rtl">
-      <NatureBackground bgId={bgId} customUrl={customUrl} />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/10 to-black/70" />
+      <div className="fixed inset-0" style={{ zIndex: -2 }}><NatureBackground bgId={bgId} customUrl={customUrl} /></div>
+      <div className="fixed inset-0 pointer-events-none bg-gradient-to-b from-black/50 via-black/10 to-black/70" style={{ zIndex: -1 }} />
 
       {/* ── Header ── */}
       <header className="relative z-20 flex items-center justify-between px-4 pb-1.5 header-pt flex-shrink-0" dir="ltr">
@@ -1014,8 +1014,8 @@ function ParentHome({ session, data }: { session: any; data: HomeData | null }) 
 
   return (
     <div className="flex flex-col h-screen" dir="rtl">
-      <NatureBackground bgId={bgId} customUrl={customUrl} />
-      <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/10 to-black/70" />
+      <div className="fixed inset-0" style={{ zIndex: -2 }}><NatureBackground bgId={bgId} customUrl={customUrl} /></div>
+      <div className="fixed inset-0 pointer-events-none bg-gradient-to-b from-black/50 via-black/10 to-black/70" style={{ zIndex: -1 }} />
 
       {calModal && <CalendarModal title={calModal.title} items={calModal.items} onClose={() => setCalModal(null)} />}
 
