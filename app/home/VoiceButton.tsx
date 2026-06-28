@@ -18,6 +18,7 @@ interface ApiHistory {
 
 export default function VoiceButton() {
   const router = useRouter()
+  const [isMobile, setIsMobile] = useState(false)
   const [state, setState] = useState<State>("idle")
   const stateRef = useRef<State>("idle")
   const [open, setOpen] = useState(false)
@@ -26,6 +27,10 @@ export default function VoiceButton() {
   const [apiHistory, setApiHistory] = useState<ApiHistory[]>([])
   const recognitionRef = useRef<any>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    setIsMobile(window.matchMedia("(pointer: coarse)").matches || window.innerWidth < 768)
+  }, [])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -119,6 +124,8 @@ export default function VoiceButton() {
 
   const isListening = state === "listening"
   const isProcessing = state === "processing"
+
+  if (!isMobile) return null
 
   return (
     <div className="flex flex-col items-center gap-3 pt-1 pb-2">
