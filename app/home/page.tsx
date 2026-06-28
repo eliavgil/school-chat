@@ -5,14 +5,17 @@ import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import BottomNav from "@/app/components/BottomNav"
-import { NatureBackground } from "@/app/components/NatureBackground"
+import { NatureBackground, BG_OPTIONS } from "@/app/components/NatureBackground"
 import VoiceButton from "@/app/home/VoiceButton"
 import {
   getRemainingSchoolDays, getDaysUntilSummer, getNextVacation, getDaysUntilNextVacation,
 } from "@/lib/school-calendar"
-import { getPersonalEvents, getPersonalDisplayName, getPersonalBackground, getCustomBgUrl, getQuoteCategories } from "@/app/components/personalStore"
+import {
+  getPersonalEvents, getPersonalDisplayName, getPersonalBackground, getCustomBgUrl, getQuoteCategories,
+  setPersonalBackground as storeSaveBg, setPersonalDisplayName as storeSaveName, setQuoteCategories as storeSaveQCats,
+} from "@/app/components/personalStore"
 import PushManager from "@/app/components/PushManager"
-import { getDailyQuote, getCategoryEmoji, type Quote } from "@/lib/quotes"
+import { getDailyQuote, getCategoryEmoji, CATEGORIES, type Quote, type QuoteCategory } from "@/lib/quotes"
 import { ROLE_DEFAULTS } from "@/app/components/NatureBackground"
 
 // ── Types ─────────────────────────────────────────────────
@@ -412,6 +415,141 @@ function StudentHome({ session, data }: { session: any; data: HomeData | null })
 
         </div>
       </main>
+    </div>
+  )
+}
+
+// ══════════════════════════════════════════════════════════
+// SETTINGS PANEL (page 5 of teacher swipe flow)
+// ══════════════════════════════════════════════════════════
+function SettingsPanel({ isAdmin }: { isAdmin: boolean }) {
+  const [displayName, setDisplayNameState] = useState(() =>
+    typeof window !== "undefined" ? getPersonalDisplayName() : ""
+  )
+  const [selectedBg, setSelectedBg] = useState(() =>
+    typeof window !== "undefined" ? getPersonalBackground() : ""
+  )
+  const [qCats, setQCatsState] = useState<QuoteCategory[]>(() =>
+    typeof window !== "undefined" ? getQuoteCategories() : ["חינוך", "הומור", "הידעת"]
+  )
+
+  function saveName(val: string) {
+    storeSaveName(val.trim())
+  }
+
+  function pickBg(id: string) {
+    setSelectedBg(id)
+    storeSaveBg(id)
+    window.dispatchEvent(new CustomEvent("bg-changed", { detail: id }))
+  }
+
+  function toggleCat(cat: QuoteCategory) {
+    const next = qCats.includes(cat) ? qCats.filter(c => c !== cat) : [...qCats, cat]
+    if (!next.length) return
+    setQCatsState(next)
+    storeSaveQCats(next)
+  }
+
+  return (
+    <div className="space-y-3">
+
+      {/* Profile */}
+      <div className="glass rounded-2xl p-4 space-y-3">
+        <p className="text-white/50 text-[10px] font-semibold uppercase tracking-widest">פרופיל</p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white text-base font-semibold flex-shrink-0">
+            {displayName ? displayName.slice(0, 1) : "?"}
+          </div>
+          <input
+            value={displayName}
+            onChange={e => setDisplayNameState(e.target.value)}
+            onBlur={e => saveName(e.target.value)}
+            placeholder="שם תצוגה"
+            dir="rtl"
+            className="flex-1 bg-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/30 focus:outline-none focus:bg-white/15 transition-colors"
+          />
+        </div>
+      </div>
+
+      {/* Background */}
+      <div className="glass rounded-2xl p-4 space-y-3">
+        <p className="text-white/50 text-[10px] font-semibold uppercase tracking-widest">רקע</p>
+        <div className="grid grid-cols-4 gap-2">
+          {BG_OPTIONS.map(bg => (
+            <button
+              key={bg.id}
+              onClick={() => pickBg(bg.id)}
+              className={`flex flex-col items-center gap-1 py-2.5 rounded-xl transition-all ${
+                selectedBg === bg.id
+                  ? "bg-white/25 ring-1 ring-white/40"
+                  : "bg-white/5 hover:bg-white/15"
+              }`}
+            >
+              <span className="text-xl">{bg.emoji}</span>
+              <span className="text-white/50 text-[9px] text-center leading-tight px-0.5">{bg.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Daily quote categories */}
+      <div className="glass rounded-2xl p-4 space-y-3">
+        <p className="text-white/50 text-[10px] font-semibold uppercase tracking-widest">ציטוטים יומיים</p>
+        <div className="flex flex-wrap gap-2">
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat}
+              onClick={() => toggleCat(cat)}
+              className={`px-3 py-1.5 rounded-full text-xs transition-all ${
+                qCats.includes(cat)
+                  ? "bg-white/25 text-white"
+                  : "bg-white/5 text-white/40 hover:bg-white/12"
+              }`}
+            >
+              {getCategoryEmoji(cat)} {cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Push notifications */}
+      <div className="glass rounded-2xl p-4 space-y-3">
+        <p className="text-white/50 text-[10px] font-semibold uppercase tracking-widest">התראות</p>
+        <PushManager />
+      </div>
+
+      {/* Admin-only links */}
+      {isAdmin && (
+        <>
+          <Link href="/manage?tab=import"
+            className="glass rounded-2xl px-4 py-3.5 flex items-center gap-3 hover:bg-white/15 interactive btn-press transition-colors">
+            <span className="text-2xl">📋</span>
+            <div className="flex-1">
+              <div className="text-white/80 text-sm font-medium">ייבוא נתונים</div>
+              <div className="text-white/40 text-xs">מערכת, אירועים, ציונים</div>
+            </div>
+            <span className="text-white/30">←</span>
+          </Link>
+          <Link href="/manage?tab=users"
+            className="glass rounded-2xl px-4 py-3.5 flex items-center gap-3 hover:bg-white/15 interactive btn-press transition-colors">
+            <span className="text-2xl">👥</span>
+            <div className="flex-1">
+              <div className="text-white/80 text-sm font-medium">ניהול משתמשים</div>
+              <div className="text-white/40 text-xs">תלמידים, הורים, מורים</div>
+            </div>
+            <span className="text-white/30">←</span>
+          </Link>
+        </>
+      )}
+
+      {/* Sign out */}
+      <button
+        onClick={() => signOut({ callbackUrl: "/login" })}
+        className="w-full glass rounded-2xl px-4 py-3.5 flex items-center gap-3 hover:bg-white/10 interactive btn-press transition-colors">
+        <span className="text-xl">🚪</span>
+        <span className="text-white/50 text-sm">יציאה</span>
+      </button>
+
     </div>
   )
 }
@@ -939,39 +1077,8 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
           {/* ══ PAGE 5: הגדרות ══ */}
           <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
-            <div className="px-4 pt-3 pb-10 space-y-3">
-
-              {/* Push notifications */}
-              <div className="glass rounded-2xl p-4 space-y-3">
-                <p className="text-white/50 text-[10px] font-semibold uppercase tracking-widest">התראות</p>
-                <PushManager />
-              </div>
-
-              {/* Links to full settings sections */}
-              {[
-                { emoji: "🖼️", label: "רקע ושם תצוגה", sub: "התאמה אישית", href: "/manage" },
-                { emoji: "📋", label: "ייבוא נתונים", sub: "מערכת, אירועים, ציונים", href: "/manage?tab=import" },
-                { emoji: "👥", label: "ניהול משתמשים", sub: "תלמידים, הורים, מורים", href: "/manage?tab=users" },
-              ].map(item => (
-                <Link key={item.href + item.label} href={item.href}
-                  className="glass rounded-2xl px-4 py-3.5 flex items-center gap-3 hover:bg-white/15 interactive btn-press transition-colors">
-                  <span className="text-2xl">{item.emoji}</span>
-                  <div className="flex-1">
-                    <div className="text-white/80 text-sm font-medium">{item.label}</div>
-                    <div className="text-white/40 text-xs">{item.sub}</div>
-                  </div>
-                  <span className="text-white/30 text-sm">←</span>
-                </Link>
-              ))}
-
-              {/* Sign out */}
-              <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
-                className="w-full glass rounded-2xl px-4 py-3.5 flex items-center gap-3 hover:bg-white/10 interactive btn-press transition-colors text-right">
-                <span className="text-2xl">🚪</span>
-                <span className="text-white/50 text-sm">יציאה</span>
-              </button>
-
+            <div className="px-4 pt-3 pb-10">
+              <SettingsPanel isAdmin={isAdmin} />
             </div>
           </div>
 
