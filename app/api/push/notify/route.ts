@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const { body } = await req.json()
+  const { body, targets } = await req.json()
   if (!body?.trim()) return NextResponse.json({ error: "No body" }, { status: 400 })
 
   const user = await prisma.user.findUnique({
@@ -20,11 +20,16 @@ export async function POST(req: NextRequest) {
   })
   if (!user?.classId) return NextResponse.json({ error: "No class" }, { status: 400 })
 
+  // targets: array of "PARENT" | "STUDENT", defaults to both
+  const roles: ("PARENT" | "STUDENT")[] = Array.isArray(targets) && targets.length > 0
+    ? targets
+    : ["PARENT", "STUDENT"]
+
   await sendPushToClassMembers(user.classId, {
     title: `הודעה מ${user.name ?? "המורה"} 📢`,
     body: body.trim(),
     url: "/home",
-  })
+  }, roles)
 
   return NextResponse.json({ success: true })
 }

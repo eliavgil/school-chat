@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react"
 import { useSession, signOut } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import BottomNav from "@/app/components/BottomNav"
 import { NatureBackground } from "@/app/components/NatureBackground"
@@ -419,6 +420,7 @@ function StudentHome({ session, data }: { session: any; data: HomeData | null })
 // ══════════════════════════════════════════════════════════
 function TeacherHome({ session, data }: { session: any; data: HomeData | null }) {
   const now  = useTick()
+  const router = useRouter()
   const { bgId, customUrl } = useBg("teacher")
   const [menuOpen, setMenuOpen] = useState(false)
   const [page, setPage] = useState(0)
@@ -533,8 +535,11 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
   function onTouchEnd() {
     if (!dragging) return
-    if (dragDelta < -40 && page < NUM_PAGES - 1) setPage(p => p + 1)
-    if (dragDelta > 40  && page > 0)             setPage(p => p - 1)
+    if (dragDelta < -40) {
+      if (page < NUM_PAGES - 1) setPage(p => p + 1)
+      else router.push("/manage")
+    }
+    if (dragDelta > 40 && page > 0) setPage(p => p - 1)
     setDragging(false)
     setDragDelta(0)
     touchStart.current = null

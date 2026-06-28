@@ -52,6 +52,85 @@ const IconAssistant = () => (
   </svg>
 )
 
+function BroadcastPanel() {
+  const [msg, setMsg] = useState("")
+  const [targets, setTargets] = useState<string[]>(["PARENT", "STUDENT"])
+  const [state, setState] = useState<"idle" | "sending" | "ok" | "err">("idle")
+
+  function toggleTarget(t: string) {
+    setTargets(prev => prev.includes(t) ? prev.filter(x => x !== t) : [...prev, t])
+  }
+
+  async function send() {
+    if (!msg.trim() || targets.length === 0) return
+    setState("sending")
+    const res = await fetch("/api/push/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ body: msg.trim(), targets }),
+    })
+    const data = await res.json()
+    setState(data.success ? "ok" : "err")
+    if (data.success) setMsg("")
+    setTimeout(() => setState("idle"), 3000)
+  }
+
+  return (
+    <div className="flex-1 overflow-y-auto p-4 max-w-lg mx-auto w-full" dir="rtl">
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-white font-semibold text-base mb-1">הודעת תפוצה</h2>
+          <p className="text-white/40 text-xs">שליחת Push notification לכל הנמענים שבחרת</p>
+        </div>
+
+        {/* Recipient toggles */}
+        <div>
+          <p className="text-xs text-white/50 mb-2">שלח ל:</p>
+          <div className="flex gap-2">
+            {[
+              { key: "PARENT", label: "כל ההורים" },
+              { key: "STUDENT", label: "כל התלמידים" },
+            ].map(({ key, label }) => {
+              const active = targets.includes(key)
+              return (
+                <button key={key} onClick={() => toggleTarget(key)}
+                  className={`flex-1 py-2.5 rounded-xl text-sm transition-all border ${
+                    active
+                      ? "bg-white/20 text-white border-white/30"
+                      : "bg-white/5 text-white/35 border-white/10"
+                  }`}>
+                  {label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Message input */}
+        <div>
+          <textarea
+            value={msg}
+            onChange={e => setMsg(e.target.value)}
+            placeholder="כתוב את ההודעה..."
+            rows={4}
+            dir="rtl"
+            className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2.5 text-sm text-white placeholder-white/25 outline-none focus:border-white/30 resize-none"
+          />
+          <p className="text-xs text-white/25 mt-1">{msg.length} תווים</p>
+        </div>
+
+        <button
+          onClick={send}
+          disabled={!msg.trim() || targets.length === 0 || state === "sending"}
+          className="w-full bg-white/15 hover:bg-white/25 disabled:opacity-40 text-white font-medium py-3 rounded-xl transition-all text-sm"
+        >
+          {state === "sending" ? "שולח..." : state === "ok" ? "✓ נשלח!" : state === "err" ? "שגיאה בשליחה" : `שלח לכל ${targets.includes("PARENT") && targets.includes("STUDENT") ? "ההורים והתלמידים" : targets.includes("PARENT") ? "ההורים" : "התלמידים"}`}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 const QUICK_REPLIES = [
   "יצרנו קשר עם ההורה",
   "הנושא בטיפול",
@@ -252,8 +331,8 @@ export default function TeacherDashboard() {
           </div>
           {/* Main tabs */}
           <div className="flex gap-1">
-            {["שיחות", "ניתוח", "עוזר"].map((label, i) => {
-              const full = ["שיחות", "ניתוח נתונים", "עוזר אישי"][i]
+            {["שיחות", "תפוצה", "ניתוח", "עוזר"].map((label, i) => {
+              const full = ["שיחות", "תפוצה", "ניתוח נתונים", "עוזר אישי"][i]
               const isActive = mainTab === full
               return (
                 <button key={label} onClick={() => setMainTab(full)}
@@ -541,6 +620,8 @@ export default function TeacherDashboard() {
             </div>
           </>
         )}
+
+        {mainTab === "תפוצה" && <BroadcastPanel />}
 
         {mainTab === "ניתוח נתונים" && (
           <ComingSoon

@@ -715,7 +715,7 @@ export default function ManagePage() {
   const role = (session?.user as any)?.role as string | undefined
   const isTeacher = role === "TEACHER" || role === "ADMIN"
 
-  const [teacherTab, setTeacherTab] = useState<TeacherTab>("import")
+  const [teacherTab, setTeacherTab] = useState<TeacherTab>("settings")
   const [userTab, setUserTab]       = useState<UserTab>("settings")
   const [pendingCount, setPendingCount] = useState(0)
 
@@ -734,9 +734,9 @@ export default function ManagePage() {
   if (!session) { router.replace("/"); return null }
 
   const teacherTabs: [TeacherTab, string][] = [
-    ["import",   "ייבוא נתונים"],
     ["settings", "הגדרות"],
-    ["users",    "משתמשים"],
+    ["import",   "ייבוא נתונים"],
+    ["users",    "ניהול משתמשים"],
   ]
 
   const userTabs: [UserTab, string][] = [
@@ -801,10 +801,6 @@ export default function ManagePage() {
             <div className="pt-2 border-t border-white/10 mt-2">
               <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">הודעות Push</p>
               <PushManager />
-              <div className="mt-3">
-                <p className="text-xs text-white/40 mb-2">שלח הודעה לכל הכיתה</p>
-                <NotifyClassButton />
-              </div>
             </div>
           </>
         )}
