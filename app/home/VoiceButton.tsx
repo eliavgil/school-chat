@@ -68,10 +68,13 @@ export default function VoiceButton() {
   }
 
   function startListening() {
+    const isStandalone = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone === true
     const SpeechRecognition =
       (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SpeechRecognition) {
-      addMessage("assistant", "הדפדפן אינו תומך בזיהוי קול")
+      addMessage("assistant", isStandalone
+        ? "זיהוי קול לא זמין ב-PWA על iOS. פתח את האתר בסאפארי כדי להשתמש בקול."
+        : "הדפדפן אינו תומך בזיהוי קול")
       setOpen(true)
       return
     }
@@ -85,7 +88,10 @@ export default function VoiceButton() {
     rec.onresult = (e: any) => sendText(e.results[0][0].transcript)
     rec.onerror = (e: any) => {
       if (e.error === "no-speech") { setS("idle"); return }
-      addMessage("assistant", "לא הצלחתי לשמוע, נסה שוב")
+      const isStandalone = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone === true
+      addMessage("assistant", (e.error === "not-allowed" && isStandalone)
+        ? "זיהוי קול לא זמין ב-PWA על iOS. פתח בסאפארי."
+        : "לא הצלחתי לשמוע, נסה שוב")
       setS("idle")
     }
     rec.onend = () => { if (stateRef.current === "listening") setS("idle") }
