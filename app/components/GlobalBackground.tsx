@@ -15,7 +15,7 @@ export default function GlobalBackground() {
   }, [])
 
   return (
-    <div className="fixed inset-0 -z-10">
+    <div className="fixed -z-10" style={{ top: 0, right: 0, left: 0, bottom: "calc(-1 * env(safe-area-inset-bottom, 0px))" }}>
       <NatureBackground bgId={bgId} />
     </div>
   )
