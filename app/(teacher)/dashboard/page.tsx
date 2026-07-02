@@ -169,10 +169,11 @@ export default function TeacherDashboard() {
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (status === "authenticated") {
-      fetchConversations()
-      fetchGlobalTasks()
-    }
+    if (status !== "authenticated") return
+    fetchConversations()
+    fetchGlobalTasks()
+    const id = setInterval(fetchConversations, 30000)
+    return () => clearInterval(id)
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status])
 

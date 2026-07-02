@@ -15,6 +15,8 @@ import {
   setPersonalBackground as storeSaveBg, setPersonalDisplayName as storeSaveName, setQuoteCategories as storeSaveQCats,
 } from "@/app/components/personalStore"
 import PushManager from "@/app/components/PushManager"
+import { Toast } from "@/app/components/Toast"
+import Onboarding from "@/app/components/Onboarding"
 import { getDailyQuote, getCategoryEmoji, CATEGORIES, type Quote, type QuoteCategory } from "@/lib/quotes"
 import { ROLE_DEFAULTS } from "@/app/components/NatureBackground"
 
@@ -432,15 +434,21 @@ function SettingsPanel({ isAdmin }: { isAdmin: boolean }) {
   const [qCats, setQCatsState] = useState<QuoteCategory[]>(() =>
     typeof window !== "undefined" ? getQuoteCategories() : ["חינוך", "הומור", "הידעת"]
   )
+  const [toastMsg, setToastMsg] = useState("")
+  const [showToast, setShowToast] = useState(false)
+
+  function toast(msg: string) { setToastMsg(msg); setShowToast(true) }
 
   function saveName(val: string) {
     storeSaveName(val.trim())
+    if (val.trim()) toast("שם נשמר ✓")
   }
 
   function pickBg(id: string) {
     setSelectedBg(id)
     storeSaveBg(id)
     window.dispatchEvent(new CustomEvent("bg-changed", { detail: id }))
+    toast("רקע עודכן ✓")
   }
 
   function toggleCat(cat: QuoteCategory) {
@@ -448,10 +456,12 @@ function SettingsPanel({ isAdmin }: { isAdmin: boolean }) {
     if (!next.length) return
     setQCatsState(next)
     storeSaveQCats(next)
+    toast("ציטוטים עודכנו ✓")
   }
 
   return (
     <div className="space-y-3">
+      <Toast message={toastMsg} show={showToast} onHide={() => setShowToast(false)} />
 
       {/* Profile */}
       <div className="glass rounded-2xl p-4 space-y-3">
@@ -637,7 +647,19 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
   }
 
   const NUM_PAGES = 5
-  const NUM_LABELS = ["בית", "יומן", "תפריט", "כיתה"] // kept for accessibility/future use
+  const NUM_LABELS = ["בית", "יומן", "תפריט", "כיתה", "הגדרות"]
+  const [showSwipeHint, setShowSwipeHint] = useState(false)
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && !localStorage.getItem("swipe-hint-seen")) {
+      setShowSwipeHint(true)
+      const t = setTimeout(() => {
+        localStorage.setItem("swipe-hint-seen", "1")
+        setShowSwipeHint(false)
+      }, 3500)
+      return () => clearTimeout(t)
+    }
+  }, [])
   const MENU_LINKS = [
     { label: "מענים אישיים",     href: "/teacher/accommodations", emoji: "🧩", soon: false },
     { label: "מעקב רגשי-חברתי",  href: "/teacher/emotional",      emoji: "💙", soon: false },
@@ -1084,6 +1106,23 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
         </div>
       </main>
+
+      {/* ── Swipe hint (first visit) ── */}
+      {showSwipeHint && (
+        <div className="fixed inset-x-0 bottom-24 z-40 flex items-center justify-center pointer-events-none">
+          <div className="flex items-center gap-3 glass rounded-full px-5 py-2.5 border border-white/20 animate-fade-in">
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} className="text-white/60">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
+            <span className="text-white/70 text-sm font-medium">גלול בין העמודים</span>
+            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} className="text-white/60">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </div>
+        </div>
+      )}
+
+      <Onboarding role="teacher" />
     </div>
   )
 }
@@ -1361,6 +1400,8 @@ function ParentHome({ session, data }: { session: any; data: HomeData | null }) 
           )}
         </div>
       </main>
+
+      <Onboarding role="parent" />
     </div>
   )
 }

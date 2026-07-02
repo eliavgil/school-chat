@@ -21,10 +21,19 @@ export default function VoiceButton() {
   const [isMobile, setIsMobile] = useState(false)
   const [state, setState] = useState<State>("idle")
   const stateRef = useRef<State>("idle")
-  const [open, setOpen] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<Message[]>(() => {
+    if (typeof window === "undefined") return []
+    try { return JSON.parse(localStorage.getItem("voice-messages") ?? "[]") } catch { return [] }
+  })
+  const [open, setOpen] = useState(() => {
+    if (typeof window === "undefined") return false
+    try { return (JSON.parse(localStorage.getItem("voice-messages") ?? "[]") as Message[]).length > 0 } catch { return false }
+  })
   const [followUp, setFollowUp] = useState("")
-  const [apiHistory, setApiHistory] = useState<ApiHistory[]>([])
+  const [apiHistory, setApiHistory] = useState<ApiHistory[]>(() => {
+    if (typeof window === "undefined") return []
+    try { return JSON.parse(localStorage.getItem("voice-history") ?? "[]") } catch { return [] }
+  })
   const recognitionRef = useRef<any>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -39,6 +48,14 @@ export default function VoiceButton() {
   useEffect(() => {
     return () => recognitionRef.current?.abort()
   }, [])
+
+  useEffect(() => {
+    try { localStorage.setItem("voice-messages", JSON.stringify(messages)) } catch {}
+  }, [messages])
+
+  useEffect(() => {
+    try { localStorage.setItem("voice-history", JSON.stringify(apiHistory)) } catch {}
+  }, [apiHistory])
 
   function setS(s: State) {
     stateRef.current = s
@@ -113,6 +130,7 @@ export default function VoiceButton() {
     setMessages([])
     setApiHistory([])
     setFollowUp("")
+    try { localStorage.removeItem("voice-messages"); localStorage.removeItem("voice-history") } catch {}
   }
 
   function handleFollowUpKey(e: React.KeyboardEvent) {
