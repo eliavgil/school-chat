@@ -24,10 +24,11 @@ interface Goal {
 }
 
 const uid = () => Math.random().toString(36).slice(2, 9)
+const ACCENT = "#fcd34d"
 
 const DEFAULTS: Goal[] = [
   {
-    id: uid(), color: "#93c5fd", open: true,
+    id: uid(), color: ACCENT, open: true,
     name: "תעודת בגרות איכותית",
     desc: "הובלת התלמיד למיצוי מלא של יכולותיו הלימודיות וזכאות לתעודת בגרות מיטבית",
     subgoals: ["מיקסום יכולות לימודיות", "ציונים גבוהים ביחס לשנים קודמות", "אקלים לימודי חיובי בכיתה"],
@@ -42,7 +43,7 @@ const DEFAULTS: Goal[] = [
     ],
   },
   {
-    id: uid(), color: "#fcd34d", open: true,
+    id: uid(), color: ACCENT, open: true,
     name: "זהות וערכים",
     desc: "ליווי התלמיד בבירור זהותו האישית והלאומית, תוך עידוד וחיזוק ערכים משמעותיים",
     subgoals: ["כבוד לזולת / אמפטיה", "אחריות אישית", "מעורבות חברתית", "מצוינות / עומק", "חריצות / התמדה", "פיתוח זהות אישית, קבוצתית, לאומית"],
@@ -55,7 +56,7 @@ const DEFAULTS: Goal[] = [
     ],
   },
   {
-    id: uid(), color: "#67e8f9", open: true,
+    id: uid(), color: ACCENT, open: true,
     name: "מיומנויות",
     desc: "הקניית ארגז כלים ישומי ורלוונטי המכין את התלמיד לאתגרי התיכון ולעולם המחר",
     subgoals: ["למידה עצמאית", "שמיעת עצמי", "חשיבה ביקורתית", "יצירתיות", "אוריינות דיגיטלית"],
@@ -68,7 +69,7 @@ const DEFAULTS: Goal[] = [
     ],
   },
   {
-    id: uid(), color: "#d8b4fe", open: true,
+    id: uid(), color: ACCENT, open: true,
     name: "רגשי חברתי",
     desc: "יצירת מרחב בטוח ותומך המספק מענה רגשי רחב ומתמקד בפיתוח ביטחון עצמי וקשרים חברתיים",
     subgoals: ["מרחב בטוח", "כישורים חברתיים", "ביטחון עצמי", "שיח רגשי", "חוסן"],
@@ -143,7 +144,7 @@ export default function KpiPage() {
 
   function addGoal() {
     const g: Goal = {
-      id: uid(), color: "#6366f1", open: true,
+      id: uid(), color: ACCENT, open: true,
       name: "מטרת על חדשה", desc: "תיאור המטרה",
       subgoals: ["יעד 1", "יעד 2"],
       metrics: [{ id: uid(), text: "מדד ראשון", target: "", q1: "", q2: "", q3: "", q4: "", s: "none" }],
@@ -249,7 +250,7 @@ function GoalCard({
         className="flex items-stretch cursor-pointer select-none hover:bg-white/5 transition-colors"
         onClick={onToggle}
       >
-        <div className="w-1 flex-shrink-0" style={{ background: g.color }} />
+        <div className="w-1 flex-shrink-0" style={{ background: ACCENT }} />
         <div className="flex-1 px-4 py-3 min-w-0">
           <input
             className="font-bold text-sm text-white bg-transparent border-none outline-none w-full cursor-pointer focus:cursor-text"
@@ -285,7 +286,7 @@ function GoalCard({
               <span
                 key={i}
                 className="text-[11px] px-2.5 py-0.5 rounded-full border font-medium"
-                style={{ color: g.color, borderColor: `${g.color}40`, background: `${g.color}15` }}
+                style={{ color: ACCENT, borderColor: `${ACCENT}50`, background: `${ACCENT}15` }}
               >
                 {s}
               </span>
@@ -323,14 +324,15 @@ function GoalCard({
                       <div className="flex items-start gap-2">
                         <div
                           className="flex-1 rounded-xl px-3 py-1.5 flex items-start min-w-0"
-                          style={{ background: `${g.color}20`, border: `1px solid ${g.color}35` }}
+                          style={{ background: `${ACCENT}18`, border: `1px solid ${ACCENT}40` }}
                         >
-                          <input
-                            className="bg-transparent border-none outline-none text-xs w-full font-semibold placeholder-white/25 leading-relaxed"
-                            style={{ color: g.color }}
+                          <textarea
+                            className="bg-transparent border-none outline-none text-xs w-full font-semibold placeholder-white/25 leading-relaxed resize-none"
+                            style={{ color: ACCENT }}
                             value={m.text}
                             onChange={e => onMetricChange(mi, "text", e.target.value)}
                             placeholder="שם היעד"
+                            rows={2}
                           />
                         </div>
                         {g.metrics.length > 1 && (
