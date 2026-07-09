@@ -641,6 +641,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
   const MENU_LINKS = [
     { label: "מענים אישיים",     href: "/teacher/accommodations", emoji: "🧩", soon: false },
     { label: "מעקב רגשי-חברתי",  href: "/teacher/emotional",      emoji: "💙", soon: false },
+    { label: "לוח KPI",           href: "/kpi",                    emoji: "📊", soon: false },
     { label: "מורה מקצועי",       href: "/teacher/subject",        emoji: "📚", soon: false },
     { label: "ניהול שכבה",        href: "/teacher/grade-hub",      emoji: "🏫", soon: false },
     { label: "הגדרות",            href: "/manage",                 emoji: "⚙️", soon: false },
