@@ -27,7 +27,7 @@ const uid = () => Math.random().toString(36).slice(2, 9)
 
 const DEFAULTS: Goal[] = [
   {
-    id: uid(), color: "#3b82f6", open: true,
+    id: uid(), color: "#93c5fd", open: true,
     name: "תעודת בגרות איכותית",
     desc: "הובלת התלמיד למיצוי מלא של יכולותיו הלימודיות וזכאות לתעודת בגרות מיטבית",
     subgoals: ["מיקסום יכולות לימודיות", "ציונים גבוהים ביחס לשנים קודמות", "אקלים לימודי חיובי בכיתה"],
@@ -42,7 +42,7 @@ const DEFAULTS: Goal[] = [
     ],
   },
   {
-    id: uid(), color: "#f59e0b", open: true,
+    id: uid(), color: "#fcd34d", open: true,
     name: "זהות וערכים",
     desc: "ליווי התלמיד בבירור זהותו האישית והלאומית, תוך עידוד וחיזוק ערכים משמעותיים",
     subgoals: ["כבוד לזולת / אמפטיה", "אחריות אישית", "מעורבות חברתית", "מצוינות / עומק", "חריצות / התמדה", "פיתוח זהות אישית, קבוצתית, לאומית"],
@@ -55,7 +55,7 @@ const DEFAULTS: Goal[] = [
     ],
   },
   {
-    id: uid(), color: "#06b6d4", open: true,
+    id: uid(), color: "#67e8f9", open: true,
     name: "מיומנויות",
     desc: "הקניית ארגז כלים ישומי ורלוונטי המכין את התלמיד לאתגרי התיכון ולעולם המחר",
     subgoals: ["למידה עצמאית", "שמיעת עצמי", "חשיבה ביקורתית", "יצירתיות", "אוריינות דיגיטלית"],
@@ -68,7 +68,7 @@ const DEFAULTS: Goal[] = [
     ],
   },
   {
-    id: uid(), color: "#a855f7", open: true,
+    id: uid(), color: "#d8b4fe", open: true,
     name: "רגשי חברתי",
     desc: "יצירת מרחב בטוח ותומך המספק מענה רגשי רחב ומתמקד בפיתוח ביטחון עצמי וקשרים חברתיים",
     subgoals: ["מרחב בטוח", "כישורים חברתיים", "ביטחון עצמי", "שיח רגשי", "חוסן"],
@@ -294,29 +294,39 @@ function GoalCard({
 
           {/* Table */}
           <div className="overflow-x-auto border-t border-white/8">
-            <table className="w-full min-w-[680px] border-collapse">
+            <table className="w-full border-collapse" style={{ tableLayout: "fixed", minWidth: 640 }}>
+              <colgroup>
+                <col style={{ width: "42%" }} />
+                <col style={{ width: "16%" }} />
+                <col style={{ width: "8%" }} />
+                <col style={{ width: "8%" }} />
+                <col style={{ width: "8%" }} />
+                <col style={{ width: "8%" }} />
+                <col style={{ width: "10%" }} />
+              </colgroup>
               <thead>
                 <tr className="border-b border-white/10">
-                  <th className="text-right text-white/40 text-[11px] font-semibold px-4 py-2 min-w-[280px] uppercase tracking-wide">יעד</th>
-                  <th className="text-center text-white/40 text-[11px] font-semibold px-3 py-2 whitespace-nowrap uppercase tracking-wide">מדד הצלחה</th>
-                  <th className="text-center text-white/40 text-[11px] font-semibold px-3 py-2 whitespace-nowrap">רבעון א׳</th>
-                  <th className="text-center text-white/40 text-[11px] font-semibold px-3 py-2 whitespace-nowrap">רבעון ב׳</th>
-                  <th className="text-center text-white/40 text-[11px] font-semibold px-3 py-2 whitespace-nowrap">רבעון ג׳</th>
-                  <th className="text-center text-white/40 text-[11px] font-semibold px-3 py-2 whitespace-nowrap">רבעון ד׳</th>
-                  <th className="text-center text-white/40 text-[11px] font-semibold px-3 py-2 whitespace-nowrap min-w-[80px]">עמידה</th>
+                  <th className="text-right text-white/40 text-[11px] font-semibold px-4 py-2 uppercase tracking-wide">יעד</th>
+                  <th className="text-center text-white/40 text-[11px] font-semibold px-2 py-2 uppercase tracking-wide">מדד הצלחה</th>
+                  <th className="text-center text-white/40 text-[11px] font-semibold px-1 py-2">ר׳א</th>
+                  <th className="text-center text-white/40 text-[11px] font-semibold px-1 py-2">ר׳ב</th>
+                  <th className="text-center text-white/40 text-[11px] font-semibold px-1 py-2">ר׳ג</th>
+                  <th className="text-center text-white/40 text-[11px] font-semibold px-1 py-2">ר׳ד</th>
+                  <th className="text-center text-white/40 text-[11px] font-semibold px-2 py-2">עמידה</th>
                 </tr>
               </thead>
               <tbody>
                 {g.metrics.map((m, mi) => (
                   <tr key={m.id} className="border-b border-white/5 last:border-0 hover:bg-white/4 transition-colors">
-                    <td className="px-3 py-2">
-                      <div className="flex items-center gap-2">
+                    {/* Goal pill — wide, wraps to 2 lines */}
+                    <td className="px-3 py-2 align-top">
+                      <div className="flex items-start gap-2">
                         <div
-                          className="flex-1 rounded-full px-3 py-1.5 flex items-center min-w-0"
-                          style={{ background: `${g.color}30`, border: `1px solid ${g.color}40` }}
+                          className="flex-1 rounded-xl px-3 py-1.5 flex items-start min-w-0"
+                          style={{ background: `${g.color}20`, border: `1px solid ${g.color}35` }}
                         >
                           <input
-                            className="bg-transparent border-none outline-none text-xs w-full font-medium placeholder-white/30"
+                            className="bg-transparent border-none outline-none text-xs w-full font-semibold placeholder-white/25 leading-relaxed"
                             style={{ color: g.color }}
                             value={m.text}
                             onChange={e => onMetricChange(mi, "text", e.target.value)}
@@ -326,19 +336,28 @@ function GoalCard({
                         {g.metrics.length > 1 && (
                           <button
                             onClick={() => onDelRow(mi)}
-                            className="w-4 h-4 rounded-full flex items-center justify-center text-white/20 hover:text-red-400 transition-colors text-[10px] flex-shrink-0"
+                            className="w-4 h-4 rounded-full flex items-center justify-center text-white/20 hover:text-red-400 transition-colors text-[10px] flex-shrink-0 mt-1"
                           >
                             ✕
                           </button>
                         )}
                       </div>
                     </td>
-                    <DarkCell value={m.target} onChange={v => onMetricChange(mi, "target", v)} />
-                    <DarkCell value={m.q1} onChange={v => onMetricChange(mi, "q1", v)} />
-                    <DarkCell value={m.q2} onChange={v => onMetricChange(mi, "q2", v)} />
-                    <DarkCell value={m.q3} onChange={v => onMetricChange(mi, "q3", v)} />
-                    <DarkCell value={m.q4} onChange={v => onMetricChange(mi, "q4", v)} />
-                    <td className="text-center py-2 px-3">
+                    {/* Target — wraps */}
+                    <td className="px-2 py-2 align-top">
+                      <textarea
+                        className="w-full text-center text-xs text-white/70 bg-transparent border-none outline-none rounded-md focus:bg-white/8 focus:text-white px-1 py-0.5 tabular-nums transition-colors placeholder-white/20 resize-none leading-relaxed"
+                        value={m.target}
+                        onChange={e => onMetricChange(mi, "target", e.target.value)}
+                        placeholder="—"
+                        rows={2}
+                      />
+                    </td>
+                    <SmallCell value={m.q1} onChange={v => onMetricChange(mi, "q1", v)} />
+                    <SmallCell value={m.q2} onChange={v => onMetricChange(mi, "q2", v)} />
+                    <SmallCell value={m.q3} onChange={v => onMetricChange(mi, "q3", v)} />
+                    <SmallCell value={m.q4} onChange={v => onMetricChange(mi, "q4", v)} />
+                    <td className="text-center py-2 px-2 align-middle">
                       <button
                         onClick={() => onCycle(mi)}
                         title={STATUS_LABEL[m.s]}
@@ -363,11 +382,11 @@ function GoalCard({
   )
 }
 
-function DarkCell({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function SmallCell({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <td className="text-center py-2 px-2">
+    <td className="text-center py-2 px-1 align-middle">
       <input
-        className="w-14 text-center text-xs text-white/70 bg-transparent border-none outline-none rounded-md focus:bg-white/8 focus:text-white px-1 py-0.5 tabular-nums transition-colors placeholder-white/20"
+        className="w-full text-center text-xs text-white/70 bg-transparent border-none outline-none rounded-md focus:bg-white/8 focus:text-white px-1 py-0.5 tabular-nums transition-colors placeholder-white/20"
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder="—"
