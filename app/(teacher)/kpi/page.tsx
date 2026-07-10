@@ -32,6 +32,7 @@ interface Metric {
   text: string
   target: string
   trackType: TrackType
+  checkLabels: string[]  // custom labels; empty = use global CHECK_LABELS
   checks: boolean[]
   students: string[]
   numberCells: NumberCell[]
@@ -60,8 +61,9 @@ function mkCells(count = 5): NumberCell[] {
   return Array.from({ length: count }, (_, i) => ({ label: `${i + 1}`, value: "" }))
 }
 
-function mkMetric(text: string, target: string, trackType: TrackType = "checks"): Metric {
-  return { id: uid(), text, target, trackType, checks: Array(10).fill(false), students: [], numberCells: mkCells(), percentValue: 0, percentMax: 100, textValue: "", gaugeTarget: null, s: "none" }
+function mkMetric(text: string, target: string, trackType: TrackType = "checks", checkLabels: string[] = []): Metric {
+  const checkCount = checkLabels.length || 10
+  return { id: uid(), text, target, trackType, checkLabels, checks: Array(checkCount).fill(false), students: [], numberCells: mkCells(), percentValue: 0, percentMax: 100, textValue: "", gaugeTarget: null, s: "none" }
 }
 
 const DEFAULTS: Goal[] = [
@@ -226,19 +228,114 @@ function SemiGauge({ progress }: { progress: number }) {
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
+// Tracking state saved per-metric, keyed by metric text.
+// Structural fields (trackType, gaugeTarget, checkLabels) come from the sheet
+// and are NOT persisted — they update automatically when the sheet changes.
+// Only interaction data is stored locally.
+type TrackState = Pick<Metric, "checks"|"students"|"numberCells"|"percentValue"|"percentMax"|"textValue"|"s">
+const TRACKING_KEY = "kpi-tracking"
+const ORDER_KEY = "kpi-order"
+
+function saveTracking(goals: Goal[]) {
+  const map: Record<string, TrackState> = {}
+  for (const g of goals) {
+    for (const m of g.metrics) {
+      map[m.text] = { checks: m.checks, students: m.students, numberCells: m.numberCells, percentValue: m.percentValue, percentMax: m.percentMax, textValue: m.textValue, s: m.s }
+    }
+  }
+  try { localStorage.setItem(TRACKING_KEY, JSON.stringify(map)) } catch {}
+}
+
+function saveOrder(goals: Goal[]) {
+  const map: Record<string, string[]> = {}
+  for (const g of goals) {
+    map[`${g.domain}:${g.name}`] = g.metrics.map(m => m.text)
+  }
+  try { localStorage.setItem(ORDER_KEY, JSON.stringify(map)) } catch {}
+}
+
+function mergeTracking(goals: Goal[]): Goal[] {
+  let saved: Record<string, Partial<TrackState>> = {}
+  try { const raw = localStorage.getItem(TRACKING_KEY); if (raw) saved = JSON.parse(raw) } catch {}
+  return goals.map(g => ({
+    ...g,
+    metrics: g.metrics.map(m => {
+      const st = saved[m.text] ?? {}
+      const merged = { ...m, ...st }
+      // If checkLabels changed length, resize the checks array to match
+      const expectedLen = m.checkLabels.length || 10
+      if (merged.checks.length !== expectedLen) {
+        const old = merged.checks
+        merged.checks = Array.from({ length: expectedLen }, (_, i) => old[i] ?? false)
+      }
+      return merged
+    }),
+  }))
+}
+
+function applyOrder(goals: Goal[]): Goal[] {
+  let saved: Record<string, string[]> = {}
+  try { const raw = localStorage.getItem(ORDER_KEY); if (raw) saved = JSON.parse(raw) } catch {}
+  return goals.map(g => {
+    const order = saved[`${g.domain}:${g.name}`]
+    if (!order?.length) return g
+    const byText = new Map(g.metrics.map(m => [m.text, m]))
+    const reordered = order.flatMap(t => byText.has(t) ? [byText.get(t)!] : [])
+    const seen = new Set(order)
+    const newOnes = g.metrics.filter(m => !seen.has(m.text))
+    return { ...g, metrics: [...reordered, ...newOnes] }
+  })
+}
+
 export default function KpiPage() {
   const [goals, setGoals] = useState<Goal[]>(DEFAULTS)
+  const [fromSheet, setFromSheet] = useState(false)
 
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("kpi-v5")
-      if (saved) setGoals(JSON.parse(saved))
-    } catch {}
+    async function load() {
+      // 1. Try Google Sheet
+      try {
+        const res = await fetch("/api/kpi-sheet")
+        if (res.ok) {
+          const raw = await res.json()
+          if (Array.isArray(raw) && raw.length > 0) {
+            const built: Goal[] = raw.map((rg: { domain: string; name: string; desc: string; subgoals: string[]; metrics: { text: string; target: string; trackType: string; gaugeTarget: number | null; checkLabels: string[] }[] }) => ({
+              id: uid(),
+              domain: rg.domain,
+              name: rg.name,
+              desc: rg.desc,
+              subgoals: rg.subgoals,
+              open: true,
+              metrics: rg.metrics.map(rm => ({
+                ...mkMetric(rm.text, rm.target, rm.trackType as TrackType, rm.checkLabels ?? []),
+                gaugeTarget: rm.gaugeTarget,
+              })),
+            }))
+            setGoals(applyOrder(mergeTracking(built)))
+            setFromSheet(true)
+            return
+          }
+        }
+      } catch {}
+
+      // 2. Fall back to localStorage snapshot
+      try {
+        const saved = localStorage.getItem("kpi-v5")
+        if (saved) { setGoals(JSON.parse(saved)); return }
+      } catch {}
+      // 3. Use hardcoded DEFAULTS
+      setGoals(applyOrder(mergeTracking(DEFAULTS)))
+    }
+    load()
   }, [])
 
   useEffect(() => {
-    try { localStorage.setItem("kpi-v5", JSON.stringify(goals)) } catch {}
-  }, [goals])
+    saveTracking(goals)
+    saveOrder(goals)
+    if (!fromSheet) {
+      try { localStorage.setItem("kpi-v5", JSON.stringify(goals)) } catch {}
+    }
+  }, [goals, fromSheet])
 
   function updateGoal(gi: number, patch: Partial<Goal>) {
     setGoals(prev => prev.map((g, i) => i === gi ? { ...g, ...patch } : g))
@@ -276,6 +373,10 @@ export default function KpiPage() {
   function delGoal(gi: number) {
     if (goals.length <= 1) return
     setGoals(prev => prev.filter((_, i) => i !== gi))
+  }
+
+  function reorderMetrics(gi: number, metrics: Metric[]) {
+    setGoals(prev => prev.map((g, i) => i === gi ? { ...g, metrics } : g))
   }
 
   function resetAll() {
@@ -324,6 +425,7 @@ export default function KpiPage() {
             onAddRow={() => addRow(gi)}
             onDelRow={mi => delRow(gi, mi)}
             onDelGoal={() => delGoal(gi)}
+            onReorderMetrics={metrics => reorderMetrics(gi, metrics)}
             canDelete={goals.length > 1}
           />
         ))}
@@ -334,7 +436,7 @@ export default function KpiPage() {
 
 // ── GoalCard ─────────────────────────────────────────────────────────────────
 
-function GoalCard({ g, onToggle, onDomainChange, onNameChange, onDescChange, onSubgoalsChange, onMetricChange, onCycle, onAddRow, onDelRow, onDelGoal, canDelete }: {
+function GoalCard({ g, onToggle, onDomainChange, onNameChange, onDescChange, onSubgoalsChange, onMetricChange, onCycle, onAddRow, onDelRow, onDelGoal, onReorderMetrics, canDelete }: {
   g: Goal
   onToggle: () => void
   onDomainChange: (v: string) => void
@@ -346,10 +448,20 @@ function GoalCard({ g, onToggle, onDomainChange, onNameChange, onDescChange, onS
   onAddRow: () => void
   onDelRow: (mi: number) => void
   onDelGoal: () => void
+  onReorderMetrics: (metrics: Metric[]) => void
   canDelete: boolean
 }) {
   const [editingSubgoal, setEditingSubgoal] = useState<number | null>(null)
   const [newSubgoal, setNewSubgoal] = useState("")
+  const [dragFrom, setDragFrom] = useState<number | null>(null)
+  const [dragOver, setDragOver] = useState<number | null>(null)
+
+  function handleReorder(from: number, to: number) {
+    const arr = [...g.metrics]
+    const [moved] = arr.splice(from, 1)
+    arr.splice(to, 0, moved)
+    onReorderMetrics(arr)
+  }
 
   function removeSubgoal(i: number) { onSubgoalsChange(g.subgoals.filter((_, idx) => idx !== i)) }
   function updateSubgoal(i: number, v: string) { onSubgoalsChange(g.subgoals.map((s, idx) => idx === i ? v : s)) }
@@ -453,14 +565,37 @@ function GoalCard({ g, onToggle, onDomainChange, onNameChange, onDescChange, onS
           </div>
 
           {/* ── Metrics ── */}
-          <div className="border-t border-white/10 divide-y divide-white/5">
+          <div className="border-t border-white/10">
             {g.metrics.map((m, mi) => (
-              <MetricRow
-                key={m.id} m={m} canDelete={g.metrics.length > 1}
-                onChange={patch => onMetricChange(mi, patch)}
-                onCycle={() => onCycle(mi)}
-                onDelete={() => onDelRow(mi)}
-              />
+              <div
+                key={m.id}
+                draggable
+                onDragStart={e => {
+                  if ((e.target as Element).closest?.("input,textarea,button,select")) { e.preventDefault(); return }
+                  e.dataTransfer.effectAllowed = "move"
+                  setDragFrom(mi)
+                }}
+                onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOver(mi) }}
+                onDrop={e => {
+                  e.preventDefault()
+                  if (dragFrom !== null && dragFrom !== mi) handleReorder(dragFrom, mi)
+                  setDragFrom(null); setDragOver(null)
+                }}
+                onDragEnd={() => { setDragFrom(null); setDragOver(null) }}
+                className="border-b border-white/5"
+                style={{
+                  opacity: dragFrom === mi ? 0.35 : 1,
+                  borderTop: dragOver === mi && dragFrom !== null && dragFrom !== mi ? `2px solid ${ACCENT}80` : undefined,
+                  transition: "opacity 0.15s",
+                }}
+              >
+                <MetricRow
+                  m={m} canDelete={g.metrics.length > 1}
+                  onChange={patch => onMetricChange(mi, patch)}
+                  onCycle={() => onCycle(mi)}
+                  onDelete={() => onDelRow(mi)}
+                />
+              </div>
             ))}
           </div>
 
@@ -486,8 +621,13 @@ function MetricRow({ m, canDelete, onChange, onCycle, onDelete }: {
 
   return (
     <div className="px-3 py-2.5 hover:bg-white/3 transition-colors">
-      {/* Top row: text, target, status, delete */}
+      {/* Top row: drag handle, text, target, status, delete */}
       <div className="flex items-start gap-2">
+        <div
+          className="flex-shrink-0 mt-2 cursor-grab active:cursor-grabbing select-none text-white/20 hover:text-white/50 transition-colors leading-none"
+          title="גרור לשינוי סדר"
+          style={{ fontSize: 14, letterSpacing: "-1px" }}
+        >⠿</div>
         <div className="flex-1 rounded-xl px-3 py-1.5 min-w-0" style={{ background: `${ACCENT}18`, border: `1px solid ${ACCENT}40` }}>
           <textarea
             className="bg-transparent border-none outline-none text-xs w-full font-semibold placeholder-white/25 leading-relaxed resize-none"
@@ -520,7 +660,7 @@ function MetricRow({ m, canDelete, onChange, onCycle, onDelete }: {
         {/* Track controls */}
         <div className="flex-1 min-w-0">
           {m.trackType === "checks" && (
-            <ChecksTrack checks={m.checks} onToggle={i => { const c = [...m.checks]; c[i] = !c[i]; onChange({ checks: c }) }} />
+            <ChecksTrack checks={m.checks} checkLabels={m.checkLabels} onToggle={i => { const c = [...m.checks]; c[i] = !c[i]; onChange({ checks: c }) }} />
           )}
           {m.trackType === "students" && (
             <StudentsTrack selected={m.students} onChange={s => onChange({ students: s })} />
@@ -608,12 +748,13 @@ function TrackTypeDropdown({ current, onChange }: { current: TrackType; onChange
 
 // ── Track type components ────────────────────────────────────────────────────
 
-function ChecksTrack({ checks, onToggle }: { checks: boolean[]; onToggle: (i: number) => void }) {
+function ChecksTrack({ checks, checkLabels, onToggle }: { checks: boolean[]; checkLabels: string[]; onToggle: (i: number) => void }) {
+  const labels = checkLabels.length ? checkLabels : CHECK_LABELS
   const done = checks.filter(Boolean).length
   return (
     <div className="flex items-center gap-1 flex-wrap">
       {checks.map((c, i) => (
-        <button key={i} onClick={() => onToggle(i)} title={CHECK_LABELS[i]} className="flex flex-col items-center gap-0.5 group">
+        <button key={i} onClick={() => onToggle(i)} title={labels[i] ?? String(i + 1)} className="flex flex-col items-center gap-0.5 group">
           <span
             className="w-5 h-5 rounded flex items-center justify-center text-[10px] transition-all border"
             style={c
@@ -621,7 +762,7 @@ function ChecksTrack({ checks, onToggle }: { checks: boolean[]; onToggle: (i: nu
               : { background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.12)", color: "transparent" }
             }
           >✓</span>
-          <span className="text-[8px] text-white/25 group-hover:text-white/45 leading-none">{CHECK_LABELS[i]}</span>
+          <span className="text-[8px] text-white/25 group-hover:text-white/45 leading-none">{labels[i] ?? i + 1}</span>
         </button>
       ))}
       <span className="text-[10px] text-white/30 mr-1 tabular-nums">{done}/{checks.length}</span>
