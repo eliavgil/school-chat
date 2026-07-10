@@ -38,6 +38,7 @@ interface Metric {
   percentValue: number
   percentMax: number
   textValue: string
+  gaugeTarget: number | null  // null = use default for the type
   s: Status
 }
 
@@ -58,7 +59,7 @@ function mkCells(count = 5): NumberCell[] {
 }
 
 function mkMetric(text: string, target: string, trackType: TrackType = "checks"): Metric {
-  return { id: uid(), text, target, trackType, checks: Array(10).fill(false), students: [], numberCells: mkCells(), percentValue: 0, percentMax: 100, textValue: "", s: "none" }
+  return { id: uid(), text, target, trackType, checks: Array(10).fill(false), students: [], numberCells: mkCells(), percentValue: 0, percentMax: 100, textValue: "", gaugeTarget: null, s: "none" }
 }
 
 const DEFAULTS: Goal[] = [
@@ -135,11 +136,38 @@ const STATUS_LABEL: Record<Status, string> = {
 
 // ── progress helpers ─────────────────────────────────────────────────────────
 
+function defaultGaugeTarget(m: Metric): number {
+  switch (m.trackType) {
+    case "checks":   return m.checks.length
+    case "students": return CLASS_STUDENTS.length
+    case "numbers":  return m.numberCells.length  // filled/total by default
+    default:         return 1
+  }
+}
+
+function gaugeUnit(t: TrackType): string {
+  if (t === "checks")   return "חודשים"
+  if (t === "students") return "תלמידים"
+  return ""
+}
+
 function getProgress(m: Metric): number {
   switch (m.trackType) {
-    case "checks":   return m.checks.length ? m.checks.filter(Boolean).length / m.checks.length : 0
-    case "students": return CLASS_STUDENTS.length ? m.students.length / CLASS_STUDENTS.length : 0
-    case "numbers":  return m.numberCells.length ? m.numberCells.filter(c => c.value.trim() !== "").length / m.numberCells.length : 0
+    case "checks": {
+      const tgt = m.gaugeTarget ?? m.checks.length
+      return tgt > 0 ? Math.min(1, m.checks.filter(Boolean).length / tgt) : 0
+    }
+    case "students": {
+      const tgt = m.gaugeTarget ?? CLASS_STUDENTS.length
+      return tgt > 0 ? Math.min(1, m.students.length / tgt) : 0
+    }
+    case "numbers": {
+      if (m.gaugeTarget != null && m.gaugeTarget > 0) {
+        const sum = m.numberCells.reduce((a, c) => a + (parseFloat(c.value) || 0), 0)
+        return Math.min(1, sum / m.gaugeTarget)
+      }
+      return m.numberCells.length ? m.numberCells.filter(c => c.value.trim() !== "").length / m.numberCells.length : 0
+    }
     case "percent":  return m.percentMax > 0 ? Math.min(1, m.percentValue / m.percentMax) : 0
     case "text":     return m.textValue.trim().length > 0 ? 1 : 0
   }
@@ -197,13 +225,13 @@ export default function KpiPage() {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("kpi-v4")
+      const saved = localStorage.getItem("kpi-v5")
       if (saved) setGoals(JSON.parse(saved))
     } catch {}
   }, [])
 
   useEffect(() => {
-    try { localStorage.setItem("kpi-v4", JSON.stringify(goals)) } catch {}
+    try { localStorage.setItem("kpi-v5", JSON.stringify(goals)) } catch {}
   }, [goals])
 
   function updateGoal(gi: number, patch: Partial<Goal>) {
@@ -247,7 +275,7 @@ export default function KpiPage() {
   function resetAll() {
     setGoals(prev => prev.map(g => ({
       ...g,
-      metrics: g.metrics.map(m => ({ ...m, checks: Array(10).fill(false), students: [], numberCells: m.numberCells.map(c => ({ ...c, value: "" })), percentValue: 0, textValue: "", s: "none" })),
+      metrics: g.metrics.map(m => ({ ...m, checks: Array(10).fill(false), students: [], numberCells: m.numberCells.map(c => ({ ...c, value: "" })), percentValue: 0, textValue: "", s: "none" })),  // gaugeTarget intentionally preserved
     })))
   }
 
@@ -392,25 +420,9 @@ function MetricRow({ m, canDelete, onChange, onCycle, onDelete }: {
         )}
       </div>
 
-      {/* Bottom row: type selector + track controls + gauge */}
+      {/* Bottom row: type dropdown + track controls + gauge */}
       <div className="mt-2 flex items-start gap-2 flex-wrap">
-        {/* Track type selector */}
-        <div className="flex gap-0.5 flex-shrink-0 bg-white/5 rounded-lg p-0.5">
-          {(Object.entries(TRACK_META) as [TrackType, { icon: string; label: string }][]).map(([type, meta]) => {
-            const active = m.trackType === type
-            return (
-              <button
-                key={type}
-                onClick={() => onChange({ trackType: type })}
-                className="text-[10px] px-1.5 py-0.5 rounded-md transition-colors"
-                style={active ? { background: `${ACCENT}30`, color: ACCENT } : { color: "rgba(255,255,255,0.3)" }}
-                title={meta.label}
-              >
-                {meta.icon}
-              </button>
-            )
-          })}
-        </div>
+        <TrackTypeDropdown current={m.trackType} onChange={t => onChange({ trackType: t })} />
 
         {/* Track controls */}
         <div className="flex-1 min-w-0">
@@ -431,9 +443,72 @@ function MetricRow({ m, canDelete, onChange, onCycle, onDelete }: {
           )}
         </div>
 
-        {/* Gauge */}
-        <SemiGauge progress={progress} />
+        {/* Gauge + target config */}
+        <div className="flex flex-col items-center gap-0.5 flex-shrink-0">
+          <SemiGauge progress={progress} />
+          {(m.trackType === "checks" || m.trackType === "students" || m.trackType === "numbers") && (
+            <div className="flex items-center gap-0.5">
+              <span className="text-[9px] text-white/25">מתוך</span>
+              <input
+                type="number"
+                min={1}
+                className="w-9 text-center text-[9px] text-white/45 bg-transparent border-b border-white/15 outline-none focus:border-white/40 focus:text-white/70 tabular-nums"
+                value={m.gaugeTarget ?? defaultGaugeTarget(m)}
+                onChange={e => onChange({ gaugeTarget: Number(e.target.value) || null })}
+              />
+              <span className="text-[9px] text-white/25">{gaugeUnit(m.trackType)}</span>
+            </div>
+          )}
+        </div>
       </div>
+    </div>
+  )
+}
+
+// ── Track type dropdown ──────────────────────────────────────────────────────
+
+function TrackTypeDropdown({ current, onChange }: { current: TrackType; onChange: (t: TrackType) => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+  const meta = TRACK_META[current]
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
+    if (open) document.addEventListener("mousedown", handler)
+    return () => document.removeEventListener("mousedown", handler)
+  }, [open])
+
+  return (
+    <div className="relative flex-shrink-0" ref={ref}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-lg border transition-colors"
+        style={{ borderColor: `${ACCENT}50`, color: ACCENT, background: `${ACCENT}15` }}
+      >
+        <span>{meta.icon}</span>
+        <span>{meta.label}</span>
+        <span className="text-[8px] opacity-60">▾</span>
+      </button>
+
+      {open && (
+        <div
+          className="absolute top-full mt-1 right-0 z-50 rounded-xl border border-white/15 shadow-2xl overflow-hidden"
+          style={{ background: "#1e293b", minWidth: 130 }}
+        >
+          {(Object.entries(TRACK_META) as [TrackType, { icon: string; label: string }][]).map(([type, m]) => (
+            <button
+              key={type}
+              onClick={() => { onChange(type); setOpen(false) }}
+              className="w-full flex items-center gap-2 px-3 py-2 hover:bg-white/8 transition-colors text-right"
+              style={current === type ? { color: ACCENT } : { color: "rgba(255,255,255,0.65)" }}
+            >
+              <span className="text-sm">{m.icon}</span>
+              <span className="text-xs flex-1">{m.label}</span>
+              {current === type && <span className="text-[10px]" style={{ color: ACCENT }}>✓</span>}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
