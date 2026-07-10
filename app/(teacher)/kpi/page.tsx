@@ -4,27 +4,40 @@ import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 
 type Status = "none" | "ok" | "warn" | "bad"
-type TrackType = "checks" | "students"
+type TrackType = "checks" | "students" | "numbers" | "percent" | "text"
 
-// Hardcoded class list — replace with API when available
 const CLASS_STUDENTS = [
   "אדם כהן", "אביגיל לוי", "אורי מזרחי", "איתמר פרץ", "אלה שפירא",
   "אמיר גולדברג", "בר חדד", "גל ביטון", "דנה אברמוב", "דניאל נחמני",
   "הילה כץ", "טל שמש", "יובל פישר", "יעל וקנין", "ינאי רוזן",
   "כרמל אלון", "לי בן-דוד", "לירון שלום", "מיכל אוחנה", "נועה גבאי",
   "נועם אסולין", "סהר חיים", "עדי מנחם", "עומר ברק", "עידן קפלן",
-  "פלג זוהר", "רון שגיא", "רות ספיר", "שיר ג'בארי", "תמר לוינסון",
+  "פלג זוהר", "רון שגיא", "רות ספיר", "שיר ג׳בארי", "תמר לוינסון",
 ]
 
 const CHECK_LABELS = ["ספט׳", "אוק׳", "נוב׳", "דצמ׳", "ינו׳", "פבר׳", "מרץ", "אפר׳", "מאי", "יוני"]
+
+const TRACK_META: Record<TrackType, { icon: string; label: string }> = {
+  checks:   { icon: "☑", label: "חודשי" },
+  students: { icon: "👤", label: "תלמידים" },
+  numbers:  { icon: "#", label: "מספרים" },
+  percent:  { icon: "%", label: "אחוזים" },
+  text:     { icon: "✍", label: "מילולי" },
+}
+
+interface NumberCell { label: string; value: string }
 
 interface Metric {
   id: string
   text: string
   target: string
   trackType: TrackType
-  checks: boolean[]   // length 10 for months
-  students: string[]  // selected student names
+  checks: boolean[]
+  students: string[]
+  numberCells: NumberCell[]
+  percentValue: number
+  percentMax: number
+  textValue: string
   s: Status
 }
 
@@ -40,8 +53,12 @@ interface Goal {
 const uid = () => Math.random().toString(36).slice(2, 9)
 const ACCENT = "#fcd34d"
 
-function defaultMetric(text: string, target: string, trackType: TrackType = "checks"): Metric {
-  return { id: uid(), text, target, trackType, checks: Array(10).fill(false), students: [], s: "none" }
+function mkCells(count = 5): NumberCell[] {
+  return Array.from({ length: count }, (_, i) => ({ label: `${i + 1}`, value: "" }))
+}
+
+function mkMetric(text: string, target: string, trackType: TrackType = "checks"): Metric {
+  return { id: uid(), text, target, trackType, checks: Array(10).fill(false), students: [], numberCells: mkCells(), percentValue: 0, percentMax: 100, textValue: "", s: "none" }
 }
 
 const DEFAULTS: Goal[] = [
@@ -51,13 +68,13 @@ const DEFAULTS: Goal[] = [
     desc: "הובלת התלמיד למיצוי מלא של יכולותיו הלימודיות וזכאות לתעודת בגרות מיטבית",
     subgoals: ["מיקסום יכולות לימודיות", "ציונים גבוהים ביחס לשנים קודמות", "אקלים לימודי חיובי בכיתה"],
     metrics: [
-      defaultMetric("מעבר להקבצות גבוהות גדול ממעבר לנמוכות", ""),
-      defaultMetric("מגמת ירידה בנתוני איחורים והפרעות בשיעורים", ""),
-      defaultMetric("ממוצע ציונים גבוה משנה קודמת מרבעון לרבעון", ""),
-      defaultMetric("מינימום נכשלים", ""),
-      defaultMetric("מקסימום מצטיינים", ""),
-      defaultMetric("עמידה בכל התנאים לקבלת תעודת בגרות", "כן"),
-      defaultMetric("מקסימום ניצול שעות פרטניות וקבוצות תגבור", ""),
+      mkMetric("מעבר להקבצות גבוהות גדול ממעבר לנמוכות", ""),
+      mkMetric("מגמת ירידה בנתוני איחורים והפרעות בשיעורים", ""),
+      mkMetric("ממוצע ציונים גבוה משנה קודמת מרבעון לרבעון", ""),
+      mkMetric("מינימום נכשלים", ""),
+      mkMetric("מקסימום מצטיינים", ""),
+      mkMetric("עמידה בכל התנאים לקבלת תעודת בגרות", "כן"),
+      mkMetric("מקסימום ניצול שעות פרטניות וקבוצות תגבור", ""),
     ],
   },
   {
@@ -66,11 +83,11 @@ const DEFAULTS: Goal[] = [
     desc: "ליווי התלמיד בבירור זהותו האישית והלאומית, תוך עידוד וחיזוק ערכים משמעותיים",
     subgoals: ["כבוד לזולת / אמפטיה", "אחריות אישית", "מעורבות חברתית", "מצוינות / עומק", "חריצות / התמדה", "פיתוח זהות אישית, קבוצתית, לאומית"],
     metrics: [
-      { ...defaultMetric("אחת לחודש תלמידים ממלאים שאלון אישי", "חודשי", "students"), checks: Array(10).fill(false) },
-      defaultMetric("10 שיעורי חינוך עסקו בנושאי זהות, אחריות, מצוינות, התמדה", "10"),
-      defaultMetric("ניתנו 2 משימות הערכה במסגרת שיעור חינוך", "2"),
-      { ...defaultMetric("100% משלימים חובת מעורבות חברתית", "100%", "students"), checks: Array(10).fill(false) },
-      defaultMetric("80% מהתלמידים מדווחים על שביעות רצון גבוהה מהמעורבות", "80%"),
+      mkMetric("אחת לחודש תלמידים ממלאים שאלון אישי", "חודשי", "students"),
+      mkMetric("10 שיעורי חינוך עסקו בנושאי זהות, אחריות, מצוינות, התמדה", "10"),
+      mkMetric("ניתנו 2 משימות הערכה במסגרת שיעור חינוך", "2"),
+      mkMetric("100% משלימים חובת מעורבות חברתית", "100%", "students"),
+      mkMetric("80% מהתלמידים מדווחים על שביעות רצון גבוהה מהמעורבות", "80%"),
     ],
   },
   {
@@ -79,11 +96,11 @@ const DEFAULTS: Goal[] = [
     desc: "הקניית ארגז כלים ישומי ורלוונטי המכין את התלמיד לאתגרי התיכון ולעולם המחר",
     subgoals: ["למידה עצמאית", "שמיעת עצמי", "חשיבה ביקורתית", "יצירתיות", "אוריינות דיגיטלית"],
     metrics: [
-      { ...defaultMetric("90% תלמידים עברו בחינת אוריינות דיגיטלית", "90%", "students"), checks: Array(10).fill(false) },
-      { ...defaultMetric("90% תלמידים הגישו ≥3 משימות המשלבות חשיבה ביקורתית/יצירתיות", "90%", "students"), checks: Array(10).fill(false) },
-      { ...defaultMetric("100% תלמידים הוכנסו ללמידה באמצעות בוט AI", "100%", "students"), checks: Array(10).fill(false) },
-      { ...defaultMetric("90% תלמידים הגישו ≥3 משימות המחייבות חקירה עצמאית", "90%", "students"), checks: Array(10).fill(false) },
-      defaultMetric("75% מורים דיווחו כיצד שילבו מיומנות נדרשת בהוראת המקצוע", "75%"),
+      mkMetric("90% תלמידים עברו בחינת אוריינות דיגיטלית", "90%", "students"),
+      mkMetric("90% תלמידים הגישו ≥3 משימות המשלבות חשיבה ביקורתית/יצירתיות", "90%", "students"),
+      mkMetric("100% תלמידים הוכנסו ללמידה באמצעות בוט AI", "100%", "students"),
+      mkMetric("90% תלמידים הגישו ≥3 משימות המחייבות חקירה עצמאית", "90%", "students"),
+      mkMetric("75% מורים דיווחו כיצד שילבו מיומנות נדרשת בהוראת המקצוע", "75%"),
     ],
   },
   {
@@ -92,15 +109,15 @@ const DEFAULTS: Goal[] = [
     desc: "יצירת מרחב בטוח ותומך המספק מענה רגשי רחב ומתמקד בפיתוח ביטחון עצמי וקשרים חברתיים",
     subgoals: ["מרחב בטוח", "כישורים חברתיים", "ביטחון עצמי", "שיח רגשי", "חוסן"],
     metrics: [
-      { ...defaultMetric("אחת לחודש תלמידים ממלאים שאלון אישי", "חודשי", "students"), checks: Array(10).fill(false) },
-      defaultMetric("שיחה אישית אחת לרבעון עם כל תלמיד עם שאלון וסיכום יעדים", "4/שנה"),
-      defaultMetric("3 מפגשים כיתתיים מחוץ לבית הספר", "3"),
-      defaultMetric("10 שיעורי חינוך עסקו בנושאים רגשיים-חברתיים", "10"),
-      defaultMetric("ניתנו 2 משימות הערכה במסגרת שיעור חינוך", "2"),
-      defaultMetric("מגמת ירידה במקרי אלימות מנובמבר ועד סוף השנה", "↓"),
-      { ...defaultMetric("33% מהתלמידים ישתתפו בלפחות 3 מפגשים טיפוליים חוץ-כיתתיים", "33%", "students"), checks: Array(10).fill(false) },
-      { ...defaultMetric("80% מהתלמידים ישתתפו בלפחות מפגש טיפולי אחד חוץ-כיתתי", "80%", "students"), checks: Array(10).fill(false) },
-      defaultMetric("הפחתת שימוש בטלפון בהפסקות ופעילויות חוץ", "↓"),
+      mkMetric("אחת לחודש תלמידים ממלאים שאלון אישי", "חודשי", "students"),
+      mkMetric("שיחה אישית אחת לרבעון עם כל תלמיד עם שאלון וסיכום יעדים", "4/שנה"),
+      mkMetric("3 מפגשים כיתתיים מחוץ לבית הספר", "3"),
+      mkMetric("10 שיעורי חינוך עסקו בנושאים רגשיים-חברתיים", "10"),
+      mkMetric("ניתנו 2 משימות הערכה במסגרת שיעור חינוך", "2"),
+      mkMetric("מגמת ירידה במקרי אלימות מנובמבר ועד סוף השנה", "↓"),
+      mkMetric("33% מהתלמידים ישתתפו בלפחות 3 מפגשים טיפוליים חוץ-כיתתיים", "33%", "students"),
+      mkMetric("80% מהתלמידים ישתתפו בלפחות מפגש טיפולי אחד חוץ-כיתתי", "80%", "students"),
+      mkMetric("הפחתת שימוש בטלפון בהפסקות ופעילויות חוץ", "↓"),
     ],
   },
 ]
@@ -116,18 +133,77 @@ const STATUS_LABEL: Record<Status, string> = {
   none: "טרם הוערך", ok: "עומד ביעד", warn: "בתהליך", bad: "מאחור",
 }
 
+// ── progress helpers ─────────────────────────────────────────────────────────
+
+function getProgress(m: Metric): number {
+  switch (m.trackType) {
+    case "checks":   return m.checks.length ? m.checks.filter(Boolean).length / m.checks.length : 0
+    case "students": return CLASS_STUDENTS.length ? m.students.length / CLASS_STUDENTS.length : 0
+    case "numbers":  return m.numberCells.length ? m.numberCells.filter(c => c.value.trim() !== "").length / m.numberCells.length : 0
+    case "percent":  return m.percentMax > 0 ? Math.min(1, m.percentValue / m.percentMax) : 0
+    case "text":     return m.textValue.trim().length > 0 ? 1 : 0
+  }
+}
+
+function progressColor(p: number): string {
+  const c = (v: number) => Math.round(Math.max(0, Math.min(255, v)))
+  if (p <= 0.5) {
+    const t = p * 2
+    return `rgb(${c(239+(252-239)*t)},${c(68+(211-68)*t)},${c(68+(77-68)*t)})`
+  }
+  const t = (p - 0.5) * 2
+  return `rgb(${c(252+(74-252)*t)},${c(211+(222-211)*t)},${c(77+(128-77)*t)})`
+}
+
+// ── Semi-circle gauge ────────────────────────────────────────────────────────
+
+function SemiGauge({ progress }: { progress: number }) {
+  const p = Math.max(0, Math.min(1, progress))
+  const r = 16
+  const C = Math.PI * r
+  const color = progressColor(p)
+
+  return (
+    <svg viewBox="0 0 40 22" width="52" height="28" style={{ flexShrink: 0 }}>
+      <path d="M 4 20 A 16 16 0 0 0 36 20" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="3.5" strokeLinecap="round" />
+      <path
+        d="M 4 20 A 16 16 0 0 0 36 20"
+        fill="none"
+        stroke={color}
+        strokeWidth="3.5"
+        strokeLinecap="round"
+        strokeDasharray={`${C}`}
+        strokeDashoffset={`${C * (1 - p)}`}
+        style={{ transition: "stroke-dashoffset 0.45s ease, stroke 0.45s ease" }}
+      />
+      <text
+        x="20" y="19"
+        textAnchor="middle"
+        fontSize="7.5"
+        fontWeight="700"
+        fill={p > 0 ? color : "rgba(255,255,255,0.2)"}
+        style={{ fontVariantNumeric: "tabular-nums" }}
+      >
+        {Math.round(p * 100)}%
+      </text>
+    </svg>
+  )
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
+
 export default function KpiPage() {
   const [goals, setGoals] = useState<Goal[]>(DEFAULTS)
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("kpi-v3")
+      const saved = localStorage.getItem("kpi-v4")
       if (saved) setGoals(JSON.parse(saved))
     } catch {}
   }, [])
 
   useEffect(() => {
-    try { localStorage.setItem("kpi-v3", JSON.stringify(goals)) } catch {}
+    try { localStorage.setItem("kpi-v4", JSON.stringify(goals)) } catch {}
   }, [goals])
 
   function updateGoal(gi: number, patch: Partial<Goal>) {
@@ -143,13 +219,11 @@ export default function KpiPage() {
 
   function cycleStatus(gi: number, mi: number) {
     const cur = goals[gi].metrics[mi].s
-    const next = STATUS_CYCLE[(STATUS_CYCLE.indexOf(cur) + 1) % STATUS_CYCLE.length]
-    updateMetric(gi, mi, { s: next })
+    updateMetric(gi, mi, { s: STATUS_CYCLE[(STATUS_CYCLE.indexOf(cur) + 1) % STATUS_CYCLE.length] })
   }
 
   function addRow(gi: number) {
-    const m = defaultMetric("יעד חדש", "")
-    setGoals(prev => prev.map((g, i) => i === gi ? { ...g, metrics: [...g.metrics, m] } : g))
+    setGoals(prev => prev.map((g, i) => i === gi ? { ...g, metrics: [...g.metrics, mkMetric("יעד חדש", "")] } : g))
   }
 
   function delRow(gi: number, mi: number) {
@@ -160,12 +234,7 @@ export default function KpiPage() {
   }
 
   function addGoal() {
-    const g: Goal = {
-      id: uid(), open: true,
-      name: "מטרת על חדשה", desc: "תיאור המטרה",
-      subgoals: ["יעד 1", "יעד 2"],
-      metrics: [defaultMetric("מדד ראשון", "")],
-    }
+    const g: Goal = { id: uid(), open: true, name: "מטרת על חדשה", desc: "תיאור המטרה", subgoals: ["יעד 1", "יעד 2"], metrics: [mkMetric("מדד ראשון", "")] }
     setGoals(prev => [...prev, g])
     setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" }), 80)
   }
@@ -178,47 +247,26 @@ export default function KpiPage() {
   function resetAll() {
     setGoals(prev => prev.map(g => ({
       ...g,
-      metrics: g.metrics.map(m => ({ ...m, checks: Array(10).fill(false), students: [], s: "none" }))
+      metrics: g.metrics.map(m => ({ ...m, checks: Array(10).fill(false), students: [], numberCells: m.numberCells.map(c => ({ ...c, value: "" })), percentValue: 0, textValue: "", s: "none" })),
     })))
   }
 
   return (
-    <div
-      className="min-h-screen"
-      dir="rtl"
-      style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)" }}
-    >
-      {/* Header */}
+    <div className="min-h-screen" dir="rtl" style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)" }}>
       <div className="bg-black/30 backdrop-blur-md border-b border-white/10 px-4 header-pt pb-3 sticky top-0 z-10">
         <div className="flex items-center gap-3 max-w-5xl mx-auto">
-          <Link
-            href="/home"
-            className="w-9 h-9 glass rounded-xl flex items-center justify-center text-white/70 hover:text-white interactive btn-press transition-colors"
-          >
-            🏠
-          </Link>
+          <Link href="/home" className="w-9 h-9 glass rounded-xl flex items-center justify-center text-white/70 hover:text-white interactive btn-press transition-colors">🏠</Link>
           <div className="flex-1">
             <div className="font-semibold text-white text-sm">לוח KPI</div>
             <div className="text-white/40 text-xs">מדדי הצלחה לאורך השנה</div>
           </div>
           <div className="flex gap-2">
-            <button
-              onClick={resetAll}
-              className="text-xs text-white/40 hover:text-white/70 glass rounded-lg px-3 py-1.5 transition-colors"
-            >
-              איפוס
-            </button>
-            <button
-              onClick={addGoal}
-              className="text-xs text-white bg-white/15 hover:bg-white/25 rounded-lg px-3 py-1.5 transition-colors font-medium"
-            >
-              + מטרה
-            </button>
+            <button onClick={resetAll} className="text-xs text-white/40 hover:text-white/70 glass rounded-lg px-3 py-1.5 transition-colors">איפוס</button>
+            <button onClick={addGoal} className="text-xs text-white bg-white/15 hover:bg-white/25 rounded-lg px-3 py-1.5 transition-colors font-medium">+ מטרה</button>
           </div>
         </div>
       </div>
 
-      {/* Legend */}
       <div className="max-w-5xl mx-auto px-4 pt-3 pb-1 flex gap-4 flex-wrap">
         {(Object.entries(STATUS_LABEL) as [Status, string][]).map(([s, label]) => (
           <div key={s} className="flex items-center gap-1.5">
@@ -228,12 +276,10 @@ export default function KpiPage() {
         ))}
       </div>
 
-      {/* Cards */}
       <main className="max-w-5xl mx-auto px-4 py-3 space-y-4 pb-16">
         {goals.map((g, gi) => (
           <GoalCard
-            key={g.id}
-            g={g}
+            key={g.id} g={g}
             onToggle={() => updateGoal(gi, { open: !g.open })}
             onNameChange={v => updateGoal(gi, { name: v })}
             onDescChange={v => updateGoal(gi, { desc: v })}
@@ -250,10 +296,9 @@ export default function KpiPage() {
   )
 }
 
-function GoalCard({
-  g, onToggle, onNameChange, onDescChange,
-  onMetricChange, onCycle, onAddRow, onDelRow, onDelGoal, canDelete,
-}: {
+// ── GoalCard ─────────────────────────────────────────────────────────────────
+
+function GoalCard({ g, onToggle, onNameChange, onDescChange, onMetricChange, onCycle, onAddRow, onDelRow, onDelGoal, canDelete }: {
   g: Goal
   onToggle: () => void
   onNameChange: (v: string) => void
@@ -267,80 +312,38 @@ function GoalCard({
 }) {
   return (
     <div className="glass rounded-2xl border border-white/10 overflow-hidden">
-      {/* Goal header */}
-      <div
-        className="flex items-stretch cursor-pointer select-none hover:bg-white/5 transition-colors"
-        onClick={onToggle}
-      >
+      <div className="flex items-stretch cursor-pointer select-none hover:bg-white/5 transition-colors" onClick={onToggle}>
         <div className="w-1 flex-shrink-0" style={{ background: ACCENT }} />
         <div className="flex-1 px-4 py-3 min-w-0">
-          <input
-            className="font-bold text-sm text-white bg-transparent border-none outline-none w-full cursor-pointer focus:cursor-text"
-            value={g.name}
-            onClick={e => e.stopPropagation()}
-            onChange={e => onNameChange(e.target.value)}
-          />
-          <input
-            className="text-xs text-white/45 bg-transparent border-none outline-none w-full mt-0.5 cursor-pointer focus:cursor-text"
-            value={g.desc}
-            onClick={e => e.stopPropagation()}
-            onChange={e => onDescChange(e.target.value)}
-          />
+          <input className="font-bold text-sm text-white bg-transparent border-none outline-none w-full cursor-pointer focus:cursor-text" value={g.name} onClick={e => e.stopPropagation()} onChange={e => onNameChange(e.target.value)} />
+          <input className="text-xs text-white/45 bg-transparent border-none outline-none w-full mt-0.5 cursor-pointer focus:cursor-text" value={g.desc} onClick={e => e.stopPropagation()} onChange={e => onDescChange(e.target.value)} />
         </div>
         <div className="flex items-center gap-2 px-3" onClick={e => e.stopPropagation()}>
-          {canDelete && (
-            <button
-              onClick={onDelGoal}
-              className="text-[10px] text-red-400/60 hover:text-red-400 transition-colors px-2 py-1 rounded-lg hover:bg-red-400/10"
-            >
-              מחק
-            </button>
-          )}
+          {canDelete && <button onClick={onDelGoal} className="text-[10px] text-red-400/60 hover:text-red-400 transition-colors px-2 py-1 rounded-lg hover:bg-red-400/10">מחק</button>}
           <span className={`text-white/30 text-base transition-transform duration-200 ${g.open ? "rotate-180" : ""}`}>▾</span>
         </div>
       </div>
 
       {g.open && (
         <>
-          {/* Sub-goal chips */}
           <div className="px-4 py-2 flex flex-wrap gap-1.5 border-t border-white/8">
             {g.subgoals.map((s, i) => (
-              <span
-                key={i}
-                className="text-[11px] px-2.5 py-0.5 rounded-full border font-medium"
-                style={{ color: ACCENT, borderColor: `${ACCENT}50`, background: `${ACCENT}15` }}
-              >
-                {s}
-              </span>
+              <span key={i} className="text-[11px] px-2.5 py-0.5 rounded-full border font-medium" style={{ color: ACCENT, borderColor: `${ACCENT}50`, background: `${ACCENT}15` }}>{s}</span>
             ))}
           </div>
 
-          {/* Metrics list */}
           <div className="border-t border-white/8 divide-y divide-white/5">
             {g.metrics.map((m, mi) => (
               <MetricRow
-                key={m.id}
-                m={m}
-                canDelete={g.metrics.length > 1}
-                onTextChange={v => onMetricChange(mi, { text: v })}
-                onTargetChange={v => onMetricChange(mi, { target: v })}
-                onCheckToggle={idx => {
-                  const next = [...m.checks]
-                  next[idx] = !next[idx]
-                  onMetricChange(mi, { checks: next })
-                }}
-                onStudentsChange={s => onMetricChange(mi, { students: s })}
-                onTypeToggle={() => onMetricChange(mi, { trackType: m.trackType === "checks" ? "students" : "checks" })}
+                key={m.id} m={m} canDelete={g.metrics.length > 1}
+                onChange={patch => onMetricChange(mi, patch)}
                 onCycle={() => onCycle(mi)}
                 onDelete={() => onDelRow(mi)}
               />
             ))}
           </div>
 
-          <button
-            onClick={onAddRow}
-            className="flex items-center gap-2 mx-4 my-2.5 px-3 py-1.5 rounded-lg border border-dashed border-white/15 text-white/30 hover:text-white/60 hover:border-white/30 text-xs transition-colors"
-          >
+          <button onClick={onAddRow} className="flex items-center gap-2 mx-4 my-2.5 px-3 py-1.5 rounded-lg border border-dashed border-white/15 text-white/30 hover:text-white/60 hover:border-white/30 text-xs transition-colors">
             <span>＋</span> הוסף יעד
           </button>
         </>
@@ -349,142 +352,123 @@ function GoalCard({
   )
 }
 
-function MetricRow({
-  m, canDelete,
-  onTextChange, onTargetChange, onCheckToggle, onStudentsChange, onTypeToggle, onCycle, onDelete,
-}: {
+// ── MetricRow ────────────────────────────────────────────────────────────────
+
+function MetricRow({ m, canDelete, onChange, onCycle, onDelete }: {
   m: Metric
   canDelete: boolean
-  onTextChange: (v: string) => void
-  onTargetChange: (v: string) => void
-  onCheckToggle: (idx: number) => void
-  onStudentsChange: (s: string[]) => void
-  onTypeToggle: () => void
+  onChange: (patch: Partial<Metric>) => void
   onCycle: () => void
   onDelete: () => void
 }) {
-  const doneCount = m.trackType === "checks"
-    ? m.checks.filter(Boolean).length
-    : m.students.length
+  const progress = getProgress(m)
 
   return (
     <div className="px-3 py-2.5 hover:bg-white/3 transition-colors">
+      {/* Top row: text, target, status, delete */}
       <div className="flex items-start gap-2">
-        {/* Goal text pill */}
-        <div
-          className="flex-1 rounded-xl px-3 py-1.5 min-w-0"
-          style={{ background: `${ACCENT}18`, border: `1px solid ${ACCENT}40` }}
-        >
+        <div className="flex-1 rounded-xl px-3 py-1.5 min-w-0" style={{ background: `${ACCENT}18`, border: `1px solid ${ACCENT}40` }}>
           <textarea
             className="bg-transparent border-none outline-none text-xs w-full font-semibold placeholder-white/25 leading-relaxed resize-none"
             style={{ color: ACCENT }}
             value={m.text}
-            onChange={e => onTextChange(e.target.value)}
+            onChange={e => onChange({ text: e.target.value })}
             placeholder="שם היעד"
             rows={2}
           />
         </div>
-
-        {/* Target */}
         <div className="w-14 flex-shrink-0">
           <textarea
             className="w-full text-center text-xs text-white/70 bg-transparent border-none outline-none rounded-md focus:bg-white/8 focus:text-white px-1 py-0.5 tabular-nums transition-colors placeholder-white/20 resize-none leading-relaxed"
             value={m.target}
-            onChange={e => onTargetChange(e.target.value)}
+            onChange={e => onChange({ target: e.target.value })}
             placeholder="יעד"
             rows={2}
           />
         </div>
-
-        {/* Status dot */}
-        <button
-          onClick={onCycle}
-          title={STATUS_LABEL[m.s]}
-          className={`w-4 h-4 rounded-full flex-shrink-0 mt-1 transition-transform hover:scale-125 ${STATUS_DOT[m.s]}`}
-        />
-
-        {/* Delete */}
+        <button onClick={onCycle} title={STATUS_LABEL[m.s]} className={`w-4 h-4 rounded-full flex-shrink-0 mt-1.5 transition-transform hover:scale-125 ${STATUS_DOT[m.s]}`} />
         {canDelete && (
-          <button
-            onClick={onDelete}
-            className="w-4 h-4 rounded-full flex items-center justify-center text-white/20 hover:text-red-400 transition-colors text-[10px] flex-shrink-0 mt-1"
-          >
-            ✕
-          </button>
+          <button onClick={onDelete} className="w-4 h-4 flex items-center justify-center text-white/20 hover:text-red-400 transition-colors text-[10px] flex-shrink-0 mt-1.5">✕</button>
         )}
       </div>
 
-      {/* Tracking area */}
-      <div className="mt-2 flex items-center gap-2 flex-wrap">
-        {/* Toggle type button */}
-        <button
-          onClick={onTypeToggle}
-          className="text-[10px] px-2 py-0.5 rounded-full border transition-colors flex-shrink-0"
-          style={
-            m.trackType === "students"
-              ? { color: ACCENT, borderColor: `${ACCENT}50`, background: `${ACCENT}15` }
-              : { color: "rgba(255,255,255,0.35)", borderColor: "rgba(255,255,255,0.12)", background: "transparent" }
-          }
-        >
-          {m.trackType === "students" ? "👤 תלמידים" : "☑ חודשי"}
-        </button>
+      {/* Bottom row: type selector + track controls + gauge */}
+      <div className="mt-2 flex items-start gap-2 flex-wrap">
+        {/* Track type selector */}
+        <div className="flex gap-0.5 flex-shrink-0 bg-white/5 rounded-lg p-0.5">
+          {(Object.entries(TRACK_META) as [TrackType, { icon: string; label: string }][]).map(([type, meta]) => {
+            const active = m.trackType === type
+            return (
+              <button
+                key={type}
+                onClick={() => onChange({ trackType: type })}
+                className="text-[10px] px-1.5 py-0.5 rounded-md transition-colors"
+                style={active ? { background: `${ACCENT}30`, color: ACCENT } : { color: "rgba(255,255,255,0.3)" }}
+                title={meta.label}
+              >
+                {meta.icon}
+              </button>
+            )
+          })}
+        </div>
 
-        {m.trackType === "checks" ? (
-          <ChecksTrack checks={m.checks} onToggle={onCheckToggle} doneCount={doneCount} />
-        ) : (
-          <StudentsTrack selected={m.students} onChange={onStudentsChange} />
-        )}
+        {/* Track controls */}
+        <div className="flex-1 min-w-0">
+          {m.trackType === "checks" && (
+            <ChecksTrack checks={m.checks} onToggle={i => { const c = [...m.checks]; c[i] = !c[i]; onChange({ checks: c }) }} />
+          )}
+          {m.trackType === "students" && (
+            <StudentsTrack selected={m.students} onChange={s => onChange({ students: s })} />
+          )}
+          {m.trackType === "numbers" && (
+            <NumbersTrack cells={m.numberCells} onChange={cells => onChange({ numberCells: cells })} />
+          )}
+          {m.trackType === "percent" && (
+            <PercentTrack value={m.percentValue} max={m.percentMax} onValueChange={v => onChange({ percentValue: v })} onMaxChange={v => onChange({ percentMax: v })} />
+          )}
+          {m.trackType === "text" && (
+            <TextTrack value={m.textValue} onChange={v => onChange({ textValue: v })} />
+          )}
+        </div>
+
+        {/* Gauge */}
+        <SemiGauge progress={progress} />
       </div>
     </div>
   )
 }
 
-function ChecksTrack({ checks, onToggle, doneCount }: {
-  checks: boolean[]
-  onToggle: (i: number) => void
-  doneCount: number
-}) {
+// ── Track type components ────────────────────────────────────────────────────
+
+function ChecksTrack({ checks, onToggle }: { checks: boolean[]; onToggle: (i: number) => void }) {
+  const done = checks.filter(Boolean).length
   return (
-    <div className="flex items-center gap-1 flex-wrap flex-1">
+    <div className="flex items-center gap-1 flex-wrap">
       {checks.map((c, i) => (
-        <button
-          key={i}
-          onClick={() => onToggle(i)}
-          title={CHECK_LABELS[i]}
-          className="flex flex-col items-center gap-0.5 group"
-        >
+        <button key={i} onClick={() => onToggle(i)} title={CHECK_LABELS[i]} className="flex flex-col items-center gap-0.5 group">
           <span
             className="w-5 h-5 rounded flex items-center justify-center text-[10px] transition-all border"
-            style={
-              c
-                ? { background: `${ACCENT}30`, borderColor: `${ACCENT}80`, color: ACCENT }
-                : { background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.12)", color: "transparent" }
+            style={c
+              ? { background: `${ACCENT}30`, borderColor: `${ACCENT}80`, color: ACCENT }
+              : { background: "rgba(255,255,255,0.05)", borderColor: "rgba(255,255,255,0.12)", color: "transparent" }
             }
-          >
-            ✓
-          </span>
+          >✓</span>
           <span className="text-[8px] text-white/25 group-hover:text-white/45 leading-none">{CHECK_LABELS[i]}</span>
         </button>
       ))}
-      <span className="text-[10px] text-white/30 mr-1 tabular-nums">{doneCount}/{checks.length}</span>
+      <span className="text-[10px] text-white/30 mr-1 tabular-nums">{done}/{checks.length}</span>
     </div>
   )
 }
 
-function StudentsTrack({ selected, onChange }: {
-  selected: string[]
-  onChange: (s: string[]) => void
-}) {
+function StudentsTrack({ selected, onChange }: { selected: string[]; onChange: (s: string[]) => void }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-  const total = CLASS_STUDENTS.length
   const done = selected.length
-  const pct = Math.round((done / total) * 100)
+  const pct = Math.round((done / CLASS_STUDENTS.length) * 100)
 
   useEffect(() => {
-    function handler(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
+    const handler = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false) }
     if (open) document.addEventListener("mousedown", handler)
     return () => document.removeEventListener("mousedown", handler)
   }, [open])
@@ -494,7 +478,7 @@ function StudentsTrack({ selected, onChange }: {
   }
 
   return (
-    <div className="relative flex items-center gap-2" ref={ref}>
+    <div className="relative flex items-center gap-2 flex-wrap" ref={ref}>
       <button
         onClick={() => setOpen(o => !o)}
         className="flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-lg border transition-colors"
@@ -506,58 +490,28 @@ function StudentsTrack({ selected, onChange }: {
 
       {done > 0 && (
         <div className="flex items-center gap-1.5">
-          {/* Progress bar */}
           <div className="w-16 h-1.5 rounded-full bg-white/10 overflow-hidden">
-            <div
-              className="h-full rounded-full transition-all duration-300"
-              style={{ width: `${pct}%`, background: ACCENT }}
-            />
+            <div className="h-full rounded-full transition-all duration-300" style={{ width: `${pct}%`, background: ACCENT }} />
           </div>
           <span className="text-[10px] text-white/40 tabular-nums">{pct}%</span>
         </div>
       )}
 
       {open && (
-        <div
-          className="absolute top-full mt-1 right-0 z-50 rounded-xl border border-white/15 shadow-2xl overflow-hidden"
-          style={{ background: "#1e293b", minWidth: 200, maxHeight: 280 }}
-        >
+        <div className="absolute top-full mt-1 right-0 z-50 rounded-xl border border-white/15 shadow-2xl overflow-hidden" style={{ background: "#1e293b", minWidth: 200, maxHeight: 280 }}>
           <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between">
-            <span className="text-[11px] text-white/50">{done}/{total} נבחרו</span>
+            <span className="text-[11px] text-white/50">{done}/{CLASS_STUDENTS.length} נבחרו</span>
             <div className="flex gap-2">
-              <button
-                onClick={() => onChange([...CLASS_STUDENTS])}
-                className="text-[10px] text-white/40 hover:text-white transition-colors"
-              >
-                הכל
-              </button>
-              <button
-                onClick={() => onChange([])}
-                className="text-[10px] text-white/40 hover:text-white transition-colors"
-              >
-                נקה
-              </button>
+              <button onClick={() => onChange([...CLASS_STUDENTS])} className="text-[10px] text-white/40 hover:text-white transition-colors">הכל</button>
+              <button onClick={() => onChange([])} className="text-[10px] text-white/40 hover:text-white transition-colors">נקה</button>
             </div>
           </div>
           <div className="overflow-y-auto" style={{ maxHeight: 230 }}>
             {CLASS_STUDENTS.map(name => {
               const checked = selected.includes(name)
               return (
-                <button
-                  key={name}
-                  onClick={() => toggle(name)}
-                  className="w-full flex items-center gap-2.5 px-3 py-1.5 hover:bg-white/8 transition-colors text-right"
-                >
-                  <span
-                    className="w-4 h-4 rounded border flex items-center justify-center text-[9px] flex-shrink-0 transition-all"
-                    style={
-                      checked
-                        ? { background: `${ACCENT}30`, borderColor: `${ACCENT}80`, color: ACCENT }
-                        : { background: "transparent", borderColor: "rgba(255,255,255,0.2)", color: "transparent" }
-                    }
-                  >
-                    ✓
-                  </span>
+                <button key={name} onClick={() => toggle(name)} className="w-full flex items-center gap-2.5 px-3 py-1.5 hover:bg-white/8 transition-colors text-right">
+                  <span className="w-4 h-4 rounded border flex items-center justify-center text-[9px] flex-shrink-0 transition-all" style={checked ? { background: `${ACCENT}30`, borderColor: `${ACCENT}80`, color: ACCENT } : { background: "transparent", borderColor: "rgba(255,255,255,0.2)", color: "transparent" }}>✓</span>
                   <span className="text-xs text-white/70 flex-1">{name}</span>
                 </button>
               )
@@ -566,5 +520,103 @@ function StudentsTrack({ selected, onChange }: {
         </div>
       )}
     </div>
+  )
+}
+
+function NumbersTrack({ cells, onChange }: { cells: NumberCell[]; onChange: (c: NumberCell[]) => void }) {
+  function updateCell(i: number, field: keyof NumberCell, val: string) {
+    onChange(cells.map((c, idx) => idx === i ? { ...c, [field]: val } : c))
+  }
+  function addCell() {
+    onChange([...cells, { label: `${cells.length + 1}`, value: "" }])
+  }
+  function removeCell(i: number) {
+    if (cells.length <= 1) return
+    onChange(cells.filter((_, idx) => idx !== i))
+  }
+  const filled = cells.filter(c => c.value.trim() !== "").length
+
+  return (
+    <div className="flex items-end gap-1.5 flex-wrap">
+      {cells.map((cell, i) => (
+        <div key={i} className="flex flex-col items-center gap-0.5 group relative">
+          <input
+            className="text-[9px] text-white/35 bg-transparent border-none outline-none text-center w-11 focus:text-white/60 placeholder-white/20"
+            value={cell.label}
+            onChange={e => updateCell(i, "label", e.target.value)}
+            placeholder={`${i + 1}`}
+          />
+          <input
+            className="w-11 h-7 text-center text-xs text-white/85 bg-white/8 border border-white/15 rounded-lg focus:border-white/35 focus:text-white outline-none tabular-nums transition-colors placeholder-white/25"
+            value={cell.value}
+            onChange={e => updateCell(i, "value", e.target.value)}
+            placeholder="—"
+          />
+          <button
+            onClick={() => removeCell(i)}
+            className="absolute -top-0.5 -right-1 w-3.5 h-3.5 rounded-full bg-red-500/70 text-white text-[8px] opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center z-10"
+          >✕</button>
+        </div>
+      ))}
+      <div className="flex flex-col items-center gap-0.5">
+        <span className="text-[9px] text-transparent">+</span>
+        <button
+          onClick={addCell}
+          className="w-7 h-7 rounded-lg border border-dashed border-white/20 text-white/30 hover:text-white/60 hover:border-white/40 text-sm transition-colors flex items-center justify-center"
+        >+</button>
+      </div>
+      <div className="flex flex-col justify-end pb-1">
+        <span className="text-[10px] text-white/30 tabular-nums">{filled}/{cells.length}</span>
+      </div>
+    </div>
+  )
+}
+
+function PercentTrack({ value, max, onValueChange, onMaxChange }: { value: number; max: number; onValueChange: (v: number) => void; onMaxChange: (v: number) => void }) {
+  const pct = max > 0 ? Math.min(100, Math.round((value / max) * 100)) : 0
+  const color = progressColor(pct / 100)
+
+  return (
+    <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-1 bg-white/8 rounded-xl px-3 py-1.5 border border-white/15">
+        <input
+          type="number"
+          className="w-14 text-center text-sm font-bold bg-transparent border-none outline-none tabular-nums"
+          style={{ color }}
+          value={value}
+          min={0}
+          onChange={e => onValueChange(Number(e.target.value))}
+        />
+        <span className="text-white/25 text-sm">/</span>
+        <input
+          type="number"
+          className="w-12 text-center text-xs text-white/50 bg-transparent border-none outline-none tabular-nums"
+          value={max}
+          min={1}
+          onChange={e => onMaxChange(Number(e.target.value))}
+        />
+      </div>
+      <div className="flex-1 flex flex-col gap-0.5 min-w-[80px]">
+        <div className="h-2 rounded-full bg-white/10 overflow-hidden">
+          <div
+            className="h-full rounded-full transition-all duration-400"
+            style={{ width: `${pct}%`, background: color }}
+          />
+        </div>
+        <span className="text-[10px] tabular-nums" style={{ color }}>{pct}%</span>
+      </div>
+    </div>
+  )
+}
+
+function TextTrack({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <textarea
+      className="w-full text-xs text-white/70 bg-white/5 border border-white/12 rounded-xl px-3 py-2 outline-none focus:border-white/30 focus:text-white resize-none transition-colors placeholder-white/20 leading-relaxed"
+      value={value}
+      onChange={e => onChange(e.target.value)}
+      placeholder="הוסף הערה מילולית..."
+      rows={2}
+    />
   )
 }
