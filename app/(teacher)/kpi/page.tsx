@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 
 type Status = "none" | "ok" | "warn" | "bad"
-type TrackType = "checks" | "students" | "numbers" | "percent" | "text"
+type TrackType = "checks" | "students" | "numbers" | "percent" | "text" | "compare"
 
 const CLASS_STUDENTS = [
   "אדם כהן", "אביגיל לוי", "אורי מזרחי", "איתמר פרץ", "אלה שפירא",
@@ -23,6 +23,7 @@ const TRACK_META: Record<TrackType, { icon: string; label: string }> = {
   numbers:  { icon: "#", label: "מספרים" },
   percent:  { icon: "%", label: "אחוזים" },
   text:     { icon: "✍", label: "מילולי" },
+  compare:  { icon: "⇄", label: "חיובי/שלילי" },
 }
 
 interface NumberCell { label: string; value: string }
@@ -39,7 +40,8 @@ interface Metric {
   percentValue: number
   percentMax: number
   textValue: string
-  gaugeTarget: number | null  // null = use default for the type
+  compareValue: string  // entered number for compare type
+  gaugeTarget: number | null  // null = use default; for compare = threshold
   s: Status
 }
 
@@ -63,7 +65,7 @@ function mkCells(count = 5): NumberCell[] {
 
 function mkMetric(text: string, target: string, trackType: TrackType = "checks", checkLabels: string[] = []): Metric {
   const checkCount = checkLabels.length || 10
-  return { id: uid(), text, target, trackType, checkLabels, checks: Array(checkCount).fill(false), students: [], numberCells: mkCells(), percentValue: 0, percentMax: 100, textValue: "", gaugeTarget: null, s: "none" }
+  return { id: uid(), text, target, trackType, checkLabels, checks: Array(checkCount).fill(false), students: [], numberCells: mkCells(), percentValue: 0, percentMax: 100, textValue: "", compareValue: "", gaugeTarget: null, s: "none" }
 }
 
 const DEFAULTS: Goal[] = [
@@ -178,6 +180,12 @@ function getProgress(m: Metric): number {
     }
     case "percent":  return m.percentMax > 0 ? Math.min(1, m.percentValue / m.percentMax) : 0
     case "text":     return m.textValue.trim().length > 0 ? 1 : 0
+    case "compare": {
+      if (!m.compareValue.trim()) return 0
+      const val = parseFloat(m.compareValue)
+      if (isNaN(val)) return 0
+      return m.gaugeTarget != null ? (val >= m.gaugeTarget ? 1 : 0) : 0
+    }
   }
 }
 
@@ -232,7 +240,7 @@ function SemiGauge({ progress }: { progress: number }) {
 // Structural fields (trackType, gaugeTarget, checkLabels) come from the sheet
 // and are NOT persisted — they update automatically when the sheet changes.
 // Only interaction data is stored locally.
-type TrackState = Pick<Metric, "checks"|"students"|"numberCells"|"percentValue"|"percentMax"|"textValue"|"s">
+type TrackState = Pick<Metric, "checks"|"students"|"numberCells"|"percentValue"|"percentMax"|"textValue"|"compareValue"|"s">
 const TRACKING_KEY = "kpi-tracking"
 const ORDER_KEY = "kpi-order"
 
@@ -240,7 +248,7 @@ function saveTracking(goals: Goal[]) {
   const map: Record<string, TrackState> = {}
   for (const g of goals) {
     for (const m of g.metrics) {
-      map[m.text] = { checks: m.checks, students: m.students, numberCells: m.numberCells, percentValue: m.percentValue, percentMax: m.percentMax, textValue: m.textValue, s: m.s }
+      map[m.text] = { checks: m.checks, students: m.students, numberCells: m.numberCells, percentValue: m.percentValue, percentMax: m.percentMax, textValue: m.textValue, compareValue: m.compareValue, s: m.s }
     }
   }
   try { localStorage.setItem(TRACKING_KEY, JSON.stringify(map)) } catch {}
@@ -299,10 +307,10 @@ export default function KpiPage() {
         if (res.ok) {
           const raw = await res.json()
           if (Array.isArray(raw) && raw.length > 0) {
-            const built: Goal[] = raw.map((rg: { domain: string; name: string; desc: string; subgoals: string[]; metrics: { text: string; target: string; trackType: string; gaugeTarget: number | null; checkLabels: string[] }[] }) => ({
+            const built: Goal[] = raw.map((rg: { domain: string; desc: string; subgoals: string[]; metrics: { text: string; target: string; trackType: string; gaugeTarget: number | null; checkLabels: string[] }[] }) => ({
               id: uid(),
               domain: rg.domain,
-              name: rg.name,
+              name: rg.domain,
               desc: rg.desc,
               subgoals: rg.subgoals,
               open: true,
@@ -674,6 +682,9 @@ function MetricRow({ m, canDelete, onChange, onCycle, onDelete }: {
           {m.trackType === "text" && (
             <TextTrack value={m.textValue} onChange={v => onChange({ textValue: v })} />
           )}
+          {m.trackType === "compare" && (
+            <CompareTrack value={m.compareValue} threshold={m.gaugeTarget} onChange={v => onChange({ compareValue: v })} />
+          )}
         </div>
 
         {/* Gauge + target config */}
@@ -927,5 +938,46 @@ function TextTrack({ value, onChange }: { value: string; onChange: (v: string) =
       placeholder="הוסף הערה מילולית..."
       rows={2}
     />
+  )
+}
+
+function CompareTrack({ value, threshold, onChange }: { value: string; threshold: number | null; onChange: (v: string) => void }) {
+  const num = parseFloat(value)
+  const hasValue = value.trim() !== "" && !isNaN(num)
+  const success = hasValue && threshold != null && num >= threshold
+  const fail    = hasValue && threshold != null && num < threshold
+
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex flex-col gap-0.5">
+        <span className="text-[9px] text-white/30">ערך נוכחי</span>
+        <input
+          type="number"
+          className="w-20 text-sm font-semibold tabular-nums text-center bg-white/5 border border-white/15 rounded-lg px-2 py-1 outline-none focus:border-white/35 focus:bg-white/8 text-white transition-colors"
+          value={value}
+          onChange={e => onChange(e.target.value)}
+          placeholder="הזן"
+        />
+      </div>
+      {threshold != null && (
+        <div className="flex flex-col items-center gap-0.5">
+          <span className="text-[9px] text-white/30">סף השוואה</span>
+          <span className="text-sm font-semibold tabular-nums text-white/40">{threshold}</span>
+        </div>
+      )}
+      {hasValue && threshold != null && (
+        <div className={`flex items-center justify-center w-9 h-9 rounded-full text-lg font-bold transition-all ${
+          success ? "bg-green-500/20 text-green-400 border border-green-500/40" : "bg-red-500/20 text-red-400 border border-red-500/40"
+        }`}>
+          {success ? "✓" : "✗"}
+        </div>
+      )}
+      {hasValue && threshold == null && (
+        <span className="text-[10px] text-white/30">הגדר יעד גרף כסף השוואה</span>
+      )}
+      {!hasValue && (
+        <span className="text-[10px] text-white/20">הזן ערך להשוואה</span>
+      )}
+    </div>
   )
 }

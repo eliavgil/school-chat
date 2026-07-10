@@ -27,6 +27,7 @@ const TRACK_TYPE_MAP: Record<string, string> = {
   "מספרים": "numbers", "מספר": "numbers", "numbers": "numbers",
   "אחוזים": "percent", "אחוז": "percent", "percent": "percent",
   "מילולי": "text", "טקסט": "text", "text": "text",
+  "חיובי/שלילי": "compare", "חיובי שלילי": "compare", "השוואה": "compare", "compare": "compare",
 }
 
 export async function GET() {
@@ -43,14 +44,16 @@ export async function GET() {
     const rows = csv.split(/\r?\n/).map(parseRow)
     if (rows.length < 2) return NextResponse.json([])
 
-    // Expected columns (row 0 = headers, skipped):
-    // 0: תחום  1: שם מטרה  2: תיאור  3: דגשים (;-sep)  4: מדד  5: יעד
-    // 6: סוג מדידה  7: יעד גרף  8: תוויות (;-sep labels or plain count for checkboxes)
+    // Column layout (row 0 = headers, skipped):
+    // 0: תחום  1: תיאור  2: דגשים (;-sep)  3: מדד  4: יעד
+    // 5: סוג מדידה  6: יעד גרף  7: תוויות (;-sep labels or plain count)
+    //
+    // Goal row:   col 0 filled, col 3 (מדד) empty
+    // Metric row: col 0 filled, col 3 (מדד) filled
     const data = rows.slice(1).filter(r => r.some(c => c))
 
     type RawGoal = {
       domain: string
-      name: string
       desc: string
       subgoals: string[]
       metrics: { text: string; target: string; trackType: string; gaugeTarget: number | null; checkLabels: string[] }[]
@@ -60,13 +63,13 @@ export async function GET() {
     const lastGoalByDomain = new Map<string, RawGoal>()
 
     for (const cols of data) {
-      const [domain, name, desc, subgoalsRaw, text, target, trackTypeRaw, gaugeTargetRaw, checkLabelsRaw] = cols
+      const [domain, desc, subgoalsRaw, text, target, trackTypeRaw, gaugeTargetRaw, checkLabelsRaw] = cols
       if (!domain) continue
 
-      if (name) {
+      if (!text) {
+        // Goal row
         const goal: RawGoal = {
           domain: domain.trim(),
-          name: name.trim(),
           desc: (desc || "").trim(),
           subgoals: subgoalsRaw
             ? subgoalsRaw.split(";").map(s => s.trim()).filter(Boolean)
@@ -75,14 +78,13 @@ export async function GET() {
         }
         goals.push(goal)
         lastGoalByDomain.set(domain.trim(), goal)
-      } else if (text) {
+      } else {
+        // Metric row — attach to the most recent goal with this domain
         const goal = lastGoalByDomain.get(domain.trim())
         if (goal) {
           const trackType = TRACK_TYPE_MAP[(trackTypeRaw || "").trim().toLowerCase()] ?? "checks"
           const gaugeTargetNum = parseFloat((gaugeTargetRaw || "").trim())
 
-          // Parse checkbox labels: "מפגש 1;מפגש 2;מפגש 3" → array
-          // or a plain number "5" → ["1","2","3","4","5"]
           let checkLabels: string[] = []
           const labelsRaw = (checkLabelsRaw || "").trim()
           if (labelsRaw) {
