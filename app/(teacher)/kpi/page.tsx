@@ -54,6 +54,7 @@ interface Goal {
 
 const uid = () => Math.random().toString(36).slice(2, 9)
 const ACCENT = "#fcd34d"
+const CHIPS_COLOR = "#7dd3fc"  // sky-300 — readable on dark, clearly distinct from amber
 
 function mkCells(count = 5): NumberCell[] {
   return Array.from({ length: count }, (_, i) => ({ label: `${i + 1}`, value: "" }))
@@ -365,13 +366,18 @@ function GoalCard({ g, onToggle, onDomainChange, onNameChange, onDescChange, onS
       <div className="flex items-stretch cursor-pointer select-none hover:bg-white/5 transition-colors" onClick={onToggle}>
         <div className="w-1 flex-shrink-0" style={{ background: ACCENT }} />
         <div className="flex-1 px-4 py-3 min-w-0" onClick={e => e.stopPropagation()}>
+          {/* "תחום — X" on one line */}
+          <div className="flex items-baseline gap-1.5 min-w-0">
+            <span className="text-xs font-semibold text-white/40 flex-shrink-0 select-none">תחום —</span>
+            <input
+              className="font-bold text-base text-white bg-transparent border-none outline-none min-w-0 flex-1"
+              value={g.domain}
+              onChange={e => onDomainChange(e.target.value)}
+            />
+          </div>
+          {/* Description */}
           <input
-            className="font-bold text-base text-white bg-transparent border-none outline-none w-full leading-snug"
-            value={g.domain}
-            onChange={e => onDomainChange(e.target.value)}
-          />
-          <input
-            className="text-xs text-white/40 bg-transparent border-none outline-none w-full mt-0.5 leading-relaxed placeholder-white/20"
+            className="text-xs text-white/45 bg-transparent border-none outline-none w-full mt-1 leading-relaxed placeholder-white/20"
             value={g.desc}
             onChange={e => onDescChange(e.target.value)}
             placeholder="הסבר קצר על התחום..."
@@ -389,11 +395,11 @@ function GoalCard({ g, onToggle, onDomainChange, onNameChange, onDescChange, onS
         <>
           {/* ── Lower box: מטרות/דגשים ── */}
           <div className="border-t border-white/10 px-4 py-3" style={{ background: "rgba(255,255,255,0.02)" }}>
-            <div className="text-[10px] font-bold tracking-widest uppercase mb-2" style={{ color: ACCENT, opacity: 0.7 }}>
+            <div className="text-[10px] font-bold tracking-widest uppercase mb-2" style={{ color: CHIPS_COLOR, opacity: 0.6 }}>
               מטרות / דגשים
             </div>
             <div className="flex flex-wrap gap-1.5 items-center">
-              {/* Goal name chip — white italic */}
+              {/* Goal name chip — white italic, slightly larger */}
               <span
                 className="inline-flex items-center rounded-full border px-3 py-1"
                 style={{ color: "#fff", borderColor: "rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.08)" }}
@@ -406,18 +412,18 @@ function GoalCard({ g, onToggle, onDomainChange, onNameChange, onDescChange, onS
                 />
               </span>
 
-              {/* Subgoal chips — amber, semibold */}
+              {/* Subgoal chips — sky-blue, semibold */}
               {g.subgoals.map((s, i) => (
                 <span
                   key={i}
                   className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[12px] font-semibold group"
-                  style={{ color: ACCENT, borderColor: `${ACCENT}50`, background: `${ACCENT}15` }}
+                  style={{ color: CHIPS_COLOR, borderColor: `${CHIPS_COLOR}50`, background: `${CHIPS_COLOR}15` }}
                 >
                   {editingSubgoal === i ? (
                     <input
                       autoFocus
                       className="bg-transparent border-none outline-none text-[12px] font-semibold"
-                      style={{ color: ACCENT, width: `${Math.max(4, s.length + 1)}ch` }}
+                      style={{ color: CHIPS_COLOR, width: `${Math.max(4, s.length + 1)}ch` }}
                       value={s}
                       onChange={e => updateSubgoal(i, e.target.value)}
                       onBlur={() => setEditingSubgoal(null)}
