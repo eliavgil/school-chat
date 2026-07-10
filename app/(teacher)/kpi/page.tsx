@@ -316,6 +316,7 @@ export default function KpiPage() {
             onToggle={() => updateGoal(gi, { open: !g.open })}
             onDomainChange={v => updateGoal(gi, { domain: v })}
             onNameChange={v => updateGoal(gi, { name: v })}
+            onDescChange={v => updateGoal(gi, { desc: v })}
             onSubgoalsChange={v => updateGoal(gi, { subgoals: v })}
             onMetricChange={(mi, patch) => updateMetric(gi, mi, patch)}
             onCycle={mi => cycleStatus(gi, mi)}
@@ -332,11 +333,12 @@ export default function KpiPage() {
 
 // ── GoalCard ─────────────────────────────────────────────────────────────────
 
-function GoalCard({ g, onToggle, onDomainChange, onNameChange, onSubgoalsChange, onMetricChange, onCycle, onAddRow, onDelRow, onDelGoal, canDelete }: {
+function GoalCard({ g, onToggle, onDomainChange, onNameChange, onDescChange, onSubgoalsChange, onMetricChange, onCycle, onAddRow, onDelRow, onDelGoal, canDelete }: {
   g: Goal
   onToggle: () => void
   onDomainChange: (v: string) => void
   onNameChange: (v: string) => void
+  onDescChange: (v: string) => void
   onSubgoalsChange: (v: string[]) => void
   onMetricChange: (mi: number, patch: Partial<Metric>) => void
   onCycle: (mi: number) => void
@@ -348,12 +350,8 @@ function GoalCard({ g, onToggle, onDomainChange, onNameChange, onSubgoalsChange,
   const [editingSubgoal, setEditingSubgoal] = useState<number | null>(null)
   const [newSubgoal, setNewSubgoal] = useState("")
 
-  function removeSubgoal(i: number) {
-    onSubgoalsChange(g.subgoals.filter((_, idx) => idx !== i))
-  }
-  function updateSubgoal(i: number, v: string) {
-    onSubgoalsChange(g.subgoals.map((s, idx) => idx === i ? v : s))
-  }
+  function removeSubgoal(i: number) { onSubgoalsChange(g.subgoals.filter((_, idx) => idx !== i)) }
+  function updateSubgoal(i: number, v: string) { onSubgoalsChange(g.subgoals.map((s, idx) => idx === i ? v : s)) }
   function addSubgoal() {
     if (!newSubgoal.trim()) return
     onSubgoalsChange([...g.subgoals, newSubgoal.trim()])
@@ -362,80 +360,23 @@ function GoalCard({ g, onToggle, onDomainChange, onNameChange, onSubgoalsChange,
 
   return (
     <div className="glass rounded-2xl border border-white/10 overflow-hidden">
-      {/* Header */}
+
+      {/* ── Upper box: domain name + description ── */}
       <div className="flex items-stretch cursor-pointer select-none hover:bg-white/5 transition-colors" onClick={onToggle}>
         <div className="w-1 flex-shrink-0" style={{ background: ACCENT }} />
-
-        <div className="flex-1 px-4 py-3 space-y-2 min-w-0" onClick={e => e.stopPropagation()}>
-          {/* Row 1: תחום */}
-          <div className="flex items-baseline gap-2">
-            <span className="text-[10px] font-bold tracking-widest text-white/35 uppercase flex-shrink-0">תחום</span>
-            <input
-              className="font-bold text-sm text-white bg-transparent border-none outline-none flex-1 min-w-0"
-              value={g.domain}
-              onChange={e => onDomainChange(e.target.value)}
-              onClick={e => e.stopPropagation()}
-            />
-          </div>
-
-          {/* Row 2: מטרות/דגשים */}
-          <div className="flex items-start gap-2 flex-wrap">
-            <span className="text-[10px] font-bold tracking-widest text-white/35 uppercase flex-shrink-0 pt-0.5">מטרות/דגשים</span>
-            {/* Goal name — white italic pill, editable */}
-            <span
-              className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-[11px] font-bold italic"
-              style={{ color: "#fff", borderColor: "rgba(255,255,255,0.35)", background: "rgba(255,255,255,0.1)", fontFamily: "var(--font-heebo), sans-serif" }}
-            >
-              <input
-                className="bg-transparent border-none outline-none text-[11px] font-bold italic text-white w-auto min-w-0"
-                style={{ width: `${Math.max(6, g.name.length)}ch` }}
-                value={g.name}
-                onChange={e => onNameChange(e.target.value)}
-                onClick={e => e.stopPropagation()}
-              />
-            </span>
-            {/* Sub-goal chips — amber, different weight */}
-            {g.subgoals.map((s, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-semibold group"
-                style={{ color: ACCENT, borderColor: `${ACCENT}55`, background: `${ACCENT}18`, letterSpacing: "0.01em" }}
-              >
-                {editingSubgoal === i ? (
-                  <input
-                    autoFocus
-                    className="bg-transparent border-none outline-none text-[11px] font-semibold"
-                    style={{ color: ACCENT, width: `${Math.max(4, s.length)}ch` }}
-                    value={s}
-                    onChange={e => updateSubgoal(i, e.target.value)}
-                    onBlur={() => setEditingSubgoal(null)}
-                    onKeyDown={e => { if (e.key === "Enter" || e.key === "Escape") setEditingSubgoal(null) }}
-                    onClick={e => e.stopPropagation()}
-                  />
-                ) : (
-                  <span onDoubleClick={e => { e.stopPropagation(); setEditingSubgoal(i) }}>{s}</span>
-                )}
-                <button
-                  onClick={e => { e.stopPropagation(); removeSubgoal(i) }}
-                  className="opacity-0 group-hover:opacity-60 hover:!opacity-100 text-[9px] leading-none transition-opacity"
-                >✕</button>
-              </span>
-            ))}
-            {/* Add subgoal inline */}
-            <span className="inline-flex items-center gap-1" onClick={e => e.stopPropagation()}>
-              <input
-                className="text-[11px] text-white/30 bg-transparent border-b border-white/15 outline-none placeholder-white/20 focus:text-white/60 focus:border-white/35"
-                style={{ width: "6ch" }}
-                placeholder="+ הוסף"
-                value={newSubgoal}
-                onChange={e => setNewSubgoal(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") addSubgoal() }}
-                onBlur={addSubgoal}
-              />
-            </span>
-          </div>
+        <div className="flex-1 px-4 py-3 min-w-0" onClick={e => e.stopPropagation()}>
+          <input
+            className="font-bold text-base text-white bg-transparent border-none outline-none w-full leading-snug"
+            value={g.domain}
+            onChange={e => onDomainChange(e.target.value)}
+          />
+          <input
+            className="text-xs text-white/40 bg-transparent border-none outline-none w-full mt-0.5 leading-relaxed placeholder-white/20"
+            value={g.desc}
+            onChange={e => onDescChange(e.target.value)}
+            placeholder="הסבר קצר על התחום..."
+          />
         </div>
-
         <div className="flex items-center gap-2 px-3 flex-shrink-0" onClick={e => e.stopPropagation()}>
           {canDelete && (
             <button onClick={onDelGoal} className="text-[10px] text-red-400/60 hover:text-red-400 transition-colors px-2 py-1 rounded-lg hover:bg-red-400/10">מחק</button>
@@ -446,7 +387,67 @@ function GoalCard({ g, onToggle, onDomainChange, onNameChange, onSubgoalsChange,
 
       {g.open && (
         <>
-          <div className="border-t border-white/8 divide-y divide-white/5">
+          {/* ── Lower box: מטרות/דגשים ── */}
+          <div className="border-t border-white/10 px-4 py-3" style={{ background: "rgba(255,255,255,0.02)" }}>
+            <div className="text-[10px] font-bold tracking-widest uppercase mb-2" style={{ color: ACCENT, opacity: 0.7 }}>
+              מטרות / דגשים
+            </div>
+            <div className="flex flex-wrap gap-1.5 items-center">
+              {/* Goal name chip — white italic */}
+              <span
+                className="inline-flex items-center rounded-full border px-3 py-1"
+                style={{ color: "#fff", borderColor: "rgba(255,255,255,0.3)", background: "rgba(255,255,255,0.08)" }}
+              >
+                <input
+                  className="bg-transparent border-none outline-none text-[12px] font-bold italic text-white min-w-0"
+                  style={{ width: `${Math.max(6, g.name.length + 1)}ch` }}
+                  value={g.name}
+                  onChange={e => onNameChange(e.target.value)}
+                />
+              </span>
+
+              {/* Subgoal chips — amber, semibold */}
+              {g.subgoals.map((s, i) => (
+                <span
+                  key={i}
+                  className="inline-flex items-center gap-1 rounded-full border px-3 py-1 text-[12px] font-semibold group"
+                  style={{ color: ACCENT, borderColor: `${ACCENT}50`, background: `${ACCENT}15` }}
+                >
+                  {editingSubgoal === i ? (
+                    <input
+                      autoFocus
+                      className="bg-transparent border-none outline-none text-[12px] font-semibold"
+                      style={{ color: ACCENT, width: `${Math.max(4, s.length + 1)}ch` }}
+                      value={s}
+                      onChange={e => updateSubgoal(i, e.target.value)}
+                      onBlur={() => setEditingSubgoal(null)}
+                      onKeyDown={e => { if (e.key === "Enter" || e.key === "Escape") setEditingSubgoal(null) }}
+                    />
+                  ) : (
+                    <span onDoubleClick={() => setEditingSubgoal(i)}>{s}</span>
+                  )}
+                  <button
+                    onClick={() => removeSubgoal(i)}
+                    className="opacity-0 group-hover:opacity-50 hover:!opacity-100 text-[9px] transition-opacity leading-none"
+                  >✕</button>
+                </span>
+              ))}
+
+              {/* Add subgoal */}
+              <input
+                className="text-[11px] bg-transparent border-b border-white/15 outline-none placeholder-white/20 text-white/30 focus:text-white/60 focus:border-white/35 px-1"
+                style={{ width: "7ch" }}
+                placeholder="+ הוסף"
+                value={newSubgoal}
+                onChange={e => setNewSubgoal(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") addSubgoal() }}
+                onBlur={addSubgoal}
+              />
+            </div>
+          </div>
+
+          {/* ── Metrics ── */}
+          <div className="border-t border-white/10 divide-y divide-white/5">
             {g.metrics.map((m, mi) => (
               <MetricRow
                 key={m.id} m={m} canDelete={g.metrics.length > 1}
