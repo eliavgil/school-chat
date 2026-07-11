@@ -95,8 +95,8 @@ function parseSheet(csv: string, fallbackName: string): SheetDomain {
 }
 
 async function fetchCsv(url: string): Promise<string> {
-  const res = await fetch(url, { next: { revalidate: 300 } })
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+  const res = await fetch(url, { redirect: "follow", cache: "no-store" })
+  if (!res.ok) throw new Error(`HTTP ${res.status} — ${url.slice(0, 80)}`)
   return res.text()
 }
 
