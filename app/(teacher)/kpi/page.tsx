@@ -42,7 +42,8 @@ const GREEN  = "#4ade80"
 const AMBER  = "#fbbf24"
 const RED    = "#f87171"
 const BLUE   = "#60a5fa"
-const MUTED  = "rgba(255,255,255,.4)"
+const MUTED  = "rgba(255,255,255,.45)"
+const TEXT   = "rgba(255,255,255,.9)"
 
 const MONTH_NAMES = new Set(["ספטמבר","אוקטובר","נובמבר","דצמבר","ינואר","פברואר","מרץ","אפריל","מאי","יוני"])
 const CLASS_TOTAL = 22
@@ -94,6 +95,84 @@ const STATUS_BORDER: Record<StatusColor, string> = {
   green: "rgba(74,222,128,.3)", amber: "rgba(251,191,36,.3)", red: "rgba(248,113,113,.3)"
 }
 
+// ── Summary (collapsed view) ──────────────────────────────────────────────────
+
+function getSummary(m: SheetMetric, chartType: ChartType): { main: string; sub: string } {
+  const vals = m.results[0]?.values ?? []
+
+  switch (chartType) {
+    case "donut_bars":
+      return { main: vals[0] ?? "—", sub: "ממוצע כיתתי" }
+
+    case "monthly_trend": {
+      const nums = m.categories.map((_, i) => vals[i] ? parsePct(vals[i]) : null)
+      const filled = nums.filter(v => v !== null) as number[]
+      const cur = filled[filled.length - 1]
+      const prev = filled[filled.length - 2] ?? null
+      if (cur === undefined) return { main: "—", sub: "חודש נוכחי" }
+      const delta = prev !== null ? ` (${cur > prev ? "↑" : "↓"}${Math.abs(cur - prev).toFixed(0)}%)` : ""
+      return { main: cur.toFixed(0) + "%", sub: "חודש נוכחי" + delta }
+    }
+
+    case "monthly_tiles": {
+      const filled = vals.filter(v => v.trim()).length
+      return { main: `${filled}/${m.categories.length}`, sub: "חודשים דווחו" }
+    }
+
+    case "bagrut_bars": {
+      const totals = m.categories.map((_, i) => {
+        const raw = vals[i] ?? ""
+        const missing = raw ? raw.split(",").filter(s => s.trim()).length : 0
+        return CLASS_TOTAL - missing
+      })
+      const avg = totals.length > 0 ? Math.round(totals.reduce((a, v) => a + v, 0) / totals.length) : 0
+      return { main: `${avg}/${CLASS_TOTAL}`, sub: "עומדים בתנאים (ממוצע)" }
+    }
+
+    case "transfer": {
+      const upTotal  = m.categories.filter(c => c.includes("עלו")).reduce((a, c) => a + (parseInt(vals[m.categories.indexOf(c)] ?? "0") || 0), 0)
+      const downTotal = m.categories.filter(c => c.includes("ירדו")).reduce((a, c) => a + (parseInt(vals[m.categories.indexOf(c)] ?? "0") || 0), 0)
+      const net = upTotal - downTotal
+      return { main: (net >= 0 ? "+" : "") + net, sub: "נטו העברות הקבצה" }
+    }
+
+    case "grouped_bars": {
+      const half = Math.floor(m.categories.length / 2)
+      const avail  = m.categories.slice(0, half).reduce((a, _, i) => a + (parseInt(vals[i] ?? "0") || 0), 0)
+      const actual = m.categories.slice(half).reduce((a, _, i) => a + (parseInt(vals[half + i] ?? "0") || 0), 0)
+      const pct = avail > 0 ? Math.round((actual / avail) * 100) : 0
+      return { main: pct + "%", sub: `שעות בוצעו (${actual}/${avail})` }
+    }
+
+    case "numbered_list": {
+      const done = vals.filter(v => v.trim()).length
+      return { main: `${done}/${m.categories.length}`, sub: "שיעורים הושלמו" }
+    }
+
+    case "task_list": {
+      const total = m.results[0]?.values.reduce((a, v) => a + (parseInt(v) || 0), 0) ?? 0
+      return { main: total === 0 ? "✓" : String(total), sub: total === 0 ? "כולם הגישו" : "לא הגישו סה״כ" }
+    }
+
+    case "segmented_bar": {
+      const data = m.categories.map((_, i) => parseInt(vals[i] ?? "0") || 0)
+      const total = data.reduce((a, v) => a + v, 0)
+      const done  = data.slice(0, -1).reduce((a, v) => a + v, 0)
+      return { main: `${done}/${total}`, sub: "ביצעו" }
+    }
+
+    case "likert_bars": {
+      const data = m.categories.map((_, i) => parseInt(vals[i] ?? "0") || 0)
+      const total = data.reduce((a, v) => a + v, 0)
+      const high  = Math.round(((data[0] ?? 0) + (data[1] ?? 0)) / Math.max(total, 1) * 100)
+      return { main: high + "%", sub: "שביעות רצון גבוהה" }
+    }
+
+    default:
+      return { main: vals[0] ?? "—", sub: m.results[0]?.label ?? "" }
+  }
+}
+
 // ── SVG Donut ─────────────────────────────────────────────────────────────────
 
 function Donut({ value, color, size = 88 }: { value: number; color: string; size?: number }) {
@@ -116,7 +195,7 @@ function BarRow({ label, value, max, color, note }: { label: string; value: numb
   return (
     <div style={{ marginBottom: 10 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-        <span style={{ fontSize: 13, fontWeight: 700 }}>{label}</span>
+        <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{label}</span>
         <span style={{ fontSize: 12, color: MUTED, fontVariantNumeric: "tabular-nums" }}>{note ?? String(value)}</span>
       </div>
       <div style={{ height: 9, background: "rgba(255,255,255,.06)", borderRadius: 999, overflow: "hidden" }}>
@@ -138,7 +217,6 @@ function DonutBarsChart({ m }: { m: SheetMetric }) {
     name: cat,
     value: parsePct(vals[i + 1] ?? "0"),
   })).filter(d => d.value > 0)
-
   const labelMax = isHigherBetter ? 100 : 20
 
   return (
@@ -206,7 +284,7 @@ function MonthlyTrendChart({ m }: { m: SheetMetric }) {
       {data.map(({ month, value }) => (
         <div key={month} style={{ display: "grid", gridTemplateColumns: "80px 1fr 44px", alignItems: "center", gap: 10, marginBottom: 10 }}>
           <span style={{ fontSize: 12, color: MUTED, textAlign: "right" }}>{month}</span>
-          <div style={{ position: "relative" }}>
+          <div>
             <div style={{ height: 9, background: "rgba(255,255,255,.06)", borderRadius: 999, overflow: "hidden" }}>
               {value !== null && (
                 <div style={{ width: `${Math.min(100, (value / maxVal) * 100)}%`, height: "100%",
@@ -229,16 +307,10 @@ function MonthlyTrendChart({ m }: { m: SheetMetric }) {
 
 function MonthlyTilesChart({ m }: { m: SheetMetric }) {
   const vals = m.results[0]?.values ?? []
-  const data = m.categories.map((month, i) => ({
-    month,
-    value: vals[i] ? parsePct(vals[i]) : null,
-  }))
+  const data = m.categories.map((month, i) => ({ month, value: vals[i] ? parsePct(vals[i]) : null }))
 
   return (
     <div>
-      <p style={{ fontSize: 12, color: MUTED, marginBottom: 16 }}>
-        לחיצה על חודש תפתח רשימת תלמידים לסימון מי לא מילא
-      </p>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(110px, 1fr))", gap: 10 }}>
         {data.map(({ month, value }) => {
           const status = value !== null ? evalStatus(value, m.target) : null
@@ -247,7 +319,7 @@ function MonthlyTilesChart({ m }: { m: SheetMetric }) {
           const border = status ? STATUS_BORDER[status] : "rgba(255,255,255,.08)"
           return (
             <div key={month} style={{ background: bg, border: `1px solid ${border}`, borderRadius: 10,
-              padding: "12px 14px", cursor: value !== null ? "pointer" : "default", opacity: value !== null ? 1 : 0.4 }}>
+              padding: "12px 14px", opacity: value !== null ? 1 : 0.4 }}>
               <div style={{ fontSize: 11, color: MUTED, marginBottom: 4 }}>{month}</div>
               <div style={{ fontSize: 22, fontWeight: 900, color: col, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
                 {value !== null ? value + "%" : "—"}
@@ -271,9 +343,6 @@ function BagrutBarsChart({ m }: { m: SheetMetric }) {
   const vals = m.results[0]?.values ?? []
   return (
     <div>
-      <p style={{ fontSize: 12, color: MUTED, marginBottom: 16 }}>
-        הסרגל מציג אחוז העומדים בתנאי. שמות שלא עומדים מופיעים מתחת.
-      </p>
       {m.categories.map((cond, i) => {
         const raw = vals[i] ?? ""
         const names = raw ? raw.split(",").map(s => s.trim()).filter(Boolean) : []
@@ -284,7 +353,7 @@ function BagrutBarsChart({ m }: { m: SheetMetric }) {
         return (
           <div key={cond} style={{ marginBottom: 14 }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
-              <span style={{ fontSize: 13, fontWeight: 700 }}>{cond}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{cond}</span>
               <span style={{ fontSize: 11, color: MUTED, fontVariantNumeric: "tabular-nums" }}>
                 {missing > 0 ? `${missing} לא עומדים` : "כולם עומדים"}
               </span>
@@ -311,8 +380,8 @@ function TransferChart({ m }: { m: SheetMetric }) {
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 }}>
-      {subjects.map((subject, si) => {
-        const upIdx  = m.categories.findIndex(c => c.includes("עלו") && c.includes(subject))
+      {subjects.map((subject) => {
+        const upIdx   = m.categories.findIndex(c => c.includes("עלו") && c.includes(subject))
         const downIdx = m.categories.findIndex(c => c.includes("ירדו") && c.includes(subject))
         const up   = parseInt(vals[upIdx]   ?? "0") || 0
         const down = parseInt(vals[downIdx] ?? "0") || 0
@@ -357,9 +426,9 @@ function GroupedBarsChart({ m }: { m: SheetMetric }) {
     label: cat.replace("סך שעות ", "").replace("סך ", "").replace("שהתקיימו", "").trim(),
     value: parseInt(vals[half + i] ?? "0") || 0,
   }))
-  const totalAvail = available.reduce((a, d) => a + d.value, 0)
+  const totalAvail  = available.reduce((a, d) => a + d.value, 0)
   const totalActual = actual.reduce((a, d) => a + d.value, 0)
-  const pctOverall = totalAvail > 0 ? Math.round((totalActual / totalAvail) * 100) : 0
+  const pctOverall  = totalAvail > 0 ? Math.round((totalActual / totalAvail) * 100) : 0
   const status = evalStatus(pctOverall, m.target)
   const maxVal = Math.max(...available.map(d => d.value), 1)
 
@@ -434,7 +503,7 @@ function NumberedListChart({ m }: { m: SheetMetric }) {
                 color: isDone ? GREEN : MUTED }}>
                 {isDone ? "✓" : num}
               </div>
-              <span style={{ fontSize: 13, color: isDone ? "rgba(255,255,255,.85)" : MUTED }}>
+              <span style={{ fontSize: 13, color: isDone ? TEXT : MUTED }}>
                 {topic || "טרם הוזן"}
               </span>
             </div>
@@ -448,9 +517,9 @@ function NumberedListChart({ m }: { m: SheetMetric }) {
 // ── Chart: TaskList ───────────────────────────────────────────────────────────
 
 function TaskListChart({ m }: { m: SheetMetric }) {
-  const counts  = m.results[0]?.values ?? []
-  const names   = m.results[1]?.values ?? []
-  const topics  = m.results[2]?.values ?? []
+  const counts = m.results[0]?.values ?? []
+  const names  = m.results[1]?.values ?? []
+  const topics = m.results[2]?.values ?? []
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -462,7 +531,7 @@ function TaskListChart({ m }: { m: SheetMetric }) {
           <div key={task} style={{ background: "rgba(255,255,255,.03)", border: "1px solid rgba(255,255,255,.07)",
             borderRadius: 10, padding: "13px 15px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-              <span style={{ fontSize: 13, fontWeight: 700 }}>{task}</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: TEXT }}>{task}</span>
               {topic && (
                 <span style={{ fontSize: 11, fontWeight: 600, padding: "3px 9px", borderRadius: 999,
                   background: "rgba(96,165,250,.1)", border: "1px solid rgba(96,165,250,.2)", color: BLUE }}>
@@ -577,9 +646,12 @@ function StatOnlyChart({ m }: { m: SheetMetric }) {
   )
 }
 
-// ── MetricCard ─────────────────────────────────────────────────────────────────
+// ── MetricCard (collapsible) ──────────────────────────────────────────────────
+
+const WIDE_CHARTS = new Set<ChartType>(["bagrut_bars", "grouped_bars", "monthly_tiles"])
 
 function MetricCard({ m, wide }: { m: SheetMetric; wide?: boolean }) {
+  const [open, setOpen] = useState(false)
   const chartType = getChartType(m)
 
   let statusColor: StatusColor = "amber"
@@ -589,45 +661,80 @@ function MetricCard({ m, wide }: { m: SheetMetric; wide?: boolean }) {
     if (!isNaN(num)) statusColor = evalStatus(num, m.target)
   }
 
+  const summary = getSummary(m, chartType)
+
   return (
     <div className={wide ? "col-span-2" : ""} style={{
       background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)",
       borderRadius: 16, overflow: "hidden",
     }}>
-      <div style={{ padding: "18px 22px 14px", borderBottom: "1px solid rgba(255,255,255,.07)",
-        display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".08em", textTransform: "uppercase",
-            color: MUTED, marginBottom: 3 }}>{m.period}</div>
-          <div style={{ fontSize: 15, fontWeight: 700, lineHeight: 1.3 }}>{m.name}</div>
-          <div style={{ fontSize: 12, color: MUTED, marginTop: 2 }}>יעד: {m.target}</div>
+      {/* Summary row — always visible, click to expand */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{ width: "100%", background: "none", border: "none", cursor: "pointer",
+          padding: "18px 20px 16px", textAlign: "right", color: TEXT,
+          display: "flex", alignItems: "center", gap: 16 }}
+      >
+        {/* Big number */}
+        <div style={{ flexShrink: 0, minWidth: 72, textAlign: "center" }}>
+          <div style={{ fontSize: 38, fontWeight: 900, color: STATUS_COLOR[statusColor],
+            fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>
+            {summary.main}
+          </div>
+          {summary.sub && (
+            <div style={{ fontSize: 10, color: MUTED, marginTop: 3, lineHeight: 1.3 }}>{summary.sub}</div>
+          )}
         </div>
-        <div style={{ padding: "4px 10px", borderRadius: 999, fontSize: 11, fontWeight: 700, flexShrink: 0,
-          background: STATUS_BG[statusColor], border: `1px solid ${STATUS_BORDER[statusColor]}`, color: STATUS_COLOR[statusColor] }}>
-          {STATUS_LABEL[statusColor]}
-        </div>
-      </div>
 
-      <div style={{ padding: 22 }}>
-        {chartType === "donut_bars"     && <DonutBarsChart m={m} />}
-        {chartType === "monthly_trend"  && <MonthlyTrendChart m={m} />}
-        {chartType === "monthly_tiles"  && <MonthlyTilesChart m={m} />}
-        {chartType === "bagrut_bars"    && <BagrutBarsChart m={m} />}
-        {chartType === "transfer"       && <TransferChart m={m} />}
-        {chartType === "grouped_bars"   && <GroupedBarsChart m={m} />}
-        {chartType === "numbered_list"  && <NumberedListChart m={m} />}
-        {chartType === "task_list"      && <TaskListChart m={m} />}
-        {chartType === "segmented_bar"  && <SegmentedBarChart m={m} />}
-        {chartType === "likert_bars"    && <LikertBarsChart m={m} />}
-        {chartType === "stat_only"      && <StatOnlyChart m={m} />}
-      </div>
-
-      {m.results[0]?.label && (
-        <div style={{ padding: "10px 22px", borderTop: "1px solid rgba(255,255,255,.07)",
-          background: "rgba(255,255,255,.02)", fontSize: 11, color: MUTED, display: "flex", alignItems: "center", gap: 7 }}>
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: STATUS_COLOR[statusColor], flexShrink: 0 }} />
-          נתוני {m.results[0].label}
+        {/* Name + meta */}
+        <div style={{ flex: 1, minWidth: 0, textAlign: "right" }}>
+          <div style={{ fontSize: 14, fontWeight: 700, lineHeight: 1.3, color: TEXT, marginBottom: 4 }}>{m.name}</div>
+          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, justifyContent: "flex-end" }}>
+            <span style={{ fontSize: 10, color: MUTED }}>{m.period}</span>
+            <span style={{ fontSize: 10, color: MUTED }}>·</span>
+            <span style={{ fontSize: 10, color: MUTED }}>יעד: {m.target}</span>
+          </div>
         </div>
+
+        {/* Status + chevron */}
+        <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+          <div style={{ padding: "3px 9px", borderRadius: 999, fontSize: 10, fontWeight: 700,
+            background: STATUS_BG[statusColor], border: `1px solid ${STATUS_BORDER[statusColor]}`,
+            color: STATUS_COLOR[statusColor], whiteSpace: "nowrap" }}>
+            {STATUS_LABEL[statusColor]}
+          </div>
+          <span style={{ fontSize: 11, color: MUTED, transition: "transform .2s",
+            display: "inline-block", transform: open ? "rotate(180deg)" : "none" }}>
+            ▾
+          </span>
+        </div>
+      </button>
+
+      {/* Expanded chart */}
+      {open && (
+        <>
+          <div style={{ height: 1, background: "rgba(255,255,255,.07)", margin: "0 20px" }} />
+          <div style={{ padding: "20px 20px 18px" }}>
+            {chartType === "donut_bars"     && <DonutBarsChart m={m} />}
+            {chartType === "monthly_trend"  && <MonthlyTrendChart m={m} />}
+            {chartType === "monthly_tiles"  && <MonthlyTilesChart m={m} />}
+            {chartType === "bagrut_bars"    && <BagrutBarsChart m={m} />}
+            {chartType === "transfer"       && <TransferChart m={m} />}
+            {chartType === "grouped_bars"   && <GroupedBarsChart m={m} />}
+            {chartType === "numbered_list"  && <NumberedListChart m={m} />}
+            {chartType === "task_list"      && <TaskListChart m={m} />}
+            {chartType === "segmented_bar"  && <SegmentedBarChart m={m} />}
+            {chartType === "likert_bars"    && <LikertBarsChart m={m} />}
+            {chartType === "stat_only"      && <StatOnlyChart m={m} />}
+          </div>
+          {m.results[0]?.label && (
+            <div style={{ padding: "8px 20px 14px", fontSize: 10, color: MUTED,
+              display: "flex", alignItems: "center", gap: 6 }}>
+              <div style={{ width: 5, height: 5, borderRadius: "50%", background: STATUS_COLOR[statusColor], flexShrink: 0 }} />
+              נתוני {m.results[0].label}
+            </div>
+          )}
+        </>
       )}
     </div>
   )
@@ -635,30 +742,23 @@ function MetricCard({ m, wide }: { m: SheetMetric; wide?: boolean }) {
 
 // ── DomainView ────────────────────────────────────────────────────────────────
 
-const WIDE_CHARTS = new Set<ChartType>(["bagrut_bars", "grouped_bars", "monthly_tiles"])
-
 function DomainView({ domain }: { domain: SheetDomain }) {
+  const descParts = [domain.desc, domain.tags.length > 0 ? domain.tags.join(" · ") : ""].filter(Boolean)
+  const fullDesc = descParts.join(" — ")
+
   return (
     <div>
       <div style={{ marginBottom: 32 }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".12em", textTransform: "uppercase",
-          color: ACCENT, opacity: .7, marginBottom: 8 }}>תחום</div>
-        <h1 style={{ fontSize: "clamp(28px, 5vw, 44px)", fontWeight: 800, letterSpacing: "-.5px",
-          lineHeight: 1.1, marginBottom: 10 }}>{domain.name}</h1>
-        {domain.desc && <p style={{ fontSize: 15, color: MUTED, maxWidth: 580, marginBottom: 16 }}>{domain.desc}</p>}
-        {domain.tags.length > 0 && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {domain.tags.map(tag => (
-              <span key={tag} style={{ fontSize: 11, fontWeight: 600, padding: "4px 11px", borderRadius: 999,
-                background: "rgba(96,165,250,.1)", border: "1px solid rgba(96,165,250,.2)", color: BLUE }}>
-                {tag}
-              </span>
-            ))}
-          </div>
+          color: ACCENT, marginBottom: 8 }}>תחום</div>
+        <h1 style={{ fontSize: "clamp(26px, 5vw, 42px)", fontWeight: 800, letterSpacing: "-.5px",
+          lineHeight: 1.15, marginBottom: 10, color: TEXT }}>{domain.name}</h1>
+        {fullDesc && (
+          <p style={{ fontSize: 14, color: MUTED, maxWidth: 600, lineHeight: 1.6 }}>{fullDesc}</p>
         )}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
         {domain.metrics.map((m, i) => {
           const wide = WIDE_CHARTS.has(getChartType(m))
           return <MetricCard key={i} m={m} wide={wide} />
@@ -673,18 +773,15 @@ function DomainView({ domain }: { domain: SheetDomain }) {
 export default function KpiPage() {
   const [domains, setDomains] = useState<SheetDomain[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError]   = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState(0)
 
   useEffect(() => {
     fetch("/api/kpi-sheet")
       .then(r => r.json())
       .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setDomains(data)
-        } else if (data?.error) {
-          setError(data.error)
-        }
+        if (Array.isArray(data) && data.length > 0) setDomains(data)
+        else if (data?.error) setError(data.error)
       })
       .catch(e => setError(String(e)))
       .finally(() => setLoading(false))
@@ -694,8 +791,9 @@ export default function KpiPage() {
 
   return (
     <div className="min-h-screen" dir="rtl"
-      style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)" }}>
+      style={{ background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)", color: TEXT }}>
 
+      {/* Sticky header */}
       <div className="sticky top-0 z-20">
         <div className="bg-black/40 backdrop-blur-md border-b border-white/10 px-4 header-pt pb-3">
           <div className="flex items-center gap-3 max-w-5xl mx-auto">
@@ -723,20 +821,21 @@ export default function KpiPage() {
         )}
       </div>
 
+      {/* Content */}
       <main className="max-w-5xl mx-auto px-6 pt-8 pb-20">
         {loading && (
           <div className="flex items-center justify-center py-20">
-            <div className="text-white/40 text-sm">טוען נתונים...</div>
+            <div style={{ color: MUTED, fontSize: 14 }}>טוען נתונים...</div>
           </div>
         )}
         {error && (
           <div className="glass rounded-2xl p-6 text-center">
-            <div className="text-red-400 text-sm mb-2">שגיאה בטעינת הנתונים</div>
-            <div className="text-white/40 text-xs">{error}</div>
+            <div style={{ color: RED, fontSize: 14, marginBottom: 6 }}>שגיאה בטעינת הנתונים</div>
+            <div style={{ color: MUTED, fontSize: 12 }}>{error}</div>
           </div>
         )}
         {!loading && !error && domains.length === 0 && (
-          <div className="glass rounded-2xl p-6 text-center text-white/40 text-sm">
+          <div className="glass rounded-2xl p-6 text-center" style={{ color: MUTED, fontSize: 14 }}>
             לא הוגדרו כתובות גיליונות (הגדר KPI_SHEET_1_URL ו-KPI_SHEET_2_URL ב-Vercel)
           </div>
         )}
