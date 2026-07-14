@@ -34,6 +34,41 @@ const TRACK  = "rgba(255,255,255,.07)"
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
+const MONTH_NAMES = new Set([
+  "ספטמבר","אוקטובר","נובמבר","דצמבר",
+  "ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט",
+])
+
+// Smart extraction: uses mainValue hint if numeric, otherwise derives from results
+function computeMainValue(m: SheetMetric): string {
+  // 1. If גרף ראשי column starts with a number/%, use it directly
+  if (m.mainValue) {
+    const direct = m.mainValue.match(/^(\d+(?:\.\d+)?%?)/)
+    if (direct) return direct[1]
+  }
+
+  // 2. Find first results row that has any data
+  const row = m.results.find(r => r.values.some(v => v.trim()))
+  if (!row) return ""
+
+  // 3. Monthly categories → show most recent filled value
+  const monthIdxs = m.categories
+    .map((c, i) => (MONTH_NAMES.has(c) ? i : -1))
+    .filter(i => i >= 0)
+  if (monthIdxs.length > 0) {
+    for (let i = monthIdxs.length - 1; i >= 0; i--) {
+      const v = row.values[monthIdxs[i]]?.trim()
+      if (v) return v
+    }
+    // fallback: count filled months
+    const filled = monthIdxs.filter(i => row.values[i]?.trim()).length
+    return `${filled}/${monthIdxs.length}`
+  }
+
+  // 4. Default → first value (usually the "overall" / average column)
+  return row.values[0]?.trim() ?? ""
+}
+
 function parseMainValue(s: string): { display: string; pct: number | null } {
   if (!s) return { display: "—", pct: null }
   const pctMatch = s.match(/^(\d+(?:\.\d+)?)%/)
@@ -94,7 +129,7 @@ function MetricCard({ m, active, onToggle }: {
   active: boolean
   onToggle: () => void
 }) {
-  const { display, pct } = parseMainValue(m.mainValue)
+  const { display, pct } = parseMainValue(computeMainValue(m))
 
   return (
     <button
