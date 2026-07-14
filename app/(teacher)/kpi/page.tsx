@@ -172,6 +172,14 @@ function MetricCard({ m, active, onToggle }: {
 
 // ── Detail Table ──────────────────────────────────────────────────────────────
 
+function CellValue({ v }: { v: string | undefined }) {
+  const val = v?.trim() ?? ""
+  if (!val) return <>—</>
+  const parts = val.split(",").map(s => s.trim()).filter(Boolean)
+  if (parts.length <= 1) return <>{val}</>
+  return <>{parts.map((p, i) => <div key={i}>{p}</div>)}</>
+}
+
 function DetailTable({ m }: { m: SheetMetric }) {
   const hasCategories = m.categories.length > 0
   const hasResults    = m.results.length > 0
@@ -220,7 +228,7 @@ function DetailTable({ m }: { m: SheetMetric }) {
                 {m.categories.map((_, ci) => (
                   <td key={ci} style={{ padding: "9px 14px", textAlign: "center",
                     color: TEXT, fontVariantNumeric: "tabular-nums" }}>
-                    {row.values[ci] ?? "—"}
+                    <CellValue v={row.values[ci]} />
                   </td>
                 ))}
               </tr>
@@ -239,7 +247,7 @@ function DetailTable({ m }: { m: SheetMetric }) {
                 {row.label || `שורה ${ri + 1}`}
               </span>
               <span style={{ color: TEXT, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>
-                {row.values[0] ?? "—"}
+                <CellValue v={row.values[0]} />
               </span>
             </div>
           ))}
