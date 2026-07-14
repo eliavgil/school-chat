@@ -84,8 +84,8 @@ function parseSheet(csv: string, fallbackName: string): SheetDomain {
         target: cols[1]?.trim() ?? "",
         period,
         graphInstr: cols[3]?.trim() ?? "",
-        fillInstr: cols[4]?.trim() ?? "",
-        mainValue: cols[5]?.trim() ?? "",
+        mainValue: cols[4]?.trim() ?? "",
+        fillInstr: cols[5]?.trim() ?? "",
         categories: [],
         results: [],
       }
