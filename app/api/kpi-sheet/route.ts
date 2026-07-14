@@ -41,9 +41,53 @@ export interface SheetDomain {
   metrics: SheetMetric[]
 }
 
+// New format: each metric block = header row (col A="מדד", col B="נתון מרכזי") + data row
+function isNewFormat(allRows: string[][]): boolean {
+  return allRows.some(r => r[0]?.trim() === "מדד" && r[1]?.trim() === "נתון מרכזי")
+}
+
+function parseSheetNewFormat(allRows: string[][], fallbackName: string): SheetDomain {
+  const metrics: SheetMetric[] = []
+
+  for (let i = 0; i < allRows.length; i++) {
+    const row = allRows[i]
+    if (row[0]?.trim() !== "מדד" || row[1]?.trim() !== "נתון מרכזי") continue
+
+    // Find next non-empty row = data row
+    let di = i + 1
+    while (di < allRows.length && !allRows[di].some(c => c.trim())) di++
+    if (di >= allRows.length) continue
+
+    const data = allRows[di]
+    const metricName = data[0]?.trim()
+    if (!metricName || metricName === "מדד") continue
+
+    const categories = row.slice(6).filter(c => c.trim())
+    const vals = data.slice(6)
+
+    metrics.push({
+      name: metricName,
+      mainValue:  data[1]?.trim() ?? "",
+      graphInstr: data[2]?.trim() ?? "",  // תיאור נתון מרכזי
+      target:     data[3]?.trim() ?? "",
+      period:     data[4]?.trim() ?? "",
+      fillInstr:  data[5]?.trim() ?? "",  // נתונים נוספים
+      categories,
+      results: vals.some(v => v.trim()) ? [{ label: "", values: vals }] : [],
+    })
+
+    i = di
+  }
+
+  return { name: fallbackName, desc: "", tags: [], metrics }
+}
+
 function parseSheet(csv: string, fallbackName: string): SheetDomain {
   const allRows = csv.split(/\r?\n/).map(parseRow)
 
+  if (isNewFormat(allRows)) return parseSheetNewFormat(allRows, fallbackName)
+
+  // Legacy format
   let name = fallbackName
   let desc = ""
   let tags: string[] = []
@@ -84,8 +128,8 @@ function parseSheet(csv: string, fallbackName: string): SheetDomain {
         target: cols[1]?.trim() ?? "",
         period,
         graphInstr: cols[3]?.trim() ?? "",
-        mainValue: cols[4]?.trim() ?? "",
-        fillInstr: cols[5]?.trim() ?? "",
+        mainValue:  cols[4]?.trim() ?? "",
+        fillInstr:  cols[5]?.trim() ?? "",
         categories: [],
         results: [],
       }
