@@ -1,22 +1,33 @@
 import { NextResponse } from "next/server"
 
-function parseRow(row: string): string[] {
-  const out: string[] = []
+function parseCsv(csv: string): string[][] {
+  const rows: string[][] = []
+  let row: string[] = []
   let cur = ""
   let inQ = false
-  for (let i = 0; i < row.length; i++) {
-    const c = row[i]
+
+  for (let i = 0; i < csv.length; i++) {
+    const c = csv[i]
     if (c === '"') {
-      if (inQ && row[i + 1] === '"') { cur += '"'; i++ }
+      if (inQ && csv[i + 1] === '"') { cur += '"'; i++ }
       else inQ = !inQ
-    } else if (c === "," && !inQ) {
-      out.push(cur.trim()); cur = ""
+    } else if (c === ',' && !inQ) {
+      row.push(cur.trim()); cur = ""
+    } else if (!inQ && (c === '\n' || c === '\r')) {
+      if (c === '\r' && csv[i + 1] === '\n') i++
+      row.push(cur.trim()); cur = ""
+      rows.push(row); row = []
     } else {
       cur += c
     }
   }
-  out.push(cur.trim())
-  return out
+
+  if (row.length > 0 || cur.trim()) {
+    row.push(cur.trim())
+    rows.push(row)
+  }
+
+  return rows
 }
 
 const PERIODS = new Set(["רבעוני", "חודשי", "מחצית", "שנתי", "שבועי"])
@@ -83,7 +94,7 @@ function parseSheetNewFormat(allRows: string[][], fallbackName: string): SheetDo
 }
 
 function parseSheet(csv: string, fallbackName: string): SheetDomain {
-  const allRows = csv.split(/\r?\n/).map(parseRow)
+  const allRows = parseCsv(csv)
 
   if (isNewFormat(allRows)) return parseSheetNewFormat(allRows, fallbackName)
 
