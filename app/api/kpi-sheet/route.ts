@@ -29,6 +29,7 @@ export interface SheetMetric {
   period: string
   graphInstr: string
   fillInstr: string
+  mainValue: string
   categories: string[]
   results: { label: string; values: string[] }[]
 }
@@ -84,6 +85,7 @@ function parseSheet(csv: string, fallbackName: string): SheetDomain {
         period,
         graphInstr: cols[3]?.trim() ?? "",
         fillInstr: cols[4]?.trim() ?? "",
+        mainValue: cols[5]?.trim() ?? "",
         categories: [],
         results: [],
       }
