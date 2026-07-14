@@ -40,7 +40,7 @@ function parseMainValue(s: string): { display: string; pct: number | null } {
   if (pctMatch) return { display: pctMatch[0], pct: parseFloat(pctMatch[1]) }
   const numMatch = s.match(/^(\d+(?:\.\d+)?)/)
   if (numMatch) return { display: numMatch[1], pct: null }
-  return { display: s, pct: null }
+  return { display: "—", pct: null }
 }
 
 // ── Main Donut ────────────────────────────────────────────────────────────────
