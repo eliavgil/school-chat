@@ -138,7 +138,7 @@ export async function importAttendance(sheets: SheetData[], classId: string) {
     const justifiedAbsences = parseInt(cellStr(row[7])) || 0
     const tardiness = parseInt(cellStr(row[8])) || 0
     const justifiedTardiness = parseInt(cellStr(row[9])) || 0
-    const disruptions = parseInt(cellStr(row[10])) || 0
+    const disruptions = parseInt(cellStr(row[13])) || 0
 
     await prisma.studentAttendance.upsert({
       where: { studentId: student.id },
