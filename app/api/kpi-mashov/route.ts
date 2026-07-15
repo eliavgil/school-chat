@@ -56,11 +56,21 @@ export async function GET() {
     include: { student: { select: { name: true } } },
   })
 
-  // Correct formula: total tardiness incidents / total lesson slots
-  const totalTardiness = attendance.reduce((s, a) => s + a.tardiness, 0)
-  const totalLessons   = attendance.reduce((s, a) => s + a.totalLessons, 0)
-  const tardinessRate  = totalLessons > 0 ? totalTardiness / totalLessons : null
+  // Correct formula: incidents / total lesson slots
+  const totalLessons       = attendance.reduce((s, a) => s + a.totalLessons, 0)
+
+  const totalAbsences      = attendance.reduce((s, a) => s + a.absences, 0)
+  const absenceRate        = totalLessons > 0 ? totalAbsences / totalLessons : null
+  const absenceMainValue   = absenceRate !== null ? `${Math.round(absenceRate * 100)}%` : ""
+
+  const totalTardiness     = attendance.reduce((s, a) => s + a.tardiness, 0)
+  const tardinessRate      = totalLessons > 0 ? totalTardiness / totalLessons : null
   const tardinessMainValue = tardinessRate !== null ? `${Math.round(tardinessRate * 100)}%` : ""
+
+  const absenceDetail = attendance
+    .filter(a => a.absences > 0)
+    .sort((a, b) => b.absences - a.absences)
+    .map(a => ({ label: a.student.name, values: [String(a.absences)] }))
 
   const tardinessDetail = attendance
     .filter(a => a.tardiness > 0)
@@ -118,6 +128,16 @@ export async function GET() {
         fillInstr: "",
         categories: [],
         results: [],
+      },
+      {
+        name: "היעדרויות",
+        mainValue: absenceMainValue,
+        target: "<15%",
+        period: "שוטף",
+        graphInstr: "אחוז השיעורים שבהם תלמידים נעדרו (סך היעדרויות ÷ סך שיעורים)",
+        fillInstr: "",
+        categories: ["מספר היעדרויות"],
+        results: absenceDetail,
       },
       {
         name: "איחורים",
