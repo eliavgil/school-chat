@@ -191,7 +191,14 @@ function MetricCard({ m, active, onToggle }: {
 
   const isGray   = display === "—"
   const isTrend  = m.name.includes("מגמות")
-  const inverted = !isGray && !isTrend && pct !== null && m.target.trim().startsWith("<")
+  const targetLower = m.target.trim().toLowerCase()
+  const inverted = !isGray && !isTrend && pct !== null && (
+    targetLower.startsWith("<") ||
+    targetLower.startsWith("נמוך מ") ||
+    targetLower.startsWith("פחות מ") ||
+    targetLower.startsWith("קטן מ") ||
+    targetLower.startsWith("לא יותר מ")
+  )
   const trendData = isTrend ? m.mainValue.trim().match(/^(\d+)\/(\d+)$/) : null
 
   let donut
