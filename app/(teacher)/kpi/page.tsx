@@ -429,14 +429,18 @@ export default function KpiPage() {
   const [activeTab, setActiveTab] = useState(0)
 
   useEffect(() => {
-    fetch("/api/kpi-sheet")
-      .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) setDomains(data)
-        else if (data?.error) setError(data.error)
-      })
-      .catch(e => setError(String(e)))
-      .finally(() => setLoading(false))
+    Promise.all([
+      fetch("/api/kpi-mashov").then(r => r.json()).catch(() => null),
+      fetch("/api/kpi-sheet").then(r => r.json()).catch(() => null),
+    ]).then(([mashov, sheets]) => {
+      const result: SheetDomain[] = []
+      if (mashov && !mashov.error) result.push(mashov)
+      if (Array.isArray(sheets)) result.push(...sheets)
+      else if (sheets?.error && result.length === 0) setError(sheets.error)
+      if (result.length > 0) setDomains(result)
+    })
+    .catch(e => setError(String(e)))
+    .finally(() => setLoading(false))
   }, [])
 
   const safeTab = domains.length > 0 ? Math.min(activeTab, domains.length - 1) : 0
