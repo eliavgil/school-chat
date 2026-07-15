@@ -232,6 +232,7 @@ model StudentAttendance {
   justifiedAbsences      Int      @default(0)
   tardiness              Int      @default(0)
   justifiedTardiness     Int      @default(0)
+  disruptions            Int      @default(0)
   updatedAt              DateTime @default(now())
 }
 

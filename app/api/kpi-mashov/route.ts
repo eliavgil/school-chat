@@ -67,31 +67,16 @@ export async function GET() {
     .sort((a, b) => b.tardiness - a.tardiness)
     .map(a => ({ label: a.student.name, values: [String(a.tardiness)] }))
 
-  // ── Behavior (TeacherRecord — voice dictation by teacher) ─────────────
-  // Filter by teacherId (not classId) to match how records are stored
-  const [disruptionRecords, tardinessTeacherRecords] = await Promise.all([
-    prisma.teacherRecord.findMany({
-      where: { teacherId: session.user.id, category: "הפרעה" },
-      orderBy: { createdAt: "desc" },
-    }),
-    prisma.teacherRecord.findMany({
-      where: { teacherId: session.user.id, category: "איחור" },
-      orderBy: { createdAt: "desc" },
-    }),
-  ])
-
-  // Disruptions: count unique students and incidents
-  const disruptionByStudent = new Map<string, number>()
-  for (const r of disruptionRecords) {
-    disruptionByStudent.set(r.studentName, (disruptionByStudent.get(r.studentName) ?? 0) + 1)
-  }
-  const disruptionStudentCount = disruptionByStudent.size
+  // ── Disruptions (from Mashov attendance import — disruptions column) ──
+  const studentsWithDisruptions = attendance.filter(a => a.disruptions > 0)
+  const disruptionStudentCount = studentsWithDisruptions.length
   const disruptionMainValue = totalStudents > 0
     ? `${Math.round((disruptionStudentCount / totalStudents) * 100)}%`
     : ""
-  const disruptionDetail = [...disruptionByStudent.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([name, count]) => ({ label: name, values: [String(count)] }))
+  const disruptionDetail = attendance
+    .filter(a => a.disruptions > 0)
+    .sort((a, b) => b.disruptions - a.disruptions)
+    .map(a => ({ label: a.student.name, values: [String(a.disruptions)] }))
 
 
   // ── Build domain ──────────────────────────────────────────────────────

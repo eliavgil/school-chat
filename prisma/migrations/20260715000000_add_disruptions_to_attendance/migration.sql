@@ -1,0 +1,1 @@
+ALTER TABLE "StudentAttendance" ADD COLUMN IF NOT EXISTS "disruptions" INTEGER NOT NULL DEFAULT 0;
