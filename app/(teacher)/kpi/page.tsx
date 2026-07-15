@@ -78,37 +78,39 @@ function parseMainValue(s: string): { display: string; pct: number | null } {
   return { display: "—", pct: null }
 }
 
-// ── Main Donut ────────────────────────────────────────────────────────────────
+// ── Donuts ────────────────────────────────────────────────────────────────────
 
-function MainDonut({ pct, display }: { pct: number | null; display: string }) {
+function MainDonut({ pct, display, inverted = false }: {
+  pct: number | null; display: string; inverted?: boolean
+}) {
   const size    = 148
   const strokeW = 13
   const r       = (size - strokeW) / 2
   const circ    = 2 * Math.PI * r
 
-  const greenLen = pct !== null ? Math.max(0, Math.min(pct / 100, 1)) * circ : circ
-  const redLen   = pct !== null ? Math.max(0, 1 - pct / 100) * circ : 0
-  const arcColor = pct !== null ? GREEN : ACCENT
+  const pctArc  = pct !== null ? Math.max(0, Math.min(pct / 100, 1)) * circ : circ
+  const restArc = pct !== null ? Math.max(0, 1 - pct / 100) * circ : 0
+
+  const pctColor  = pct !== null ? (inverted ? RED  : GREEN) : ACCENT
+  const restColor = inverted ? GREEN : RED
+
   const fontSize = display.length > 5 ? 18 : display.length > 3 ? 24 : 32
 
   return (
     <div style={{ position: "relative", width: size, height: size, margin: "0 auto" }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}
         style={{ transform: "rotate(-90deg)" }}>
-        {/* Track */}
         <circle cx={size / 2} cy={size / 2} r={r} fill="none"
           stroke={TRACK} strokeWidth={strokeW} />
-        {/* Red remainder */}
-        {pct !== null && redLen > 0 && (
+        {pct !== null && restArc > 0 && (
           <circle cx={size / 2} cy={size / 2} r={r} fill="none"
-            stroke={RED} strokeWidth={strokeW}
-            strokeDasharray={`${redLen} ${circ - redLen}`}
-            strokeDashoffset={-greenLen} />
+            stroke={restColor} strokeWidth={strokeW}
+            strokeDasharray={`${restArc} ${circ - restArc}`}
+            strokeDashoffset={-pctArc} />
         )}
-        {/* Green / accent progress arc */}
         <circle cx={size / 2} cy={size / 2} r={r} fill="none"
-          stroke={arcColor} strokeWidth={strokeW}
-          strokeDasharray={`${greenLen} ${circ - greenLen}`}
+          stroke={pctColor} strokeWidth={strokeW}
+          strokeDasharray={`${pctArc} ${circ - pctArc}`}
           strokeLinecap="round" />
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "flex",
@@ -122,6 +124,62 @@ function MainDonut({ pct, display }: { pct: number | null; display: string }) {
   )
 }
 
+function GrayDonut() {
+  const size = 148, strokeW = 13
+  const r = (size - strokeW) / 2
+  return (
+    <div style={{ position: "relative", width: size, height: size, margin: "0 auto" }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none"
+          stroke="rgba(255,255,255,.12)" strokeWidth={strokeW} />
+      </svg>
+      <div style={{ position: "absolute", inset: 0, display: "flex",
+        alignItems: "center", justifyContent: "center" }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: MUTED,
+          textAlign: "center", padding: "0 16px", lineHeight: 1.4 }}>
+          אין מידע
+        </span>
+      </div>
+    </div>
+  )
+}
+
+function TrendDonut({ up, down }: { up: number; down: number }) {
+  const size = 148, strokeW = 13
+  const r    = (size - strokeW) / 2
+  const circ = 2 * Math.PI * r
+  const total  = up + down
+  const upLen  = total > 0 ? (up / total) * circ : 0
+  const dnLen  = circ - upLen
+
+  return (
+    <div style={{ position: "relative", width: size, height: size, margin: "0 auto" }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}
+        style={{ transform: "rotate(-90deg)" }}>
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none"
+          stroke={TRACK} strokeWidth={strokeW} />
+        {down > 0 && (
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none"
+            stroke={RED} strokeWidth={strokeW}
+            strokeDasharray={`${dnLen} ${circ - dnLen}`}
+            strokeDashoffset={-upLen} />
+        )}
+        {up > 0 && (
+          <circle cx={size / 2} cy={size / 2} r={r} fill="none"
+            stroke={up >= down ? GREEN : ACCENT} strokeWidth={strokeW}
+            strokeDasharray={`${upLen} ${circ - upLen}`}
+            strokeLinecap="round" />
+        )}
+      </svg>
+      <div style={{ position: "absolute", inset: 0, display: "flex",
+        flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2 }}>
+        <span style={{ fontSize: 22, fontWeight: 900, color: GREEN, lineHeight: 1 }}>+{up}</span>
+        <span style={{ fontSize: 22, fontWeight: 900, color: RED,   lineHeight: 1 }}>−{down}</span>
+      </div>
+    </div>
+  )
+}
+
 // ── MetricCard ────────────────────────────────────────────────────────────────
 
 function MetricCard({ m, active, onToggle }: {
@@ -130,6 +188,20 @@ function MetricCard({ m, active, onToggle }: {
   onToggle: () => void
 }) {
   const { display, pct } = parseMainValue(computeMainValue(m))
+
+  const isGray   = display === "—"
+  const isTrend  = m.name.includes("מגמות")
+  const inverted = !isGray && !isTrend && pct !== null && m.target.trim().startsWith("<")
+  const trendData = isTrend ? m.mainValue.trim().match(/^(\d+)\/(\d+)$/) : null
+
+  let donut
+  if (isGray) {
+    donut = <GrayDonut />
+  } else if (isTrend && trendData) {
+    donut = <TrendDonut up={parseInt(trendData[1])} down={parseInt(trendData[2])} />
+  } else {
+    donut = <MainDonut pct={pct} display={display} inverted={inverted} />
+  }
 
   return (
     <button
@@ -155,17 +227,13 @@ function MetricCard({ m, active, onToggle }: {
         {m.name}
       </div>
 
-      <MainDonut pct={pct} display={display} />
+      {donut}
 
-      <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.6 }}>
-        <span>יעד — {m.target}</span>
-        {m.period && (
-          <>
-            <span style={{ margin: "0 5px" }}>·</span>
-            <span>{m.period}</span>
-          </>
-        )}
-      </div>
+      {m.target && (
+        <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.95)" }}>
+          🎯 {m.target}
+        </div>
+      )}
     </button>
   )
 }
