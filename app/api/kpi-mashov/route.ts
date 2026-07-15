@@ -50,34 +50,49 @@ export async function GET() {
 
   const failingStudents = studentAvgs.filter(s => s.avg < 55)
 
-  // ── Attendance & tardiness (StudentAttendance) ────────────────────────
+  // ── Attendance & tardiness (StudentAttendance from Mashov import) ──────
   const attendance = await prisma.studentAttendance.findMany({
     where: { student: { classId } },
     include: { student: { select: { name: true } } },
   })
-  const tardinessFromAttendance = attendance
-    .filter(a => a.tardiness > 0)
-    .map(a => ({ name: a.student.name, count: a.tardiness }))
 
-  // ── Behavior (TeacherRecord voice dictation) ──────────────────────────
-  const [disruptionRecords, tardinessRecords] = await Promise.all([
+  // Correct formula: total tardiness incidents / total lesson slots
+  const totalTardiness = attendance.reduce((s, a) => s + a.tardiness, 0)
+  const totalLessons   = attendance.reduce((s, a) => s + a.totalLessons, 0)
+  const tardinessRate  = totalLessons > 0 ? totalTardiness / totalLessons : null
+  const tardinessMainValue = tardinessRate !== null ? `${Math.round(tardinessRate * 100)}%` : ""
+
+  const tardinessDetail = attendance
+    .filter(a => a.tardiness > 0)
+    .sort((a, b) => b.tardiness - a.tardiness)
+    .map(a => ({ label: a.student.name, values: [String(a.tardiness)] }))
+
+  // ── Behavior (TeacherRecord — voice dictation by teacher) ─────────────
+  // Filter by teacherId (not classId) to match how records are stored
+  const [disruptionRecords, tardinessTeacherRecords] = await Promise.all([
     prisma.teacherRecord.findMany({
-      where: { classId, category: "הפרעה" },
+      where: { teacherId: session.user.id, category: "הפרעה" },
       orderBy: { createdAt: "desc" },
     }),
     prisma.teacherRecord.findMany({
-      where: { classId, category: "איחור" },
+      where: { teacherId: session.user.id, category: "איחור" },
       orderBy: { createdAt: "desc" },
     }),
   ])
 
-  // Tardiness: prefer StudentAttendance if available, else TeacherRecords
-  const tardinessStudentNames =
-    tardinessFromAttendance.length > 0
-      ? tardinessFromAttendance.map(a => a.name)
-      : [...new Set(tardinessRecords.map(r => r.studentName))]
+  // Disruptions: count unique students and incidents
+  const disruptionByStudent = new Map<string, number>()
+  for (const r of disruptionRecords) {
+    disruptionByStudent.set(r.studentName, (disruptionByStudent.get(r.studentName) ?? 0) + 1)
+  }
+  const disruptionStudentCount = disruptionByStudent.size
+  const disruptionMainValue = totalStudents > 0
+    ? `${Math.round((disruptionStudentCount / totalStudents) * 100)}%`
+    : ""
+  const disruptionDetail = [...disruptionByStudent.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, count]) => ({ label: name, values: [String(count)] }))
 
-  const disruptionStudentNames = [...new Set(disruptionRecords.map(r => r.studentName))]
 
   // ── Build domain ──────────────────────────────────────────────────────
   return NextResponse.json({
@@ -121,23 +136,23 @@ export async function GET() {
       },
       {
         name: "איחורים",
-        mainValue: pct(tardinessStudentNames.length, totalStudents),
+        mainValue: tardinessMainValue,
         target: "<5%",
         period: "שוטף",
-        graphInstr: "אחוז התלמידים עם איחורים",
+        graphInstr: "אחוז השיעורים שבהם תלמידים אחרו (סך איחורים ÷ סך שיעורים)",
         fillInstr: "",
-        categories: ["שם תלמיד"],
-        results: tardinessStudentNames.map(name => ({ label: name, values: [] })),
+        categories: ["מספר איחורים"],
+        results: tardinessDetail,
       },
       {
         name: "הפרעות",
-        mainValue: pct(disruptionStudentNames.length, totalStudents),
+        mainValue: disruptionMainValue,
         target: "<10%",
         period: "שוטף",
         graphInstr: "אחוז התלמידים עם רישום הפרעה",
         fillInstr: "",
-        categories: ["שם תלמיד"],
-        results: disruptionStudentNames.map(name => ({ label: name, values: [] })),
+        categories: ["מספר הפרעות"],
+        results: disruptionDetail,
       },
       {
         name: "מעבר מגמות",
