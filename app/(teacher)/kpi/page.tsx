@@ -304,7 +304,42 @@ function DomainView({ domain }: { domain: SheetDomain }) {
       </div>
 
       {selected !== null && domain.metrics[selected] && (
-        <DetailTable m={domain.metrics[selected]} />
+        <div
+          onClick={() => setSelected(null)}
+          style={{
+            position: "fixed", inset: 0, zIndex: 50,
+            background: "rgba(0,0,0,.65)", backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            padding: "20px",
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: "#1a2540",
+              border: "1px solid rgba(255,255,255,.12)",
+              borderRadius: 20,
+              padding: "28px 24px 24px",
+              maxWidth: 720, width: "100%",
+              maxHeight: "80vh", overflowY: "auto",
+              position: "relative",
+            }}
+          >
+            <button
+              onClick={() => setSelected(null)}
+              style={{
+                position: "absolute", top: 14, left: 14,
+                background: "rgba(255,255,255,.08)", border: "none",
+                borderRadius: 999, width: 30, height: 30,
+                cursor: "pointer", color: TEXT, fontSize: 14,
+                display: "flex", alignItems: "center", justifyContent: "center",
+              }}
+            >
+              ✕
+            </button>
+            <DetailTable m={domain.metrics[selected]} />
+          </div>
+        </div>
       )}
     </div>
   )
