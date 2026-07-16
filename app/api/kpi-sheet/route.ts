@@ -161,6 +161,7 @@ export async function GET() {
   const configs = [
     { url: process.env.KPI_SHEET_1_URL ?? process.env.KPI_SHEET_CSV_URL, fallback: "הישגים לימודיים" },
     { url: process.env.KPI_SHEET_2_URL, fallback: "זהות וערכים" },
+    { url: process.env.KPI_SHEET_3_URL, fallback: "כישורים ומיומנויות" },
   ].filter(c => c.url)
 
   if (!configs.length) {
