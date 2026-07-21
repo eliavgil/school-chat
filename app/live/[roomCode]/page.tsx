@@ -229,7 +229,6 @@ function MediaBlock({ slide }: { slide: Slide }) {
     ? extractYouTubeId(slide.youtube_url)
     : (slide.link_url ? extractYouTubeId(slide.link_url) : null)
 
-  const isTopOrDefault = !slide.image_position || slide.image_position === "top"
   const isBackground = slide.image_position === "background"
 
   return (
@@ -269,12 +268,46 @@ function renderInline(text: string): React.ReactNode[] {
   )
 }
 
+function renderTable(lines: string[], key: number) {
+  const rows = lines
+    .filter(l => l.trim().startsWith("|") && !/^\|[\s\-|]+\|$/.test(l.trim()))
+    .map(l => l.trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim()))
+  if (rows.length < 1) return null
+  const [header, ...body] = rows
+  return (
+    <div key={key} style={{ overflowX: "auto", marginBottom: 10 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, direction: "rtl" }}>
+        <thead>
+          <tr>{header.map((h, i) => <th key={i} style={{ textAlign: "right", padding: "6px 8px", background: "var(--ink)", color: "var(--paper)", fontWeight: 700, borderBottom: "2px solid var(--gold)" }}>{renderInline(h)}</th>)}</tr>
+        </thead>
+        <tbody>
+          {body.map((row, ri) => (
+            <tr key={ri} style={{ background: ri % 2 === 0 ? "var(--paper2)" : "#fff" }}>
+              {row.map((cell, ci) => <td key={ci} style={{ padding: "6px 8px", borderBottom: "1px solid var(--line)" }}>{renderInline(cell)}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 function renderBody(text: string) {
   return text.split(/\n\n+/).map((para, pi) => {
-    if (para.startsWith("> ")) {
-      return <blockquote key={pi} style={{ borderRight: "3px solid var(--seal)", paddingRight: 12, margin: "8px 0", color: "var(--seal)", fontWeight: 600, fontSize: 13 }}>{renderInline(para.slice(2))}</blockquote>
+    const trimmed = para.trim()
+
+    if (trimmed === "---") {
+      return <hr key={pi} style={{ border: "none", borderTop: "1px solid var(--line)", margin: "10px 0" }} />
     }
+
+    if (trimmed.startsWith("> ")) {
+      return <blockquote key={pi} style={{ borderRight: "3px solid var(--seal)", paddingRight: 12, margin: "8px 0", color: "var(--seal)", fontWeight: 600, fontSize: 13 }}>{renderInline(trimmed.slice(2))}</blockquote>
+    }
+
     const lines = para.split("\n")
+    const isTable = lines.filter(l => l.trim().startsWith("|")).length >= 2
+    if (isTable) return renderTable(lines, pi)
+
     return (
       <p key={pi} className="body-text" style={{ marginBottom: 8, marginTop: 0 }}>
         {lines.map((line, li) => (
@@ -398,3 +431,78 @@ export default function LivePage({ params }: Props) {
         .on("broadcast", { event: "slide_change" }, ({ payload }) => {
           if (typeof payload?.index === "number") setCurrentIdx(payload.index)
         })
+        .subscribe()
+    } catch {}
+  }
+
+  useEffect(() => {
+    if (status !== "authenticated") return
+    fetch(`/api/sessions/${code}`)
+      .then(r => {
+        if (!r.ok) { setPhase("not-found"); return null }
+        return r.json()
+      })
+      .then(d => {
+        if (!d) return
+        setSessionData({ session: d as LiveSession, lesson: d.lesson as Lesson })
+        setCurrentIdx(d.current_slide_index)
+        setPhase("live")
+        subscribeRealtime(d.room_code)
+      })
+      .catch(() => setPhase("not-found"))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status])
+
+  if (status === "loading") return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "var(--ink)" }}>
+      <style>{FONT + CSS}</style>
+      <div style={{ color: "rgba(245,241,230,0.4)", fontFamily: "'Heebo',sans-serif", fontSize: 16 }}>טוען...</div>
+    </div>
+  )
+
+  if (status === "unauthenticated") return <SignInScreen code={code} />
+
+  if (phase === "not-found") return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "var(--ink)", direction: "rtl" }}>
+      <style>{FONT + CSS}</style>
+      <div style={{ background: "var(--paper)", borderRadius: 20, padding: "32px 28px", textAlign: "center", maxWidth: 320 }}>
+        <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
+        <h2 style={{ fontFamily: "'Frank Ruhl Libre',serif", color: "var(--ink)", marginBottom: 8 }}>Session לא נמצא</h2>
+        <p style={{ color: "rgba(27,42,74,0.6)", fontSize: 14 }}>בדקו שהקוד {code} נכון, או שהמורה טרם פתח/ה את השיעור.</p>
+      </div>
+    </div>
+  )
+
+  if (phase === "loading" || !sessionData || !slide) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "var(--ink)" }}>
+      <style>{FONT + CSS}</style>
+      <div style={{ color: "rgba(245,241,230,0.5)", fontFamily: "'Heebo',sans-serif", fontSize: 16 }}>ממתין לשיעור להתחיל...</div>
+    </div>
+  )
+
+  return (
+    <div className="app" dir="rtl">
+      <style>{FONT + CSS}</style>
+
+      <div className="topbar">
+        <div style={{ color: "var(--paper)", fontFamily: "'Frank Ruhl Libre',serif", fontWeight: 700, fontSize: 14, opacity: 0.85 }}>
+          {sessionData.lesson.title}
+        </div>
+        <div className="code-badge">🔴 {code}</div>
+      </div>
+
+      <StudentSlide slide={slide} sessionId={sessionData.session.id} studentId={studentId} />
+
+      {/* Progress dots */}
+      <div style={{ display: "flex", justifyContent: "center", gap: 5, padding: "10px 0 16px", flexShrink: 0 }}>
+        {sessionData.lesson.slides.map((_, i) => (
+          <div key={i} style={{
+            width: i === currentIdx ? 20 : 6, height: 6, borderRadius: 3,
+            background: i === currentIdx ? "var(--gold)" : i < currentIdx ? "rgba(245,241,230,0.35)" : "rgba(245,241,230,0.15)",
+            transition: "all .3s ease"
+          }} />
+        ))}
+      </div>
+    </div>
+  )
+}
