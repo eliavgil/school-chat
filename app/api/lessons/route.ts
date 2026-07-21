@@ -11,7 +11,7 @@ export async function GET() {
   const sb = adminClient()
   const { data, error } = await sb
     .from("lessons")
-    .select("id, title, created_at, class_id")
+    .select("id, slug, title, subject, created_at")
     .order("created_at", { ascending: false })
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -22,8 +22,8 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { title, class_id } = await req.json()
-  if (!title || !class_id) return NextResponse.json({ error: "title + class_id required" }, { status: 400 })
+  const { title, subject } = await req.json()
+  if (!title) return NextResponse.json({ error: "title required" }, { status: 400 })
 
   const defaultSlide: Slide = {
     id: "s1", order: 1, type: "intro",
@@ -32,10 +32,11 @@ export async function POST(req: Request) {
     body: "כאן יבוא תוכן השיעור.",
   }
 
+  const slug = `lesson-${Date.now()}`
   const sb = adminClient()
   const { data, error } = await sb
     .from("lessons")
-    .insert({ title, class_id, slides: [defaultSlide] })
+    .insert({ title, subject: subject ?? "כללי", slug, slides: [defaultSlide] })
     .select()
     .single()
 

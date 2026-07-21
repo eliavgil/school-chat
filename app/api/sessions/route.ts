@@ -12,8 +12,8 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { lesson_id, class_id } = await req.json()
-  if (!lesson_id || !class_id) return NextResponse.json({ error: "lesson_id + class_id required" }, { status: 400 })
+  const { lesson_id, class_id = null } = await req.json()
+  if (!lesson_id) return NextResponse.json({ error: "lesson_id required" }, { status: 400 })
 
   const sb = adminClient()
 

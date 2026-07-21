@@ -3,7 +3,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 
-interface LessonItem { id: string; title: string; created_at: string; class_id: string }
+interface LessonItem { id: string; slug: string; title: string; subject: string; created_at: string }
 
 export default function LessonsPage() {
   const router = useRouter()
@@ -23,7 +23,7 @@ export default function LessonsPage() {
     const res = await fetch("/api/lessons", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title: "שיעור חדש", class_id: "default" }),
+      body: JSON.stringify({ title: "שיעור חדש", subject: "אזרחות" }),
     })
     if (res.ok) {
       const lesson = await res.json()
