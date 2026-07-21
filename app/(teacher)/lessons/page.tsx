@@ -50,12 +50,18 @@ export default function LessonsPage() {
       <main style={{ maxWidth: 720, margin: "0 auto", padding: "32px 20px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24 }}>
           <h1 style={{ fontFamily: "'Frank Ruhl Libre', serif", color: "var(--ink)", fontSize: 26, margin: 0 }}>מאגר שיעורים</h1>
+          <div style={{ display: "flex", gap: 8 }}>
+          <Link href="/lessons/results"
+            style={{ padding: "10px 16px", borderRadius: 8, border: "1.5px solid var(--ok)", color: "var(--ok)", fontSize: 14, fontWeight: 700, textDecoration: "none" }}>
+            📊 תוצאות
+          </Link>
           <button
             onClick={createLesson}
             disabled={creating}
             style={{ background: "var(--seal)", color: "var(--paper)", border: "none", borderRadius: 8, padding: "10px 20px", fontFamily: "'Heebo'", fontWeight: 700, fontSize: 14, cursor: creating ? "default" : "pointer", opacity: creating ? 0.6 : 1 }}>
             {creating ? "יוצר..." : "+ שיעור חדש"}
           </button>
+          </div>
         </div>
 
         {loading ? (
