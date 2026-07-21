@@ -58,6 +58,22 @@ const CSS = `
   .cond-chip{flex:1;min-width:140px;background:var(--paper2);border:1px solid var(--line);border-radius:10px;padding:12px 10px;text-align:center;}
   .cond-chip .n{font-family:'Frank Ruhl Libre',serif;font-weight:900;color:var(--seal);font-size:20px;display:block;margin-bottom:3px;}
   .cond-chip .t{font-size:13px;font-weight:700;color:var(--ink);}
+  .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:40;backdrop-filter:blur(2px);}
+  .sidebar{position:fixed;top:0;right:0;bottom:0;width:280px;background:var(--ink);border-left:1px solid rgba(176,141,63,0.25);z-index:41;display:flex;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,0.4);}
+  .sidebar-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid rgba(176,141,63,0.2);flex-shrink:0;}
+  .sidebar-title{color:var(--paper);font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:15px;}
+  .sidebar-close{background:none;border:none;color:rgba(245,241,230,0.5);font-size:20px;cursor:pointer;padding:2px 6px;border-radius:6px;}
+  .sidebar-close:hover{color:var(--paper);}
+  .sidebar-list{flex:1;overflow-y:auto;padding:8px;}
+  .sidebar-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:.15s;}
+  .sidebar-item:hover{background:rgba(245,241,230,0.08);}
+  .sidebar-item.active{background:rgba(176,141,63,0.18);border:1px solid rgba(176,141,63,0.35);}
+  .sidebar-num{width:24px;height:24px;border-radius:50%;background:var(--seal);color:var(--paper);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
+  .sidebar-item.active .sidebar-num{background:var(--gold);}
+  .sidebar-label{font-size:13px;color:rgba(245,241,230,0.8);font-weight:600;line-height:1.3;flex:1;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+  .sidebar-type{font-size:10px;color:rgba(245,241,230,0.35);letter-spacing:1px;text-transform:uppercase;margin-top:1px;}
+  .icon-btn{background:rgba(245,241,230,0.1);border:1px solid rgba(245,241,230,0.15);border-radius:7px;color:rgba(245,241,230,0.7);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s;flex-shrink:0;}
+  .icon-btn:hover{background:rgba(245,241,230,0.18);color:var(--paper);}
 `
 
 function DoodleIcon({ type }: { type: string }) {
@@ -239,6 +255,7 @@ export default function PresentPage({ params }: Props) {
   const [revealOpen, setRevealOpen] = useState(false)
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState("")
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     fetch(`/api/lessons/${id}`).then(r => r.json()).then(d => {
@@ -349,25 +366,44 @@ export default function PresentPage({ params }: Props) {
 
   const total = lesson.slides.length
 
+  const TYPE_LABELS: Record<string, string> = {
+    intro: "פתיחה", poll: "סקר", quiz: "חידון", definitions: "הגדרות",
+    matching: "התאמה", reveal: "גילוי", enrichment: "העשרה", homework: "שיעורי בית", feedback: "משוב",
+  }
+
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "var(--ink)", direction: "rtl" }}>
       <style>{SLIDE_FONT + CSS}</style>
 
       {/* Topbar */}
       <div className="topbar">
-        <div style={{ color: "var(--paper)", fontFamily: "'Frank Ruhl Libre',serif", fontWeight: 700, fontSize: 16 }}>
+        {/* Sidebar toggle */}
+        <button className="icon-btn" onClick={() => setSidebarOpen(true)} title="רשימת שקפים">
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+          </svg>
+        </button>
+
+        <div style={{ color: "var(--paper)", fontFamily: "'Frank Ruhl Libre',serif", fontWeight: 700, fontSize: 16, flex: 1, padding: "0 14px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {lesson.title}
         </div>
 
         {/* Progress */}
-        <div style={{ flex: 1, maxWidth: 380, height: 3, background: "rgba(245,241,230,0.15)", margin: "0 20px", borderRadius: 2, overflow: "hidden" }}>
+        <div style={{ width: 200, height: 3, background: "rgba(245,241,230,0.15)", margin: "0 16px", borderRadius: 2, overflow: "hidden", flexShrink: 0 }}>
           <div style={{ height: "100%", width: `${((idx + 1) / total) * 100}%`, background: "linear-gradient(90deg,var(--gold),var(--seal))", transition: "width .3s ease" }} />
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ color: "rgba(245,241,230,0.65)", fontSize: 13, fontVariantNumeric: "tabular-nums" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span style={{ color: "rgba(245,241,230,0.65)", fontSize: 13, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
             {String(idx + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
           </span>
+
+          {/* Edit button */}
+          <button className="icon-btn" onClick={() => window.open(`/lessons/${id}/edit`, "_blank")} title="ערוך שיעור">
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+            </svg>
+          </button>
 
           {session ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -408,6 +444,34 @@ export default function PresentPage({ params }: Props) {
           <button className="navbtn" disabled={idx === total - 1} onClick={() => go(idx + 1)}>‹</button>
         </div>
       </div>
+
+      {/* Slides sidebar */}
+      {sidebarOpen && (
+        <>
+          <div className="sidebar-overlay" onClick={() => setSidebarOpen(false)} />
+          <div className="sidebar">
+            <div className="sidebar-head">
+              <span className="sidebar-title">שקפים</span>
+              <button className="sidebar-close" onClick={() => setSidebarOpen(false)}>✕</button>
+            </div>
+            <div className="sidebar-list">
+              {lesson.slides.map((s, i) => (
+                <div
+                  key={s.id}
+                  className={`sidebar-item${i === idx ? " active" : ""}`}
+                  onClick={() => { go(i); setSidebarOpen(false) }}
+                >
+                  <div className="sidebar-num">{i + 1}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="sidebar-label">{s.title || s.eyebrow || "—"}</div>
+                    <div className="sidebar-type">{TYPE_LABELS[s.type] ?? s.type}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
     </div>
   )
 }
