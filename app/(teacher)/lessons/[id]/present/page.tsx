@@ -76,6 +76,45 @@ const CSS = `
   .icon-btn:hover{background:rgba(245,241,230,0.18);color:var(--paper);}
 `
 
+function extractYouTubeId(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/)
+  return m ? m[1] : null
+}
+
+function SlideMedia({ slide }: { slide: Slide }) {
+  const ytUrl = slide.youtube_url || slide.link_url || ""
+  const ytId = ytUrl ? extractYouTubeId(ytUrl) : null
+  const showImg = slide.image_url && slide.image_position !== "background"
+
+  return (
+    <>
+      {showImg && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={slide.image_url!} alt="" style={{
+          width: slide.image_size === "small" ? "40%" : slide.image_size === "medium" ? "65%" : slide.image_size === "large" ? "85%" : "100%",
+          borderRadius: 10, marginBottom: 16, display: "block", objectFit: "cover",
+        }} />
+      )}
+      {ytId && (
+        <div style={{ position: "relative", paddingTop: "56.25%", borderRadius: 12, overflow: "hidden", marginBottom: 16, background: "#000" }}>
+          <iframe
+            src={`https://www.youtube.com/embed/${ytId}`}
+            style={{ position: "absolute", inset: 0, width: "100%", height: "100%", border: "none" }}
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </div>
+      )}
+      {slide.link_url && !ytId && (
+        <a href={slide.link_url} target="_blank" rel="noopener noreferrer"
+          style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--seal)", fontWeight: 700, fontSize: 13, textDecoration: "none", border: "1.5px solid var(--seal)", borderRadius: 8, padding: "7px 14px", marginBottom: 14 }}>
+          🔗 פתח קישור
+        </a>
+      )}
+    </>
+  )
+}
+
 function DoodleIcon({ type }: { type: string }) {
   const icons: Record<string, React.ReactElement> = {
     intro: <svg viewBox="0 0 24 24"><path d="M12 2l2.5 6.5L21 9l-5 4.5 1.5 7L12 17l-5.5 3.5 1.5-7L3 9l6.5-.5z"/></svg>,
@@ -104,12 +143,26 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
   }
 
   const { type, eyebrow, title, body, questions } = slide
+  const isBackground = slide.image_position === "background"
+
+  const bgStyle: React.CSSProperties = isBackground && slide.image_url ? {
+    backgroundImage: `url(${slide.image_url})`,
+    backgroundSize: "cover",
+    backgroundPosition: "center",
+  } : {}
 
   return (
-    <div className="slide-inner">
+    <div className="slide-inner" style={bgStyle}>
+      {isBackground && slide.image_url && (
+        <div style={{ position: "absolute", inset: 0, background: "rgba(245,241,230,0.88)", borderRadius: 16 }} />
+      )}
+      <div style={{ position: "relative", zIndex: 1 }}>
       <DoodleIcon type={type} />
       <div className="eyebrow">{eyebrow || type}</div>
       <h1 className="stitle">{title}</h1>
+
+      {/* Media: image (non-background) + YouTube + link */}
+      <SlideMedia slide={slide} />
 
       {body && <p className="lead">{body}</p>}
 
@@ -242,6 +295,7 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
           )}
         </div>
       ))}
+      </div>{/* /relative z-1 */}
     </div>
   )
 }
@@ -377,8 +431,15 @@ export default function PresentPage({ params }: Props) {
 
       {/* Topbar */}
       <div className="topbar">
+        {/* Back to lessons list */}
+        <a href="/lessons" className="icon-btn" title="חזרה לשיעורים" style={{ textDecoration: "none" }}>
+          <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
+          </svg>
+        </a>
+
         {/* Sidebar toggle */}
-        <button className="icon-btn" onClick={() => setSidebarOpen(true)} title="רשימת שקפים">
+        <button className="icon-btn" onClick={() => setSidebarOpen(true)} title="רשימת שקפים" style={{ marginRight: 6 }}>
           <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
           </svg>
