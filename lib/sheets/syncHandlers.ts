@@ -75,21 +75,42 @@ export async function syncExams() {
 // Columns: ת.ז | שם מלא | טלפון הורה | אימייל הורה | שם הורה | ...
 export async function syncStudents(classId = "class-y") {
   const rows = await fetchSheet("תלמידים - פרטים אישיים")
-  let count = 0
 
+  const sheetStudents: { idNumber: string; name: string }[] = []
   for (const row of rows.slice(1)) {
     const idNumber = cell(row, 0)
     const name     = cell(row, 1)
     if (!idNumber || !name || !/^\d+$/.test(idNumber)) continue
+    sheetStudents.push({ idNumber, name })
+  }
 
+  const sheetIds = sheetStudents.map(s => s.idNumber)
+
+  // Remove students no longer in the sheet (same classId only)
+  const toDelete = await prisma.student.findMany({
+    where: { classId, idNumber: { notIn: sheetIds } },
+    select: { id: true },
+  })
+  if (toDelete.length) {
+    const ids = toDelete.map(s => s.id)
+    await prisma.studentGrade.deleteMany({ where: { studentId: { in: ids } } })
+    await prisma.studentAttendance.deleteMany({ where: { studentId: { in: ids } } })
+    await prisma.studentAccommodation.deleteMany({ where: { studentId: { in: ids } } })
+    await prisma.emotionalNote.deleteMany({ where: { studentId: { in: ids } } })
+    await prisma.parentStudent.deleteMany({ where: { studentId: { in: ids } } })
+    await prisma.student.deleteMany({ where: { id: { in: ids } } })
+  }
+
+  // Upsert all students from sheet
+  for (const { idNumber, name } of sheetStudents) {
     await prisma.student.upsert({
       where:  { idNumber },
       update: { name, classId },
       create: { name, idNumber, classId },
     })
-    count++
   }
-  return count
+
+  return sheetStudents.length
 }
 
 // ── מורים מקצועיים בכיתה ───────────────────────────────────
