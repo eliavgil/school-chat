@@ -18,6 +18,9 @@ export interface Slide {
   title: string
   body?: string
   image_url?: string | null
+  image_position?: 'top' | 'right' | 'left' | 'background' | null
+  image_size?: 'small' | 'medium' | 'large' | 'full' | null
+  youtube_url?: string | null
   link_url?: string | null
   display?: { show_names: boolean }
   questions?: SlideQuestion[]
@@ -25,8 +28,9 @@ export interface Slide {
 
 export interface Lesson {
   id: string
-  class_id: string
+  slug: string
   title: string
+  subject: string
   slides: Slide[]
   created_at: string
 }
