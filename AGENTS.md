@@ -5,6 +5,71 @@ This version has breaking changes — APIs, conventions, and file structure may 
 <!-- END:nextjs-agent-rules -->
 
 ---
+name: lesson-design
+description: Pedagogical guidelines for building civics lesson slide decks. Apply whenever creating or editing lesson seed files (app/api/seed/civics-lesson-*/route.ts).
+---
+
+# Lesson Design — Civics (אזרחות), כיתה י
+
+## Who you're teaching
+
+10th graders, beginners — no prior civics knowledge assumed. They need a reason to care before they can absorb content. Start with something that feels real, surprising, or slightly absurd.
+
+## Core philosophy
+
+**The slide is a backdrop, not a script.** The teacher talks; the slide gives the eye somewhere to land. Default to less text — one sharp sentence is worth four vague ones. The student should be able to glance at the slide, understand the theme, and look back at the teacher. The exception: definition slides, worked examples, and step-by-step instructions that students need to copy or memorize — those can be dense.
+
+## What makes a slide excellent
+
+A great slide does one or more of these:
+- **Provokes a question** before it answers one — lead with the tension, not the conclusion
+- **Visual first** — if there's an image, it should be the first thing the eye hits, and it should make the student think or feel something
+- **One idea** — if you're tempted to put two things on a slide, make two slides
+- **A small surprise** — something slightly funny, weird, or unexpected (a meme-adjacent image, an absurd statistic, an emoji used incorrectly on purpose). This is not decoration; it's the thing that prevents the class from falling asleep
+
+## Engagement techniques
+
+Sprinkle these through the lesson, especially in the second third (where attention sags):
+- Sudden contrast: a slide that's visually very different from the ones around it
+- A poll or quiz question with one obviously wrong answer that's secretly tempting
+- A real headline, quote, or number that feels almost too extreme to be true (but is)
+- A "what do you think?" beat before the explanation — ask before you tell
+- A slide where the title is a question and the body is blank, so the teacher can cold-call before revealing
+
+## Slide type guidelines
+
+| Type | Default length | Use it for |
+|---|---|---|
+| `intro` | 2–4 lines max | Opening hook, section transitions, "map of what's coming" |
+| `poll` | Question + 4 short options | Opinion or prediction before the lesson teaches the answer |
+| `quiz` | Question + 4 options, one correct | Check understanding; mark `correct_index` |
+| `definitions` | Can be long | Terms students must memorize; use flip cards |
+| `reveal` | Short prompt, longer answer hidden | Model answers, worked examples, bagrut-style responses |
+| `enrichment` | 2–3 cards, punchy | Going deeper for curious students; optional |
+| `homework` | Numbered list | Clear tasks; each item one sentence |
+| `feedback` | One question, star rating | End of lesson only |
+| `matching` | Pairs | Terminology matching, cause-effect, law-to-principle |
+
+## Lesson flow
+
+- **Slide 1**: Hook — an image, headline, or question that lands in the real world. Don't start with a definition.
+- **Slide 2**: Poll — get every student to commit to a position before they know the answer.
+- **Middle third**: The peak. This is where the hardest concept goes, with the most support: a definition slide, a quiz, a worked example (reveal type).
+- **Last slides**: Summary, then homework or feedback. End with something that makes the lesson feel finished, not truncated.
+
+## Body text rules
+
+- No bullet points by default — use `\n` line breaks to separate ideas within a paragraph instead
+- Bold (`**term**`) only on the first introduction of a key term, or to highlight the single most important phrase on the slide
+- `> blockquote` for bagrut tips, exam notes, or teacher asides
+- `---` horizontal rule to separate distinct sections within a long slide
+- Tables only for genuine comparisons (not lists that happen to have two columns)
+
+## Image guidance
+
+When writing a slide that would benefit from an image, add an `image_url` field with a descriptive comment about what kind of image would work. Even if no URL is available yet, write: `image_url: null, // suggested: [description of ideal image]` in a comment so it's easy to fill in later.
+
+---
 name: frontend-design
 description: Guidance for distinctive, intentional visual design when building new UI or reshaping an existing one. Helps with aesthetic direction, typography, and making choices that don't read as templated defaults.
 ---
