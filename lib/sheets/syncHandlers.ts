@@ -96,14 +96,17 @@ export async function syncStudents(classId = "class-y") {
   })
   if (toDelete.length) {
     const ids = toDelete.map(s => s.id)
-    await prisma.message.deleteMany({ where: { studentId: { in: ids } } })
-    await prisma.studentRecord.deleteMany({ where: { studentId: { in: ids } } })
-    await prisma.studentGrade.deleteMany({ where: { studentId: { in: ids } } })
-    await prisma.studentAttendance.deleteMany({ where: { studentId: { in: ids } } })
-    await prisma.studentAccommodation.deleteMany({ where: { studentId: { in: ids } } })
-    await prisma.emotionalNote.deleteMany({ where: { studentId: { in: ids } } })
-    await prisma.parentStudent.deleteMany({ where: { studentId: { in: ids } } })
-    await prisma.student.deleteMany({ where: { id: { in: ids } } })
+    await prisma.$transaction([
+      prisma.user.updateMany({ where: { studentId: { in: ids } }, data: { studentId: null } }),
+      prisma.message.deleteMany({ where: { studentId: { in: ids } } }),
+      prisma.studentRecord.deleteMany({ where: { studentId: { in: ids } } }),
+      prisma.studentGrade.deleteMany({ where: { studentId: { in: ids } } }),
+      prisma.studentAttendance.deleteMany({ where: { studentId: { in: ids } } }),
+      prisma.studentAccommodation.deleteMany({ where: { studentId: { in: ids } } }),
+      prisma.emotionalNote.deleteMany({ where: { studentId: { in: ids } } }),
+      prisma.parentStudent.deleteMany({ where: { studentId: { in: ids } } }),
+      prisma.student.deleteMany({ where: { id: { in: ids } } }),
+    ])
   }
 
   // Upsert all students from sheet
