@@ -73,7 +73,11 @@ export default function LessonsPage() {
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            {lessons.map(l => (
+            {[...lessons].sort((a, b) => {
+              const na = parseInt(a.title.match(/שיעור\s+(\d+)/)?.[1] ?? "9999")
+              const nb = parseInt(b.title.match(/שיעור\s+(\d+)/)?.[1] ?? "9999")
+              return na - nb
+            }).map(l => (
               <div key={l.id} style={{ background: "#fff", border: "1px solid rgba(27,42,74,0.12)", borderRadius: 12, padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
                   <div style={{ fontFamily: "'Frank Ruhl Libre', serif", fontWeight: 700, color: "var(--ink)", fontSize: 16 }}>{l.title}</div>
