@@ -229,6 +229,7 @@ function MediaBlock({ slide }: { slide: Slide }) {
     ? extractYouTubeId(slide.youtube_url)
     : (slide.link_url ? extractYouTubeId(slide.link_url) : null)
 
+  const isTopOrDefault = !slide.image_position || slide.image_position === "top"
   const isBackground = slide.image_position === "background"
 
   return (
