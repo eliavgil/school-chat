@@ -130,6 +130,64 @@ function DoodleIcon({ type }: { type: string }) {
   return <div className="doodle">{icons[type] ?? icons.intro}</div>
 }
 
+function renderInline(text: string): React.ReactNode[] {
+  return text.split(/(\*\*[^*]+\*\*)/).map((part, i) =>
+    part.startsWith("**") && part.endsWith("**")
+      ? <strong key={i}>{part.slice(2, -2)}</strong>
+      : part
+  )
+}
+
+function renderTable(lines: string[], key: number) {
+  const rows = lines
+    .filter(l => l.trim().startsWith("|") && !/^\|[\s\-|]+\|$/.test(l.trim()))
+    .map(l => l.trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim()))
+  if (rows.length < 1) return null
+  const [header, ...body] = rows
+  return (
+    <div key={key} style={{ overflowX: "auto", marginBottom: 12 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, direction: "rtl" }}>
+        <thead>
+          <tr>{header.map((h, i) => <th key={i} style={{ textAlign: "right", padding: "7px 10px", background: "var(--ink)", color: "var(--paper)", fontWeight: 700, borderBottom: "2px solid var(--gold)" }}>{renderInline(h)}</th>)}</tr>
+        </thead>
+        <tbody>
+          {body.map((row, ri) => (
+            <tr key={ri} style={{ background: ri % 2 === 0 ? "var(--paper2)" : "#fff" }}>
+              {row.map((cell, ci) => <td key={ci} style={{ padding: "7px 10px", borderBottom: "1px solid var(--line)" }}>{renderInline(cell)}</td>)}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function renderBody(text: string) {
+  return text.split(/\n\n+/).map((para, pi) => {
+    const trimmed = para.trim()
+
+    if (trimmed === "---") {
+      return <hr key={pi} style={{ border: "none", borderTop: "1px solid var(--line)", margin: "12px 0" }} />
+    }
+
+    if (trimmed.startsWith("> ")) {
+      return <blockquote key={pi} style={{ borderRight: "3px solid var(--seal)", paddingRight: 14, margin: "10px 0", color: "var(--seal)", fontWeight: 600, fontSize: 15 }}>{renderInline(trimmed.slice(2))}</blockquote>
+    }
+
+    const lines = para.split("\n")
+    const isTable = lines.filter(l => l.trim().startsWith("|")).length >= 2
+    if (isTable) return renderTable(lines, pi)
+
+    return (
+      <p key={pi} className="lead" style={{ marginBottom: 10, marginTop: 0 }}>
+        {lines.map((line, li) => (
+          <span key={li}>{renderInline(line)}{li < lines.length - 1 && <br />}</span>
+        ))}
+      </p>
+    )
+  })
+}
+
 function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
   slide: Slide
   agg: AggResult
@@ -164,7 +222,7 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
       {/* Media: image (non-background) + YouTube + link */}
       <SlideMedia slide={slide} />
 
-      {body && <p className="lead">{body}</p>}
+      {body && <div>{renderBody(body)}</div>}
 
       {/* POLL / QUIZ — bar chart results */}
       {(type === "poll" || type === "quiz") && questions && questions.map(q => {
