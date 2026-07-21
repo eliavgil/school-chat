@@ -294,7 +294,7 @@ export default function PresentPage({ params }: Props) {
     const res = await fetch("/api/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lesson_id: lesson.id, class_id: lesson.class_id }),
+      body: JSON.stringify({ lesson_id: lesson.id }),
     })
     if (res.ok) setSession(await res.json())
     else setError("שגיאה ביצירת session")
