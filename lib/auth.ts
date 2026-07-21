@@ -20,6 +20,7 @@ export const authOptions: NextAuthOptions = {
         token.role = (user as any).role
         token.accessStatus = (user as any).accessStatus
         token.parentType = (user as any).parentType ?? null
+        token.studentId = (user as any).studentId ?? null
       }
       // Re-fetch from DB when admin changes role/accessStatus,
       // or when the token doesn't yet carry our custom fields.
@@ -28,12 +29,13 @@ export const authOptions: NextAuthOptions = {
       if (trigger === "update" || !token.role) {
         const dbUser = await prisma.user.findUnique({
           where: { id: token.sub! },
-          select: { role: true, accessStatus: true, parentType: true },
+          select: { role: true, accessStatus: true, parentType: true, studentId: true },
         })
         if (dbUser) {
           token.role = dbUser.role
           token.accessStatus = dbUser.accessStatus
           token.parentType = dbUser.parentType ?? null
+          token.studentId = dbUser.studentId ?? null
         }
       }
       // For PENDING users: always re-check DB so approval takes effect
@@ -53,6 +55,7 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as string
         session.user.accessStatus = token.accessStatus as string
         session.user.parentType = token.parentType as string | null
+        session.user.studentId = token.studentId as string | null
       }
       return session
     },

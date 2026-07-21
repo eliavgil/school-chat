@@ -35,7 +35,7 @@ export default function LoginPage() {
         {/* Pill announcement — Duna style */}
         <div className="inline-flex items-center gap-2 bg-stone-900/85 text-white text-xs rounded-full px-3.5 py-1.5 w-fit mb-8 animate-fade-in stagger-1">
           <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span>
-          כיתה י2 סילבר · שנה"ל תשפ"ו
+          כיתה י4 סילבר · שנה"ל תשפ"ו
         </div>
 
         {/* Big editorial headline */}

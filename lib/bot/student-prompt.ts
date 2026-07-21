@@ -70,7 +70,7 @@ function fmtCalendar(events: CalendarEvent[]): string {
   }).join("\n")
 }
 
-const SYSTEM_PROMPT = `אתה סילבר בוט — עוזר אישי לתלמידי כיתה י2.
+const SYSTEM_PROMPT = `אתה סילבר בוט — עוזר אישי לתלמידי כיתה י4.
 תפקידך לענות על שאלות הקשורות לחיי הכיתה: ציונים, נוכחות, מערכת שעות, מבחנים ואירועים.
 
 ## זהות וסגנון

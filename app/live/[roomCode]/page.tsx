@@ -1,5 +1,6 @@
 "use client"
 import { useEffect, useState, use } from "react"
+import { useSession, signIn } from "next-auth/react"
 import { browserClient } from "@/lib/lessons/supabase"
 import type { Lesson, Slide, LiveSession, SlideQuestion } from "@/lib/lessons/types"
 
@@ -64,38 +65,23 @@ function imageSizeStyle(size?: string | null): React.CSSProperties {
   return { width: map[size ?? "full"] ?? "100%" }
 }
 
-// Join form
-function JoinForm({ code, onJoin }: { code: string; onJoin: (studentId: string) => void }) {
-  const [phone, setPhone] = useState("")
-  const [name, setName] = useState("")
-  const [error, setError] = useState("")
-  const [joining, setJoining] = useState(false)
-
-  async function join() {
-    if (!name.trim()) { setError("נא להזין שם"); return }
-    setJoining(true)
-    const studentId = phone.trim() || `anon:${name.trim()}`
-    onJoin(studentId)
-  }
-
+// Google sign-in screen
+function SignInScreen({ code }: { code: string }) {
+  const [loading, setLoading] = useState(false)
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "var(--ink)", padding: 24, direction: "rtl" }}>
       <style>{FONT + CSS}</style>
       <div style={{ background: "var(--paper)", borderRadius: 20, padding: "32px 28px", width: "100%", maxWidth: 360, textAlign: "center" }}>
         <div style={{ fontSize: 40, marginBottom: 12 }}>📚</div>
         <div style={{ fontFamily: "'Frank Ruhl Libre',serif", fontWeight: 900, color: "var(--ink)", fontSize: 22, marginBottom: 6 }}>הצטרפות לשיעור</div>
-        <div style={{ color: "var(--gold)", fontWeight: 700, fontSize: 18, letterSpacing: 2, marginBottom: 24 }}>{code.toUpperCase()}</div>
-
-        <input value={name} onChange={e => setName(e.target.value)} placeholder="שם מלא" dir="rtl"
-          style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1.5px solid var(--line)", fontFamily: "'Heebo'", fontSize: 15, marginBottom: 10, outline: "none" }} />
-        <input value={phone} onChange={e => setPhone(e.target.value)} placeholder="מספר טלפון (אופציונלי)" dir="ltr" type="tel"
-          style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1.5px solid var(--line)", fontFamily: "'Heebo'", fontSize: 15, marginBottom: 16, outline: "none" }} />
-
-        {error && <div style={{ color: "var(--seal)", fontSize: 13, marginBottom: 10 }}>{error}</div>}
-
-        <button onClick={join} disabled={joining}
-          style={{ width: "100%", background: "var(--seal)", color: "var(--paper)", border: "none", borderRadius: 10, padding: "13px 0", fontFamily: "'Heebo'", fontWeight: 700, fontSize: 15, cursor: joining ? "default" : "pointer" }}>
-          {joining ? "מצטרף..." : "כניסה לשיעור"}
+        <div style={{ color: "var(--gold)", fontWeight: 700, fontSize: 18, letterSpacing: 2, marginBottom: 8 }}>{code}</div>
+        <p style={{ color: "rgba(27,42,74,0.55)", fontSize: 13, marginBottom: 24 }}>יש להיכנס עם חשבון בית הספר</p>
+        <button
+          onClick={() => { setLoading(true); signIn("google", { callbackUrl: `/live/${code}` }) }}
+          disabled={loading}
+          style={{ width: "100%", background: "var(--ink)", color: "var(--paper)", border: "none", borderRadius: 10, padding: "13px 0", fontFamily: "'Heebo'", fontWeight: 700, fontSize: 15, cursor: loading ? "default" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 10, opacity: loading ? 0.7 : 1 }}>
+          <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.5 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.2 6.5 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.6-7.9 19.6-20 0-1.3-.1-2.7-.4-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 16 19 12 24 12c3 0 5.8 1.1 7.9 3l5.7-5.7C34.2 6.5 29.4 4 24 4 16.3 4 9.7 8.4 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 10-2 13.5-5.2l-6.2-5.3C29.4 35.2 26.8 36 24 36c-5.3 0-9.8-3.6-11.4-8.5l-6.5 5C9.5 39.4 16.3 44 24 44z"/><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.9 2.5-2.5 4.6-4.6 6.1l6.2 5.3C41 36 44 30.5 44 24c0-1.3-.1-2.7-.4-4z"/></svg>
+          {loading ? "מתחבר..." : "כניסה עם Google"}
         </button>
       </div>
     </div>
@@ -373,29 +359,13 @@ export default function LivePage({ params }: Props) {
   const { roomCode } = use(params)
   const code = roomCode.toUpperCase()
 
-  const [phase, setPhase] = useState<"joining" | "live" | "not-found">("joining")
-  const [studentId, setStudentId] = useState("")
+  const { data: session, status } = useSession()
+  const [phase, setPhase] = useState<"loading" | "live" | "not-found">("loading")
   const [sessionData, setSessionData] = useState<{ session: LiveSession; lesson: Lesson } | null>(null)
   const [currentIdx, setCurrentIdx] = useState(0)
 
   const slide = sessionData?.lesson.slides[currentIdx]
-
-  async function fetchSession() {
-    const r = await fetch(`/api/sessions/${code}`)
-    if (!r.ok) { setPhase("not-found"); return null }
-    const d = await r.json()
-    return { session: d as LiveSession, lesson: d.lesson as Lesson }
-  }
-
-  async function onJoin(sid: string) {
-    setStudentId(sid)
-    const data = await fetchSession()
-    if (!data) return
-    setSessionData(data)
-    setCurrentIdx(data.session.current_slide_index)
-    setPhase("live")
-    subscribeRealtime(data.session.room_code)
-  }
+  const studentId = session?.user?.studentId ?? session?.user?.id ?? ""
 
   function subscribeRealtime(rc: string) {
     try {
@@ -408,7 +378,31 @@ export default function LivePage({ params }: Props) {
     } catch {}
   }
 
-  if (phase === "joining") return <JoinForm code={code} onJoin={onJoin} />
+  useEffect(() => {
+    if (status !== "authenticated") return
+    fetch(`/api/sessions/${code}`)
+      .then(r => {
+        if (!r.ok) { setPhase("not-found"); return null }
+        return r.json()
+      })
+      .then(d => {
+        if (!d) return
+        setSessionData({ session: d as LiveSession, lesson: d.lesson as Lesson })
+        setCurrentIdx(d.current_slide_index)
+        setPhase("live")
+        subscribeRealtime(d.room_code)
+      })
+      .catch(() => setPhase("not-found"))
+  }, [status])
+
+  if (status === "loading") return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "var(--ink)" }}>
+      <style>{FONT + CSS}</style>
+      <div style={{ color: "rgba(245,241,230,0.4)", fontFamily: "'Heebo',sans-serif", fontSize: 16 }}>טוען...</div>
+    </div>
+  )
+
+  if (status === "unauthenticated") return <SignInScreen code={code} />
 
   if (phase === "not-found") return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "var(--ink)", direction: "rtl" }}>
@@ -421,7 +415,7 @@ export default function LivePage({ params }: Props) {
     </div>
   )
 
-  if (!sessionData || !slide) return (
+  if (phase === "loading" || !sessionData || !slide) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: "var(--ink)" }}>
       <style>{FONT + CSS}</style>
       <div style={{ color: "rgba(245,241,230,0.5)", fontFamily: "'Heebo',sans-serif", fontSize: 16 }}>ממתין לשיעור להתחיל...</div>

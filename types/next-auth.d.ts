@@ -10,6 +10,7 @@ declare module "next-auth" {
       role?: string
       accessStatus?: string
       parentType?: string | null
+      studentId?: string | null
     }
   }
 }

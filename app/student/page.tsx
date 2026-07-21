@@ -160,7 +160,7 @@ export default function StudentPage() {
             </div>
             <div>
               <div className="font-semibold text-stone-900 text-sm">שלום {firstName}</div>
-              <div className="text-xs text-stone-400">כיתה י2 סילבר · סילבר בוט</div>
+              <div className="text-xs text-stone-400">כיתה י4 סילבר · סילבר בוט</div>
             </div>
           </div>
           <div className="flex items-center gap-1">
