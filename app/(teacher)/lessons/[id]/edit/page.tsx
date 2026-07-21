@@ -6,15 +6,29 @@ import type { Lesson, Slide, SlideType, SlideQuestion } from "@/lib/lessons/type
 interface Props { params: Promise<{ id: string }> }
 
 const SLIDE_TYPES: { value: SlideType; label: string }[] = [
-  { value: "intro",      label: "פתיחה" },
-  { value: "poll",       label: "סקר" },
-  { value: "quiz",       label: "חידון" },
-  { value: "definitions",label: "הגדרות" },
-  { value: "matching",   label: "התאמה" },
-  { value: "reveal",     label: "גילוי" },
-  { value: "enrichment", label: "העשרה" },
-  { value: "homework",   label: "שיעורי בית" },
-  { value: "feedback",   label: "משוב" },
+  { value: "intro",       label: "פתיחה" },
+  { value: "poll",        label: "סקר" },
+  { value: "quiz",        label: "חידון" },
+  { value: "definitions", label: "הגדרות" },
+  { value: "matching",    label: "התאמה" },
+  { value: "reveal",      label: "גילוי" },
+  { value: "enrichment",  label: "העשרה" },
+  { value: "homework",    label: "שיעורי בית" },
+  { value: "feedback",    label: "משוב" },
+]
+
+const IMG_POSITIONS = [
+  { value: "top",        label: "למעלה" },
+  { value: "right",      label: "ימין" },
+  { value: "left",       label: "שמאל" },
+  { value: "background", label: "רקע" },
+]
+
+const IMG_SIZES = [
+  { value: "small",  label: "קטן" },
+  { value: "medium", label: "בינוני" },
+  { value: "large",  label: "גדול" },
+  { value: "full",   label: "מלא" },
 ]
 
 const FONT = `@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Heebo:wght@300;400;500;700&display=swap');`
@@ -22,6 +36,7 @@ const FONT = `@import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+L
 const CSS = `
   :root{--ink:#1B2A4A;--paper:#F5F1E6;--paper2:#ECE5D3;--seal:#A23B2E;--gold:#B08D3F;--ok:#3F6B4F;--line:rgba(27,42,74,0.14);}
   body{margin:0;background:var(--paper2);}
+  *{box-sizing:border-box;}
   input,textarea,select{font-family:'Heebo',sans-serif;font-size:14px;border:1.5px solid var(--line);border-radius:8px;padding:9px 12px;width:100%;outline:none;background:#fff;color:var(--ink);}
   input:focus,textarea:focus,select:focus{border-color:var(--ink);}
   label{font-size:12px;font-weight:700;color:var(--ink);opacity:0.6;display:block;margin-bottom:4px;letter-spacing:.5px;}
@@ -40,7 +55,24 @@ const CSS = `
   .save-bar{position:sticky;bottom:0;background:var(--ink);padding:14px 20px;display:flex;gap:10px;align-items:center;}
   .save-btn{background:var(--seal);color:var(--paper);border:none;border-radius:8px;padding:10px 24px;font-family:'Heebo';font-weight:700;font-size:14px;cursor:pointer;}
   .ghost-btn{background:transparent;color:rgba(245,241,230,0.65);border:1px solid rgba(245,241,230,0.3);border-radius:8px;padding:10px 16px;font-family:'Heebo';font-weight:600;font-size:13px;cursor:pointer;}
+  .chip-row{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+  .chip{padding:4px 12px;border-radius:20px;border:1.5px solid var(--line);background:#fff;cursor:pointer;font-size:12px;font-weight:600;color:var(--ink);transition:.15s;}
+  .chip.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .yt-preview{position:relative;width:100%;padding-top:56.25%;border-radius:10px;overflow:hidden;margin-top:8px;background:#000;}
+  .yt-preview iframe{position:absolute;inset:0;width:100%;height:100%;border:none;}
+  .drag-handle{cursor:grab;color:var(--ink);opacity:0.3;font-size:18px;padding:0 4px;line-height:1;user-select:none;}
+  .drag-handle:hover{opacity:0.7;}
+  .slide-item{transition:opacity .15s;}
+  .slide-item.dragging{opacity:0.35;}
+  .slide-item.drag-over{border:2px dashed var(--seal) !important;}
+  .section-label{font-size:11px;font-weight:700;color:var(--ink);opacity:0.5;letter-spacing:.7px;text-transform:uppercase;margin-bottom:6px;}
+  .media-section{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px;}
 `
+
+function extractYouTubeId(url: string): string | null {
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/)
+  return m ? m[1] : null
+}
 
 function newQuestion(): SlideQuestion {
   return { id: `q${Date.now()}`, text: "", options: ["", ""], correct_index: null }
@@ -58,14 +90,11 @@ function QuestionEditor({ q, onChange, onDelete, type }: {
     const opts = [...q.options]; opts[i] = val
     onChange({ ...q, options: opts })
   }
-
-  function addOpt() {
-    onChange({ ...q, options: [...q.options, ""] })
-  }
-
+  function addOpt() { onChange({ ...q, options: [...q.options, ""] }) }
   function delOpt(i: number) {
     const opts = q.options.filter((_, idx) => idx !== i)
-    onChange({ ...q, options: opts, correct_index: q.correct_index === i ? null : (q.correct_index !== null && q.correct_index > i ? q.correct_index - 1 : q.correct_index) })
+    const ci = q.correct_index
+    onChange({ ...q, options: opts, correct_index: ci === i ? null : (ci !== null && ci > i ? ci - 1 : ci) })
   }
 
   return (
@@ -99,49 +128,45 @@ function QuestionEditor({ q, onChange, onDelete, type }: {
   )
 }
 
-function SlideEditor({ slide, onChange, onDelete, onMoveUp, onMoveDown, isFirst, isLast }: {
+function SlideEditor({ slide, onChange, onDelete, dragHandleProps }: {
   slide: Slide
   onChange: (s: Slide) => void
   onDelete: () => void
-  onMoveUp: () => void
-  onMoveDown: () => void
-  isFirst: boolean
-  isLast: boolean
+  dragHandleProps: React.HTMLAttributes<HTMLSpanElement>
 }) {
   const [open, setOpen] = useState(false)
+  const ytId = slide.youtube_url ? extractYouTubeId(slide.youtube_url) : null
 
   function setQ(i: number, q: SlideQuestion) {
     const qs = [...(slide.questions ?? [])]; qs[i] = q
     onChange({ ...slide, questions: qs })
   }
   function delQ(i: number) {
-    const qs = (slide.questions ?? []).filter((_, idx) => idx !== i)
-    onChange({ ...slide, questions: qs })
+    onChange({ ...slide, questions: (slide.questions ?? []).filter((_, idx) => idx !== i) })
   }
   function addQ() {
     onChange({ ...slide, questions: [...(slide.questions ?? []), newQuestion()] })
   }
 
   const typeLabel = SLIDE_TYPES.find(t => t.value === slide.type)?.label ?? slide.type
-  const hasQuestions = ["poll", "quiz", "definitions", "matching", "reveal", "homework", "enrichment", "feedback", "intro"].includes(slide.type)
 
   return (
     <div style={{ background: "#fff", border: "1px solid var(--line)", borderRadius: 12, marginBottom: 8, overflow: "hidden" }}>
-      {/* Slide header */}
-      <div onClick={() => setOpen(v => !v)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "14px 16px", cursor: "pointer", background: open ? "var(--paper2)" : "#fff" }}>
-        <span style={{ background: "var(--seal)", color: "var(--paper)", borderRadius: "50%", width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{slide.order}</span>
-        <span style={{ flex: 1, fontWeight: 600, color: "var(--ink)", fontSize: 14 }}>{slide.title || "(ללא כותרת)"}</span>
-        <span style={{ fontSize: 11, background: "var(--paper2)", borderRadius: 6, padding: "2px 8px", color: "var(--ink)", opacity: 0.7 }}>{typeLabel}</span>
-        <div style={{ display: "flex", gap: 4 }}>
-          <button onClick={e => { e.stopPropagation(); onMoveUp() }} disabled={isFirst} style={{ background: "none", border: "none", cursor: isFirst ? "default" : "pointer", opacity: isFirst ? 0.2 : 0.6, fontSize: 14 }}>↑</button>
-          <button onClick={e => { e.stopPropagation(); onMoveDown() }} disabled={isLast} style={{ background: "none", border: "none", cursor: isLast ? "default" : "pointer", opacity: isLast ? 0.2 : 0.6, fontSize: 14 }}>↓</button>
-          <button onClick={e => { e.stopPropagation(); onDelete() }} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--seal)", fontSize: 16 }}>×</button>
-        </div>
-        <span style={{ fontSize: 14, color: "var(--ink)", opacity: 0.4 }}>{open ? "▲" : "▼"}</span>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "13px 14px", background: open ? "var(--paper2)" : "#fff" }}>
+        <span {...dragHandleProps} className="drag-handle" title="גרור לשינוי סדר">⠿</span>
+        <span onClick={() => setOpen(v => !v)} style={{ display: "flex", alignItems: "center", gap: 8, flex: 1, cursor: "pointer" }}>
+          <span style={{ background: "var(--seal)", color: "var(--paper)", borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{slide.order}</span>
+          <span style={{ flex: 1, fontWeight: 600, color: "var(--ink)", fontSize: 14 }}>{slide.title || "(ללא כותרת)"}</span>
+          <span style={{ fontSize: 11, background: "var(--paper2)", borderRadius: 6, padding: "2px 8px", color: "var(--ink)", opacity: 0.7 }}>{typeLabel}</span>
+        </span>
+        <button onClick={e => { e.stopPropagation(); onDelete() }} style={{ background: "none", border: "none", cursor: "pointer", color: "var(--seal)", fontSize: 18, lineHeight: 1, padding: "0 2px" }}>×</button>
+        <span onClick={() => setOpen(v => !v)} style={{ fontSize: 13, color: "var(--ink)", opacity: 0.4, cursor: "pointer" }}>{open ? "▲" : "▼"}</span>
       </div>
 
       {open && (
         <div style={{ padding: "16px", borderTop: "1px solid var(--line)" }}>
+          {/* Type + Eyebrow */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 14 }}>
             <div className="field">
               <label>סוג שקף</label>
@@ -150,7 +175,7 @@ function SlideEditor({ slide, onChange, onDelete, onMoveUp, onMoveDown, isFirst,
               </select>
             </div>
             <div className="field">
-              <label>עיניים (eyebrow)</label>
+              <label>כותרת עליונה (eyebrow)</label>
               <input value={slide.eyebrow} onChange={e => onChange({ ...slide, eyebrow: e.target.value })} placeholder="פתיחה אקטואלית" />
             </div>
           </div>
@@ -161,19 +186,98 @@ function SlideEditor({ slide, onChange, onDelete, onMoveUp, onMoveDown, isFirst,
           </div>
 
           <div className="field">
-            <label>גוף (אופציונלי)</label>
-            <textarea value={slide.body ?? ""} onChange={e => onChange({ ...slide, body: e.target.value })} placeholder="תוכן חופשי..." />
+            <label>טקסט חופשי (אופציונלי)</label>
+            <textarea value={slide.body ?? ""} onChange={e => onChange({ ...slide, body: e.target.value })} placeholder="תוכן..." />
           </div>
 
-          {hasQuestions && (
-            <div>
-              <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)", marginBottom: 8 }}>שאלות</div>
-              {(slide.questions ?? []).map((q, i) => (
-                <QuestionEditor key={q.id} q={q} type={slide.type} onChange={q => setQ(i, q)} onDelete={() => delQ(i)} />
-              ))}
-              <button className="add-btn" onClick={addQ}>+ הוספת שאלה</button>
+          {/* ── Media section ── */}
+          <div className="media-section">
+            <div className="section-label">מדיה</div>
+
+            {/* Image */}
+            <div className="field">
+              <label>קישור לתמונה (URL)</label>
+              <input
+                value={slide.image_url ?? ""}
+                onChange={e => onChange({ ...slide, image_url: e.target.value || null })}
+                placeholder="https://..."
+                type="url"
+              />
             </div>
-          )}
+            {slide.image_url && (
+              <>
+                <div className="field">
+                  <label>מיקום תמונה</label>
+                  <div className="chip-row">
+                    {IMG_POSITIONS.map(p => (
+                      <button key={p.value} className={`chip${(slide.image_position ?? "top") === p.value ? " active" : ""}`}
+                        onClick={() => onChange({ ...slide, image_position: p.value as Slide["image_position"] })}>
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="field">
+                  <label>גודל תמונה</label>
+                  <div className="chip-row">
+                    {IMG_SIZES.map(s => (
+                      <button key={s.value} className={`chip${(slide.image_size ?? "medium") === s.value ? " active" : ""}`}
+                        onClick={() => onChange({ ...slide, image_size: s.value as Slide["image_size"] })}>
+                        {s.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ marginBottom: 14, borderRadius: 8, overflow: "hidden", maxHeight: 160 }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={slide.image_url} alt="" style={{ width: "100%", objectFit: "cover", display: "block" }} />
+                </div>
+              </>
+            )}
+
+            {/* YouTube */}
+            <div className="field">
+              <label>קישור יוטיוב</label>
+              <input
+                value={slide.youtube_url ?? ""}
+                onChange={e => onChange({ ...slide, youtube_url: e.target.value || null })}
+                placeholder="https://youtube.com/watch?v=..."
+                type="url"
+              />
+            </div>
+            {slide.youtube_url && ytId && (
+              <div className="yt-preview" style={{ marginBottom: 14 }}>
+                <iframe
+                  src={`https://www.youtube.com/embed/${ytId}`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            )}
+            {slide.youtube_url && !ytId && (
+              <div style={{ fontSize: 12, color: "var(--seal)", marginBottom: 14 }}>קישור לא מזוהה כיוטיוב תקין</div>
+            )}
+
+            {/* External link */}
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label>קישור לחומר חיצוני (URL)</label>
+              <input
+                value={slide.link_url ?? ""}
+                onChange={e => onChange({ ...slide, link_url: e.target.value || null })}
+                placeholder="https://..."
+                type="url"
+              />
+            </div>
+          </div>
+
+          {/* Questions */}
+          <div>
+            <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)", marginBottom: 8 }}>שאלות</div>
+            {(slide.questions ?? []).map((q, i) => (
+              <QuestionEditor key={q.id} q={q} type={slide.type} onChange={q => setQ(i, q)} onDelete={() => delQ(i)} />
+            ))}
+            <button className="add-btn" onClick={addQ}>+ הוספת שאלה</button>
+          </div>
         </div>
       )}
     </div>
@@ -189,6 +293,10 @@ export default function EditLessonPage({ params }: Props) {
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
 
+  // Drag state
+  const [dragIdx, setDragIdx] = useState<number | null>(null)
+  const [dragOverIdx, setDragOverIdx] = useState<number | null>(null)
+
   useEffect(() => {
     fetch(`/api/lessons/${id}`).then(r => r.json()).then(d => {
       if (d.error) return
@@ -202,24 +310,25 @@ export default function EditLessonPage({ params }: Props) {
     const next = [...slides]; next[i] = s; setSlides(next)
   }
   function delSlide(i: number) {
-    const next = slides.filter((_, idx) => idx !== i).map((s, idx) => ({ ...s, order: idx + 1 }))
-    setSlides(next)
-  }
-  function moveSlide(i: number, dir: -1 | 1) {
-    const j = i + dir
-    if (j < 0 || j >= slides.length) return
-    const next = [...slides]
-    ;[next[i], next[j]] = [next[j], next[i]]
-    setSlides(next.map((s, idx) => ({ ...s, order: idx + 1 })))
+    setSlides(slides.filter((_, idx) => idx !== i).map((s, idx) => ({ ...s, order: idx + 1 })))
   }
   function addSlide() {
-    const newSlide: Slide = {
-      id: `s${Date.now()}`, order: slides.length + 1,
-      type: "poll", eyebrow: "סקר", title: "שאלה חדשה",
-      questions: [newQuestion()],
-    }
-    setSlides([...slides, newSlide])
+    const s: Slide = { id: `s${Date.now()}`, order: slides.length + 1, type: "poll", eyebrow: "סקר", title: "שאלה חדשה", questions: [newQuestion()] }
+    setSlides([...slides, s])
   }
+
+  // Drag handlers
+  function onDragStart(i: number) { setDragIdx(i) }
+  function onDragOver(e: React.DragEvent, i: number) { e.preventDefault(); setDragOverIdx(i) }
+  function onDrop(i: number) {
+    if (dragIdx === null || dragIdx === i) { setDragIdx(null); setDragOverIdx(null); return }
+    const next = [...slides]
+    const [removed] = next.splice(dragIdx, 1)
+    next.splice(i, 0, removed)
+    setSlides(next.map((s, idx) => ({ ...s, order: idx + 1 })))
+    setDragIdx(null); setDragOverIdx(null)
+  }
+  function onDragEnd() { setDragIdx(null); setDragOverIdx(null) }
 
   async function save() {
     setSaving(true)
@@ -228,24 +337,18 @@ export default function EditLessonPage({ params }: Props) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ title, slides }),
     })
-    setSaving(false)
-    setSaved(true)
+    setSaving(false); setSaved(true)
     setTimeout(() => setSaved(false), 2000)
   }
 
   if (!lesson) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: "'Heebo',sans-serif", color: "#1B2A4A", opacity: 0.5 }}>
-        טוען...
-      </div>
-    )
+    return <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: "'Heebo',sans-serif", color: "#1B2A4A", opacity: 0.5 }}>טוען...</div>
   }
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--paper2)", fontFamily: "'Heebo',sans-serif", direction: "rtl" }}>
       <style>{FONT + CSS}</style>
 
-      {/* Header */}
       <header style={{ background: "var(--ink)", padding: "14px 20px", display: "flex", alignItems: "center", gap: 12 }}>
         <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "rgba(245,241,230,0.6)", cursor: "pointer", fontSize: 18 }}>←</button>
         <input
@@ -264,24 +367,29 @@ export default function EditLessonPage({ params }: Props) {
       <main style={{ maxWidth: 680, margin: "0 auto", padding: "20px 16px 120px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
           <span style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15 }}>{slides.length} שקפים</span>
-          <button
-            onClick={addSlide}
-            style={{ background: "var(--seal)", color: "var(--paper)", border: "none", borderRadius: 8, padding: "8px 16px", fontFamily: "'Heebo'", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+          <button onClick={addSlide} style={{ background: "var(--seal)", color: "var(--paper)", border: "none", borderRadius: 8, padding: "8px 16px", fontFamily: "'Heebo'", fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
             + שקף חדש
           </button>
         </div>
 
         {slides.map((slide, i) => (
-          <SlideEditor
+          <div
             key={slide.id}
-            slide={slide}
-            onChange={s => setSlide(i, s)}
-            onDelete={() => delSlide(i)}
-            onMoveUp={() => moveSlide(i, -1)}
-            onMoveDown={() => moveSlide(i, 1)}
-            isFirst={i === 0}
-            isLast={i === slides.length - 1}
-          />
+            className={`slide-item${dragIdx === i ? " dragging" : ""}${dragOverIdx === i && dragIdx !== i ? " drag-over" : ""}`}
+            onDragOver={e => onDragOver(e, i)}
+            onDrop={() => onDrop(i)}
+            onDragEnd={onDragEnd}
+          >
+            <SlideEditor
+              slide={slide}
+              onChange={s => setSlide(i, s)}
+              onDelete={() => delSlide(i)}
+              dragHandleProps={{
+                draggable: true,
+                onDragStart: () => onDragStart(i),
+              }}
+            />
+          </div>
         ))}
 
         {slides.length === 0 && (
