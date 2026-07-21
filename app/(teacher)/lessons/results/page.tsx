@@ -1,6 +1,30 @@
 "use client"
 import { useEffect, useState, useMemo } from "react"
 
+/* ── Tracking types ─────────────────────────────────────── */
+interface LessonStatus {
+  lessonId: string
+  lessonTitle: string
+  status: "done" | "next" | "upcoming"
+  sessionId: string | null
+  sessionDate: string | null
+  roomCode: string | null
+}
+interface ClassTracking {
+  classId: string
+  className: string
+  completedCount: number
+  totalLessons: number
+  nextLesson: LessonStatus | null
+  lessons: LessonStatus[]
+}
+interface TrackingData {
+  lessons: { id: string; title: string; createdAt: string }[]
+  classes: { id: string; name: string }[]
+  classTracking: ClassTracking[]
+  unassigned: { sessionId: string; lessonId: string; lessonTitle: string; date: string; roomCode: string }[]
+}
+
 /* ── Types ─────────────────────────────────────────────── */
 interface Question {
   id: string
@@ -73,10 +97,12 @@ function formatDate(iso: string) {
 /* ── Main page ──────────────────────────────────────────── */
 export default function ResultsPage() {
   const [data, setData] = useState<ApiData | null>(null)
+  const [trackingData, setTrackingData] = useState<TrackingData | null>(null)
   const [loading, setLoading] = useState(true)
+  const [trackingLoading, setTrackingLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [selectedClass, setSelectedClass] = useState<string | "all">("all")
-  const [view, setView] = useState<"session" | "averages">("session")
+  const [view, setView] = useState<"session" | "averages" | "tracking">("session")
   const [selectedSession, setSelectedSession] = useState<string | null>(null)
 
   useEffect(() => {
@@ -93,6 +119,16 @@ export default function ResultsPage() {
       .finally(() => setLoading(false))
   }, [selectedClass]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  useEffect(() => {
+    if (view !== "tracking" || trackingData) return
+    setTrackingLoading(true)
+    fetch("/api/tracking")
+      .then(r => r.json())
+      .then(d => { if (!d.error) setTrackingData(d) })
+      .catch(() => {})
+      .finally(() => setTrackingLoading(false))
+  }, [view]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const session = useMemo(
     () => data?.sessions.find(s => s.id === selectedSession) ?? null,
     [data, selectedSession]
@@ -103,17 +139,23 @@ export default function ResultsPage() {
     [session]
   )
 
+  const TABS = [
+    { key: "session", label: "לפי שיעור" },
+    { key: "averages", label: "ממוצעי תלמידים" },
+    { key: "tracking", label: "📋 מעקב שיעורים" },
+  ] as const
+
   return (
     <div dir="rtl" style={{ minHeight: "100vh", background: "#f8fafc", fontFamily: "system-ui, sans-serif", padding: "0" }}>
       {/* Header */}
       <div style={{ background: "#1e293b", color: "#fff", padding: "16px 24px", display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <a href="/lessons" style={{ color: "#94a3b8", textDecoration: "none", fontSize: 14 }}>← שיעורים</a>
-        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>תוצאות תלמידים</h1>
+        <h1 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>דשבורד שיעורים</h1>
       </div>
 
       <div style={{ padding: "20px 24px", maxWidth: 1200, margin: "0 auto" }}>
-        {/* Class filter */}
-        {data && data.classes.length > 0 && (
+        {/* Class filter — hide for tracking tab (it has its own class view) */}
+        {view !== "tracking" && data && data.classes.length > 0 && (
           <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
             <button onClick={() => setSelectedClass("all")} style={chipStyle(selectedClass === "all")}>כל הכיתות</button>
             {data.classes.map(c => (
@@ -124,23 +166,24 @@ export default function ResultsPage() {
 
         {/* View tabs */}
         <div style={{ display: "flex", gap: 0, marginBottom: 24, borderBottom: "2px solid #e2e8f0" }}>
-          {(["session", "averages"] as const).map(v => (
-            <button key={v} onClick={() => setView(v)} style={{
+          {TABS.map(({ key, label }) => (
+            <button key={key} onClick={() => setView(key)} style={{
               padding: "10px 20px", background: "none", border: "none", cursor: "pointer",
-              fontWeight: view === v ? 700 : 400, color: view === v ? "#3b82f6" : "#64748b",
-              borderBottom: view === v ? "2px solid #3b82f6" : "2px solid transparent",
+              fontWeight: view === key ? 700 : 400, color: view === key ? "#3b82f6" : "#64748b",
+              borderBottom: view === key ? "2px solid #3b82f6" : "2px solid transparent",
               marginBottom: -2, fontSize: 15, fontFamily: "inherit",
             }}>
-              {v === "session" ? "לפי שיעור" : "ממוצעי תלמידים"}
+              {label}
             </button>
           ))}
         </div>
 
-        {loading && <p style={{ color: "#64748b" }}>טוען נתונים...</p>}
+        {loading && view !== "tracking" && <p style={{ color: "#64748b" }}>טוען נתונים...</p>}
         {error && <p style={{ color: "#dc2626" }}>שגיאה: {error}</p>}
 
         {data && !loading && view === "session" && <SessionView data={data} session={session} selectedSession={selectedSession} setSelectedSession={setSelectedSession} allQuestions={allQuestions} />}
         {data && !loading && view === "averages" && <AveragesView data={data} />}
+        {view === "tracking" && (trackingLoading ? <p style={{ color: "#64748b" }}>טוען...</p> : trackingData ? <TrackingView data={trackingData} /> : null)}
       </div>
     </div>
   )
@@ -386,6 +429,134 @@ function AveragesView({ data }: { data: ApiData }) {
         ))}
         <span style={{ color: "#94a3b8" }}>— = לא השתתף</span>
       </div>
+    </div>
+  )
+}
+
+/* ── Tracking view ──────────────────────────────────────── */
+function TrackingView({ data }: { data: TrackingData }) {
+  const { lessons, classTracking, unassigned } = data
+
+  if (classTracking.length === 0) {
+    return <p style={{ color: "#64748b" }}>אין כיתות במערכת.</p>
+  }
+
+  return (
+    <div>
+      {/* Summary cards per class */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16, marginBottom: 32 }}>
+        {classTracking.map(cls => (
+          <div key={cls.classId} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 12, padding: "18px 20px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 }}>
+              <div style={{ fontWeight: 700, fontSize: 18, color: "#1e293b" }}>{cls.className}</div>
+              <div style={{ fontSize: 13, color: "#64748b", background: "#f1f5f9", borderRadius: 20, padding: "3px 10px" }}>
+                {cls.completedCount}/{cls.totalLessons} שיעורים
+              </div>
+            </div>
+
+            {/* Progress bar */}
+            <div style={{ height: 6, background: "#e2e8f0", borderRadius: 3, marginBottom: 14, overflow: "hidden" }}>
+              <div style={{
+                height: "100%",
+                width: cls.totalLessons > 0 ? `${(cls.completedCount / cls.totalLessons) * 100}%` : "0%",
+                background: "#3b82f6", borderRadius: 3, transition: "width .4s"
+              }} />
+            </div>
+
+            {/* Next lesson */}
+            {cls.nextLesson ? (
+              <div style={{ background: "#eff6ff", borderRadius: 8, padding: "10px 14px", marginBottom: 12 }}>
+                <div style={{ fontSize: 11, color: "#3b82f6", fontWeight: 600, marginBottom: 4, textTransform: "uppercase", letterSpacing: 0.5 }}>השיעור הבא</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: "#1e40af" }}>{cls.nextLesson.lessonTitle}</div>
+              </div>
+            ) : (
+              <div style={{ background: "#f0fdf4", borderRadius: 8, padding: "10px 14px", marginBottom: 12, color: "#16a34a", fontWeight: 600, fontSize: 14 }}>
+                ✓ כל השיעורים הושלמו
+              </div>
+            )}
+
+            {/* Last 3 taught */}
+            <div style={{ fontSize: 12, color: "#64748b", marginBottom: 6 }}>שיעורים אחרונים:</div>
+            {cls.lessons.filter(l => l.status === "done").slice(-3).reverse().map(l => (
+              <div key={l.lessonId} style={{ display: "flex", justifyContent: "space-between", fontSize: 12, padding: "3px 0", borderBottom: "1px solid #f1f5f9" }}>
+                <span style={{ color: "#16a34a" }}>✓ {l.lessonTitle.replace(/^שיעור \d+:\s*/, "")}</span>
+                <span style={{ color: "#94a3b8" }}>{l.sessionDate ? formatDate(l.sessionDate) : ""}</span>
+              </div>
+            ))}
+            {cls.lessons.filter(l => l.status === "done").length === 0 && (
+              <div style={{ fontSize: 12, color: "#94a3b8" }}>טרם בוצע שיעור</div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Full matrix table */}
+      <Section title="טבלת מעקב — כל הכיתות">
+        <div style={{ overflowX: "auto" }}>
+          <table style={tableStyle}>
+            <thead>
+              <tr>
+                <th style={{ ...thStyle, textAlign: "right", minWidth: 200 }}>שיעור</th>
+                {classTracking.map(cls => (
+                  <th key={cls.classId} style={{ ...thStyle, minWidth: 120 }}>{cls.className}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {lessons.map(lesson => (
+                <tr key={lesson.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
+                  <td style={{ ...tdStyle, fontWeight: 500, color: "#1e293b" }}>{lesson.title}</td>
+                  {classTracking.map(cls => {
+                    const ls = cls.lessons.find(l => l.lessonId === lesson.id)
+                    if (!ls) return <td key={cls.classId} style={{ ...tdStyle, textAlign: "center", color: "#cbd5e1" }}>—</td>
+                    if (ls.status === "done") return (
+                      <td key={cls.classId} style={{ ...tdStyle, textAlign: "center", background: "#f0fdf4" }}>
+                        <div style={{ color: "#16a34a", fontWeight: 700, fontSize: 16 }}>✓</div>
+                        <div style={{ fontSize: 10, color: "#86efac" }}>{ls.sessionDate ? new Date(ls.sessionDate).toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit" }) : ""}</div>
+                      </td>
+                    )
+                    if (ls.status === "next") return (
+                      <td key={cls.classId} style={{ ...tdStyle, textAlign: "center", background: "#eff6ff" }}>
+                        <div style={{ color: "#3b82f6", fontWeight: 700, fontSize: 16 }}>→</div>
+                        <div style={{ fontSize: 10, color: "#93c5fd" }}>הבא</div>
+                      </td>
+                    )
+                    return (
+                      <td key={cls.classId} style={{ ...tdStyle, textAlign: "center" }}>
+                        <span style={{ color: "#e2e8f0", fontSize: 18 }}>·</span>
+                      </td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Legend */}
+        <div style={{ marginTop: 12, display: "flex", gap: 20, fontSize: 12, color: "#64748b" }}>
+          <span>✓ בוצע</span>
+          <span style={{ color: "#3b82f6" }}>→ השיעור הבא</span>
+          <span style={{ color: "#cbd5e1" }}>· טרם הגיע</span>
+        </div>
+      </Section>
+
+      {/* Unassigned sessions */}
+      {unassigned.length > 0 && (
+        <Section title="שיעורים ללא כיתה מזוהה">
+          <div style={{ color: "#64748b", fontSize: 13, marginBottom: 12 }}>
+            שיעורים אלו לא הכילו תשובות תלמידים, ולכן לא ניתן לזהות לאיזו כיתה הם שייכים.
+          </div>
+          {unassigned.map(s => (
+            <div key={s.sessionId} style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: 8, padding: "10px 16px", marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <div style={{ fontWeight: 600, fontSize: 14 }}>{s.lessonTitle}</div>
+                <div style={{ fontSize: 12, color: "#94a3b8", marginTop: 2 }}>קוד: {s.roomCode} · {formatDate(s.date)}</div>
+              </div>
+            </div>
+          ))}
+        </Section>
+      )}
     </div>
   )
 }
