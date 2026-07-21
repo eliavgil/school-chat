@@ -13,7 +13,7 @@ const heebo = Heebo({
 
 export const metadata: Metadata = {
   title: "כפר סילבר",
-  description: "מערכת תקשורת בית ספרית — כיתה י2 סילבר",
+  description: "מערכת תקשורת בית ספרית — כיתה י4 סילבר",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,

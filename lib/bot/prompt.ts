@@ -84,7 +84,7 @@ function formatTeachers(teachers: StudentData["teachers"]): string {
     .join("\n")
 }
 
-const SYSTEM_PROMPT = `אתה סילבר בוט — בוט חכם המסייע למחנך כיתה י2 בבית הספר.
+const SYSTEM_PROMPT = `אתה סילבר בוט — בוט חכם המסייע למחנך כיתה י4 בבית הספר.
 תפקידך לענות על שאלות הורים הקשורות לילדיהם או לכיתה בכלל.
 
 ## זהות ותפקיד
