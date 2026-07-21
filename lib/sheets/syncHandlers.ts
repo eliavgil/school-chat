@@ -83,7 +83,6 @@ export async function syncStudents(classId = "class-y") {
     const name  = cell(row, 0)  // A: שם התלמיד
     const phone = cell(row, 8)  // I: סלולרי של התלמיד — used as unique key
     if (!name) continue
-    // Use phone as idNumber if available, otherwise derive from name
     const idNumber = phone.replace(/\D/g, "") || name.trim()
     sheetStudents.push({ idNumber, name })
   }
