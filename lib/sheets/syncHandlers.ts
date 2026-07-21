@@ -96,6 +96,8 @@ export async function syncStudents(classId = "class-y") {
   })
   if (toDelete.length) {
     const ids = toDelete.map(s => s.id)
+    await prisma.message.deleteMany({ where: { studentId: { in: ids } } })
+    await prisma.studentRecord.deleteMany({ where: { studentId: { in: ids } } })
     await prisma.studentGrade.deleteMany({ where: { studentId: { in: ids } } })
     await prisma.studentAttendance.deleteMany({ where: { studentId: { in: ids } } })
     await prisma.studentAccommodation.deleteMany({ where: { studentId: { in: ids } } })
