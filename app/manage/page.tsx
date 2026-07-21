@@ -243,9 +243,11 @@ function ImportTab() {
       const res = await fetch("/api/sync", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ target: "all" }) })
       const d = await res.json()
       if (!res.ok) throw new Error(d.error ?? `HTTP ${res.status}`)
-      const total = Object.values(d.results as Record<string, number | string>)
-        .filter(v => typeof v === "number").reduce((s: number, v) => s + (v as number), 0)
-      setMainResult({ ok: true, text: `סונכרנו ${total} רשומות` })
+      const results = d.results as Record<string, number | string>
+      const total = Object.values(results).filter(v => typeof v === "number").reduce((s: number, v) => s + (v as number), 0)
+      const errors = Object.entries(results).filter(([, v]) => typeof v === "string" && v.startsWith("error:"))
+      const errorText = errors.length ? ` | שגיאות: ${errors.map(([k, v]) => `${k}: ${v}`).join(", ")}` : ""
+      setMainResult({ ok: errors.length === 0, text: `סונכרנו ${total} רשומות${errorText}` })
     } catch (e: any) {
       setMainResult({ ok: false, text: e.message })
     }
