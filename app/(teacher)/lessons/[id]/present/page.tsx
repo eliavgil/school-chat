@@ -362,13 +362,18 @@ export default function PresentPage({ params }: Props) {
   async function startSession() {
     if (!lesson) return
     setStarting(true)
-    const res = await fetch("/api/sessions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ lesson_id: lesson.id }),
-    })
-    if (res.ok) setSession(await res.json())
-    else setError("שגיאה ביצירת session")
+    try {
+      const res = await fetch("/api/sessions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lesson_id: lesson.id }),
+      })
+      const data = await res.json()
+      if (res.ok) setSession(data)
+      else setError(data.error ?? `שגיאה ${res.status}`)
+    } catch (e: any) {
+      setError(e.message ?? "שגיאת רשת")
+    }
     setStarting(false)
   }
 
@@ -407,7 +412,6 @@ export default function PresentPage({ params }: Props) {
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: "'Heebo',sans-serif", color: "#A23B2E" }}>
       <div style={{ textAlign: "center" }}>
         <p style={{ fontSize: 18, marginBottom: 8 }}>{error}</p>
-        <p style={{ fontSize: 13, opacity: 0.6 }}>ודאו שמשתני הסביבה NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY מוגדרים</p>
       </div>
     </div>
   )
