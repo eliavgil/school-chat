@@ -89,24 +89,27 @@ export async function syncStudents(classId = "class-y") {
 
   const sheetIds = sheetStudents.map(s => s.idNumber)
 
-  // Remove students no longer in the sheet (same classId only)
+  // Remove students no longer in the sheet (including those with null idNumber)
   const toDelete = await prisma.student.findMany({
-    where: { classId, idNumber: { notIn: sheetIds } },
+    where: {
+      classId,
+      OR: [{ idNumber: null }, { idNumber: { notIn: sheetIds } }],
+    },
     select: { id: true },
   })
   if (toDelete.length) {
     const ids = toDelete.map(s => s.id)
-    await prisma.$transaction([
-      prisma.user.updateMany({ where: { studentId: { in: ids } }, data: { studentId: null } }),
-      prisma.message.deleteMany({ where: { studentId: { in: ids } } }),
-      prisma.studentRecord.deleteMany({ where: { studentId: { in: ids } } }),
-      prisma.studentGrade.deleteMany({ where: { studentId: { in: ids } } }),
-      prisma.studentAttendance.deleteMany({ where: { studentId: { in: ids } } }),
-      prisma.studentAccommodation.deleteMany({ where: { studentId: { in: ids } } }),
-      prisma.emotionalNote.deleteMany({ where: { studentId: { in: ids } } }),
-      prisma.parentStudent.deleteMany({ where: { studentId: { in: ids } } }),
-      prisma.student.deleteMany({ where: { id: { in: ids } } }),
-    ])
+    await prisma.$transaction(async (tx) => {
+      await tx.user.updateMany({ where: { studentId: { in: ids } }, data: { studentId: null } })
+      await tx.message.deleteMany({ where: { studentId: { in: ids } } })
+      await tx.studentRecord.deleteMany({ where: { studentId: { in: ids } } })
+      await tx.studentGrade.deleteMany({ where: { studentId: { in: ids } } })
+      await tx.studentAttendance.deleteMany({ where: { studentId: { in: ids } } })
+      await tx.studentAccommodation.deleteMany({ where: { studentId: { in: ids } } })
+      await tx.emotionalNote.deleteMany({ where: { studentId: { in: ids } } })
+      await tx.parentStudent.deleteMany({ where: { studentId: { in: ids } } })
+      await tx.student.deleteMany({ where: { id: { in: ids } } })
+    })
   }
 
   // Upsert all students from sheet
