@@ -521,6 +521,13 @@ export default function PresentPage({ params }: Props) {
             {String(idx + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
           </span>
 
+          {/* PDF export */}
+          <button className="icon-btn" onClick={() => window.open(`/lessons/${id}/print`, "_blank")} title="ייצוא PDF">
+            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm1-4h.01"/>
+            </svg>
+          </button>
+
           {/* Edit button */}
           <button className="icon-btn" onClick={() => window.open(`/lessons/${id}/edit`, "_blank")} title="ערוך שיעור">
             <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
