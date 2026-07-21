@@ -393,6 +393,7 @@ export default function LivePage({ params }: Props) {
         subscribeRealtime(d.room_code)
       })
       .catch(() => setPhase("not-found"))
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status])
 
   if (status === "loading") return (
