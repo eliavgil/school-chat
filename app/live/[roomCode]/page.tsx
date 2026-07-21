@@ -309,7 +309,6 @@ function renderBody(text: string) {
     const isTable = lines.filter(l => l.trim().startsWith("|")).length >= 2
     if (isTable) return renderTable(lines, pi)
 
-
     return (
       <p key={pi} className="body-text" style={{ marginBottom: 8, marginTop: 0 }}>
         {lines.map((line, li) => (
