@@ -522,10 +522,14 @@ export default function PresentPage({ params }: Props) {
           </span>
 
           {/* PDF export */}
-          <button className="icon-btn" onClick={() => window.open(`/lessons/${id}/print`, "_blank")} title="ייצוא PDF">
-            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <button onClick={() => window.open(`/lessons/${id}/print`, "_blank")}
+            style={{ background: "rgba(245,241,230,0.1)", border: "1px solid rgba(245,241,230,0.3)", borderRadius: 7, color: "rgba(245,241,230,0.85)", padding: "0 12px", height: 34, display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, fontFamily: "'Heebo',sans-serif", fontWeight: 700, flexShrink: 0, transition: ".15s" }}
+            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(245,241,230,0.18)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--paper)" }}
+            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(245,241,230,0.1)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(245,241,230,0.85)" }}>
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm1-4h.01"/>
             </svg>
+            PDF
           </button>
 
           {/* Edit button */}
