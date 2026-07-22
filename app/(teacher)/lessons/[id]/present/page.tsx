@@ -85,6 +85,8 @@ const CSS = `
     .enrich-grid{grid-template-columns:1fr;}
     .flip-grid{grid-template-columns:1fr;}
     .topbar{padding:10px 12px;}
+    @keyframes run-across{from{left:110%}to{left:-60%}}
+    .anim-runner{width:150px;height:150px;bottom:50px;}
   }
 `
 
