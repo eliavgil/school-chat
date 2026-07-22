@@ -343,6 +343,27 @@ a      { -webkit-tap-highlight-color: transparent; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* ── Print ──────────────────────────────────────────────── */
+@media print {
+  /* Hide the animated background and any fixed overlays */
+  .fixed { display: none !important; }
+  canvas { display: none !important; }
+
+  /* Reset body for clean white print */
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Stop all animations */
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 /* ── New background animations ── */
 @keyframes aurora-shift {
   0%   { background-position: 0% 50%; }
