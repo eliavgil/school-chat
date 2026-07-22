@@ -540,7 +540,7 @@ export default function PresentPage({ params }: Props) {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100svh", background: "var(--ink)", direction: "rtl", overflow: "hidden" }}>
+    <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", background: "var(--ink)", direction: "rtl", overflow: "hidden" }}>
       <style>{SLIDE_FONT + CSS}</style>
 
       {/* Topbar */}
