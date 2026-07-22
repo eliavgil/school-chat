@@ -16,7 +16,9 @@ const slides: Slide[] = [
     title: "חקיקה בעלת אופי יהודי",
     body: `**עד כמה מדינה יהודית — גם בחוק?**
 שלושה תחומים, מחלוקת אחת שלא נגמרת`,
-    image_url: null, // suggested: תמונת הכנסת מבחוץ עם מנורת הזהב בחזית — סמל המדינה לצד ספר חוקים
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Knesset20050328.jpg/1024px-Knesset20050328.jpg",
+    image_position: "background",
+    image_size: "full",
   },
 
   {
@@ -31,6 +33,9 @@ const slides: Slide[] = [
 הוויכוח הזה חוזר שוב ושוב: עד כמה מותר למדינה לכפות **אורח חיים יהודי**?
 
 **השאלה שנענה עליה היום:** אילו חוקים בישראל נותנים ביטוי לאופי היהודי — ואיפה עובר הגבול?`,
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Shabbat_Candles.jpg/800px-Shabbat_Candles.jpg",
+    image_position: "right",
+    image_size: "medium",
   },
   {
     id: "s2",
@@ -162,6 +167,9 @@ const slides: Slide[] = [
 | **דגל המדינה** | פסים תכלת-לבן + מגן דוד | מגן דוד, צבעי הטלית |
 | **סמל המדינה** | מנורה + ענפי זית | המנורה מבית המקדש |
 | **המנון "התקווה"** | שאיפת החזרה לארץ ישראל | "נפש יהודי הומיה" |`,
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Emblem_of_Israel.svg/500px-Emblem_of_Israel.svg.png",
+    image_position: "right",
+    image_size: "medium",
   },
   {
     id: "s7",
@@ -211,6 +219,9 @@ const slides: Slide[] = [
 ---
 
 > **שימו לב לבגרות:** הסדר הסטטוס קוו מבטא את ה**שטח הביניים** — הוא לא קובע שישראל היא מדינת הלכה, אבל גם לא שהיא חילונית לחלוטין.`,
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Jerusalem-2013-Temple_Mount-Western_Wall01.jpg/1024px-Jerusalem-2013-Temple_Mount-Western_Wall01.jpg",
+    image_position: "right",
+    image_size: "medium",
   },
   {
     id: "s9",

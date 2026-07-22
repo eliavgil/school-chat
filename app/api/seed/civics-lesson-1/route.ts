@@ -16,7 +16,9 @@ const slides: Slide[] = [
     title: "מרכיבי המדינה",
     body: `**מה הופך קבוצת אנשים למדינה?**
 ולימוד מיומנות שאלת אירוע`,
-    image_url: null, // suggested: תמונת מפה פוליטית של העולם עם גבולות מדינות — מינימליסטית, צבעים מאופקים
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/The_Earth_seen_from_Apollo_17.jpg/800px-The_Earth_seen_from_Apollo_17.jpg",
+    image_position: "background",
+    image_size: "full",
   },
 
   {
@@ -28,6 +30,9 @@ const slides: Slide[] = [
     body: `בנובמבר 2012 הצביעה עצרת האו"ם: 138 מדינות הכירו בפלסטין כ"מדינה משקיפה שאינה חברה". אבל האם פלסטין עומדת בתנאים? גוש עזה בשליטת חמאס, הגדה בשליטת הרשות הפלסטינית — שני גופי שלטון, שטח מפוצל, ללא ריבונות מלאה.
 
 **השאלה שנענה עליה היום:** מהם מרכיבי המדינה — ובאיזה תנאים קבוצה הופכת למדינה?`,
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Flag_of_Palestine.svg/800px-Flag_of_Palestine.svg.png",
+    image_position: "right",
+    image_size: "medium",
   },
   {
     id: "s2",
@@ -316,6 +321,7 @@ export async function GET() {
 
   const sb = adminClient()
 
+  // Check if lesson already exists
   const { data: existing } = await sb
     .from("lessons")
     .select("id, title")

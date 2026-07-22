@@ -16,7 +16,9 @@ const slides: Slide[] = [
     title: "חוק הלאום",
     body: `**חוק יסוד: ישראל — מדינת הלאום של העם היהודי**
 אושר בכנסת ביולי 2018`,
-    image_url: null, // suggested: דגל ישראל על רקע בניין הכנסת — תמונה פורמלית עם תחושת כובד
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Flag_of_Israel.svg/800px-Flag_of_Israel.svg.png",
+    image_position: "background",
+    image_size: "full",
   },
 
   // ── שקף 2: מטרות השיעור ───────────────────────────────────────────────────
@@ -66,7 +68,9 @@ const slides: Slide[] = [
 שבועות לאחר מכן — מאות קצינים ולוחמים דרוזים עמדו בכיכר רבין: "שרנו בצבא. ועכשיו אנחנו אזרחים סוג ב'?"
 
 **מה כל כך מעצבן בחוק הזה — ומה הוא בכלל קובע?**`,
-    image_url: null, // suggested: תמונת מחאת הדרוזים בכיכר רבין 2018 — קצינים במדים עם שלטים
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Knesset20050328.jpg/1024px-Knesset20050328.jpg",
+    image_position: "top",
+    image_size: "large",
   },
 
   // ── שקף 4: סקר פתיחה ──────────────────────────────────────────────────────
@@ -284,6 +288,9 @@ const slides: Slide[] = [
     type: "enrichment",
     eyebrow: "העשרה",
     title: "הצהרת העצמאות מול חוק הלאום",
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Declaration_of_State_of_Israel_1948.jpg/800px-Declaration_of_State_of_Israel_1948.jpg",
+    image_position: "right",
+    image_size: "medium",
     questions: [
       {
         id: "e1",
