@@ -53,7 +53,7 @@ const CSS = `
   .rtag{display:inline-block;font-size:10px;font-weight:700;color:#fff;background:var(--seal);border-radius:5px;padding:2px 7px;margin-bottom:6px;}
   .reveal-box{margin-top:14px;background:var(--paper2);border-radius:10px;overflow:hidden;max-height:0;transition:max-height .4s ease;}
   .reveal-box.open{max-height:400px;}
-  .reveal-inner{padding:16px 18px;}
+  .reveal-inner{padding:16px 18px;white-space:pre-line;}
   .conditions-strip{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;}
   .cond-chip{flex:1;min-width:140px;background:var(--paper2);border:1px solid var(--line);border-radius:10px;padding:12px 10px;text-align:center;}
   .cond-chip .n{font-family:'Frank Ruhl Libre',serif;font-weight:900;color:var(--seal);font-size:20px;display:block;margin-bottom:3px;}
