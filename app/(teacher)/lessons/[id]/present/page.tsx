@@ -79,6 +79,13 @@ const CSS = `
   .icon-btn:hover{background:rgba(245,241,230,0.18);color:var(--paper);}
   @keyframes run-across{from{left:1320px}to{left:-240px}}
   .anim-runner{position:absolute;bottom:70px;width:220px;height:220px;animation:run-across 5s linear forwards;z-index:20;pointer-events:none;}
+  @media (max-width: 767px) {
+    .slide-inner{padding:24px 20px 100px 20px;}
+    .grid2{grid-template-columns:1fr;}
+    .enrich-grid{grid-template-columns:1fr;}
+    .flip-grid{grid-template-columns:1fr;}
+    .topbar{padding:10px 12px;}
+  }
 `
 
 function extractYouTubeId(url: string): string | null {
@@ -380,6 +387,14 @@ export default function PresentPage({ params }: Props) {
   })
   const [animActive, setAnimActive] = useState(false)
   const lottieDivRef = useRef<HTMLDivElement>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const update = () => setIsMobile(window.innerWidth < 768)
+    update()
+    window.addEventListener("resize", update)
+    return () => window.removeEventListener("resize", update)
+  }, [])
 
   useEffect(() => {
     fetch(`/api/lessons/${id}`).then(r => r.json()).then(d => {
@@ -612,43 +627,50 @@ export default function PresentPage({ params }: Props) {
 
       {/* Slide stage */}
       <div className="stage" ref={stageRef}>
-        <div style={{
-          position: "absolute",
-          left: "50%",
-          top: "50%",
-          width: SLIDE_W,
-          height: SLIDE_H,
-          transform: `translate(-50%, -50%) scale(${scale})`,
-          transformOrigin: "center center",
-          background: "var(--paper)",
-          borderRadius: 12,
-          overflow: "hidden",
-        }}>
-          {slide && (
-            <SlideView
-              slide={slide}
-              agg={agg}
-              revealOpen={revealOpen}
-              setRevealOpen={setRevealOpen}
-            />
-          )}
-
-          {/* Running animation overlay */}
-          {animActive && (
-            <div className="anim-runner">
-              <div ref={lottieDivRef} style={{ width: "100%", height: "100%", transform: "scaleX(-1)" }} />
+        {isMobile ? (
+          // Mobile: native width, no scale transform
+          <div style={{ position: "absolute", inset: 0, background: "var(--paper)", overflow: "hidden" }}>
+            {slide && (
+              <SlideView slide={slide} agg={agg} revealOpen={revealOpen} setRevealOpen={setRevealOpen} />
+            )}
+            <div className="seal-stamp">{idx + 1}</div>
+            <div className="navbtns">
+              <button className="navbtn" disabled={idx === 0} onClick={() => go(idx - 1)}>›</button>
+              <button className="navbtn" disabled={idx === total - 1} onClick={() => go(idx + 1)}>‹</button>
             </div>
-          )}
-
-          {/* Seal stamp */}
-          <div className="seal-stamp">{idx + 1}</div>
-
-          {/* Nav buttons */}
-          <div className="navbtns">
-            <button className="navbtn" disabled={idx === 0} onClick={() => go(idx - 1)}>›</button>
-            <button className="navbtn" disabled={idx === total - 1} onClick={() => go(idx + 1)}>‹</button>
           </div>
-        </div>
+        ) : (
+          // Desktop: 1280×720 fixed canvas, scaled to fit
+          <div style={{
+            position: "absolute",
+            left: "50%",
+            top: "50%",
+            width: SLIDE_W,
+            height: SLIDE_H,
+            transform: `translate(-50%, -50%) scale(${scale})`,
+            transformOrigin: "center center",
+            background: "var(--paper)",
+            borderRadius: 12,
+            overflow: "hidden",
+          }}>
+            {slide && (
+              <SlideView slide={slide} agg={agg} revealOpen={revealOpen} setRevealOpen={setRevealOpen} />
+            )}
+
+            {/* Running animation overlay */}
+            {animActive && (
+              <div className="anim-runner">
+                <div ref={lottieDivRef} style={{ width: "100%", height: "100%", transform: "scaleX(-1)" }} />
+              </div>
+            )}
+
+            <div className="seal-stamp">{idx + 1}</div>
+            <div className="navbtns">
+              <button className="navbtn" disabled={idx === 0} onClick={() => go(idx - 1)}>›</button>
+              <button className="navbtn" disabled={idx === total - 1} onClick={() => go(idx + 1)}>‹</button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Slides sidebar */}
