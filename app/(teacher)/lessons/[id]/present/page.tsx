@@ -633,6 +633,11 @@ export default function PresentPage({ params }: Props) {
             {slide && (
               <SlideView slide={slide} agg={agg} revealOpen={revealOpen} setRevealOpen={setRevealOpen} />
             )}
+            {animActive && (
+              <div className="anim-runner">
+                <div ref={lottieDivRef} style={{ width: "100%", height: "100%", transform: "scaleX(-1)" }} />
+              </div>
+            )}
             <div className="seal-stamp">{idx + 1}</div>
             <div className="navbtns">
               <button className="navbtn" disabled={idx === 0} onClick={() => go(idx - 1)}>›</button>
