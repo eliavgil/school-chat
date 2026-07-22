@@ -1,7 +1,8 @@
 "use client"
-import { useEffect, useState, use } from "react"
+import { useEffect, useState, useRef, use } from "react"
 import { useRouter } from "next/navigation"
 import type { Lesson, Slide, SlideType, SlideQuestion } from "@/lib/lessons/types"
+import { ANIMATION_REGISTRY, ANIMATION_DELAYS } from "@/lib/lessons/animations"
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -135,7 +136,33 @@ function SlideEditor({ slide, onChange, onDelete, dragHandleProps }: {
   dragHandleProps: React.HTMLAttributes<HTMLSpanElement>
 }) {
   const [open, setOpen] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const ytId = slide.youtube_url ? extractYouTubeId(slide.youtube_url) : null
+
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploading(true)
+    setUploadError(null)
+    const fd = new FormData()
+    fd.append("file", file)
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: fd })
+      const data = await res.json()
+      if (data.url) {
+        onChange({ ...slide, image_url: data.url })
+      } else {
+        setUploadError(data.error ?? "שגיאה בהעלאה")
+      }
+    } catch {
+      setUploadError("שגיאה בהעלאה")
+    } finally {
+      setUploading(false)
+      e.target.value = ""
+    }
+  }
 
   function setQ(i: number, q: SlideQuestion) {
     const qs = [...(slide.questions ?? [])]; qs[i] = q
@@ -196,13 +223,30 @@ function SlideEditor({ slide, onChange, onDelete, dragHandleProps }: {
 
             {/* Image */}
             <div className="field">
-              <label>קישור לתמונה (URL)</label>
-              <input
-                value={slide.image_url ?? ""}
-                onChange={e => onChange({ ...slide, image_url: e.target.value || null })}
-                placeholder="https://..."
-                type="url"
-              />
+              <label>תמונה</label>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <input
+                  value={slide.image_url ?? ""}
+                  onChange={e => onChange({ ...slide, image_url: e.target.value || null })}
+                  placeholder="https://... (URL) או העלאת קובץ ←"
+                  type="url"
+                  style={{ flex: 1 }}
+                />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={handleImageUpload}
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={uploading}
+                  style={{ whiteSpace: "nowrap", padding: "9px 14px", borderRadius: 8, border: "1.5px solid var(--ink)", background: uploading ? "var(--paper2)" : "#fff", color: "var(--ink)", fontSize: 13, fontWeight: 700, cursor: uploading ? "default" : "pointer", fontFamily: "'Heebo'", opacity: uploading ? 0.6 : 1, flexShrink: 0 }}>
+                  {uploading ? "מעלה..." : "העלאת קובץ"}
+                </button>
+              </div>
+              {uploadError && <div style={{ fontSize: 12, color: "var(--seal)", marginTop: 4 }}>{uploadError}</div>}
             </div>
             {slide.image_url && (
               <>
@@ -268,6 +312,50 @@ function SlideEditor({ slide, onChange, onDelete, dragHandleProps }: {
                 type="url"
               />
             </div>
+          </div>
+
+          {/* ── Animation section ── */}
+          <div className="media-section">
+            <div className="section-label">אנימציה</div>
+            <div className="chip-row" style={{ marginBottom: 10 }}>
+              {Object.entries(ANIMATION_REGISTRY).map(([key, { label, emoji }]) => (
+                <button
+                  key={key}
+                  className={`chip${slide.animation?.name === key ? " active" : ""}`}
+                  onClick={() => onChange({
+                    ...slide,
+                    animation: slide.animation?.name === key ? null : { name: key, delay: slide.animation?.delay ?? 0 }
+                  })}
+                >
+                  {emoji} {label}
+                </button>
+              ))}
+              {slide.animation && (
+                <button
+                  className="chip"
+                  style={{ background: "rgba(162,59,46,.08)", color: "var(--seal)", borderColor: "rgba(162,59,46,.2)" }}
+                  onClick={() => onChange({ ...slide, animation: null })}
+                >
+                  ✕ הסר
+                </button>
+              )}
+            </div>
+            {slide.animation && (
+              <div className="field" style={{ marginBottom: 0 }}>
+                <label>תזמון — מתי תופיע האנימציה?</label>
+                <div className="chip-row">
+                  {ANIMATION_DELAYS.map(d => (
+                    <button
+                      key={d.value}
+                      className={`chip${(slide.animation?.delay ?? 0) === d.value ? " active" : ""}`}
+                      onClick={() => onChange({ ...slide, animation: { ...slide.animation!, delay: d.value } })}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Questions */}

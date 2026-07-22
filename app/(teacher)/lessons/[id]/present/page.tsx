@@ -77,6 +77,8 @@ const CSS = `
   .sidebar-type{font-size:10px;color:rgba(245,241,230,0.35);letter-spacing:1px;text-transform:uppercase;margin-top:1px;}
   .icon-btn{background:rgba(245,241,230,0.1);border:1px solid rgba(245,241,230,0.15);border-radius:7px;color:rgba(245,241,230,0.7);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s;flex-shrink:0;}
   .icon-btn:hover{background:rgba(245,241,230,0.18);color:var(--paper);}
+  @keyframes run-across{from{left:1320px}to{left:-240px}}
+  .anim-runner{position:absolute;bottom:70px;width:220px;height:220px;animation:run-across 5s linear forwards;z-index:20;pointer-events:none;}
 `
 
 function extractYouTubeId(url: string): string | null {
@@ -373,6 +375,8 @@ export default function PresentPage({ params }: Props) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const stageRef = useRef<HTMLDivElement>(null)
   const [scale, setScale] = useState(1)
+  const [animActive, setAnimActive] = useState(false)
+  const lottieDivRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     fetch(`/api/lessons/${id}`).then(r => r.json()).then(d => {
@@ -483,6 +487,33 @@ export default function PresentPage({ params }: Props) {
     obs.observe(el)
     return () => obs.disconnect()
   }, [])
+
+  // Start animation timer when slide changes
+  useEffect(() => {
+    setAnimActive(false)
+    const anim = slide?.animation
+    if (!anim) return
+    const t = setTimeout(() => setAnimActive(true), anim.delay * 1000)
+    return () => { clearTimeout(t); setAnimActive(false) }
+  }, [slide?.id])
+
+  // Load and play Lottie when animActive becomes true
+  useEffect(() => {
+    if (!animActive || !slide?.animation?.name) return
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let inst: any
+    let cancelled = false
+    const name = slide.animation.name
+    ;(async () => {
+      const { default: lottie } = await import("lottie-web")
+      if (cancelled || !lottieDivRef.current) return
+      const data = await fetch(`/animations/${name}.json`).then(r => r.json())
+      if (cancelled || !lottieDivRef.current) return
+      inst = lottie.loadAnimation({ container: lottieDivRef.current, animationData: data, loop: true, autoplay: true, renderer: "svg" })
+    })()
+    const t = setTimeout(() => setAnimActive(false), 5000)
+    return () => { cancelled = true; clearTimeout(t); inst?.destroy() }
+  }, [animActive, slide?.animation?.name])
 
   if (error) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: "'Heebo',sans-serif", color: "#A23B2E" }}>
@@ -597,6 +628,13 @@ export default function PresentPage({ params }: Props) {
               revealOpen={revealOpen}
               setRevealOpen={setRevealOpen}
             />
+          )}
+
+          {/* Running animation overlay */}
+          {animActive && (
+            <div className="anim-runner">
+              <div ref={lottieDivRef} style={{ width: "100%", height: "100%", transform: "scaleX(-1)" }} />
+            </div>
           )}
 
           {/* Seal stamp */}
