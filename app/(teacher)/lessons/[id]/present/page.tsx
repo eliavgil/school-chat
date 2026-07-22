@@ -1,9 +1,12 @@
 "use client"
-import React, { useEffect, useState, useCallback, use } from "react"
+import React, { useEffect, useState, useCallback, use, useRef } from "react"
 import { browserClient } from "@/lib/lessons/supabase"
 import type { Lesson, Slide, LiveSession } from "@/lib/lessons/types"
 
 interface Props { params: Promise<{ id: string }> }
+
+const SLIDE_W = 1280
+const SLIDE_H = 720
 
 interface AggResult { [questionId: string]: { [answer: string]: number } }
 
@@ -13,7 +16,7 @@ const CSS = `
   :root{--ink:#1B2A4A;--paper:#F5F1E6;--paper2:#ECE5D3;--seal:#A23B2E;--gold:#B08D3F;--ok:#3F6B4F;--line:rgba(27,42,74,0.14);}
   body{margin:0;overflow:hidden;}
   .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:var(--ink);border-bottom:1px solid rgba(176,141,63,0.3);flex-shrink:0;}
-  .stage{flex:1;background:var(--paper);position:relative;overflow:hidden;border-radius:16px 16px 0 0;margin:0 8px;}
+  .stage{flex:1;position:relative;overflow:hidden;}
   .slide-inner{position:absolute;inset:0;padding:40px 64px 90px 64px;overflow-y:auto;}
   .eyebrow{font-size:12px;letter-spacing:2.5px;color:var(--seal);font-weight:700;margin-bottom:6px;text-transform:uppercase;}
   h1.stitle{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:clamp(24px,3vw,38px);color:var(--ink);margin:0 0 18px;line-height:1.2;border-bottom:2px solid var(--line);padding-bottom:14px;}
@@ -92,7 +95,7 @@ function SlideMedia({ slide }: { slide: Slide }) {
         // eslint-disable-next-line @next/next/no-img-element
         <img src={slide.image_url!} alt="" style={{
           width: slide.image_size === "small" ? "40%" : slide.image_size === "medium" ? "65%" : slide.image_size === "large" ? "85%" : "100%",
-          borderRadius: 10, marginBottom: 16, display: "block", objectFit: "cover",
+          maxHeight: "42%", borderRadius: 10, marginBottom: 16, display: "block", objectFit: "cover",
         }} />
       )}
       {ytId && (
@@ -368,6 +371,8 @@ export default function PresentPage({ params }: Props) {
   const [starting, setStarting] = useState(false)
   const [error, setError] = useState("")
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const stageRef = useRef<HTMLDivElement>(null)
+  const [scale, setScale] = useState(1)
 
   useEffect(() => {
     fetch(`/api/lessons/${id}`).then(r => r.json()).then(d => {
@@ -466,6 +471,19 @@ export default function PresentPage({ params }: Props) {
     return () => window.removeEventListener("keydown", onKey)
   }, [go, idx])
 
+  useEffect(() => {
+    const el = stageRef.current
+    if (!el) return
+    const update = () => {
+      const s = Math.min(el.clientWidth / SLIDE_W, el.clientHeight / SLIDE_H)
+      setScale(Math.round(s * 1000) / 1000)
+    }
+    update()
+    const obs = new ResizeObserver(update)
+    obs.observe(el)
+    return () => obs.disconnect()
+  }, [])
+
   if (error) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: "'Heebo',sans-serif", color: "#A23B2E" }}>
       <div style={{ textAlign: "center" }}>
@@ -559,23 +577,36 @@ export default function PresentPage({ params }: Props) {
       </div>
 
       {/* Slide stage */}
-      <div className="stage">
-        {slide && (
-          <SlideView
-            slide={slide}
-            agg={agg}
-            revealOpen={revealOpen}
-            setRevealOpen={setRevealOpen}
-          />
-        )}
+      <div className="stage" ref={stageRef}>
+        <div style={{
+          position: "absolute",
+          left: "50%",
+          top: "50%",
+          width: SLIDE_W,
+          height: SLIDE_H,
+          transform: `translate(-50%, -50%) scale(${scale})`,
+          transformOrigin: "center center",
+          background: "var(--paper)",
+          borderRadius: 12,
+          overflow: "hidden",
+        }}>
+          {slide && (
+            <SlideView
+              slide={slide}
+              agg={agg}
+              revealOpen={revealOpen}
+              setRevealOpen={setRevealOpen}
+            />
+          )}
 
-        {/* Seal stamp */}
-        <div className="seal-stamp">{idx + 1}</div>
+          {/* Seal stamp */}
+          <div className="seal-stamp">{idx + 1}</div>
 
-        {/* Nav buttons */}
-        <div className="navbtns">
-          <button className="navbtn" disabled={idx === 0} onClick={() => go(idx - 1)}>›</button>
-          <button className="navbtn" disabled={idx === total - 1} onClick={() => go(idx + 1)}>‹</button>
+          {/* Nav buttons */}
+          <div className="navbtns">
+            <button className="navbtn" disabled={idx === 0} onClick={() => go(idx - 1)}>›</button>
+            <button className="navbtn" disabled={idx === total - 1} onClick={() => go(idx + 1)}>‹</button>
+          </div>
         </div>
       </div>
 
