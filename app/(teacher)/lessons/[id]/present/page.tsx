@@ -14,7 +14,7 @@ const SLIDE_FONT = `@import url('https://fonts.googleapis.com/css2?family=Frank+
 
 const CSS = `
   :root{--ink:#1B2A4A;--paper:#F5F1E6;--paper2:#ECE5D3;--seal:#A23B2E;--gold:#B08D3F;--ok:#3F6B4F;--line:rgba(27,42,74,0.14);}
-  body{margin:0;overflow:hidden;}
+  body{margin:0;}
   .topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:var(--ink);border-bottom:1px solid rgba(176,141,63,0.3);flex-shrink:0;}
   .stage{flex:1;position:relative;overflow:hidden;}
   .slide-inner{position:absolute;inset:0;padding:40px 64px 90px 64px;overflow-y:auto;}
@@ -374,7 +374,10 @@ export default function PresentPage({ params }: Props) {
   const [error, setError] = useState("")
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const stageRef = useRef<HTMLDivElement>(null)
-  const [scale, setScale] = useState(1)
+  const [scale, setScale] = useState(() => {
+    if (typeof window === "undefined") return 1
+    return Math.min(window.innerWidth / SLIDE_W, (window.innerHeight - 60) / SLIDE_H)
+  })
   const [animActive, setAnimActive] = useState(false)
   const lottieDivRef = useRef<HTMLDivElement>(null)
 
@@ -537,7 +540,7 @@ export default function PresentPage({ params }: Props) {
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100vh", background: "var(--ink)", direction: "rtl" }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100svh", background: "var(--ink)", direction: "rtl", overflow: "hidden" }}>
       <style>{SLIDE_FONT + CSS}</style>
 
       {/* Topbar */}
