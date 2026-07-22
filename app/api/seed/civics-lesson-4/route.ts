@@ -7,9 +7,21 @@ import type { Slide } from "@/lib/lessons/types"
 const LESSON_TITLE = "שיעור 4: חקיקה בעלת אופי יהודי"
 
 const slides: Slide[] = [
+  // ── שקף 1: פתיחה – כותרת השיעור ──────────────────────────────────────────
+  {
+    id: "s0",
+    order: 1,
+    type: "intro",
+    eyebrow: "שיעור 4 | אזרחות כיתה י",
+    title: "חקיקה בעלת אופי יהודי",
+    body: `**עד כמה מדינה יהודית — גם בחוק?**
+שלושה תחומים, מחלוקת אחת שלא נגמרת`,
+    image_url: null, // suggested: תמונת הכנסת מבחוץ עם מנורת הזהב בחזית — סמל המדינה לצד ספר חוקים
+  },
+
   {
     id: "s1",
-    order: 1,
+    order: 2,
     type: "intro",
     eyebrow: "פתיחה אקטואלית",
     title: "סופרמרקט פתוח בשבת — מותר או אסור?",
@@ -22,7 +34,7 @@ const slides: Slide[] = [
   },
   {
     id: "s2",
-    order: 2,
+    order: 3,
     type: "poll",
     eyebrow: "סקר פתיחה",
     title: "מה דעתך על חקיקה בעלת אופי יהודי?",
@@ -42,7 +54,7 @@ const slides: Slide[] = [
   },
   {
     id: "s3",
-    order: 3,
+    order: 4,
     type: "intro",
     eyebrow: "מפת דרכים",
     title: "שלושה תחומים — אותה שאלה",
@@ -61,7 +73,7 @@ const slides: Slide[] = [
   },
   {
     id: "s4",
-    order: 4,
+    order: 5,
     type: "definitions",
     eyebrow: "תחום א׳: חקיקה",
     title: "חוקים בעלי אופי יהודי — חובה לזכור",
@@ -93,7 +105,7 @@ const slides: Slide[] = [
   },
   {
     id: "s5",
-    order: 5,
+    order: 6,
     type: "quiz",
     eyebrow: "בדיקת הבנה",
     title: "קצרה — על החוקים",
@@ -126,7 +138,7 @@ const slides: Slide[] = [
   },
   {
     id: "s6",
-    order: 6,
+    order: 7,
     type: "definitions",
     eyebrow: "תחום ב׳: המרחב הציבורי",
     title: "האופי היהודי שנראה בכל מקום",
@@ -153,7 +165,7 @@ const slides: Slide[] = [
   },
   {
     id: "s7",
-    order: 7,
+    order: 8,
     type: "poll",
     eyebrow: "לפני התחום השלישי",
     title: "האם ישראל צריכה נישואים אזרחיים?",
@@ -176,7 +188,7 @@ const slides: Slide[] = [
   },
   {
     id: "s8",
-    order: 8,
+    order: 9,
     type: "reveal",
     eyebrow: "תחום ג׳: בין הציבורי לפרטי",
     title: "הסדר הסטטוס קוו",
@@ -202,7 +214,7 @@ const slides: Slide[] = [
   },
   {
     id: "s9",
-    order: 9,
+    order: 10,
     type: "reveal",
     eyebrow: "מיומנות בגרות",
     title: "ציין-הצג-הסבר: דוגמה מהמרחב הציבורי",
@@ -230,7 +242,7 @@ const slides: Slide[] = [
   },
   {
     id: "s10",
-    order: 10,
+    order: 11,
     type: "matching",
     eyebrow: "תרגול",
     title: "חוק + מה הוא מבטא — נסדר את זה",
@@ -275,7 +287,7 @@ const slides: Slide[] = [
   },
   {
     id: "s11",
-    order: 11,
+    order: 12,
     type: "quiz",
     eyebrow: "בוחן סיכום",
     title: "5 שאלות — חקיקה בעלת אופי יהודי",
@@ -344,7 +356,7 @@ const slides: Slide[] = [
   },
   {
     id: "s12",
-    order: 12,
+    order: 13,
     type: "homework",
     eyebrow: "משימה לבית",
     title: "ציין-הצג-הסבר: שאלת אירוע",
@@ -365,7 +377,7 @@ const slides: Slide[] = [
   },
   {
     id: "s13",
-    order: 13,
+    order: 14,
     type: "feedback",
     eyebrow: "משוב",
     title: "איך היה?",
@@ -409,7 +421,12 @@ export async function GET() {
     .maybeSingle()
 
   if (existing) {
-    return NextResponse.json({ message: "Lesson already exists", id: existing.id, title: existing.title })
+    const { error: updateError } = await sb
+      .from("lessons")
+      .update({ slides })
+      .eq("id", existing.id)
+    if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
+    return NextResponse.json({ message: "Lesson updated", id: existing.id, title: existing.title, slideCount: slides.length })
   }
 
   const slug = `civics-jewish-legislation-4`
