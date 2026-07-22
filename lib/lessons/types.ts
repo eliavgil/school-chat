@@ -10,6 +10,11 @@ export interface SlideQuestion {
   feedback?: string
 }
 
+export interface SlideAnimation {
+  name: string   // key in ANIMATION_REGISTRY
+  delay: number  // seconds after slide appears (0 = immediate)
+}
+
 export interface Slide {
   id: string
   order: number
@@ -24,6 +29,7 @@ export interface Slide {
   link_url?: string | null
   display?: { show_names: boolean }
   questions?: SlideQuestion[]
+  animation?: SlideAnimation | null
 }
 
 export interface Lesson {
