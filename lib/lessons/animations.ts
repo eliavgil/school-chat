@@ -6,6 +6,11 @@ export const ANIMATION_REGISTRY: Record<string, { label: string; emoji: string }
   totoro: { label: "טוטורו", emoji: "🌿" },
   robot: { label: "רובוט", emoji: "🤖" },
   giraffe: { label: "ג'ירפה", emoji: "🦒" },
+  runner: { label: "רץ", emoji: "🏃" },
+  frankenstein: { label: "פרנקנשטיין", emoji: "🧟" },
+  death_dance: { label: "ריקוד מוות", emoji: "💀" },
+  dancing_bug: { label: "חרק רוקד", emoji: "🐛" },
+  cat: { label: "חתול", emoji: "🐱" },
 }
 
 export const ANIMATION_DELAYS = [
