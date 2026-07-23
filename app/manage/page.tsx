@@ -515,10 +515,18 @@ function UsersTab() {
                   <div className="text-white/50 text-xs">{u.email}</div>
                   {u.requestedChildName && <div className="text-amber-300 text-xs mt-1">שם שהוזן: {u.requestedChildName}</div>}
                 </div>
-                <button onClick={() => setExpandedId(expandedId === u.id ? null : u.id)}
-                  className="bg-white/10 text-white rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-white/20 interactive">
-                  {expandedId === u.id ? "ביטול" : "אשר"}
-                </button>
+                <div className="flex gap-2 items-center">
+                  <button onClick={() => setExpandedId(expandedId === u.id ? null : u.id)}
+                    className="bg-white/10 text-white rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-white/20 interactive">
+                    {expandedId === u.id ? "ביטול" : "אשר"}
+                  </button>
+                  <button
+                    onClick={() => { if (confirm(`למחוק לחלוטין את חשבון ${u.name ?? u.email}?\nהמשתמש יוכל להירשם מחדש.`)) action(u.id, "delete-user") }}
+                    title="מחק חשבון"
+                    className="text-xs text-red-500/60 hover:text-red-500 interactive">
+                    🗑
+                  </button>
+                </div>
               </div>
               {expandedId === u.id && (
                 <ApproveWithLink students={students} loading={actionLoading === u.id}
@@ -584,6 +592,12 @@ function UsersTab() {
                       {linkingStudentId === s.id ? "ביטול" : (s.studentRecord ? "שנה" : "קשר")}
                     </button>
                     <button onClick={() => action(s.id, "deny")} className="text-xs text-red-400/70 hover:text-red-400 interactive">בטל</button>
+                    <button
+                      onClick={() => { if (confirm(`למחוק לחלוטין את חשבון ${s.name ?? s.email}?\nהמשתמש יוכל להירשם מחדש.`)) action(s.id, "delete-user") }}
+                      title="מחק חשבון לגמרי (מאפשר הרשמה מחדש)"
+                      className="text-xs text-red-500/60 hover:text-red-500 interactive">
+                      🗑
+                    </button>
                   </div>
                 </div>
                 {linkingStudentId === s.id && (
