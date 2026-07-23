@@ -10,9 +10,13 @@ export interface SlideQuestion {
   feedback?: string
 }
 
+export type AnimationPosition = "across" | "center" | "corner-right" | "corner-left" | "top"
+
 export interface SlideAnimation {
-  name: string   // key in ANIMATION_REGISTRY
-  delay: number  // seconds after slide appears (0 = immediate)
+  name: string                  // key in ANIMATION_REGISTRY
+  delay: number                 // seconds after slide appears (0 = immediate)
+  position?: AnimationPosition  // default: "across"
+  loop?: boolean                // default: false (play once)
 }
 
 export interface Slide {

@@ -1,7 +1,7 @@
 "use client"
 import React, { useEffect, useState, useCallback, use, useRef } from "react"
 import { browserClient } from "@/lib/lessons/supabase"
-import type { Lesson, Slide, LiveSession } from "@/lib/lessons/types"
+import type { Lesson, Slide, LiveSession, SlideAnimation } from "@/lib/lessons/types"
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -78,7 +78,14 @@ const CSS = `
   .icon-btn{background:rgba(245,241,230,0.1);border:1px solid rgba(245,241,230,0.15);border-radius:7px;color:rgba(245,241,230,0.7);width:34px;height:34px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:.15s;flex-shrink:0;}
   .icon-btn:hover{background:rgba(245,241,230,0.18);color:var(--paper);}
   @keyframes run-across{from{left:1320px}to{left:-240px}}
-  .anim-runner{position:absolute;bottom:70px;width:220px;height:220px;animation:run-across 5s linear forwards;z-index:20;pointer-events:none;}
+  @keyframes run-across-loop{from{left:1320px}to{left:-240px}}
+  .anim-across{position:absolute;bottom:70px;width:220px;height:220px;z-index:20;pointer-events:none;}
+  .anim-across.once{animation:run-across 5s linear forwards;}
+  .anim-across.loop{animation:run-across 6s linear infinite;}
+  .anim-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:280px;height:280px;z-index:20;pointer-events:none;}
+  .anim-corner-right{position:absolute;bottom:80px;right:80px;width:200px;height:200px;z-index:20;pointer-events:none;}
+  .anim-corner-left{position:absolute;bottom:80px;left:80px;width:200px;height:200px;z-index:20;pointer-events:none;}
+  .anim-top{position:absolute;top:20px;left:50%;transform:translateX(-50%);width:200px;height:200px;z-index:20;pointer-events:none;}
   @media (max-width: 767px) {
     .slide-inner{padding:24px 20px 100px 20px;}
     .grid2{grid-template-columns:1fr;}
@@ -86,7 +93,10 @@ const CSS = `
     .flip-grid{grid-template-columns:1fr;}
     .topbar{padding:10px 12px;}
     @keyframes run-across{from{left:110%}to{left:-60%}}
-    .anim-runner{width:150px;height:150px;bottom:50px;}
+    .anim-across{width:150px;height:150px;bottom:50px;}
+    .anim-center{width:180px;height:180px;}
+    .anim-corner-right,.anim-corner-left{width:130px;height:130px;}
+    .anim-top{width:130px;height:130px;}
   }
 `
 
@@ -372,6 +382,23 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
   )
 }
 
+function AnimOverlay({ anim, lottieDivRef }: {
+  anim: SlideAnimation
+  lottieDivRef: React.RefObject<HTMLDivElement | null>
+}) {
+  const pos = anim.position ?? "across"
+  const loop = anim.loop ?? false
+  const cls = pos === "across"
+    ? `anim-across ${loop ? "loop" : "once"}`
+    : `anim-${pos}`
+  const flip = pos === "across"
+  return (
+    <div className={cls}>
+      <div ref={lottieDivRef} style={{ width: "100%", height: "100%", ...(flip ? { transform: "scaleX(-1)" } : {}) }} />
+    </div>
+  )
+}
+
 export default function PresentPage({ params }: Props) {
   const { id } = use(params)
   const [lesson, setLesson] = useState<Lesson | null>(null)
@@ -520,20 +547,34 @@ export default function PresentPage({ params }: Props) {
   // Load and play Lottie when animActive becomes true
   useEffect(() => {
     if (!animActive || !slide?.animation?.name) return
+    const { name, position = "across", loop = false } = slide.animation
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     let inst: any
     let cancelled = false
-    const name = slide.animation.name
+    let t: ReturnType<typeof setTimeout> | undefined
     ;(async () => {
       const { default: lottie } = await import("lottie-web")
       if (cancelled || !lottieDivRef.current) return
       const data = await fetch(`/animations/${name}.json`).then(r => r.json())
       if (cancelled || !lottieDivRef.current) return
-      inst = lottie.loadAnimation({ container: lottieDivRef.current, animationData: data, loop: true, autoplay: true, renderer: "svg" })
+      inst = lottie.loadAnimation({
+        container: lottieDivRef.current,
+        animationData: data,
+        loop,
+        autoplay: true,
+        renderer: "svg",
+      })
+      if (!loop) {
+        if (position === "across") {
+          // CSS animation handles timing; dismiss after it completes
+          t = setTimeout(() => setAnimActive(false), 5500)
+        } else {
+          inst.addEventListener("complete", () => { if (!cancelled) setAnimActive(false) })
+        }
+      }
     })()
-    const t = setTimeout(() => setAnimActive(false), 5000)
     return () => { cancelled = true; clearTimeout(t); inst?.destroy() }
-  }, [animActive, slide?.animation?.name])
+  }, [animActive, slide?.animation?.name, slide?.animation?.position, slide?.animation?.loop])
 
   if (error) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100vh", fontFamily: "'Heebo',sans-serif", color: "#A23B2E" }}>
@@ -635,10 +676,8 @@ export default function PresentPage({ params }: Props) {
             {slide && (
               <SlideView slide={slide} agg={agg} revealOpen={revealOpen} setRevealOpen={setRevealOpen} />
             )}
-            {animActive && (
-              <div className="anim-runner">
-                <div ref={lottieDivRef} style={{ width: "100%", height: "100%", transform: "scaleX(-1)" }} />
-              </div>
+            {animActive && slide?.animation && (
+              <AnimOverlay anim={slide.animation} lottieDivRef={lottieDivRef} />
             )}
             <div className="seal-stamp">{idx + 1}</div>
             <div className="navbtns">
@@ -664,11 +703,8 @@ export default function PresentPage({ params }: Props) {
               <SlideView slide={slide} agg={agg} revealOpen={revealOpen} setRevealOpen={setRevealOpen} />
             )}
 
-            {/* Running animation overlay */}
-            {animActive && (
-              <div className="anim-runner">
-                <div ref={lottieDivRef} style={{ width: "100%", height: "100%", transform: "scaleX(-1)" }} />
-              </div>
+            {animActive && slide?.animation && (
+              <AnimOverlay anim={slide.animation} lottieDivRef={lottieDivRef} />
             )}
 
             <div className="seal-stamp">{idx + 1}</div>

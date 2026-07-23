@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef, use } from "react"
 import { useRouter } from "next/navigation"
 import type { Lesson, Slide, SlideType, SlideQuestion } from "@/lib/lessons/types"
-import { ANIMATION_REGISTRY, ANIMATION_DELAYS } from "@/lib/lessons/animations"
+import { ANIMATION_REGISTRY, ANIMATION_DELAYS, ANIMATION_POSITIONS } from "@/lib/lessons/animations"
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -317,44 +317,65 @@ function SlideEditor({ slide, onChange, onDelete, dragHandleProps }: {
           {/* ── Animation section ── */}
           <div className="media-section">
             <div className="section-label">אנימציה</div>
-            <div className="chip-row" style={{ marginBottom: 10 }}>
-              {Object.entries(ANIMATION_REGISTRY).map(([key, { label, emoji }]) => (
-                <button
-                  key={key}
-                  className={`chip${slide.animation?.name === key ? " active" : ""}`}
-                  onClick={() => onChange({
+            <div className="field" style={{ marginBottom: 10 }}>
+              <select
+                value={slide.animation?.name ?? ""}
+                onChange={e => {
+                  const key = e.target.value
+                  onChange({
                     ...slide,
-                    animation: slide.animation?.name === key ? null : { name: key, delay: slide.animation?.delay ?? 0 }
-                  })}
-                >
-                  {emoji} {label}
-                </button>
-              ))}
-              {slide.animation && (
-                <button
-                  className="chip"
-                  style={{ background: "rgba(162,59,46,.08)", color: "var(--seal)", borderColor: "rgba(162,59,46,.2)" }}
-                  onClick={() => onChange({ ...slide, animation: null })}
-                >
-                  ✕ הסר
-                </button>
-              )}
+                    animation: key
+                      ? { name: key, delay: slide.animation?.delay ?? 0, position: slide.animation?.position ?? "across", loop: slide.animation?.loop ?? false }
+                      : null,
+                  })
+                }}
+              >
+                <option value="">— ללא אנימציה —</option>
+                {Object.entries(ANIMATION_REGISTRY).map(([key, { label, emoji }]) => (
+                  <option key={key} value={key}>{emoji} {label}</option>
+                ))}
+              </select>
             </div>
             {slide.animation && (
-              <div className="field" style={{ marginBottom: 0 }}>
-                <label>תזמון — מתי תופיע האנימציה?</label>
-                <div className="chip-row">
-                  {ANIMATION_DELAYS.map(d => (
-                    <button
-                      key={d.value}
-                      className={`chip${(slide.animation?.delay ?? 0) === d.value ? " active" : ""}`}
-                      onClick={() => onChange({ ...slide, animation: { ...slide.animation!, delay: d.value } })}
-                    >
-                      {d.label}
-                    </button>
-                  ))}
+              <>
+                <div className="field" style={{ marginBottom: 10 }}>
+                  <label>תזמון — מתי תופיע?</label>
+                  <div className="chip-row">
+                    {ANIMATION_DELAYS.map(d => (
+                      <button key={d.value}
+                        className={`chip${(slide.animation?.delay ?? 0) === d.value ? " active" : ""}`}
+                        onClick={() => onChange({ ...slide, animation: { ...slide.animation!, delay: d.value } })}>
+                        {d.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+                <div className="field" style={{ marginBottom: 10 }}>
+                  <label>מיקום</label>
+                  <div className="chip-row">
+                    {ANIMATION_POSITIONS.map(p => (
+                      <button key={p.value}
+                        className={`chip${(slide.animation?.position ?? "across") === p.value ? " active" : ""}`}
+                        onClick={() => onChange({ ...slide, animation: { ...slide.animation!, position: p.value as any } })}>
+                        {p.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="field" style={{ marginBottom: 0 }}>
+                  <label>חזרה</label>
+                  <div className="chip-row">
+                    <button className={`chip${!(slide.animation?.loop) ? " active" : ""}`}
+                      onClick={() => onChange({ ...slide, animation: { ...slide.animation!, loop: false } })}>
+                      פעם אחת
+                    </button>
+                    <button className={`chip${slide.animation?.loop ? " active" : ""}`}
+                      onClick={() => onChange({ ...slide, animation: { ...slide.animation!, loop: true } })}>
+                      כל הזמן
+                    </button>
+                  </div>
+                </div>
+              </>
             )}
           </div>
 
