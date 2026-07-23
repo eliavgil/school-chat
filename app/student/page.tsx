@@ -191,16 +191,16 @@ export default function StudentPage() {
         <span className="text-[#B08D3F] text-sm font-bold whitespace-nowrap">📚 קוד שיעור:</span>
         <input
           value={joinCode}
-          onChange={e => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6))}
-          onKeyDown={e => { if (e.key === "Enter" && joinCode.length === 6) router.push(`/live/${joinCode}`) }}
-          placeholder="XXXXXX"
-          maxLength={6}
+          onChange={e => setJoinCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
+          onKeyDown={e => { if (e.key === "Enter" && joinCode.length === 2) router.push(`/live/${joinCode}`) }}
+          placeholder="00"
+          maxLength={2}
           dir="ltr"
           className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white placeholder:text-white/30 text-sm font-mono tracking-widest focus:outline-none focus:border-[#B08D3F]"
         />
         <button
-          onClick={() => { if (joinCode.length === 6) router.push(`/live/${joinCode}`) }}
-          disabled={joinCode.length !== 6}
+          onClick={() => { if (joinCode.length === 2) router.push(`/live/${joinCode}`) }}
+          disabled={joinCode.length !== 2}
           className="bg-[#A23B2E] disabled:opacity-40 text-white text-sm font-bold px-4 py-1.5 rounded-lg whitespace-nowrap transition-opacity">
           כנס
         </button>
