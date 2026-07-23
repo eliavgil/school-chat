@@ -5,15 +5,15 @@ import type { Lesson, Slide } from "@/lib/lessons/types"
 interface Props { params: Promise<{ id: string }> }
 
 const PRINT_CSS = `
-  @import url('https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&family=Heebo:wght@300;400;500;700&display=swap');
   :root{--ink:#1B2A4A;--paper:#F5F1E6;--paper2:#ECE5D3;--seal:#A23B2E;--gold:#B08D3F;--ok:#3F6B4F;--line:rgba(27,42,74,0.14);}
-  *{box-sizing:border-box;}
-  body{margin:0;background:#fff;font-family:'Heebo',sans-serif;direction:rtl;color:var(--ink);}
+  *{box-sizing:border-box;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
+  html,body{margin:0;padding:0;background:var(--paper)!important;font-family:'Heebo',Arial,sans-serif;direction:rtl;color:var(--ink)!important;}
   .no-print{background:var(--ink);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:10;}
-  .slide-page{background:var(--paper);min-height:100vh;padding:48px 64px 64px;position:relative;border-bottom:3px solid var(--gold);}
-  .slide-num{position:absolute;top:20px;left:24px;width:36px;height:36px;border-radius:50%;background:var(--seal);color:var(--paper);display:flex;align-items:center;justify-content:center;font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:16px;}
+  .slide-page{background:var(--paper);padding:48px 64px 64px;position:relative;border-bottom:3px solid var(--gold);page-break-after:always;break-after:page;page-break-inside:avoid;min-height:100vh;}
+  .slide-page:last-child{page-break-after:auto;break-after:auto;}
+  .slide-num{position:absolute;top:20px;left:24px;width:36px;height:36px;border-radius:50%;background:var(--seal);color:var(--paper);display:flex;align-items:center;justify-content:center;font-family:'Frank Ruhl Libre',Georgia,serif;font-weight:900;font-size:16px;}
   .eyebrow{font-size:11px;letter-spacing:2.5px;color:var(--seal);font-weight:700;margin-bottom:6px;text-transform:uppercase;}
-  h2.stitle{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:28px;color:var(--ink);margin:0 0 18px;line-height:1.2;border-bottom:2px solid var(--line);padding-bottom:14px;}
+  h2.stitle{font-family:'Frank Ruhl Libre',Georgia,serif;font-weight:900;font-size:28px;color:var(--ink);margin:0 0 18px;line-height:1.2;border-bottom:2px solid var(--line);padding-bottom:14px;}
   .lead{font-size:15px;line-height:1.85;color:var(--ink);margin:0 0 10px;}
   table{width:100%;border-collapse:collapse;font-size:14px;}
   th{text-align:right;padding:7px 10px;background:var(--ink);color:var(--paper);font-weight:700;border-bottom:2px solid var(--gold);}
@@ -21,23 +21,28 @@ const PRINT_CSS = `
   tr:nth-child(even) td{background:var(--paper2);}
   blockquote{border-right:3px solid var(--seal);padding-right:14px;margin:10px 0;color:var(--seal);font-weight:600;font-size:14px;}
   hr.divider{border:none;border-top:1px solid var(--line);margin:12px 0;}
-  .type-tag{display:inline-block;font-size:10px;font-weight:700;color:#fff;background:var(--seal);border-radius:5px;padding:2px 7px;margin-bottom:8px;}
-  .options-list{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
-  .option{padding:9px 14px;border:1.5px solid var(--line);border-radius:8px;font-size:14px;background:#fff;}
+  .type-tag{display:inline-block;font-size:10px;font-weight:700;color:var(--paper);background:var(--seal);border-radius:5px;padding:2px 7px;margin-bottom:8px;}
+  .q-block{margin-bottom:22px;padding-top:16px;border-top:1px solid var(--line);}
+  .q-block:first-child{padding-top:0;border-top:none;}
+  .q-header{display:flex;align-items:flex-start;gap:10px;margin-bottom:10px;}
+  .q-num{width:22px;height:22px;border-radius:50%;background:var(--seal);color:var(--paper);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:2px;}
+  .q-text{font-weight:700;font-size:15px;color:var(--ink);line-height:1.45;}
+  .options-list{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+  .option{padding:9px 14px;border:1.5px solid var(--line);border-radius:8px;font-size:14px;background:#fff;display:flex;align-items:center;gap:8px;}
   .option.correct{background:rgba(63,107,79,.12);border-color:var(--ok);color:var(--ok);font-weight:700;}
+  .opt-letter{font-weight:900;font-size:14px;color:var(--seal);flex-shrink:0;width:18px;}
+  .option.correct .opt-letter{color:var(--ok);}
   .def-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
   .def-card{border:1.5px solid var(--line);border-radius:10px;overflow:hidden;}
-  .def-term{background:var(--ink);color:var(--paper);padding:10px 14px;font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:14px;}
+  .def-term{background:var(--ink);color:var(--paper);padding:10px 14px;font-family:'Frank Ruhl Libre',Georgia,serif;font-weight:700;font-size:14px;}
   .def-body{padding:10px 14px;font-size:13px;line-height:1.55;background:var(--paper2);}
   .task-item{display:flex;gap:10px;align-items:flex-start;padding:9px 0;border-bottom:1px solid var(--line);}
   .task-num{width:24px;height:24px;border-radius:50%;background:var(--seal);color:var(--paper);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:2px;}
   .reveal-box{background:var(--paper2);border-radius:10px;padding:16px 18px;margin-top:12px;border-right:3px solid var(--gold);}
   @media print{
     .no-print{display:none!important;}
-    .slide-page{min-height:0;height:100vh;page-break-after:always;break-after:page;border-bottom:none;}
-    .slide-page:last-child{page-break-after:auto;break-after:auto;}
-    body{background:#fff;}
-    @page{margin:0;size:A4 landscape;}
+    .slide-page{min-height:0;}
+    @page{margin:10mm;size:A4 landscape;}
   }
 `
 
@@ -111,21 +116,28 @@ function PrintSlide({ slide, num }: { slide: Slide; num: number }) {
       {body && <div>{renderBody(body)}</div>}
 
       {/* Poll / Quiz — show options, mark correct */}
-      {(type === "poll" || type === "quiz") && questions && questions.map(q => (
-        <div key={q.id} style={{ marginBottom: 18 }}>
-          <p style={{ fontWeight: 700, fontSize: 15, marginBottom: 8 }}>{q.text}</p>
-          <div className="options-list">
-            {q.options.map((opt, oi) => (
-              <div key={oi} className={`option${q.correct_index === oi ? " correct" : ""}`}>
-                {opt}{q.correct_index === oi ? " ✓" : ""}
-              </div>
-            ))}
+      {(type === "poll" || type === "quiz") && questions && questions.map((q, qi) => {
+        const letters = ["א", "ב", "ג", "ד", "ה"]
+        return (
+          <div key={q.id} className="q-block">
+            <div className="q-header">
+              {questions.length > 1 && <div className="q-num">{qi + 1}</div>}
+              <div className="q-text">{q.text}</div>
+            </div>
+            <div className="options-list">
+              {q.options.map((opt, oi) => (
+                <div key={oi} className={`option${q.correct_index === oi ? " correct" : ""}`}>
+                  <span className="opt-letter">{letters[oi] ?? oi + 1}.</span>
+                  <span>{opt}{q.correct_index === oi ? " ✓" : ""}</span>
+                </div>
+              ))}
+            </div>
+            {q.feedback && type === "quiz" && (
+              <p style={{ fontSize: 13, color: "var(--ok)", marginTop: 8, fontWeight: 600 }}>💡 {q.feedback}</p>
+            )}
           </div>
-          {q.feedback && type === "quiz" && (
-            <p style={{ fontSize: 13, color: "var(--ok)", marginTop: 8, fontWeight: 600 }}>💡 {q.feedback}</p>
-          )}
-        </div>
-      ))}
+        )
+      })}
 
       {/* Definitions — term/definition pairs */}
       {type === "definitions" && questions && (
@@ -172,11 +184,19 @@ function PrintSlide({ slide, num }: { slide: Slide; num: number }) {
       )}
 
       {/* Feedback — show questions */}
-      {type === "feedback" && questions && questions.map(q => (
-        <div key={q.id} style={{ marginBottom: 16 }}>
-          <p style={{ fontWeight: 700, fontSize: 15, background: "var(--ink)", color: "var(--paper)", borderRadius: 10, padding: "12px 16px", margin: "0 0 8px" }}>{q.text}</p>
+      {type === "feedback" && questions && questions.map((q, qi) => (
+        <div key={q.id} className="q-block">
+          <div className="q-header">
+            {questions.length > 1 && <div className="q-num">{qi + 1}</div>}
+            <div className="q-text" style={{ background: "var(--ink)", color: "var(--paper)", borderRadius: 8, padding: "10px 14px" }}>{q.text}</div>
+          </div>
           <div className="options-list">
-            {q.options.map((opt, oi) => <div key={oi} className="option">{opt}</div>)}
+            {q.options.map((opt, oi) => (
+              <div key={oi} className="option">
+                <span className="opt-letter">{"★".repeat(oi + 1)}</span>
+                <span>{opt}</span>
+              </div>
+            ))}
           </div>
         </div>
       ))}
@@ -215,6 +235,9 @@ export default function PrintPage({ params }: Props) {
 
   return (
     <div>
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@500;700;900&display=swap" />
       <style>{PRINT_CSS}</style>
 
       {/* Toolbar — hidden during print */}

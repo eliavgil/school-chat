@@ -98,6 +98,7 @@ const CSS = `
     .anim-corner-right,.anim-corner-left{width:130px;height:130px;}
     .anim-top{width:130px;height:130px;}
   }
+  @keyframes winner-pop{0%{transform:scale(0.5);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
 `
 
 function extractYouTubeId(url: string): string | null {
@@ -249,28 +250,38 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
       {body && <div>{renderBody(body)}</div>}
 
       {/* POLL / QUIZ — bar chart results */}
-      {(type === "poll" || type === "quiz") && questions && questions.map(q => {
+      {(type === "poll" || type === "quiz") && questions && questions.map((q, qi) => {
         const qAgg = agg[q.id] ?? {}
         const total = Object.values(qAgg).reduce((s, v) => s + v, 0)
+        const letters = ["א", "ב", "ג", "ד", "ה"]
         return (
-          <div key={q.id} style={{ marginBottom: 20 }}>
-            <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>{q.text}</div>
-            <div style={{ maxWidth: 560 }}>
+          <div key={q.id} style={{ marginBottom: 28, paddingTop: qi > 0 ? 16 : 0, borderTop: qi > 0 ? "1px solid rgba(27,42,74,0.14)" : "none" }}>
+            {/* Question number + text */}
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 14 }}>
+              <span style={{ background: "#A23B2E", color: "#F5F1E6", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, flexShrink: 0, fontFamily: "'Frank Ruhl Libre',serif", lineHeight: 1 }}>{qi + 1}</span>
+              <div style={{ fontWeight: 700, color: "#1B2A4A", fontSize: 15, lineHeight: 1.4 }}>{q.text}</div>
+            </div>
+            {/* Options with letter labels */}
+            <div style={{ maxWidth: 580, paddingRight: 38 }}>
               {q.options.map((opt, oi) => {
                 const cnt = qAgg[String(oi)] ?? 0
                 const pct = total ? Math.round((cnt / total) * 100) : 0
                 const isCorrect = q.correct_index !== null && oi === q.correct_index
+                const badgeBg = isCorrect ? "#3F6B4F" : "#1B2A4A"
                 return (
                   <div key={oi} className="bar-row">
                     <div className="bar-label">
-                      <span style={{ color: isCorrect ? "var(--ok)" : undefined }}>{opt}{isCorrect ? " ✓" : ""}</span>
-                      <span>{cnt > 0 ? `${cnt} (${pct}%)` : "0"}</span>
+                      <span style={{ display: "flex", alignItems: "center", gap: 6, color: isCorrect ? "#3F6B4F" : "#1B2A4A" }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", background: badgeBg, color: "#F5F1E6", borderRadius: 4, minWidth: 22, height: 22, fontSize: 12, fontWeight: 900, flexShrink: 0, padding: "0 4px" }}>{letters[oi] ?? oi + 1}</span>
+                        {opt}{isCorrect ? " ✓" : ""}
+                      </span>
+                      <span style={{ fontVariantNumeric: "tabular-nums" }}>{cnt > 0 ? `${cnt} (${pct}%)` : "—"}</span>
                     </div>
                     <div className="bar-bg"><div className="bar-fill" style={{ width: `${pct}%` }} /></div>
                   </div>
                 )
               })}
-              {total > 0 && <div style={{ fontSize: 12, color: "rgba(27,42,74,0.45)", marginTop: 4 }}>{total} תגובות</div>}
+              {total > 0 && <div style={{ fontSize: 12, color: "rgba(27,42,74,0.45)", marginTop: 6 }}>{total} תגובות</div>}
             </div>
           </div>
         )
@@ -357,18 +368,24 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
       )}
 
       {/* FEEDBACK — show question text */}
-      {type === "feedback" && questions && questions.map(q => (
-        <div key={q.id} style={{ marginBottom: 16 }}>
-          <div className="qbox">{q.text}</div>
+      {type === "feedback" && questions && questions.map((q, qi) => (
+        <div key={q.id} style={{ marginBottom: 20, paddingTop: qi > 0 ? 14 : 0, borderTop: qi > 0 ? "1px solid var(--line)" : "none" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
+            <span style={{ background: "#A23B2E", color: "#F5F1E6", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, flexShrink: 0, fontFamily: "'Frank Ruhl Libre',serif", lineHeight: 1 }}>{qi + 1}</span>
+            <div className="qbox" style={{ flex: 1 }}>{q.text}</div>
+          </div>
           {agg[q.id] && (
-            <div style={{ marginTop: 8, maxWidth: 480 }}>
+            <div style={{ marginTop: 10, maxWidth: 480 }}>
               {q.options.map((opt, oi) => {
                 const cnt = (agg[q.id] ?? {})[String(oi)] ?? 0
                 const total = Object.values(agg[q.id] ?? {}).reduce((s, v) => s + v, 0)
                 const pct = total ? Math.round((cnt / total) * 100) : 0
                 return (
                   <div key={oi} className="bar-row">
-                    <div className="bar-label"><span>{opt}</span><span>{cnt}</span></div>
+                    <div className="bar-label">
+                      <span>{"★".repeat(oi + 1)} {opt}</span>
+                      <span>{cnt}</span>
+                    </div>
                     <div className="bar-bg"><div className="bar-fill" style={{ width: `${pct}%` }} /></div>
                   </div>
                 )
@@ -378,6 +395,48 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
         </div>
       ))}
       </div>{/* /relative z-1 */}
+    </div>
+  )
+}
+
+function NameSpinner({ students, onClose }: { students: { id: string; name: string }[], onClose: () => void }) {
+  const [phase, setPhase] = useState<"idle" | "spinning" | "done">("idle")
+  const [current, setCurrent] = useState("")
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function spin() {
+    if (students.length === 0 || phase === "spinning") return
+    const winner = students[Math.floor(Math.random() * students.length)].name
+    setPhase("spinning")
+    const startTime = Date.now()
+    const duration = 3200
+    const tick = () => {
+      const elapsed = Date.now() - startTime
+      if (elapsed >= duration) { setCurrent(winner); setPhase("done"); return }
+      const delay = 55 + Math.pow(elapsed / duration, 1.8) * 320
+      setCurrent(students[Math.floor(Math.random() * students.length)].name)
+      timerRef.current = setTimeout(tick, delay)
+    }
+    timerRef.current = setTimeout(tick, 55)
+  }
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.78)", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "var(--ink)", border: "2px solid rgba(176,141,63,0.4)", borderRadius: 20, padding: "40px 56px", textAlign: "center", minWidth: 360, direction: "rtl", position: "relative", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }}>
+        <button onClick={onClose} style={{ position: "absolute", top: 14, left: 14, background: "none", border: "none", color: "rgba(245,241,230,0.35)", fontSize: 22, cursor: "pointer", lineHeight: 1, padding: 4 }}>✕</button>
+        <div style={{ color: "var(--gold)", fontSize: 12, fontWeight: 700, letterSpacing: 2.5, marginBottom: 28, textTransform: "uppercase" }}>גלגל שמות</div>
+        <div style={{ height: 120, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(245,241,230,0.06)", borderRadius: 14, marginBottom: 28, overflow: "hidden", border: phase === "done" ? "1.5px solid rgba(176,141,63,0.4)" : "1.5px solid rgba(245,241,230,0.06)" }}>
+          {phase === "idle" && <span style={{ color: "rgba(245,241,230,0.2)", fontSize: 40, fontFamily: "'Frank Ruhl Libre',serif" }}>?</span>}
+          {phase === "spinning" && <span style={{ color: "var(--paper)", fontSize: 34, fontFamily: "'Frank Ruhl Libre',serif", fontWeight: 900, filter: "blur(1.5px)", userSelect: "none" }}>{current}</span>}
+          {phase === "done" && <span style={{ color: "var(--gold)", fontSize: 42, fontFamily: "'Frank Ruhl Libre',serif", fontWeight: 900, animation: "winner-pop 0.5s cubic-bezier(0.175,0.885,0.32,1.275) forwards", userSelect: "none" }}>{current}</span>}
+        </div>
+        <button onClick={spin} disabled={phase === "spinning"} style={{ background: phase === "done" ? "rgba(176,141,63,0.15)" : "var(--seal)", color: "var(--paper)", border: phase === "done" ? "1.5px solid var(--gold)" : "none", borderRadius: 10, padding: "12px 36px", fontFamily: "'Heebo',sans-serif", fontWeight: 700, fontSize: 16, cursor: phase === "spinning" ? "default" : "pointer", opacity: phase === "spinning" ? 0.55 : 1, transition: ".2s" }}>
+          {phase === "idle" ? "🎲 סובב" : phase === "spinning" ? "מסתובב..." : "🎲 שוב"}
+        </button>
+        {phase === "done" && <div style={{ color: "rgba(245,241,230,0.45)", fontSize: 12, marginTop: 16 }}>{students.length} תלמידים בכיתה</div>}
+      </div>
     </div>
   )
 }
@@ -417,12 +476,20 @@ export default function PresentPage({ params }: Props) {
   const [animActive, setAnimActive] = useState(false)
   const lottieDivRef = useRef<HTMLDivElement>(null)
   const [isMobile, setIsMobile] = useState(false)
+  const [spinnerOpen, setSpinnerOpen] = useState(false)
+  const [students, setStudents] = useState<{ id: string; name: string }[]>([])
 
   useEffect(() => {
     const update = () => setIsMobile(window.innerWidth < 768)
     update()
     window.addEventListener("resize", update)
     return () => window.removeEventListener("resize", update)
+  }, [])
+
+  useEffect(() => {
+    fetch("/api/class/students").then(r => r.ok ? r.json() : []).then(d => {
+      if (Array.isArray(d)) setStudents(d)
+    })
   }, [])
 
   useEffect(() => {
@@ -649,6 +716,9 @@ export default function PresentPage({ params }: Props) {
             </svg>
           </button>
 
+          {/* Name spinner */}
+          <button className="icon-btn" onClick={() => setSpinnerOpen(true)} title="גלגל שמות" style={{ fontSize: 16 }}>🎲</button>
+
           {session ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ background: "rgba(176,141,63,0.2)", border: "1px solid var(--gold)", color: "var(--gold)", borderRadius: 6, padding: "4px 10px", fontSize: 13, fontFamily: "'Heebo'", fontWeight: 700, letterSpacing: 2 }}>
@@ -742,6 +812,10 @@ export default function PresentPage({ params }: Props) {
             </div>
           </div>
         </>
+      )}
+
+      {spinnerOpen && (
+        <NameSpinner students={students} onClose={() => setSpinnerOpen(false)} />
       )}
     </div>
   )
