@@ -98,6 +98,7 @@ const CSS = `
     .anim-corner-right,.anim-corner-left{width:130px;height:130px;}
     .anim-top{width:130px;height:130px;}
   }
+  @keyframes winner-pop{0%{transform:scale(0.5);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
 `
 
 function extractYouTubeId(url: string): string | null {
@@ -382,6 +383,48 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
   )
 }
 
+function NameSpinner({ students, onClose }: { students: { id: string; name: string }[], onClose: () => void }) {
+  const [phase, setPhase] = useState<"idle" | "spinning" | "done">("idle")
+  const [current, setCurrent] = useState("")
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  function spin() {
+    if (students.length === 0 || phase === "spinning") return
+    const winner = students[Math.floor(Math.random() * students.length)].name
+    setPhase("spinning")
+    const startTime = Date.now()
+    const duration = 3200
+    const tick = () => {
+      const elapsed = Date.now() - startTime
+      if (elapsed >= duration) { setCurrent(winner); setPhase("done"); return }
+      const delay = 55 + Math.pow(elapsed / duration, 1.8) * 320
+      setCurrent(students[Math.floor(Math.random() * students.length)].name)
+      timerRef.current = setTimeout(tick, delay)
+    }
+    timerRef.current = setTimeout(tick, 55)
+  }
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current) }, [])
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 60, background: "rgba(0,0,0,0.78)", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(4px)" }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: "var(--ink)", border: "2px solid rgba(176,141,63,0.4)", borderRadius: 20, padding: "40px 56px", textAlign: "center", minWidth: 360, direction: "rtl", position: "relative", boxShadow: "0 20px 60px rgba(0,0,0,0.6)" }}>
+        <button onClick={onClose} style={{ position: "absolute", top: 14, left: 14, background: "none", border: "none", color: "rgba(245,241,230,0.35)", fontSize: 22, cursor: "pointer", lineHeight: 1, padding: 4 }}>✕</button>
+        <div style={{ color: "var(--gold)", fontSize: 12, fontWeight: 700, letterSpacing: 2.5, marginBottom: 28, textTransform: "uppercase" }}>גלגל שמות</div>
+        <div style={{ height: 120, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(245,241,230,0.06)", borderRadius: 14, marginBottom: 28, overflow: "hidden", border: phase === "done" ? "1.5px solid rgba(176,141,63,0.4)" : "1.5px solid rgba(245,241,230,0.06)" }}>
+          {phase === "idle" && <span style={{ color: "rgba(245,241,230,0.2)", fontSize: 40, fontFamily: "'Frank Ruhl Libre',serif" }}>?</span>}
+          {phase === "spinning" && <span style={{ color: "var(--paper)", fontSize: 34, fontFamily: "'Frank Ruhl Libre',serif", fontWeight: 900, filter: "blur(1.5px)", userSelect: "none" }}>{current}</span>}
+          {phase === "done" && <span style={{ color: "var(--gold)", fontSize: 42, fontFamily: "'Frank Ruhl Libre',serif", fontWeight: 900, animation: "winner-pop 0.5s cubic-bezier(0.175,0.885,0.32,1.275) forwards", userSelect: "none" }}>{current}</span>}
+        </div>
+        <button onClick={spin} disabled={phase === "spinning"} style={{ background: phase === "done" ? "rgba(176,141,63,0.15)" : "var(--seal)", color: "var(--paper)", border: phase === "done" ? "1.5px solid var(--gold)" : "none", borderRadius: 10, padding: "12px 36px", fontFamily: "'Heebo',sans-serif", fontWeight: 700, fontSize: 16, cursor: phase === "spinning" ? "default" : "pointer", opacity: phase === "spinning" ? 0.55 : 1, transition: ".2s" }}>
+          {phase === "idle" ? "🎲 סובב" : phase === "spinning" ? "מסתובב..." : "🎲 שוב"}
+        </button>
+        {phase === "done" && <div style={{ color: "rgba(245,241,230,0.45)", fontSize: 12, marginTop: 16 }}>{students.length} תלמידים בכיתה</div>}
+      </div>
+    </div>
+  )
+}
+
 function AnimOverlay({ anim, lottieDivRef }: {
   anim: SlideAnimation
   lottieDivRef: React.RefObject<HTMLDivElement | null>
@@ -417,12 +460,20 @@ export default function PresentPage({ params }: Props) {
   const [animActive, setAnimActive] = useState(false)
   const lottieDivRef = useRef<HTMLDivElement>(null)
   const [isMobile, setIsMobile] = useState(false)
+  const [spinnerOpen, setSpinnerOpen] = useState(false)
+  const [students, setStudents] = useState<{ id: string; name: string }[]>([])
 
   useEffect(() => {
     const update = () => setIsMobile(window.innerWidth < 768)
     update()
     window.addEventListener("resize", update)
     return () => window.removeEventListener("resize", update)
+  }, [])
+
+  useEffect(() => {
+    fetch("/api/class/students").then(r => r.ok ? r.json() : []).then(d => {
+      if (Array.isArray(d)) setStudents(d)
+    })
   }, [])
 
   useEffect(() => {
@@ -649,6 +700,9 @@ export default function PresentPage({ params }: Props) {
             </svg>
           </button>
 
+          {/* Name spinner */}
+          <button className="icon-btn" onClick={() => setSpinnerOpen(true)} title="גלגל שמות" style={{ fontSize: 16 }}>🎲</button>
+
           {session ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ background: "rgba(176,141,63,0.2)", border: "1px solid var(--gold)", color: "var(--gold)", borderRadius: 6, padding: "4px 10px", fontSize: 13, fontFamily: "'Heebo'", fontWeight: 700, letterSpacing: 2 }}>
@@ -742,6 +796,10 @@ export default function PresentPage({ params }: Props) {
             </div>
           </div>
         </>
+      )}
+
+      {spinnerOpen && (
+        <NameSpinner students={students} onClose={() => setSpinnerOpen(false)} />
       )}
     </div>
   )
