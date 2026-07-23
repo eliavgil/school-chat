@@ -493,10 +493,18 @@ function UsersTab() {
                   {u.phone && <div className="text-white/40 text-xs" dir="ltr">{u.phone}</div>}
                   {u.requestedChildName && <div className="text-amber-300 text-xs mt-1">{u.parentType ?? "הורה"} של: {u.requestedChildName}</div>}
                 </div>
-                <button onClick={() => setExpandedId(expandedId === u.id ? null : u.id)}
-                  className="bg-white/10 text-white rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-white/20 interactive">
-                  {expandedId === u.id ? "ביטול" : "אשר גישה"}
-                </button>
+                <div className="flex gap-2 items-center">
+                  <button onClick={() => setExpandedId(expandedId === u.id ? null : u.id)}
+                    className="bg-white/10 text-white rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-white/20 interactive">
+                    {expandedId === u.id ? "ביטול" : "אשר גישה"}
+                  </button>
+                  <button
+                    onClick={() => { if (confirm(`למחוק לחלוטין את חשבון ${u.name ?? u.email}?\nהמשתמש יוכל להירשם מחדש.`)) action(u.id, "delete-user") }}
+                    title="מחק חשבון"
+                    className="text-xs text-red-500/60 hover:text-red-500 interactive">
+                    🗑
+                  </button>
+                </div>
               </div>
               {expandedId === u.id && (
                 <ApproveWithLink students={students} loading={actionLoading === u.id}
@@ -561,7 +569,15 @@ function UsersTab() {
                     ))}
                   </div>
                 </div>
-                <button onClick={() => action(p.id, "deny")} className="text-xs text-red-400/70 hover:text-red-400 interactive whitespace-nowrap">בטל גישה</button>
+                <div className="flex gap-2 items-center flex-shrink-0">
+                  <button onClick={() => action(p.id, "deny")} className="text-xs text-red-400/70 hover:text-red-400 interactive whitespace-nowrap">בטל גישה</button>
+                  <button
+                    onClick={() => { if (confirm(`למחוק לחלוטין את חשבון ${p.name ?? p.email}?\nהמשתמש יוכל להירשם מחדש.`)) action(p.id, "delete-user") }}
+                    title="מחק חשבון"
+                    className="text-xs text-red-500/60 hover:text-red-500 interactive">
+                    🗑
+                  </button>
+                </div>
               </div>
             ))}
           </div>}
