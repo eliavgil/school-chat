@@ -11,6 +11,16 @@ export const ANIMATION_REGISTRY: Record<string, { label: string; emoji: string }
   death_dance: { label: "ריקוד מוות", emoji: "💀" },
   dancing_bug: { label: "חרק רוקד", emoji: "🐛" },
   cat: { label: "חתול", emoji: "🐱" },
+  crying: { label: "בוכה", emoji: "😭" },
+  snowman: { label: "איש שלג", emoji: "⛄" },
+  bear: { label: "דוב", emoji: "🐻" },
+  piggy: { label: "קופת חיסכון", emoji: "🐷" },
+  survey: { label: "סקר", emoji: "📋" },
+  frog: { label: "צפרדע", emoji: "🐸" },
+  watermelon: { label: "אבטיח", emoji: "🍉" },
+  strawberry: { label: "תות", emoji: "🍓" },
+  pencil: { label: "עיפרון", emoji: "✏️" },
+  loading_hand: { label: "טעינה", emoji: "👋" },
 }
 
 export const ANIMATION_DELAYS = [
