@@ -1,5 +1,11 @@
 import { NextResponse } from "next/server"
+import { createHash } from "crypto"
 import { adminClient } from "@/lib/lessons/supabase"
+
+function toUUID(id: string): string {
+  const h = createHash("md5").update(id).digest("hex")
+  return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20,32)}`
+}
 
 export async function POST(req: Request) {
   const { session_id, student_id, slide_id, question_id, answer } = await req.json()
@@ -8,7 +14,7 @@ export async function POST(req: Request) {
   }
 
   const sb = adminClient()
-  const sid = (student_id as string) || "anonymous"
+  const sid = toUUID((student_id as string) || "anonymous")
   const qid = (question_id as string) || slide_id
 
   const { error } = await sb
