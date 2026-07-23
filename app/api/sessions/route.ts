@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { adminClient } from "@/lib/lessons/supabase"
+import { prisma } from "@/lib/db/prisma"
 
 function genCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
@@ -12,8 +13,19 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { lesson_id, class_id = null } = await req.json()
+  const { lesson_id, class_id: provided_class_id } = await req.json()
   if (!lesson_id) return NextResponse.json({ error: "lesson_id required" }, { status: 400 })
+
+  // Resolve class_id: use provided value, or look it up from the teacher's user record
+  let class_id = provided_class_id ?? null
+  if (!class_id) {
+    const user = await prisma.user.findUnique({
+      where: { id: (session.user as any).id },
+      select: { classId: true },
+    })
+    class_id = user?.classId ?? null
+  }
+  if (!class_id) return NextResponse.json({ error: "class_id required" }, { status: 400 })
 
   const sb = adminClient()
 
