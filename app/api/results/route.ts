@@ -16,7 +16,7 @@ export async function GET(req: Request) {
 
   const [lessonsRes, sessionsRes, responsesRes, classes] = await Promise.all([
     sb.from("lessons").select("id, title, slides"),
-    sb.from("live_sessions").select("id, lesson_id, room_code, created_at").order("created_at", { ascending: false }),
+    sb.from("live_sessions").select("id, lesson_id, room_code").order("id", { ascending: false }),
     sb.from("responses").select("session_id, student_id, slide_id, question_id, answer"),
     prisma.class.findMany({ include: { students: { select: { id: true, name: true, classId: true } } } }),
   ])
@@ -92,7 +92,7 @@ export async function GET(req: Request) {
       lessonId: sess.lesson_id,
       lessonTitle: lesson?.title ?? "שיעור ללא שם",
       roomCode: sess.room_code,
-      createdAt: sess.created_at,
+      createdAt: null,
       slidesWithQuestions,
       studentResults,
     }

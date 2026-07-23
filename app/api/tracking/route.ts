@@ -12,7 +12,7 @@ export async function GET() {
 
   const [lessonsRes, sessionsRes, responsesRes, classes] = await Promise.all([
     sb.from("lessons").select("id, title, created_at").order("created_at", { ascending: true }),
-    sb.from("live_sessions").select("id, lesson_id, class_id, room_code, created_at").order("created_at", { ascending: false }),
+    sb.from("live_sessions").select("id, lesson_id, class_id, room_code").order("id", { ascending: false }),
     sb.from("responses").select("session_id, student_id"),
     prisma.class.findMany({
       select: { id: true, name: true, displayName: true },
@@ -73,7 +73,7 @@ export async function GET() {
     // Sessions that were for this class, newest first
     const classSessions = sessions
       .filter(s => sessionClassMap.get(s.id) === cls.id)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .sort((a, b) => (a.id < b.id ? 1 : -1))
 
     const taughtLessonIds = new Set(classSessions.map(s => s.lesson_id))
 
@@ -106,7 +106,7 @@ export async function GET() {
         lessonTitle: l.title,
         status,
         sessionId: sess?.id ?? null,
-        sessionDate: sess?.created_at ?? null,
+        sessionDate: null,
         roomCode: sess?.room_code ?? null,
       }
     })
@@ -130,7 +130,7 @@ export async function GET() {
       sessionId: s.id,
       lessonId: s.lesson_id,
       lessonTitle: lessons.find(l => l.id === s.lesson_id)?.title ?? "שיעור לא ידוע",
-      date: s.created_at,
+      date: null,
       roomCode: s.room_code,
     }))
 
