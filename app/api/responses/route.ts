@@ -8,25 +8,20 @@ export async function POST(req: Request) {
   }
 
   const sb = adminClient()
+  const sid = (student_id as string) || "anonymous"
+  const qid = (question_id as string) || slide_id
 
-  // Upsert with unique constraint enforcement
-  const { data, error } = await sb
+  const { error } = await sb
     .from("responses")
-    .upsert(
-      {
-        session_id,
-        student_id: student_id ?? "anonymous",
-        slide_id,
-        question_id: question_id || slide_id,
-        answer: String(answer),
-      },
-      { onConflict: "session_id,student_id,slide_id,question_id", ignoreDuplicates: false }
-    )
-    .select()
-    .single()
+    .insert({ session_id, student_id: sid, slide_id, question_id: qid, answer: String(answer) })
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  return NextResponse.json(data, { status: 201 })
+  if (error) {
+    // 23505 = unique_violation: student already answered, treat as success
+    if (error.code === "23505") return NextResponse.json({ ok: true })
+    return NextResponse.json({ error: error.message, code: error.code }, { status: 500 })
+  }
+
+  return NextResponse.json({ ok: true }, { status: 201 })
 }
 
 // Aggregate results for a given session + slide
