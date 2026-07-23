@@ -199,11 +199,19 @@ function QuestionBlock({ question, sessionId, slideId, studentId, type, question
     if (done || submitting) return
     setSubmitting(true)
     setAnswered(optIdx)
-    await fetch("/api/responses", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session_id: sessionId, student_id: studentId, slide_id: slideId, question_id: questionId, answer: String(optIdx) }),
-    })
+    try {
+      const res = await fetch("/api/responses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: sessionId, student_id: studentId, slide_id: slideId, question_id: questionId, answer: String(optIdx) }),
+      })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        console.error("POST /api/responses failed:", res.status, err)
+      }
+    } catch (e) {
+      console.error("POST /api/responses error:", e)
+    }
     setDone(true)
     setSubmitting(false)
   }
