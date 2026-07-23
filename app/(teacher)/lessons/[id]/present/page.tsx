@@ -551,23 +551,11 @@ export default function PresentPage({ params }: Props) {
     fetchAgg(session.id, slide.id)
   }, [session?.id, slide?.id])
 
-  // Supabase Realtime: listen for new responses
+  // Poll for new responses every 3 seconds while a session is active
   useEffect(() => {
     if (!session || !slide) return
-    let sub: any
-    try {
-      const sb = browserClient()
-      sub = sb
-        .channel(`responses:${session.id}:${slide.id}`)
-        .on("postgres_changes", {
-          event: "INSERT",
-          schema: "public",
-          table: "responses",
-          filter: `session_id=eq.${session.id}`,
-        }, () => fetchAgg(session.id, slide.id))
-        .subscribe()
-    } catch {}
-    return () => { sub?.unsubscribe() }
+    const interval = setInterval(() => fetchAgg(session.id, slide.id), 3000)
+    return () => clearInterval(interval)
   }, [session?.id, slide?.id])
 
   async function fetchAgg(sessionId: string, slideId: string) {

@@ -14,12 +14,13 @@ export async function POST(req: Request) {
   }
 
   const sb = adminClient()
+  const esid = toUUID(String(session_id))
   const sid = toUUID((student_id as string) || "anonymous")
   const qid = (question_id as string) || slide_id
 
   const { error } = await sb
     .from("responses")
-    .insert({ session_id, student_id: sid, slide_id, question_id: qid, answer: String(answer) })
+    .insert({ session_id: esid, student_id: sid, slide_id, question_id: qid, answer: String(answer) })
 
   if (error) {
     // 23505 = unique_violation: student already answered, treat as success
@@ -42,7 +43,7 @@ export async function GET(req: Request) {
   const { data, error } = await sb
     .from("responses")
     .select("question_id, answer")
-    .eq("session_id", session_id)
+    .eq("session_id", toUUID(session_id))
     .eq("slide_id", slide_id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
