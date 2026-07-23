@@ -21,6 +21,10 @@ export const ANIMATION_REGISTRY: Record<string, { label: string; emoji: string }
   strawberry: { label: "תות", emoji: "🍓" },
   pencil: { label: "עיפרון", emoji: "✏️" },
   loading_hand: { label: "טעינה", emoji: "👋" },
+  chicken: { label: "תרנגולת", emoji: "🐔" },
+  jumping: { label: "קופץ", emoji: "🤸" },
+  camel: { label: "גמל", emoji: "🐪" },
+  toucan: { label: "טוקן", emoji: "🦜" },
 }
 
 export const ANIMATION_DELAYS = [
