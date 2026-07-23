@@ -1,6 +1,11 @@
 export const ANIMATION_REGISTRY: Record<string, { label: string; emoji: string }> = {
   elephant: { label: "פיל", emoji: "🐘" },
   dog: { label: "כלב", emoji: "🐶" },
+  turkey: { label: "הודו", emoji: "🦃" },
+  bird: { label: "ציפור", emoji: "🐦" },
+  totoro: { label: "טוטורו", emoji: "🌿" },
+  robot: { label: "רובוט", emoji: "🤖" },
+  giraffe: { label: "ג'ירפה", emoji: "🦒" },
 }
 
 export const ANIMATION_DELAYS = [
