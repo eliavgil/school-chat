@@ -2,7 +2,6 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { adminClient } from "@/lib/lessons/supabase"
-import { prisma } from "@/lib/db/prisma"
 
 function genCode() {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
@@ -13,29 +12,36 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { lesson_id, class_id: provided_class_id } = await req.json()
+  const { lesson_id } = await req.json()
   if (!lesson_id) return NextResponse.json({ error: "lesson_id required" }, { status: 400 })
 
-  // Resolve class_id: use provided value → user.classId → first class where user is a teacher
-  const teacherId = (session.user as any).id as string
-  let class_id = provided_class_id ?? null
-  if (!class_id) {
-    const user = await prisma.user.findUnique({
-      where: { id: teacherId },
-      select: { classId: true },
-    })
-    class_id = user?.classId ?? null
-  }
-  if (!class_id) {
-    const cls = await prisma.class.findFirst({
-      where: { teachers: { some: { id: teacherId } } },
-      select: { id: true },
-    })
-    class_id = cls?.id ?? null
-  }
-  if (!class_id) return NextResponse.json({ error: "No class found for this teacher" }, { status: 400 })
-
   const sb = adminClient()
+
+  // Derive class_id from the lesson itself (both are in Supabase and share the same UUID space)
+  const { data: lessonRow } = await sb
+    .from("lessons")
+    .select("class_id")
+    .eq("id", lesson_id)
+    .single()
+  const class_id = lessonRow?.class_id ?? null
+
+  // If the lesson has no class_id, use or create the default class
+  let resolved_class_id = class_id
+  if (!resolved_class_id) {
+    const { data: firstClass } = await sb.from("classes").select("id").limit(1).single()
+    if (firstClass) {
+      resolved_class_id = firstClass.id
+    } else {
+      // No classes exist yet — create the default one
+      const { data: newClass } = await sb
+        .from("classes")
+        .insert({ name: "י4" })
+        .select("id")
+        .single()
+      resolved_class_id = newClass?.id ?? null
+    }
+  }
+  if (!resolved_class_id) return NextResponse.json({ error: "Failed to resolve class" }, { status: 500 })
 
   // Mark any existing active sessions for this lesson as inactive
   await sb.from("live_sessions").update({ is_active: false }).eq("lesson_id", lesson_id).eq("is_active", true)
@@ -51,7 +57,7 @@ export async function POST(req: Request) {
 
   const { data, error } = await sb
     .from("live_sessions")
-    .insert({ lesson_id, class_id, room_code: code, current_slide_index: 0, is_active: true })
+    .insert({ lesson_id, class_id: resolved_class_id, room_code: code, current_slide_index: 0, is_active: true })
     .select()
     .single()
 
