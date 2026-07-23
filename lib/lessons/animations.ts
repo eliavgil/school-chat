@@ -1,5 +1,6 @@
 export const ANIMATION_REGISTRY: Record<string, { label: string; emoji: string }> = {
   elephant: { label: "פיל", emoji: "🐘" },
+  dog: { label: "כלב", emoji: "🐶" },
 }
 
 export const ANIMATION_DELAYS = [
