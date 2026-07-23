@@ -17,15 +17,16 @@
     "@types/papaparse": "^5.5.2",
     "@types/web-push": "^3.6.4",
     "googleapis": "^173.0.0",
+    "lottie-web": "^5.12.2",
     "next": "16.2.9",
     "next-auth": "^4.24.14",
     "papaparse": "^5.5.4",
     "prisma": "^5.22.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
+    "react-qr-code": "^2.2.0",
     "web-push": "^3.6.7",
-    "xlsx": "^0.18.5",
-    "lottie-web": "^5.12.2"
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

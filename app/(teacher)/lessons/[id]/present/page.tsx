@@ -1,5 +1,6 @@
 "use client"
 import React, { useEffect, useState, useCallback, use, useRef } from "react"
+import QRCode from "react-qr-code"
 import { browserClient } from "@/lib/lessons/supabase"
 import type { Lesson, Slide, LiveSession, SlideAnimation } from "@/lib/lessons/types"
 
@@ -515,6 +516,7 @@ export default function PresentPage({ params }: Props) {
   const lottieDivRef = useRef<HTMLDivElement>(null)
   const [isMobile, setIsMobile] = useState(false)
   const [spinnerOpen, setSpinnerOpen] = useState(false)
+  const [qrOpen, setQrOpen] = useState(false)
   const [students, setStudents] = useState<{ id: string; name: string }[]>([])
 
   useEffect(() => {
@@ -765,9 +767,11 @@ export default function PresentPage({ params }: Props) {
 
           {session ? (
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ background: "rgba(176,141,63,0.2)", border: "1px solid var(--gold)", color: "var(--gold)", borderRadius: 6, padding: "4px 10px", fontSize: 13, fontFamily: "'Heebo'", fontWeight: 700, letterSpacing: 2 }}>
-                🔴 {session.room_code}
-              </span>
+              <button onClick={() => setQrOpen(true)}
+                style={{ background: "rgba(176,141,63,0.2)", border: "1px solid var(--gold)", color: "var(--gold)", borderRadius: 6, padding: "4px 10px", fontSize: 13, fontFamily: "'Heebo'", fontWeight: 700, letterSpacing: 2, cursor: "pointer" }}
+                title="הצג QR">
+                🔴 {session.room_code} ⊞
+              </button>
               <button onClick={endSession}
                 style={{ background: "var(--seal)", color: "var(--paper)", border: "none", borderRadius: 6, padding: "5px 10px", fontFamily: "'Heebo'", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
                 סיים
@@ -860,6 +864,41 @@ export default function PresentPage({ params }: Props) {
 
       {spinnerOpen && (
         <NameSpinner students={students} onClose={() => setSpinnerOpen(false)} />
+      )}
+
+      {qrOpen && session && (
+        <div onClick={() => setQrOpen(false)} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 60,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: "var(--paper)", borderRadius: 20, padding: "32px 28px",
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 20,
+            maxWidth: 340, width: "90%",
+          }}>
+            <div style={{ fontFamily: "'Frank Ruhl Libre',serif", fontWeight: 900, color: "var(--ink)", fontSize: 20 }}>
+              הצטרפות לשיעור
+            </div>
+            <QRCode
+              value={`${typeof window !== "undefined" ? window.location.origin : ""}/live/${session.room_code}`}
+              size={220}
+              fgColor="#1B2A4A"
+              bgColor="#F5F1E6"
+              style={{ borderRadius: 8 }}
+            />
+            <div style={{ color: "var(--gold)", fontFamily: "'Heebo',sans-serif", fontWeight: 700, fontSize: 22, letterSpacing: 4 }}>
+              {session.room_code}
+            </div>
+            <div style={{ color: "rgba(27,42,74,0.5)", fontSize: 13, textAlign: "center" }}>
+              סרוק את הקוד או גש לאתר והזן את הקוד
+            </div>
+            <button onClick={() => setQrOpen(false)} style={{
+              background: "var(--ink)", color: "var(--paper)", border: "none",
+              borderRadius: 10, padding: "10px 28px", fontFamily: "'Heebo'",
+              fontWeight: 700, fontSize: 14, cursor: "pointer",
+            }}>סגור</button>
+          </div>
+        </div>
       )}
     </div>
   )
