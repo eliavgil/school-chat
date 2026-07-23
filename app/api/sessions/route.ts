@@ -16,16 +16,24 @@ export async function POST(req: Request) {
   const { lesson_id, class_id: provided_class_id } = await req.json()
   if (!lesson_id) return NextResponse.json({ error: "lesson_id required" }, { status: 400 })
 
-  // Resolve class_id: use provided value, or look it up from the teacher's user record
+  // Resolve class_id: use provided value → user.classId → first class where user is a teacher
+  const teacherId = (session.user as any).id as string
   let class_id = provided_class_id ?? null
   if (!class_id) {
     const user = await prisma.user.findUnique({
-      where: { id: (session.user as any).id },
+      where: { id: teacherId },
       select: { classId: true },
     })
     class_id = user?.classId ?? null
   }
-  if (!class_id) return NextResponse.json({ error: "class_id required" }, { status: 400 })
+  if (!class_id) {
+    const cls = await prisma.class.findFirst({
+      where: { teachers: { some: { id: teacherId } } },
+      select: { id: true },
+    })
+    class_id = cls?.id ?? null
+  }
+  if (!class_id) return NextResponse.json({ error: "No class found for this teacher" }, { status: 400 })
 
   const sb = adminClient()
 
