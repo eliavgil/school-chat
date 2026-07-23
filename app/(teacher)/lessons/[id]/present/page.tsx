@@ -250,12 +250,18 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
       {body && <div>{renderBody(body)}</div>}
 
       {/* POLL / QUIZ — bar chart results */}
-      {(type === "poll" || type === "quiz") && questions && questions.map(q => {
+      {(type === "poll" || type === "quiz") && questions && questions.map((q, qi) => {
         const qAgg = agg[q.id] ?? {}
         const total = Object.values(qAgg).reduce((s, v) => s + v, 0)
+        const letters = ["א", "ב", "ג", "ד", "ה"]
         return (
-          <div key={q.id} style={{ marginBottom: 20 }}>
-            <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10 }}>{q.text}</div>
+          <div key={q.id} style={{ marginBottom: 28, paddingTop: qi > 0 ? 16 : 0, borderTop: qi > 0 ? "1px solid var(--line)" : "none" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 12 }}>
+              {questions.length > 1 && (
+                <span style={{ background: "var(--seal)", color: "var(--paper)", borderRadius: "50%", width: 22, height: 22, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, flexShrink: 0, marginTop: 1 }}>{qi + 1}</span>
+              )}
+              <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15, lineHeight: 1.4 }}>{q.text}</div>
+            </div>
             <div style={{ maxWidth: 560 }}>
               {q.options.map((opt, oi) => {
                 const cnt = qAgg[String(oi)] ?? 0
@@ -264,14 +270,17 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
                 return (
                   <div key={oi} className="bar-row">
                     <div className="bar-label">
-                      <span style={{ color: isCorrect ? "var(--ok)" : undefined }}>{opt}{isCorrect ? " ✓" : ""}</span>
+                      <span style={{ color: isCorrect ? "var(--ok)" : undefined }}>
+                        <strong style={{ color: isCorrect ? "var(--ok)" : "var(--seal)", marginLeft: 5 }}>{letters[oi] ?? oi + 1}.</strong>
+                        {" "}{opt}{isCorrect ? " ✓" : ""}
+                      </span>
                       <span>{cnt > 0 ? `${cnt} (${pct}%)` : "0"}</span>
                     </div>
                     <div className="bar-bg"><div className="bar-fill" style={{ width: `${pct}%` }} /></div>
                   </div>
                 )
               })}
-              {total > 0 && <div style={{ fontSize: 12, color: "rgba(27,42,74,0.45)", marginTop: 4 }}>{total} תגובות</div>}
+              {total > 0 && <div style={{ fontSize: 12, color: "rgba(27,42,74,0.45)", marginTop: 6 }}>{total} תגובות</div>}
             </div>
           </div>
         )
@@ -358,18 +367,21 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
       )}
 
       {/* FEEDBACK — show question text */}
-      {type === "feedback" && questions && questions.map(q => (
-        <div key={q.id} style={{ marginBottom: 16 }}>
+      {type === "feedback" && questions && questions.map((q, qi) => (
+        <div key={q.id} style={{ marginBottom: 20, paddingTop: qi > 0 ? 14 : 0, borderTop: qi > 0 ? "1px solid var(--line)" : "none" }}>
           <div className="qbox">{q.text}</div>
           {agg[q.id] && (
-            <div style={{ marginTop: 8, maxWidth: 480 }}>
+            <div style={{ marginTop: 10, maxWidth: 480 }}>
               {q.options.map((opt, oi) => {
                 const cnt = (agg[q.id] ?? {})[String(oi)] ?? 0
                 const total = Object.values(agg[q.id] ?? {}).reduce((s, v) => s + v, 0)
                 const pct = total ? Math.round((cnt / total) * 100) : 0
                 return (
                   <div key={oi} className="bar-row">
-                    <div className="bar-label"><span>{opt}</span><span>{cnt}</span></div>
+                    <div className="bar-label">
+                      <span>{"★".repeat(oi + 1)} {opt}</span>
+                      <span>{cnt}</span>
+                    </div>
                     <div className="bar-bg"><div className="bar-fill" style={{ width: `${pct}%` }} /></div>
                   </div>
                 )
