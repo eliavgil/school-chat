@@ -303,12 +303,23 @@ function SlideEditor({ slide, onChange, onDelete, dragHandleProps }: {
             )}
 
             {/* External link */}
-            <div className="field" style={{ marginBottom: 0 }}>
+            <div className="field">
               <label>קישור לחומר חיצוני (URL)</label>
               <input
                 value={slide.link_url ?? ""}
                 onChange={e => onChange({ ...slide, link_url: e.target.value || null })}
                 placeholder="https://..."
+                type="url"
+              />
+            </div>
+
+            {/* Audio */}
+            <div className="field" style={{ marginBottom: 0 }}>
+              <label>🔊 קישור לאודיו (MP3 / WAV)</label>
+              <input
+                value={slide.audio_url ?? ""}
+                onChange={e => onChange({ ...slide, audio_url: e.target.value || null })}
+                placeholder="https://... .mp3"
                 type="url"
               />
             </div>

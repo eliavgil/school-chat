@@ -213,6 +213,41 @@ function renderBody(text: string) {
   })
 }
 
+function AudioButton({ url }: { url: string }) {
+  const [playing, setPlaying] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  function toggle() {
+    if (!audioRef.current) {
+      audioRef.current = new Audio(url)
+      audioRef.current.onended = () => setPlaying(false)
+    }
+    if (playing) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+      setPlaying(false)
+    } else {
+      audioRef.current.play()
+      setPlaying(true)
+    }
+  }
+
+  useEffect(() => () => { audioRef.current?.pause() }, [])
+
+  return (
+    <button onClick={toggle} style={{
+      display: "inline-flex", alignItems: "center", gap: 7,
+      background: playing ? "#A23B2E" : "#1B2A4A",
+      color: "#F5F1E6", border: "none", borderRadius: 10,
+      padding: "9px 18px", fontFamily: "'Heebo',sans-serif",
+      fontWeight: 700, fontSize: 14, cursor: "pointer",
+      marginBottom: 16, transition: ".2s",
+    }}>
+      {playing ? "⏹ עצור" : "🔊 נגן"}
+    </button>
+  )
+}
+
 function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
   slide: Slide
   agg: AggResult
@@ -246,6 +281,9 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
 
       {/* Media: image (non-background) + YouTube + link */}
       <SlideMedia slide={slide} />
+
+      {/* Audio player */}
+      {slide.audio_url && <AudioButton url={slide.audio_url} key={slide.id} />}
 
       {body && <div>{renderBody(body)}</div>}
 
@@ -688,35 +726,41 @@ export default function PresentPage({ params }: Props) {
           {lesson.title}
         </div>
 
-        {/* Progress */}
-        <div style={{ width: 200, height: 3, background: "rgba(245,241,230,0.15)", margin: "0 16px", borderRadius: 2, overflow: "hidden", flexShrink: 0 }}>
-          <div style={{ height: "100%", width: `${((idx + 1) / total) * 100}%`, background: "linear-gradient(90deg,var(--gold),var(--seal))", transition: "width .3s ease" }} />
-        </div>
+        {/* Progress — desktop only */}
+        {!isMobile && (
+          <div style={{ width: 200, height: 3, background: "rgba(245,241,230,0.15)", margin: "0 16px", borderRadius: 2, overflow: "hidden", flexShrink: 0 }}>
+            <div style={{ height: "100%", width: `${((idx + 1) / total) * 100}%`, background: "linear-gradient(90deg,var(--gold),var(--seal))", transition: "width .3s ease" }} />
+          </div>
+        )}
 
-        <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: isMobile ? 6 : 10, flexShrink: 0 }}>
           <span style={{ color: "rgba(245,241,230,0.65)", fontSize: 13, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>
             {String(idx + 1).padStart(2, "0")} / {String(total).padStart(2, "0")}
           </span>
 
-          {/* PDF export */}
-          <button onClick={() => window.open(`/lessons/${id}/print`, "_blank")}
-            style={{ background: "rgba(245,241,230,0.1)", border: "1px solid rgba(245,241,230,0.3)", borderRadius: 7, color: "rgba(245,241,230,0.85)", padding: "0 12px", height: 34, display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, fontFamily: "'Heebo',sans-serif", fontWeight: 700, flexShrink: 0, transition: ".15s" }}
-            onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(245,241,230,0.18)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--paper)" }}
-            onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(245,241,230,0.1)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(245,241,230,0.85)" }}>
-            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm1-4h.01"/>
-            </svg>
-            PDF
-          </button>
+          {/* PDF export — desktop only */}
+          {!isMobile && (
+            <button onClick={() => window.open(`/lessons/${id}/print`, "_blank")}
+              style={{ background: "rgba(245,241,230,0.1)", border: "1px solid rgba(245,241,230,0.3)", borderRadius: 7, color: "rgba(245,241,230,0.85)", padding: "0 12px", height: 34, display: "flex", alignItems: "center", gap: 6, cursor: "pointer", fontSize: 12, fontFamily: "'Heebo',sans-serif", fontWeight: 700, flexShrink: 0, transition: ".15s" }}
+              onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(245,241,230,0.18)"; (e.currentTarget as HTMLButtonElement).style.color = "var(--paper)" }}
+              onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.background = "rgba(245,241,230,0.1)"; (e.currentTarget as HTMLButtonElement).style.color = "rgba(245,241,230,0.85)" }}>
+              <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm1-4h.01"/>
+              </svg>
+              PDF
+            </button>
+          )}
 
-          {/* Edit button */}
-          <button className="icon-btn" onClick={() => window.open(`/lessons/${id}/edit`, "_blank")} title="ערוך שיעור">
-            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-            </svg>
-          </button>
+          {/* Edit button — desktop only */}
+          {!isMobile && (
+            <button className="icon-btn" onClick={() => window.open(`/lessons/${id}/edit`, "_blank")} title="ערוך שיעור">
+              <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+              </svg>
+            </button>
+          )}
 
-          {/* Name spinner */}
+          {/* Name spinner — always visible */}
           <button className="icon-btn" onClick={() => setSpinnerOpen(true)} title="גלגל שמות" style={{ fontSize: 16 }}>🎲</button>
 
           {session ? (
