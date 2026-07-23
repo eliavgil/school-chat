@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { useSession, signOut } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import BottomNav from "@/app/components/BottomNav"
 import ComingSoon from "@/app/components/ComingSoon"
@@ -43,7 +44,9 @@ const CHAT_STORAGE_KEY = "student-chat-history"
 
 export default function StudentPage() {
   const { data: session, status } = useSession()
+  const router = useRouter()
   const [mainTab, setMainTab] = useState("מידע")
+  const [joinCode, setJoinCode] = useState("")
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
@@ -182,6 +185,26 @@ export default function StudentPage() {
           </div>
         </div>
       </header>
+
+      {/* Join lesson bar */}
+      <div className="bg-[#1B2A4A] px-4 py-2.5 flex items-center gap-2 flex-shrink-0">
+        <span className="text-[#B08D3F] text-sm font-bold whitespace-nowrap">📚 קוד שיעור:</span>
+        <input
+          value={joinCode}
+          onChange={e => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6))}
+          onKeyDown={e => { if (e.key === "Enter" && joinCode.length === 6) router.push(`/live/${joinCode}`) }}
+          placeholder="XXXXXX"
+          maxLength={6}
+          dir="ltr"
+          className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-white placeholder:text-white/30 text-sm font-mono tracking-widest focus:outline-none focus:border-[#B08D3F]"
+        />
+        <button
+          onClick={() => { if (joinCode.length === 6) router.push(`/live/${joinCode}`) }}
+          disabled={joinCode.length !== 6}
+          className="bg-[#A23B2E] disabled:opacity-40 text-white text-sm font-bold px-4 py-1.5 rounded-lg whitespace-nowrap transition-opacity">
+          כנס
+        </button>
+      </div>
 
       {/* Content */}
       <div className="flex-1 overflow-hidden flex flex-col">
