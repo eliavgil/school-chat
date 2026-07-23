@@ -28,13 +28,12 @@ export const ANIMATION_REGISTRY: Record<string, { label: string; emoji: string }
 }
 
 export const ANIMATION_DELAYS = [
-  { value: 0,   label: "מיד" },
-  { value: 5,   label: "5 שניות" },
-  { value: 10,  label: "10 שניות" },
-  { value: 30,  label: "30 שניות" },
-  { value: 60,  label: "דקה" },
-  { value: 120, label: "2 דקות" },
-  { value: 180, label: "3 דקות" },
+  { value: 0,  label: "מיד" },
+  { value: 3,  label: "3 שניות" },
+  { value: 5,  label: "5 שניות" },
+  { value: 10, label: "10 שניות" },
+  { value: 30, label: "30 שניות" },
+  { value: 60, label: "דקה" },
 ]
 
 export const ANIMATION_POSITIONS = [
