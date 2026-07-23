@@ -213,6 +213,41 @@ function renderBody(text: string) {
   })
 }
 
+function AudioButton({ url }: { url: string }) {
+  const [playing, setPlaying] = useState(false)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  function toggle() {
+    if (!audioRef.current) {
+      audioRef.current = new Audio(url)
+      audioRef.current.onended = () => setPlaying(false)
+    }
+    if (playing) {
+      audioRef.current.pause()
+      audioRef.current.currentTime = 0
+      setPlaying(false)
+    } else {
+      audioRef.current.play()
+      setPlaying(true)
+    }
+  }
+
+  useEffect(() => () => { audioRef.current?.pause() }, [])
+
+  return (
+    <button onClick={toggle} style={{
+      display: "inline-flex", alignItems: "center", gap: 7,
+      background: playing ? "#A23B2E" : "#1B2A4A",
+      color: "#F5F1E6", border: "none", borderRadius: 10,
+      padding: "9px 18px", fontFamily: "'Heebo',sans-serif",
+      fontWeight: 700, fontSize: 14, cursor: "pointer",
+      marginBottom: 16, transition: ".2s",
+    }}>
+      {playing ? "⏹ עצור" : "🔊 נגן"}
+    </button>
+  )
+}
+
 function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
   slide: Slide
   agg: AggResult
@@ -246,6 +281,9 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
 
       {/* Media: image (non-background) + YouTube + link */}
       <SlideMedia slide={slide} />
+
+      {/* Audio player */}
+      {slide.audio_url && <AudioButton url={slide.audio_url} key={slide.id} />}
 
       {body && <div>{renderBody(body)}</div>}
 

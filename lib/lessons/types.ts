@@ -31,6 +31,7 @@ export interface Slide {
   image_size?: 'small' | 'medium' | 'large' | 'full' | null
   youtube_url?: string | null
   link_url?: string | null
+  audio_url?: string | null
   display?: { show_names: boolean }
   questions?: SlideQuestion[]
   animation?: SlideAnimation | null
