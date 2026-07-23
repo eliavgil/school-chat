@@ -106,6 +106,10 @@ export async function PATCH(req: NextRequest) {
     await prisma.user.update({ where: { id: userId }, data: { studentId: studentId ?? null } })
   } else if (action === "unlink-student") {
     await prisma.user.update({ where: { id: userId }, data: { studentId: null } })
+  } else if (action === "delete-user") {
+    // Fully removes the User + cascaded Account/Session records so the Google
+    // account can re-register from scratch.
+    await prisma.user.delete({ where: { id: userId } })
   }
 
   return NextResponse.json({ ok: true })
