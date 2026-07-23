@@ -176,8 +176,10 @@ function EventsCard({ merged, editHref }: {
 // ══════════════════════════════════════════════════════════
 function StudentHome({ session, data }: { session: any; data: HomeData | null }) {
   const now = useTick()
+  const router = useRouter()
   const { bgId, customUrl } = useBg("student")
   const [menuOpen, setMenuOpen] = useState(false)
+  const [joinCode, setJoinCode] = useState("")
   const [personalName] = useState(() => {
     if (typeof window === "undefined") return ""
     return getPersonalDisplayName()
@@ -336,7 +338,27 @@ function StudentHome({ session, data }: { session: any; data: HomeData | null })
             </Link>
           </div>
 
-          <div className="mt-8 flex justify-center opacity-40 animate-bounce">
+          {/* Join lesson */}
+          <div className="mt-5 glass rounded-2xl px-4 py-3 flex items-center gap-2 animate-fade-in stagger-3">
+            <span className="text-white/60 text-xs font-semibold whitespace-nowrap">📡 קוד שיעור</span>
+            <input
+              value={joinCode}
+              onChange={e => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6))}
+              onKeyDown={e => { if (e.key === "Enter" && joinCode.length === 6) router.push(`/live/${joinCode}`) }}
+              placeholder="XXXXXX"
+              maxLength={6}
+              dir="ltr"
+              className="flex-1 min-w-0 bg-white/10 border border-white/20 rounded-xl px-3 py-1.5 text-white placeholder:text-white/25 text-sm font-mono tracking-widest focus:outline-none focus:border-white/50 text-center"
+            />
+            <button
+              onClick={() => { if (joinCode.length === 6) router.push(`/live/${joinCode}`) }}
+              disabled={joinCode.length !== 6}
+              className="bg-white/20 disabled:opacity-30 hover:bg-white/30 text-white text-xs font-bold px-3 py-1.5 rounded-xl whitespace-nowrap transition-colors interactive">
+              כנס
+            </button>
+          </div>
+
+          <div className="mt-6 flex justify-center opacity-40 animate-bounce">
             <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="white" strokeWidth={1.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
             </svg>

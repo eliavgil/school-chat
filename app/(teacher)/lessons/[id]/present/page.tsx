@@ -518,6 +518,8 @@ export default function PresentPage({ params }: Props) {
   const [spinnerOpen, setSpinnerOpen] = useState(false)
   const [qrOpen, setQrOpen] = useState(false)
   const [students, setStudents] = useState<{ id: string; name: string }[]>([])
+  const [classPickerOpen, setClassPickerOpen] = useState(false)
+  const [availableClasses, setAvailableClasses] = useState<{ id: string; name: string }[]>([])
 
   useEffect(() => {
     const update = () => setIsMobile(window.innerWidth < 768)
@@ -580,14 +582,27 @@ export default function PresentPage({ params }: Props) {
     setAgg(result)
   }
 
-  async function startSession() {
+  async function openClassPicker() {
     if (!lesson) return
+    try {
+      const res = await fetch("/api/supabase-classes")
+      const data = res.ok ? await res.json() : []
+      setAvailableClasses(data)
+    } catch {
+      setAvailableClasses([])
+    }
+    setClassPickerOpen(true)
+  }
+
+  async function startSession(class_id: string) {
+    if (!lesson) return
+    setClassPickerOpen(false)
     setStarting(true)
     try {
       const res = await fetch("/api/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ lesson_id: lesson.id }),
+        body: JSON.stringify({ lesson_id: lesson.id, class_id }),
       })
       const data = await res.json()
       if (res.ok) setSession(data)
@@ -778,7 +793,7 @@ export default function PresentPage({ params }: Props) {
               </button>
             </div>
           ) : (
-            <button onClick={startSession} disabled={starting}
+            <button onClick={openClassPicker} disabled={starting}
               style={{ background: "var(--seal)", color: "var(--paper)", border: "none", borderRadius: 8, padding: "7px 16px", fontFamily: "'Heebo'", fontWeight: 700, fontSize: 13, cursor: starting ? "default" : "pointer", opacity: starting ? 0.7 : 1 }}>
               {starting ? "מתחיל..." : "▶ התחל שיעור"}
             </button>
@@ -864,6 +879,45 @@ export default function PresentPage({ params }: Props) {
 
       {spinnerOpen && (
         <NameSpinner students={students} onClose={() => setSpinnerOpen(false)} />
+      )}
+
+      {classPickerOpen && (
+        <div onClick={() => setClassPickerOpen(false)} style={{
+          position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", zIndex: 60,
+          display: "flex", alignItems: "center", justifyContent: "center",
+        }}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: "var(--paper)", borderRadius: 20, padding: "32px 28px",
+            display: "flex", flexDirection: "column", gap: 16,
+            maxWidth: 340, width: "90%",
+          }}>
+            <div style={{ fontFamily: "'Frank Ruhl Libre',serif", fontWeight: 900, color: "var(--ink)", fontSize: 20, textAlign: "center" }}>
+              בחר כיתה
+            </div>
+            {availableClasses.length === 0 ? (
+              <div style={{ color: "rgba(27,42,74,0.5)", fontSize: 14, textAlign: "center" }}>אין כיתות במערכת</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {availableClasses.map(cls => (
+                  <button key={cls.id} onClick={() => startSession(cls.id)} style={{
+                    background: "var(--ink)", color: "var(--paper)", border: "none",
+                    borderRadius: 12, padding: "14px 20px", fontFamily: "'Frank Ruhl Libre',serif",
+                    fontWeight: 700, fontSize: 18, cursor: "pointer", textAlign: "center",
+                    transition: "opacity .15s",
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.opacity = "0.85")}
+                  onMouseLeave={e => (e.currentTarget.style.opacity = "1")}>
+                    {cls.name}
+                  </button>
+                ))}
+              </div>
+            )}
+            <button onClick={() => setClassPickerOpen(false)} style={{
+              background: "none", color: "rgba(27,42,74,0.45)", border: "none",
+              fontFamily: "'Heebo'", fontSize: 13, cursor: "pointer", marginTop: 4,
+            }}>ביטול</button>
+          </div>
+        </div>
       )}
 
       {qrOpen && session && (
