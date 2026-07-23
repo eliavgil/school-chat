@@ -1,0 +1,53 @@
+name: Daily Database Backup
+
+on:
+  schedule:
+    - cron: '0 21 * * *'   # 00:00 שעון ישראל (UTC+3)
+  workflow_dispatch:         # הפעלה ידנית מה-Actions tab
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install PostgreSQL client
+        run: sudo apt-get install -y postgresql-client
+
+      - name: Create backup directory
+        run: mkdir -p backup
+
+      # ── Full SQL dump (כל הטבלאות) ───────────────────────────────────
+      - name: Full database dump
+        env:
+          DIRECT_URL: ${{ secrets.BACKUP_DIRECT_URL }}
+        run: |
+          pg_dump "$DIRECT_URL" \
+            --no-owner \
+            --no-privileges \
+            --format=plain \
+            --file=backup/full_backup.sql
+          echo "Backup size: $(du -sh backup/full_backup.sql | cut -f1)"
+
+      # ── Human-readable JSON for critical tables ───────────────────────
+      - name: Export lessons JSON
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          for table in lessons live_sessions responses; do
+            curl -sf \
+              -H "apikey: $SUPABASE_KEY" \
+              -H "Authorization: Bearer $SUPABASE_KEY" \
+              "$SUPABASE_URL/rest/v1/${table}?select=*" \
+              -o "backup/${table}.json" \
+              && echo "✓ $table" \
+              || echo "✗ $table (table may not exist yet)"
+          done
+
+      # ── Upload artifacts (שמור 90 יום) ──────────────────────────────
+      - name: Upload backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-${{ github.run_id }}-${{ github.run_number }}
+          path: backup/
+          retention-days: 90
