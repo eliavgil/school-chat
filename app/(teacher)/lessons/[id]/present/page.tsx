@@ -255,23 +255,24 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
         const total = Object.values(qAgg).reduce((s, v) => s + v, 0)
         const letters = ["א", "ב", "ג", "ד", "ה"]
         return (
-          <div key={q.id} style={{ marginBottom: 28, paddingTop: qi > 0 ? 16 : 0, borderTop: qi > 0 ? "1px solid var(--line)" : "none" }}>
+          <div key={q.id} style={{ marginBottom: 28, paddingTop: qi > 0 ? 16 : 0, borderTop: qi > 0 ? "1px solid rgba(27,42,74,0.14)" : "none" }}>
             {/* Question number + text */}
             <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 14 }}>
-              <span style={{ background: "var(--seal)", color: "var(--paper)", borderRadius: "50%", width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, flexShrink: 0, marginTop: 0, fontFamily: "'Frank Ruhl Libre',serif" }}>{qi + 1}</span>
-              <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 15, lineHeight: 1.4 }}>{q.text}</div>
+              <span style={{ background: "#A23B2E", color: "#F5F1E6", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, flexShrink: 0, fontFamily: "'Frank Ruhl Libre',serif", lineHeight: 1 }}>{qi + 1}</span>
+              <div style={{ fontWeight: 700, color: "#1B2A4A", fontSize: 15, lineHeight: 1.4 }}>{q.text}</div>
             </div>
             {/* Options with letter labels */}
-            <div style={{ maxWidth: 580, paddingRight: 36 }}>
+            <div style={{ maxWidth: 580, paddingRight: 38 }}>
               {q.options.map((opt, oi) => {
                 const cnt = qAgg[String(oi)] ?? 0
                 const pct = total ? Math.round((cnt / total) * 100) : 0
                 const isCorrect = q.correct_index !== null && oi === q.correct_index
+                const badgeBg = isCorrect ? "#3F6B4F" : "#1B2A4A"
                 return (
                   <div key={oi} className="bar-row">
                     <div className="bar-label">
-                      <span style={{ color: isCorrect ? "var(--ok)" : "var(--ink)" }}>
-                        <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", background: isCorrect ? "var(--ok)" : "var(--ink)", color: "var(--paper)", borderRadius: 4, width: 20, height: 20, fontSize: 12, fontWeight: 900, marginLeft: 6, flexShrink: 0 }}>{letters[oi] ?? oi + 1}</span>
+                      <span style={{ display: "flex", alignItems: "center", gap: 6, color: isCorrect ? "#3F6B4F" : "#1B2A4A" }}>
+                        <span style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", background: badgeBg, color: "#F5F1E6", borderRadius: 4, minWidth: 22, height: 22, fontSize: 12, fontWeight: 900, flexShrink: 0, padding: "0 4px" }}>{letters[oi] ?? oi + 1}</span>
                         {opt}{isCorrect ? " ✓" : ""}
                       </span>
                       <span style={{ fontVariantNumeric: "tabular-nums" }}>{cnt > 0 ? `${cnt} (${pct}%)` : "—"}</span>
@@ -370,7 +371,7 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
       {type === "feedback" && questions && questions.map((q, qi) => (
         <div key={q.id} style={{ marginBottom: 20, paddingTop: qi > 0 ? 14 : 0, borderTop: qi > 0 ? "1px solid var(--line)" : "none" }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
-            <span style={{ background: "var(--seal)", color: "var(--paper)", borderRadius: "50%", width: 26, height: 26, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 900, flexShrink: 0, fontFamily: "'Frank Ruhl Libre',serif" }}>{qi + 1}</span>
+            <span style={{ background: "#A23B2E", color: "#F5F1E6", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, flexShrink: 0, fontFamily: "'Frank Ruhl Libre',serif", lineHeight: 1 }}>{qi + 1}</span>
             <div className="qbox" style={{ flex: 1 }}>{q.text}</div>
           </div>
           {agg[q.id] && (
