@@ -3,7 +3,7 @@ import { adminClient } from "@/lib/lessons/supabase"
 
 export async function POST(req: Request) {
   const { session_id, student_id, slide_id, question_id, answer } = await req.json()
-  if (!session_id || !slide_id || !question_id || answer === undefined) {
+  if (!session_id || !slide_id || answer === undefined) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 })
   }
 
@@ -17,7 +17,7 @@ export async function POST(req: Request) {
         session_id,
         student_id: student_id ?? "anonymous",
         slide_id,
-        question_id,
+        question_id: question_id || slide_id,
         answer: String(answer),
       },
       { onConflict: "session_id,student_id,slide_id,question_id", ignoreDuplicates: false }

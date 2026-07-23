@@ -4,8 +4,7 @@ import { authOptions } from "@/lib/auth"
 import { adminClient } from "@/lib/lessons/supabase"
 
 function genCode() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
-  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join("")
+  return String(Math.floor(Math.random() * 100)).padStart(2, "0")
 }
 
 export async function POST(req: Request) {
@@ -50,9 +49,9 @@ export async function POST(req: Request) {
 
   let code = ""
   let tries = 0
-  while (tries < 10) {
+  while (tries < 20) {
     code = genCode()
-    const { data: existing } = await sb.from("live_sessions").select("id").eq("room_code", code).single()
+    const { data: existing } = await sb.from("live_sessions").select("id").eq("room_code", code).eq("is_active", true).maybeSingle()
     if (!existing) break
     tries++
   }

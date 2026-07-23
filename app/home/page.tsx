@@ -343,16 +343,16 @@ function StudentHome({ session, data }: { session: any; data: HomeData | null })
             <span className="text-white/60 text-xs font-semibold whitespace-nowrap">📡 קוד שיעור</span>
             <input
               value={joinCode}
-              onChange={e => setJoinCode(e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 6))}
-              onKeyDown={e => { if (e.key === "Enter" && joinCode.length === 6) router.push(`/live/${joinCode}`) }}
-              placeholder="XXXXXX"
-              maxLength={6}
+              onChange={e => setJoinCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 2))}
+              onKeyDown={e => { if (e.key === "Enter" && joinCode.length === 2) router.push(`/live/${joinCode}`) }}
+              placeholder="00"
+              maxLength={2}
               dir="ltr"
               className="flex-1 min-w-0 bg-white/10 border border-white/20 rounded-xl px-3 py-1.5 text-white placeholder:text-white/25 text-sm font-mono tracking-widest focus:outline-none focus:border-white/50 text-center"
             />
             <button
-              onClick={() => { if (joinCode.length === 6) router.push(`/live/${joinCode}`) }}
-              disabled={joinCode.length !== 6}
+              onClick={() => { if (joinCode.length === 2) router.push(`/live/${joinCode}`) }}
+              disabled={joinCode.length !== 2}
               className="bg-white/20 disabled:opacity-30 hover:bg-white/30 text-white text-xs font-bold px-3 py-1.5 rounded-xl whitespace-nowrap transition-colors interactive">
               כנס
             </button>

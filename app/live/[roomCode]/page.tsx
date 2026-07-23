@@ -1,8 +1,8 @@
 "use client"
-import { useEffect, useState, use } from "react"
+import { useEffect, useState, use, useRef } from "react"
 import { useSession, signIn } from "next-auth/react"
 import { browserClient } from "@/lib/lessons/supabase"
-import type { Lesson, Slide, LiveSession, SlideQuestion } from "@/lib/lessons/types"
+import type { Lesson, Slide, LiveSession, SlideQuestion, SlideAnimation } from "@/lib/lessons/types"
 
 interface Props { params: Promise<{ roomCode: string }> }
 
@@ -12,7 +12,7 @@ const CSS = `
   :root{--ink:#1B2A4A;--paper:#F5F1E6;--paper2:#ECE5D3;--seal:#A23B2E;--gold:#B08D3F;--ok:#3F6B4F;--line:rgba(27,42,74,0.14);}
   *{box-sizing:border-box;}
   body{margin:0;background:var(--ink);}
-  .app{min-height:100vh;display:flex;flex-direction:column;background:var(--ink);}
+  .app{min-height:100vh;display:flex;flex-direction:column;background:var(--ink);position:relative;overflow:hidden;}
   .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid rgba(176,141,63,0.25);flex-shrink:0;}
   .code-badge{color:var(--gold);font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:15px;letter-spacing:2px;}
   .slide-card{background:var(--paper);border-radius:20px;margin:12px;flex:1;padding:28px 24px 90px;overflow-y:auto;position:relative;}
@@ -53,6 +53,15 @@ const CSS = `
   .ext-link{display:inline-flex;align-items:center;gap:6px;color:var(--seal);font-weight:700;font-size:13px;text-decoration:none;border:1.5px solid var(--seal);border-radius:8px;padding:7px 14px;margin-bottom:14px;}
   .live-agg{margin-top:14px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px 14px;}
   .live-agg-title{font-size:11px;font-weight:700;color:var(--ink);opacity:0.5;letter-spacing:.5px;margin-bottom:8px;}
+  @keyframes run-across{from{left:110%}to{left:-60%}}
+  .anim-across{position:absolute;bottom:50px;width:150px;height:150px;z-index:20;pointer-events:none;}
+  .anim-across.once{animation:run-across 5s linear forwards;}
+  .anim-across.loop{animation:run-across 6s linear infinite;}
+  .anim-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:180px;height:180px;z-index:20;pointer-events:none;}
+  .anim-corner-right{position:absolute;bottom:80px;right:20px;width:130px;height:130px;z-index:20;pointer-events:none;}
+  .anim-corner-left{position:absolute;bottom:80px;left:20px;width:130px;height:130px;z-index:20;pointer-events:none;}
+  .anim-top{position:absolute;top:70px;left:50%;transform:translateX(-50%);width:130px;height:130px;z-index:20;pointer-events:none;}
+  .q-num{width:22px;height:22px;border-radius:50%;background:var(--seal);color:var(--paper);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;font-family:'Frank Ruhl Libre',serif;line-height:1;margin-left:8px;}
 `
 
 function extractYouTubeId(url: string): string | null {
@@ -88,11 +97,29 @@ function SignInScreen({ code }: { code: string }) {
   )
 }
 
+function AnimOverlay({ anim, lottieDivRef }: {
+  anim: SlideAnimation
+  lottieDivRef: React.RefObject<HTMLDivElement | null>
+}) {
+  const pos = anim.position ?? "across"
+  const loop = anim.loop ?? false
+  const cls = pos === "across"
+    ? `anim-across ${loop ? "loop" : "once"}`
+    : `anim-${pos}`
+  const flip = pos === "across"
+  return (
+    <div className={cls}>
+      <div ref={lottieDivRef} style={{ width: "100%", height: "100%", ...(flip ? { transform: "scaleX(-1)" } : {}) }} />
+    </div>
+  )
+}
+
 // Live aggregate bar after student answers
-function LiveAgg({ question, sessionId, slideId }: {
+function LiveAgg({ question, sessionId, slideId, questionId }: {
   question: SlideQuestion
   sessionId: string
   slideId: string
+  questionId: string
 }) {
   const [agg, setAgg] = useState<Record<string, number>>({})
 
@@ -103,7 +130,7 @@ function LiveAgg({ question, sessionId, slideId }: {
       const rows: { question_id: string; answer: string }[] = await r.json()
       const result: Record<string, number> = {}
       for (const row of rows) {
-        if (row.question_id === question.id) {
+        if (row.question_id === questionId) {
           result[row.answer] = (result[row.answer] ?? 0) + 1
         }
       }
@@ -113,14 +140,15 @@ function LiveAgg({ question, sessionId, slideId }: {
 
   useEffect(() => {
     load()
+    const retry = setTimeout(load, 800)
     let sub: ReturnType<ReturnType<typeof browserClient>["channel"]> | undefined
     try {
       const sb = browserClient()
-      sub = sb.channel(`live-agg:${sessionId}:${slideId}:${question.id}`)
+      sub = sb.channel(`live-agg:${sessionId}:${slideId}:${questionId}`)
         .on("postgres_changes", { event: "INSERT", schema: "public", table: "responses", filter: `session_id=eq.${sessionId}` }, load)
         .subscribe()
     } catch {}
-    return () => { sub?.unsubscribe() }
+    return () => { clearTimeout(retry); sub?.unsubscribe() }
   }, [])
 
   const total = Object.values(agg).reduce((s, v) => s + v, 0)
@@ -131,18 +159,14 @@ function LiveAgg({ question, sessionId, slideId }: {
       {question.options.map((opt, oi) => {
         const cnt = agg[String(oi)] ?? 0
         const pct = total ? Math.round((cnt / total) * 100) : 0
-        const isCorrect = question.correct_index !== null && oi === question.correct_index
         return (
           <div key={oi} className="bar-row">
             <div className="bar-label">
-              <span style={{ color: isCorrect ? "var(--ok)" : "var(--ink)" }}>{opt}{isCorrect ? " ✓" : ""}</span>
+              <span>{opt}</span>
               <span style={{ color: "rgba(27,42,74,0.5)" }}>{pct}%</span>
             </div>
             <div className="bar-bg">
-              <div className="bar-fill" style={{
-                width: `${pct}%`,
-                background: isCorrect ? "var(--ok)" : "linear-gradient(90deg,var(--gold),var(--seal))"
-              }} />
+              <div className="bar-fill" style={{ width: `${pct}%`, background: "linear-gradient(90deg,var(--gold),var(--seal))" }} />
             </div>
           </div>
         )
@@ -153,12 +177,13 @@ function LiveAgg({ question, sessionId, slideId }: {
 }
 
 // Interactive question
-function QuestionBlock({ question, sessionId, slideId, studentId, type }: {
+function QuestionBlock({ question, sessionId, slideId, studentId, type, questionIndex }: {
   question: SlideQuestion
   sessionId: string
   slideId: string
   studentId: string
   type: string
+  questionIndex: number
 }) {
   const [answered, setAnswered] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -168,6 +193,7 @@ function QuestionBlock({ question, sessionId, slideId, studentId, type }: {
   const isFeedback = type === "feedback"
   const isQuiz = type === "quiz"
   const showLiveAgg = done && (type === "poll" || type === "quiz" || type === "feedback")
+  const questionId = question.id || `${slideId}-${questionIndex}`
 
   async function submit(optIdx: number) {
     if (done || submitting) return
@@ -176,7 +202,7 @@ function QuestionBlock({ question, sessionId, slideId, studentId, type }: {
     await fetch("/api/responses", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session_id: sessionId, student_id: studentId, slide_id: slideId, question_id: question.id, answer: String(optIdx) }),
+      body: JSON.stringify({ session_id: sessionId, student_id: studentId, slide_id: slideId, question_id: questionId, answer: String(optIdx) }),
     })
     setDone(true)
     setSubmitting(false)
@@ -185,7 +211,10 @@ function QuestionBlock({ question, sessionId, slideId, studentId, type }: {
   if (isFeedback) {
     return (
       <div style={{ marginBottom: 20 }}>
-        <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 8 }}>{question.text}</div>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
+          <span className="q-num">{questionIndex + 1}</span>
+          <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 14 }}>{question.text}</div>
+        </div>
         <div className="star-row">
           {[1, 2, 3, 4, 5].map(s => (
             <button key={s} className={`star-btn${starPick === s ? " selected" : ""}`} onClick={() => { setStarPick(s); submit(s - 1) }}>
@@ -194,31 +223,35 @@ function QuestionBlock({ question, sessionId, slideId, studentId, type }: {
           ))}
         </div>
         {done && <div className="feedback-text">תודה! תשובתך נרשמה.</div>}
-        {showLiveAgg && <LiveAgg question={question} sessionId={sessionId} slideId={slideId} />}
+        {showLiveAgg && <LiveAgg question={question} sessionId={sessionId} slideId={slideId} questionId={questionId} />}
       </div>
     )
   }
 
   return (
     <div style={{ marginBottom: 20 }}>
-      {question.text && <div style={{ fontWeight: 700, color: "var(--ink)", marginBottom: 10, fontSize: 14 }}>{question.text}</div>}
+      {question.text && (
+        <div style={{ display: "flex", alignItems: "flex-start", marginBottom: 10 }}>
+          <span className="q-num">{questionIndex + 1}</span>
+          <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 14, lineHeight: 1.4 }}>{question.text}</div>
+        </div>
+      )}
       {question.options.map((opt, oi) => {
         let cls = "poll-opt"
         if (done) {
           cls += " done"
-          if (isQuiz && oi === question.correct_index) cls += " correct"
-          else if (oi === answered) cls += (isQuiz ? " wrong" : " selected")
+          if (oi === answered) cls += " selected"
         } else if (oi === answered) cls += " selected"
         return (
           <div key={oi} className={cls} onClick={() => !done && submit(oi)}>
             <span>{opt}</span>
-            {done && isQuiz && oi === question.correct_index && <span>✓</span>}
           </div>
         )
       })}
-      {done && question.feedback && <div className="feedback-text">{question.feedback}</div>}
-      {done && !question.feedback && !showLiveAgg && <div className="feedback-text">תשובתך נרשמה.</div>}
-      {showLiveAgg && <LiveAgg question={question} sessionId={sessionId} slideId={slideId} />}
+      {done && isQuiz && <div className="feedback-text">תשובתך נרשמה. התשובות הנכונות יוצגו בהמשך.</div>}
+      {done && !isQuiz && question.feedback && <div className="feedback-text">{question.feedback}</div>}
+      {done && !isQuiz && !question.feedback && !showLiveAgg && <div className="feedback-text">תשובתך נרשמה.</div>}
+      {showLiveAgg && !isQuiz && <LiveAgg question={question} sessionId={sessionId} slideId={slideId} questionId={questionId} />}
     </div>
   )
 }
@@ -365,8 +398,8 @@ function StudentSlide({ slide, sessionId, studentId }: {
       )}
 
       {/* Poll / Quiz / Feedback — interactive + live results */}
-      {showQuestions && questions!.map(q => (
-        <QuestionBlock key={q.id} question={q} sessionId={sessionId} slideId={slide.id} studentId={studentId} type={type} />
+      {showQuestions && questions!.map((q, qi) => (
+        <QuestionBlock key={q.id ?? qi} question={q} sessionId={sessionId} slideId={slide.id} studentId={studentId} type={type} questionIndex={qi} />
       ))}
 
       {/* Definitions — flip cards */}
@@ -421,6 +454,8 @@ export default function LivePage({ params }: Props) {
   const [phase, setPhase] = useState<"loading" | "live" | "not-found">("loading")
   const [sessionData, setSessionData] = useState<{ session: LiveSession; lesson: Lesson } | null>(null)
   const [currentIdx, setCurrentIdx] = useState(0)
+  const [animActive, setAnimActive] = useState(false)
+  const lottieDivRef = useRef<HTMLDivElement | null>(null)
 
   const slide = sessionData?.lesson.slides[currentIdx]
   const studentId = session?.user?.studentId ?? session?.user?.id ?? ""
@@ -435,6 +470,40 @@ export default function LivePage({ params }: Props) {
         .subscribe()
     } catch {}
   }
+
+  // Animation: trigger on slide change
+  useEffect(() => {
+    setAnimActive(false)
+    const anim = slide?.animation
+    if (!anim) return
+    const t = setTimeout(() => setAnimActive(true), anim.delay * 1000)
+    return () => { clearTimeout(t); setAnimActive(false) }
+  }, [slide?.id])
+
+  // Animation: load and play Lottie
+  useEffect(() => {
+    if (!animActive || !slide?.animation?.name) return
+    const { name, position = "across", loop = false } = slide.animation
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let inst: any
+    let cancelled = false
+    let t: ReturnType<typeof setTimeout> | undefined
+    ;(async () => {
+      const { default: lottie } = await import("lottie-web")
+      if (cancelled || !lottieDivRef.current) return
+      const data = await fetch(`/animations/${name}.json`).then(r => r.json())
+      if (cancelled || !lottieDivRef.current) return
+      inst = lottie.loadAnimation({ container: lottieDivRef.current, animationData: data, loop, autoplay: true, renderer: "svg" })
+      if (!loop) {
+        if (position === "across") {
+          t = setTimeout(() => setAnimActive(false), 5500)
+        } else {
+          inst.addEventListener("complete", () => { if (!cancelled) setAnimActive(false) })
+        }
+      }
+    })()
+    return () => { cancelled = true; clearTimeout(t); inst?.destroy() }
+  }, [animActive, slide?.animation?.name, slide?.animation?.position, slide?.animation?.loop])
 
   useEffect(() => {
     if (status !== "authenticated") return
@@ -493,6 +562,10 @@ export default function LivePage({ params }: Props) {
       </div>
 
       <StudentSlide slide={slide} sessionId={sessionData.session.id} studentId={studentId} />
+
+      {animActive && slide?.animation && (
+        <AnimOverlay anim={slide.animation} lottieDivRef={lottieDivRef} />
+      )}
 
       {/* Progress dots */}
       <div style={{ display: "flex", justifyContent: "center", gap: 5, padding: "10px 0 16px", flexShrink: 0 }}>
