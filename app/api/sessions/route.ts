@@ -12,27 +12,29 @@ export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { lesson_id } = await req.json()
+  const { lesson_id, class_id: explicit_class_id } = await req.json()
   if (!lesson_id) return NextResponse.json({ error: "lesson_id required" }, { status: 400 })
 
   const sb = adminClient()
 
-  // Derive class_id from the lesson itself (both are in Supabase and share the same UUID space)
-  const { data: lessonRow } = await sb
-    .from("lessons")
-    .select("class_id")
-    .eq("id", lesson_id)
-    .single()
-  const class_id = lessonRow?.class_id ?? null
+  let resolved_class_id: string | null = explicit_class_id ?? null
 
-  // If the lesson has no class_id, use or create the default class
-  let resolved_class_id = class_id
   if (!resolved_class_id) {
-    const { data: firstClass } = await sb.from("classes").select("id").limit(1).single()
+    // Derive class_id from the lesson itself
+    const { data: lessonRow } = await sb
+      .from("lessons")
+      .select("class_id")
+      .eq("id", lesson_id)
+      .single()
+    resolved_class_id = lessonRow?.class_id ?? null
+  }
+
+  if (!resolved_class_id) {
+    // Fall back to first existing Supabase class, or create one
+    const { data: firstClass } = await sb.from("classes").select("id").order("name").limit(1).single()
     if (firstClass) {
       resolved_class_id = firstClass.id
     } else {
-      // No classes exist yet — create the default one
       const { data: newClass } = await sb
         .from("classes")
         .insert({ name: "י4" })
