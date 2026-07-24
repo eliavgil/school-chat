@@ -383,6 +383,7 @@ interface PendingStudent { id: string; name: string | null; email: string | null
 interface ParentUser     { id: string; name: string | null; email: string | null; phone: string | null; parentStudents: { student: { id: string; name: string } }[] }
 interface StudentUser    { id: string; name: string | null; email: string | null; studentRecord: { id: string; name: string } | null }
 interface Student        { id: string; name: string }
+interface ClassWithStudents { id: string; name: string; displayName: string; students: { id: string; name: string }[] }
 
 function ApproveWithLink({ label, students, onApprove, onDeny, onCancel, loading }: {
   label: string; students: Student[]; loading: boolean
@@ -639,6 +640,82 @@ function UsersTab() {
 }
 
 // ────────────────────────────────────────────────────────────
+// Teacher: Roster tab (class + student management)
+// ────────────────────────────────────────────────────────────
+function RosterTab() {
+  const [roster, setRoster] = useState<ClassWithStudents[]>([])
+  const [loading, setLoading] = useState(false)
+  const [actionLoading, setActionLoading] = useState<string | null>(null)
+
+  useEffect(() => { fetchRoster() }, [])
+
+  async function fetchRoster() {
+    setLoading(true)
+    const d = await fetch("/api/admin/users").then(r => r.json())
+    setRoster(d.roster ?? [])
+    setLoading(false)
+  }
+
+  async function rosterAction(type: string, studentId?: string, classId?: string) {
+    const key = studentId ?? classId ?? type
+    setActionLoading(key)
+    await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: type, studentId, classId }),
+    })
+    await fetchRoster()
+    setActionLoading(null)
+  }
+
+  if (loading) return <p className="text-white/40 text-sm text-center py-8">טוען...</p>
+  if (roster.length === 0) return <p className="text-white/30 text-sm text-center py-8">אין כיתות ברשימה</p>
+
+  return (
+    <div className="space-y-4">
+      {roster.map(cls => (
+        <div key={cls.id} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+          <div className="flex items-center justify-between px-4 py-3 bg-white/8 border-b border-white/10">
+            <div>
+              <span className="font-semibold text-white text-sm">{cls.displayName || cls.name}</span>
+              <span className="text-white/35 text-xs mr-2">({cls.students.length} תלמידים)</span>
+            </div>
+            <button
+              disabled={actionLoading === cls.id}
+              onClick={() => {
+                if (!confirm(`למחוק את הכיתה "${cls.displayName || cls.name}" וכל ${cls.students.length} תלמידיה?\nפעולה זו אינה הפיכה.`)) return
+                rosterAction("delete-class", undefined, cls.id)
+              }}
+              className="text-xs text-red-400/70 hover:text-red-400 border border-red-400/20 rounded-lg px-2 py-1 interactive disabled:opacity-40">
+              {actionLoading === cls.id ? "מוחק..." : "מחק כיתה"}
+            </button>
+          </div>
+          {cls.students.length === 0
+            ? <p className="text-white/30 text-xs px-4 py-3">אין תלמידים בכיתה זו</p>
+            : <div className="divide-y divide-white/5">
+                {cls.students.map(s => (
+                  <div key={s.id} className="flex items-center justify-between px-4 py-2.5">
+                    <span className="text-sm text-white/80">{s.name}</span>
+                    <button
+                      disabled={actionLoading === s.id}
+                      onClick={() => {
+                        if (!confirm(`למחוק את התלמיד/ה "${s.name}"?\nפעולה זו אינה הפיכה.`)) return
+                        rosterAction("delete-student", s.id)
+                      }}
+                      className="text-xs text-red-400/60 hover:text-red-400 interactive disabled:opacity-40">
+                      {actionLoading === s.id ? "..." : "מחק"}
+                    </button>
+                  </div>
+                ))}
+              </div>
+          }
+        </div>
+      ))}
+    </div>
+  )
+}
+
+// ────────────────────────────────────────────────────────────
 // Quote category picker
 // ────────────────────────────────────────────────────────────
 import { CATEGORIES, getCategoryEmoji, type QuoteCategory } from "@/lib/quotes"
@@ -738,7 +815,7 @@ function NotifyClassButton() {
 // ────────────────────────────────────────────────────────────
 // Main page
 // ────────────────────────────────────────────────────────────
-type TeacherTab = "settings" | "import" | "users"
+type TeacherTab = "settings" | "import" | "users" | "roster"
 type UserTab    = "settings" | "events" | "notes" | "design"
 
 export default function ManagePage() {
@@ -769,6 +846,7 @@ export default function ManagePage() {
     ["settings", "הגדרות"],
     ["import",   "ייבוא נתונים"],
     ["users",    "ניהול משתמשים"],
+    ["roster",   "רשימת כיתה"],
   ]
 
   const userTabs: [UserTab, string][] = [
@@ -838,6 +916,7 @@ export default function ManagePage() {
         )}
         {isTeacher && teacherTab === "import"    && <ImportTab />}
         {isTeacher && teacherTab === "users"     && <UsersTab />}
+        {isTeacher && teacherTab === "roster"    && <RosterTab />}
 
         {!isTeacher && userTab === "settings"   && (
           <>
