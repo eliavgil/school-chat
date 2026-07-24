@@ -149,15 +149,8 @@ function LiveAgg({ question, sessionId, slideId, questionId }: {
 
   useEffect(() => {
     load()
-    const retry = setTimeout(load, 800)
-    let sub: ReturnType<ReturnType<typeof browserClient>["channel"]> | undefined
-    try {
-      const sb = browserClient()
-      sub = sb.channel(`live-agg:${sessionId}:${slideId}:${questionId}`)
-        .on("postgres_changes", { event: "INSERT", schema: "public", table: "responses", filter: `session_id=eq.${sessionId}` }, load)
-        .subscribe()
-    } catch {}
-    return () => { clearTimeout(retry); sub?.unsubscribe() }
+    const interval = setInterval(load, 3000)
+    return () => clearInterval(interval)
   }, [])
 
   const total = Object.values(agg).reduce((s, v) => s + v, 0)
