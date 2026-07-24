@@ -56,13 +56,18 @@ const CSS = `
   .anim-corner-left{position:absolute;bottom:80px;left:20px;width:130px;height:130px;z-index:20;pointer-events:none;}
   .anim-top{position:absolute;top:70px;left:50%;transform:translateX(-50%);width:130px;height:130px;z-index:20;pointer-events:none;}
   .q-num{width:22px;height:22px;border-radius:50%;background:var(--seal);color:var(--paper);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;font-family:'Frank Ruhl Libre',serif;line-height:1;margin-left:8px;}
-  .nb-sheet{background:repeating-linear-gradient(transparent 0px,transparent 34px,rgba(27,42,74,0.08) 34px,rgba(27,42,74,0.08) 35px);background-color:#fefdf7;border-right:3px solid rgba(162,59,46,0.22);border-radius:0 8px 8px 0;padding:18px 20px 18px 12px;margin-top:10px;}
-  .nb-entry{margin-bottom:22px;}
+  .slide-card.nb-page{background:#FFFCF2;padding:0;}
+  .nb-head{padding:22px 22px 10px;}
+  .nb-tab{display:inline-block;background:var(--seal);color:#fff;font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;padding:4px 12px;border-radius:0 0 7px 7px;margin-bottom:12px;}
+  .nb-title{display:inline;font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:22px;color:var(--ink);margin:0;line-height:1.35;background:linear-gradient(transparent 62%,rgba(176,141,63,0.4) 62%);}
+  .nb-rules{padding:30px 22px 90px;background-image:linear-gradient(to left,transparent 22px,rgba(196,44,44,0.5) 22px,rgba(196,44,44,0.5) 24px,transparent 24px),repeating-linear-gradient(transparent 0px,transparent 29px,rgba(70,110,190,0.32) 29px,rgba(70,110,190,0.32) 30px);}
+  .nb-entry{margin-bottom:30px;}
   .nb-entry:last-child{margin-bottom:0;}
-  .nb-term{font-family:'Frank Ruhl Libre',serif;font-weight:900;color:var(--seal);font-size:20px;line-height:1.3;margin-bottom:5px;}
-  .nb-def{font-family:'Heebo',sans-serif;font-weight:500;color:var(--ink);font-size:16px;line-height:1.65;}
-  .nb-body .body-text{font-size:16px;line-height:1.9;color:var(--ink);}
-  .nb-body strong{color:var(--seal);font-weight:900;}
+  .nb-line{margin:0;font-size:17px;line-height:30px;}
+  .nb-term{font-family:'Frank Ruhl Libre',serif;font-weight:900;color:var(--seal);}
+  .nb-def{font-family:'Heebo',sans-serif;font-weight:500;color:var(--ink);}
+  .nb-freetext .body-text{font-size:17px!important;line-height:30px!important;margin:0 0 30px 0!important;color:var(--ink);}
+  .nb-freetext strong{color:var(--seal);font-weight:900;}
 `
 
 const TYPE_LABELS: Record<string, string> = {
@@ -361,12 +366,38 @@ function renderBody(text: string) {
   })
 }
 
+function NotebookSlide({ slide }: { slide: Slide }) {
+  const { eyebrow, title, body, questions } = slide
+  return (
+    <div className="slide-card nb-page">
+      <div className="nb-head">
+        <div className="nb-tab">{eyebrow || "מושגי יסוד"}</div>
+        <h1 className="nb-title">{title}</h1>
+      </div>
+      <div className="nb-rules">
+        {questions
+          ? questions.map(q => (
+              <div key={q.id} className="nb-entry">
+                <div className="nb-line nb-term">{q.text}</div>
+                <div className="nb-line nb-def">{q.feedback ?? q.options[0]}</div>
+              </div>
+            ))
+          : body && <div className="nb-freetext">{renderBody(body)}</div>}
+      </div>
+      <div className="seal-stamp">{slide.order ?? "•"}</div>
+    </div>
+  )
+}
+
 function StudentSlide({ slide, sessionId, studentId }: {
   slide: Slide
   sessionId: string
   studentId: string
 }) {
   const { type, eyebrow, title, body, questions } = slide
+
+  if (type === "definitions") return <NotebookSlide slide={slide} />
+
   const isBackground = slide.image_position === "background"
   const showQuestions = (type === "poll" || type === "quiz" || type === "feedback" || type === "assessment") && questions?.length
   const imageAtTop = !slide.image_position || slide.image_position === "top"
@@ -389,11 +420,7 @@ function StudentSlide({ slide, sessionId, studentId }: {
 
       <div className="eyebrow">{eyebrow || TYPE_LABELS[type] || type}</div>
       <h1 className="stitle">{title}</h1>
-      {body && (
-        type === "definitions"
-          ? <div className="nb-sheet nb-body">{renderBody(body)}</div>
-          : <div>{renderBody(body)}</div>
-      )}
+      {body && <div>{renderBody(body)}</div>}
 
       {/* YouTube + link (always after title/body) */}
       <MediaBlock slide={{ ...slide, image_url: null }} />
@@ -409,17 +436,6 @@ function StudentSlide({ slide, sessionId, studentId }: {
         <QuestionBlock key={q.id ?? qi} question={q} sessionId={sessionId} slideId={slide.id} studentId={studentId} type={type} questionIndex={qi} />
       ))}
 
-      {/* Definitions — notebook page, term + definition always visible for copying */}
-      {type === "definitions" && questions && (
-        <div className="nb-sheet">
-          {questions.map(q => (
-            <div key={q.id} className="nb-entry">
-              <div className="nb-term">{q.text}</div>
-              <div className="nb-def">{q.feedback ?? q.options[0]}</div>
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* Homework */}
       {type === "homework" && questions?.map((q, i) => (

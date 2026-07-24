@@ -39,13 +39,18 @@ const CSS = `
   .bar-label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;color:var(--ink);font-weight:600;}
   .bar-bg{height:12px;background:var(--paper2);border-radius:6px;overflow:hidden;}
   .bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--seal));border-radius:6px;transition:width .5s ease;}
-  .nb-sheet{background:repeating-linear-gradient(transparent 0px,transparent 44px,rgba(27,42,74,0.09) 44px,rgba(27,42,74,0.09) 45px);background-color:#fefdf7;border-right:3px solid rgba(162,59,46,0.22);border-radius:0 8px 8px 0;padding:26px 30px 26px 18px;margin-top:14px;}
-  .nb-entry{margin-bottom:30px;}
+  .slide-inner.nb-page{background:#FFFCF2;padding:0;}
+  .nb-head{padding:26px 34px 14px;}
+  .nb-tab{display:inline-block;background:var(--seal);color:#fff;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:5px 14px;border-radius:0 0 8px 8px;margin-bottom:16px;}
+  .nb-title{display:inline;font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:34px;color:var(--ink);margin:0;line-height:1.3;background:linear-gradient(transparent 62%,rgba(176,141,63,0.4) 62%);}
+  .nb-rules{padding:42px 34px 26px;background-image:linear-gradient(to left,transparent 38px,rgba(196,44,44,0.5) 38px,rgba(196,44,44,0.5) 40px,transparent 40px),repeating-linear-gradient(transparent 0px,transparent 41px,rgba(70,110,190,0.32) 41px,rgba(70,110,190,0.32) 42px);}
+  .nb-entry{margin-bottom:42px;}
   .nb-entry:last-child{margin-bottom:0;}
-  .nb-term{font-family:'Frank Ruhl Libre',serif;font-weight:900;color:var(--seal);font-size:28px;line-height:1.3;margin-bottom:6px;}
-  .nb-def{font-family:'Heebo',sans-serif;font-weight:500;color:var(--ink);font-size:21px;line-height:1.7;}
-  .nb-body .lead{font-size:21px;line-height:2;color:var(--ink);}
-  .nb-body strong{color:var(--seal);font-weight:900;}
+  .nb-line{margin:0;font-size:22px;line-height:42px;}
+  .nb-term{font-family:'Frank Ruhl Libre',serif;font-weight:900;color:var(--seal);}
+  .nb-def{font-family:'Heebo',sans-serif;font-weight:500;color:var(--ink);}
+  .nb-freetext .lead{font-size:22px!important;line-height:42px!important;margin:0 0 42px 0!important;color:var(--ink);}
+  .nb-freetext strong{color:var(--seal);font-weight:900;}
   .qz{margin-bottom:12px;padding:14px 16px;background:#fff;border:1px solid var(--line);border-radius:10px;}
   .qz .qtext{font-weight:700;color:var(--ink);margin-bottom:8px;font-size:14px;}
   .qz .opts{display:flex;flex-direction:column;gap:7px;}
@@ -91,8 +96,13 @@ const CSS = `
     .slide-inner{padding:24px 20px 100px 20px;}
     .grid2{grid-template-columns:1fr;}
     .enrich-grid{grid-template-columns:1fr;}
-    .nb-term{font-size:23px;}
-    .nb-def{font-size:18px;}
+    .slide-inner.nb-page{padding:0;}
+    .nb-head{padding:20px 20px 10px;}
+    .nb-title{font-size:24px;}
+    .nb-rules{padding:34px 20px 20px;background-image:linear-gradient(to left,transparent 24px,rgba(196,44,44,0.5) 24px,rgba(196,44,44,0.5) 26px,transparent 26px),repeating-linear-gradient(transparent 0px,transparent 33px,rgba(70,110,190,0.32) 33px,rgba(70,110,190,0.32) 34px);}
+    .nb-entry{margin-bottom:34px;}
+    .nb-line{font-size:17px;line-height:34px;}
+    .nb-freetext .lead{font-size:17px!important;line-height:34px!important;margin:0 0 34px 0!important;}
     .topbar{padding:10px 12px;}
     @keyframes run-across{from{left:110%}to{left:-60%}}
     .anim-across{width:150px;height:150px;bottom:50px;}
@@ -252,6 +262,28 @@ function AudioButton({ url }: { url: string }) {
   )
 }
 
+function NotebookSlide({ slide }: { slide: Slide }) {
+  const { eyebrow, title, body, questions } = slide
+  return (
+    <div className="slide-inner nb-page">
+      <div className="nb-head">
+        <div className="nb-tab">{eyebrow || "מושגי יסוד"}</div>
+        <h1 className="nb-title">{title}</h1>
+      </div>
+      <div className="nb-rules">
+        {questions
+          ? questions.map(q => (
+              <div key={q.id} className="nb-entry">
+                <div className="nb-line nb-term">{q.text}</div>
+                <div className="nb-line nb-def">{q.feedback ?? q.options[0]}</div>
+              </div>
+            ))
+          : body && <div className="nb-freetext">{renderBody(body)}</div>}
+      </div>
+    </div>
+  )
+}
+
 function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
   slide: Slide
   agg: AggResult
@@ -259,6 +291,9 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
   setRevealOpen: (v: boolean) => void
 }) {
   const { type, eyebrow, title, body, questions } = slide
+
+  if (type === "definitions") return <NotebookSlide slide={slide} />
+
   const isBackground = slide.image_position === "background"
 
   const bgStyle: React.CSSProperties = isBackground && slide.image_url ? {
@@ -283,11 +318,7 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
       {/* Audio player */}
       {slide.audio_url && <AudioButton url={slide.audio_url} key={slide.id} />}
 
-      {body && (
-        type === "definitions"
-          ? <div className="nb-sheet nb-body">{renderBody(body)}</div>
-          : <div>{renderBody(body)}</div>
-      )}
+      {body && <div>{renderBody(body)}</div>}
 
       {/* POLL / QUIZ / ASSESSMENT — bar chart results */}
       {(type === "poll" || type === "quiz" || type === "assessment" || type === "assessment_answers") && questions && questions.map((q, qi) => {
@@ -337,17 +368,6 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
         </button>
       )}
 
-      {/* DEFINITIONS — notebook page, term + definition always visible for copying */}
-      {type === "definitions" && questions && (
-        <div className="nb-sheet">
-          {questions.map(q => (
-            <div key={q.id} className="nb-entry">
-              <div className="nb-term">{q.text}</div>
-              <div className="nb-def">{q.feedback ?? q.options[0]}</div>
-            </div>
-          ))}
-        </div>
-      )}
 
       {/* MATCHING — static view for teacher */}
       {type === "matching" && questions && (
