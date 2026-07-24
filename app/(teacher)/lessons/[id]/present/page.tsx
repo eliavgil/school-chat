@@ -44,6 +44,8 @@ const CSS = `
   .nb-entry:last-child{margin-bottom:0;}
   .nb-term{font-family:'Frank Ruhl Libre',serif;font-weight:900;color:var(--seal);font-size:28px;line-height:1.3;margin-bottom:6px;}
   .nb-def{font-family:'Heebo',sans-serif;font-weight:500;color:var(--ink);font-size:21px;line-height:1.7;}
+  .nb-body .lead{font-size:21px;line-height:2;color:var(--ink);}
+  .nb-body strong{color:var(--seal);font-weight:900;}
   .qz{margin-bottom:12px;padding:14px 16px;background:#fff;border:1px solid var(--line);border-radius:10px;}
   .qz .qtext{font-weight:700;color:var(--ink);margin-bottom:8px;font-size:14px;}
   .qz .opts{display:flex;flex-direction:column;gap:7px;}
@@ -281,7 +283,11 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
       {/* Audio player */}
       {slide.audio_url && <AudioButton url={slide.audio_url} key={slide.id} />}
 
-      {body && <div>{renderBody(body)}</div>}
+      {body && (
+        type === "definitions"
+          ? <div className="nb-sheet nb-body">{renderBody(body)}</div>
+          : <div>{renderBody(body)}</div>
+      )}
 
       {/* POLL / QUIZ / ASSESSMENT — bar chart results */}
       {(type === "poll" || type === "quiz" || type === "assessment" || type === "assessment_answers") && questions && questions.map((q, qi) => {

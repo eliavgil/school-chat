@@ -61,6 +61,8 @@ const CSS = `
   .nb-entry:last-child{margin-bottom:0;}
   .nb-term{font-family:'Frank Ruhl Libre',serif;font-weight:900;color:var(--seal);font-size:20px;line-height:1.3;margin-bottom:5px;}
   .nb-def{font-family:'Heebo',sans-serif;font-weight:500;color:var(--ink);font-size:16px;line-height:1.65;}
+  .nb-body .body-text{font-size:16px;line-height:1.9;color:var(--ink);}
+  .nb-body strong{color:var(--seal);font-weight:900;}
 `
 
 const TYPE_LABELS: Record<string, string> = {
@@ -387,7 +389,11 @@ function StudentSlide({ slide, sessionId, studentId }: {
 
       <div className="eyebrow">{eyebrow || TYPE_LABELS[type] || type}</div>
       <h1 className="stitle">{title}</h1>
-      {body && <div>{renderBody(body)}</div>}
+      {body && (
+        type === "definitions"
+          ? <div className="nb-sheet nb-body">{renderBody(body)}</div>
+          : <div>{renderBody(body)}</div>
+      )}
 
       {/* YouTube + link (always after title/body) */}
       <MediaBlock slide={{ ...slide, image_url: null }} />
