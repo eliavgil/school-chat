@@ -49,6 +49,7 @@ const PRINT_CSS = `
 const TYPE_LABELS: Record<string, string> = {
   intro: "פתיחה", poll: "סקר", quiz: "חידון", definitions: "הגדרות",
   matching: "התאמה", reveal: "גילוי", enrichment: "העשרה", homework: "שיעורי בית", feedback: "משוב",
+  assessment: "מבדק סוף שיעור", assessment_answers: "תשובות למבדק",
 }
 
 function renderInline(text: string): React.ReactNode[] {
@@ -115,8 +116,8 @@ function PrintSlide({ slide, num }: { slide: Slide; num: number }) {
 
       {body && <div>{renderBody(body)}</div>}
 
-      {/* Poll / Quiz — show options, mark correct */}
-      {(type === "poll" || type === "quiz") && questions && questions.map((q, qi) => {
+      {/* Poll / Quiz / Assessment — show options, mark correct */}
+      {(type === "poll" || type === "quiz" || type === "assessment" || type === "assessment_answers") && questions && questions.map((q, qi) => {
         const letters = ["א", "ב", "ג", "ד", "ה"]
         return (
           <div key={q.id} className="q-block">
@@ -132,7 +133,7 @@ function PrintSlide({ slide, num }: { slide: Slide; num: number }) {
                 </div>
               ))}
             </div>
-            {q.feedback && type === "quiz" && (
+            {q.feedback && (type === "quiz" || type === "assessment" || type === "assessment_answers") && (
               <p style={{ fontSize: 13, color: "var(--ok)", marginTop: 8, fontWeight: 600 }}>💡 {q.feedback}</p>
             )}
           </div>

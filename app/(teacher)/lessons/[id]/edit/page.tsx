@@ -7,15 +7,17 @@ import { ANIMATION_REGISTRY, ANIMATION_DELAYS, ANIMATION_POSITIONS } from "@/lib
 interface Props { params: Promise<{ id: string }> }
 
 const SLIDE_TYPES: { value: SlideType; label: string }[] = [
-  { value: "intro",       label: "פתיחה" },
-  { value: "poll",        label: "סקר" },
-  { value: "quiz",        label: "חידון" },
-  { value: "definitions", label: "הגדרות" },
-  { value: "matching",    label: "התאמה" },
-  { value: "reveal",      label: "גילוי" },
-  { value: "enrichment",  label: "העשרה" },
-  { value: "homework",    label: "שיעורי בית" },
-  { value: "feedback",    label: "משוב" },
+  { value: "intro",              label: "פתיחה" },
+  { value: "poll",               label: "סקר" },
+  { value: "quiz",               label: "חידון" },
+  { value: "assessment",         label: "מבדק סוף שיעור" },
+  { value: "assessment_answers", label: "תשובות למבדק" },
+  { value: "definitions",        label: "הגדרות" },
+  { value: "matching",           label: "התאמה" },
+  { value: "reveal",             label: "גילוי" },
+  { value: "enrichment",         label: "העשרה" },
+  { value: "homework",           label: "שיעורי בית" },
+  { value: "feedback",           label: "משוב" },
 ]
 
 const IMG_POSITIONS = [
@@ -85,7 +87,7 @@ function QuestionEditor({ q, onChange, onDelete, type }: {
   onDelete: () => void
   type: SlideType
 }) {
-  const showCorrect = type === "quiz" || type === "matching"
+  const showCorrect = type === "quiz" || type === "matching" || type === "assessment" || type === "assessment_answers"
 
   function setOpt(i: number, val: string) {
     const opts = [...q.options]; opts[i] = val
@@ -129,10 +131,11 @@ function QuestionEditor({ q, onChange, onDelete, type }: {
   )
 }
 
-function SlideEditor({ slide, onChange, onDelete, dragHandleProps }: {
+function SlideEditor({ slide, onChange, onDelete, onDuplicateAsAnswerKey, dragHandleProps }: {
   slide: Slide
   onChange: (s: Slide) => void
   onDelete: () => void
+  onDuplicateAsAnswerKey?: () => void
   dragHandleProps: React.HTMLAttributes<HTMLSpanElement>
 }) {
   const [open, setOpen] = useState(false)
@@ -200,6 +203,13 @@ function SlideEditor({ slide, onChange, onDelete, dragHandleProps }: {
               <select value={slide.type} onChange={e => onChange({ ...slide, type: e.target.value as SlideType })}>
                 {SLIDE_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
+              {slide.type === "assessment" && onDuplicateAsAnswerKey && (
+                <button
+                  onClick={onDuplicateAsAnswerKey}
+                  style={{ marginTop: 8, background: "transparent", border: "1.5px dashed var(--ink)", borderRadius: 8, padding: "6px 10px", color: "var(--ink)", cursor: "pointer", fontFamily: "'Heebo'", fontSize: 12, fontWeight: 600, width: "100%" }}>
+                  + צור שקף תשובות אחריו
+                </button>
+              )}
             </div>
             <div className="field">
               <label>כותרת עליונה (eyebrow)</label>
@@ -436,6 +446,18 @@ export default function EditLessonPage({ params }: Props) {
     const s: Slide = { id: `s${Date.now()}`, order: slides.length + 1, type: "poll", eyebrow: "סקר", title: "שאלה חדשה", questions: [newQuestion()] }
     setSlides([...slides, s])
   }
+  function duplicateAsAnswerKey(i: number) {
+    const src = slides[i]
+    const copy: Slide = {
+      ...src,
+      id: `s${Date.now()}`,
+      type: "assessment_answers",
+      title: src.title ? `${src.title} — תשובות` : "תשובות",
+    }
+    const next = [...slides]
+    next.splice(i + 1, 0, copy)
+    setSlides(next.map((s, idx) => ({ ...s, order: idx + 1 })))
+  }
 
   // Drag handlers
   function onDragStart(i: number) { setDragIdx(i) }
@@ -504,6 +526,7 @@ export default function EditLessonPage({ params }: Props) {
               slide={slide}
               onChange={s => setSlide(i, s)}
               onDelete={() => delSlide(i)}
+              onDuplicateAsAnswerKey={() => duplicateAsAnswerKey(i)}
               dragHandleProps={{
                 draggable: true,
                 onDragStart: () => onDragStart(i),

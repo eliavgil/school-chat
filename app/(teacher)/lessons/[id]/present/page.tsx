@@ -156,6 +156,8 @@ function DoodleIcon({ type }: { type: string }) {
     homework: <svg viewBox="0 0 24 24"><path d="M7 8V6a5 5 0 0110 0v2"/><rect x="4" y="8" width="16" height="12" rx="2"/></svg>,
     feedback: <svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z"/><path d="M9 10h6M9 13h4"/></svg>,
   }
+  icons.assessment = icons.quiz
+  icons.assessment_answers = icons.reveal
   return <div className="doodle">{icons[type] ?? icons.intro}</div>
 }
 
@@ -291,11 +293,12 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
 
       {body && <div>{renderBody(body)}</div>}
 
-      {/* POLL / QUIZ — bar chart results */}
-      {(type === "poll" || type === "quiz") && questions && questions.map((q, qi) => {
+      {/* POLL / QUIZ / ASSESSMENT — bar chart results */}
+      {(type === "poll" || type === "quiz" || type === "assessment" || type === "assessment_answers") && questions && questions.map((q, qi) => {
         const qAgg = agg[q.id] ?? {}
         const total = Object.values(qAgg).reduce((s, v) => s + v, 0)
         const letters = ["א", "ב", "ג", "ד", "ה"]
+        const showCorrect = type === "assessment_answers" || revealOpen
         return (
           <div key={q.id} style={{ marginBottom: 28, paddingTop: qi > 0 ? 16 : 0, borderTop: qi > 0 ? "1px solid rgba(27,42,74,0.14)" : "none" }}>
             {/* Question number + text */}
@@ -308,7 +311,7 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
               {q.options.map((opt, oi) => {
                 const cnt = qAgg[String(oi)] ?? 0
                 const pct = total ? Math.round((cnt / total) * 100) : 0
-                const isCorrect = q.correct_index !== null && oi === q.correct_index
+                const isCorrect = showCorrect && q.correct_index !== null && oi === q.correct_index
                 const badgeBg = isCorrect ? "#3F6B4F" : "#1B2A4A"
                 return (
                   <div key={oi} className="bar-row">
@@ -328,6 +331,15 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
           </div>
         )
       })}
+
+      {/* Reveal-answer toggle — quiz / assessment only (never auto-shown while projected) */}
+      {(type === "quiz" || type === "assessment") && questions?.some(q => q.correct_index !== null) && (
+        <button
+          onClick={() => setRevealOpen(!revealOpen)}
+          style={{ background: "var(--ink)", color: "var(--paper)", border: "none", borderRadius: 8, padding: "10px 20px", fontFamily: "'Heebo'", fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 4 }}>
+          {revealOpen ? "הסתר תשובות נכונות" : "חשיפת תשובה"}
+        </button>
+      )}
 
       {/* DEFINITIONS — flip cards (notebook style) */}
       {type === "definitions" && questions && (
@@ -549,11 +561,15 @@ export default function PresentPage({ params }: Props) {
 
   const slide = lesson?.slides[idx]
 
+  // Never let a reveal carry over to the next slide — reset regardless of live-session state
+  useEffect(() => {
+    setRevealOpen(false)
+  }, [slide?.id])
+
   // Fetch aggregated responses when slide changes
   useEffect(() => {
     if (!session || !slide) return
     setAgg({})
-    setRevealOpen(false)
     fetchAgg(session.id, slide.id)
   }, [session?.id, slide?.id])
 
@@ -711,6 +727,7 @@ export default function PresentPage({ params }: Props) {
   const TYPE_LABELS: Record<string, string> = {
     intro: "פתיחה", poll: "מה דעתכם", quiz: "בדיקת עירנות", definitions: "הגדרות מושגים",
     matching: "התאמה", reveal: "גילוי", enrichment: "העשרה", homework: "שיעורי בית", feedback: "משוב",
+    assessment: "מבדק סוף שיעור", assessment_answers: "תשובות למבדק",
   }
 
   return (

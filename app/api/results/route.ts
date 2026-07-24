@@ -42,7 +42,9 @@ export async function GET(req: Request) {
     const slides: Slide[] = lesson?.slides ?? []
 
     const slidesWithQuestions = slides
-      .filter(s => s.questions && s.questions.length > 0)
+      // "assessment_answers" slides are display-only duplicates of an "assessment" slide's
+      // questions (same question ids) — excluding them avoids double-counting quiz scores.
+      .filter(s => s.questions && s.questions.length > 0 && s.type !== "assessment_answers")
       .map(s => ({
         slideId: s.id,
         slideTitle: s.title,

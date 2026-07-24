@@ -1,6 +1,7 @@
 export type SlideType =
   | "intro" | "poll" | "definitions" | "quiz" | "matching"
   | "reveal" | "enrichment" | "homework" | "feedback"
+  | "assessment" | "assessment_answers"
 
 export interface SlideQuestion {
   id: string

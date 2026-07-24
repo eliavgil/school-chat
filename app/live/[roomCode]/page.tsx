@@ -71,6 +71,7 @@ const TYPE_LABELS: Record<string, string> = {
   intro: "פתיחה", poll: "מה דעתכם", quiz: "בדיקת עירנות",
   definitions: "הגדרות מושגים", matching: "התאמה", reveal: "גילוי",
   enrichment: "העשרה", homework: "שיעורי בית", feedback: "משוב",
+  assessment: "מבדק סוף שיעור", assessment_answers: "תשובות למבדק",
 }
 
 function extractYouTubeId(url: string): string | null {
@@ -193,7 +194,7 @@ function QuestionBlock({ question, sessionId, slideId, studentId, type, question
   const [starPick, setStarPick] = useState<number | null>(null)
 
   const isFeedback = type === "feedback"
-  const isQuiz = type === "quiz"
+  const isQuiz = type === "quiz" || type === "assessment"
   const showLiveAgg = done && (type === "poll" || type === "quiz" || type === "feedback")
   const questionId = question.id || `${slideId}-${questionIndex}`
 
@@ -375,7 +376,7 @@ function StudentSlide({ slide, sessionId, studentId }: {
 
   const { type, eyebrow, title, body, questions } = slide
   const isBackground = slide.image_position === "background"
-  const showQuestions = (type === "poll" || type === "quiz" || type === "feedback") && questions?.length
+  const showQuestions = (type === "poll" || type === "quiz" || type === "feedback" || type === "assessment") && questions?.length
   const imageAtTop = !slide.image_position || slide.image_position === "top"
 
   const cardStyle: React.CSSProperties = {
