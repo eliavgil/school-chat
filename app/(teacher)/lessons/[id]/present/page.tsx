@@ -46,6 +46,9 @@ const CSS = `
   .flip-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:12px;text-align:center;}
   .flip-front{background:var(--ink);color:var(--paper);font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:15px;}
   .flip-back{background:var(--gold);color:var(--ink);transform:rotateY(180deg);font-size:12px;line-height:1.5;font-weight:600;}
+  .nb-sheet{background:repeating-linear-gradient(transparent 0px,transparent 27px,rgba(27,42,74,0.07) 27px,rgba(27,42,74,0.07) 28px);background-color:#fefdf7;border-right:3px solid rgba(162,59,46,0.22);border-radius:0 8px 8px 0;padding:18px 22px 18px 12px;margin-top:12px;}
+  .nb-flip-front{background:#fff;color:var(--ink);border:1.5px solid rgba(27,42,74,0.14);}
+  .nb-flip-back{background:rgba(176,141,63,0.18);color:var(--ink);}
   .qz{margin-bottom:12px;padding:14px 16px;background:#fff;border:1px solid var(--line);border-radius:10px;}
   .qz .qtext{font-weight:700;color:var(--ink);margin-bottom:8px;font-size:14px;}
   .qz .opts{display:flex;flex-direction:column;gap:7px;}
@@ -326,17 +329,20 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
         )
       })}
 
-      {/* DEFINITIONS — flip cards */}
+      {/* DEFINITIONS — flip cards (notebook style) */}
       {type === "definitions" && questions && (
-        <div className="flip-grid">
-          {questions.map((q, i) => (
-            <div key={q.id} className={`flip-card ${flipped.has(i) ? "flipped" : ""}`} onClick={() => toggleFlip(i)}>
-              <div className="flip-inner">
-                <div className="flip-face flip-front">{q.text}</div>
-                <div className="flip-face flip-back">{q.feedback ?? q.options[0]}</div>
+        <div className="nb-sheet">
+          <div style={{ fontSize: 11, color: "rgba(162,59,46,0.5)", fontWeight: 700, letterSpacing: 1.5, marginBottom: 12, textTransform: "uppercase" }}>◀ לחצו על מושג לגילוי ההגדרה</div>
+          <div className="flip-grid">
+            {questions.map((q, i) => (
+              <div key={q.id} className={`flip-card ${flipped.has(i) ? "flipped" : ""}`} onClick={() => toggleFlip(i)}>
+                <div className="flip-inner">
+                  <div className="flip-face flip-front nb-flip-front">{q.text}</div>
+                  <div className="flip-face flip-back nb-flip-back">{q.feedback ?? q.options[0]}</div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       )}
 
@@ -703,7 +709,7 @@ export default function PresentPage({ params }: Props) {
   const total = lesson.slides.length
 
   const TYPE_LABELS: Record<string, string> = {
-    intro: "פתיחה", poll: "סקר", quiz: "חידון", definitions: "הגדרות",
+    intro: "פתיחה", poll: "מה דעתכם", quiz: "בדיקת עירנות", definitions: "הגדרות מושגים",
     matching: "התאמה", reveal: "גילוי", enrichment: "העשרה", homework: "שיעורי בית", feedback: "משוב",
   }
 

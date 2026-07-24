@@ -62,7 +62,16 @@ const CSS = `
   .anim-corner-left{position:absolute;bottom:80px;left:20px;width:130px;height:130px;z-index:20;pointer-events:none;}
   .anim-top{position:absolute;top:70px;left:50%;transform:translateX(-50%);width:130px;height:130px;z-index:20;pointer-events:none;}
   .q-num{width:22px;height:22px;border-radius:50%;background:var(--seal);color:var(--paper);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;font-family:'Frank Ruhl Libre',serif;line-height:1;margin-left:8px;}
+  .nb-sheet{background:repeating-linear-gradient(transparent 0px,transparent 27px,rgba(27,42,74,0.07) 27px,rgba(27,42,74,0.07) 28px);background-color:#fefdf7;border-right:3px solid rgba(162,59,46,0.22);border-radius:0 8px 8px 0;padding:14px 18px 14px 10px;margin-top:10px;}
+  .nb-flip-front{background:#fff;color:var(--ink);border:1.5px solid rgba(27,42,74,0.14);}
+  .nb-flip-back{background:rgba(176,141,63,0.18);color:var(--ink);}
 `
+
+const TYPE_LABELS: Record<string, string> = {
+  intro: "פתיחה", poll: "מה דעתכם", quiz: "בדיקת עירנות",
+  definitions: "הגדרות מושגים", matching: "התאמה", reveal: "גילוי",
+  enrichment: "העשרה", homework: "שיעורי בית", feedback: "משוב",
+}
 
 function extractYouTubeId(url: string): string | null {
   const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/)
@@ -392,7 +401,7 @@ function StudentSlide({ slide, sessionId, studentId }: {
       {/* Image at top (default) */}
       {imageAtTop && <MediaBlock slide={{ ...slide, link_url: null, youtube_url: null }} />}
 
-      <div className="eyebrow">{eyebrow || type}</div>
+      <div className="eyebrow">{eyebrow || TYPE_LABELS[type] || type}</div>
       <h1 className="stitle">{title}</h1>
       {body && <div>{renderBody(body)}</div>}
 
@@ -410,15 +419,19 @@ function StudentSlide({ slide, sessionId, studentId }: {
         <QuestionBlock key={q.id ?? qi} question={q} sessionId={sessionId} slideId={slide.id} studentId={studentId} type={type} questionIndex={qi} />
       ))}
 
-      {/* Definitions — flip cards */}
-      {type === "definitions" && questions?.map((q, i) => (
-        <div key={q.id} className={`flip-card ${flipped.has(i) ? "flipped" : ""}`} onClick={() => toggleFlip(i)}>
-          <div className="flip-inner">
-            <div className="flip-face flip-front">{q.text}</div>
-            <div className="flip-face flip-back">{q.feedback ?? q.options[0]}</div>
-          </div>
+      {/* Definitions — flip cards (notebook style) */}
+      {type === "definitions" && questions && (
+        <div className="nb-sheet">
+          {questions.map((q, i) => (
+            <div key={q.id} className={`flip-card ${flipped.has(i) ? "flipped" : ""}`} onClick={() => toggleFlip(i)}>
+              <div className="flip-inner">
+                <div className="flip-face flip-front nb-flip-front">{q.text}</div>
+                <div className="flip-face flip-back nb-flip-back">{q.feedback ?? q.options[0]}</div>
+              </div>
+            </div>
+          ))}
         </div>
-      ))}
+      )}
 
       {/* Homework */}
       {type === "homework" && questions?.map((q, i) => (

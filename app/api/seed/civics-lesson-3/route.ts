@@ -78,7 +78,7 @@ const slides: Slide[] = [
     id: "s3",
     order: 4,
     type: "poll",
-    eyebrow: "סקר פתיחה",
+    eyebrow: "מה דעתכם",
     title: "לפני שנלמד — מה לדעתך?",
     questions: [
       {
@@ -117,7 +117,7 @@ const slides: Slide[] = [
     id: "s5",
     order: 6,
     type: "definitions",
-    eyebrow: "מושגי יסוד",
+    eyebrow: "הגדרות מושגים",
     title: "מושגים שחייבים לדעת",
     questions: [
       {
@@ -182,12 +182,22 @@ const slides: Slide[] = [
 → פתח לקהילות סגורות ליהודים בלבד?`,
   },
 
+  {
+    id: "s6b",
+    order: 8,
+    type: "intro",
+    eyebrow: "מנוחמוח",
+    title: "הפסקה קצרה!",
+    body: `קומו, תנועו, נשמו — ואז חזרה לעסק! 💪`,
+    animation: { name: "jumping", delay: 1, position: "corner-right", loop: false },
+  },
+
   // ── שקף 8: חידון ביניים ───────────────────────────────────────────────────
   {
     id: "s7",
-    order: 8,
+    order: 9,
     type: "quiz",
-    eyebrow: "בדיקת הבנה",
+    eyebrow: "בדיקת עירנות",
     title: "מה הבנתם עד כה?",
     questions: [
       {
@@ -232,7 +242,7 @@ const slides: Slide[] = [
   // ── שקף 9: המחלוקת ────────────────────────────────────────────────────────
   {
     id: "s8",
-    order: 9,
+    order: 10,
     type: "reveal",
     eyebrow: "המחלוקת",
     title: "למה הוויכוח כל כך חריף?",
@@ -255,7 +265,7 @@ const slides: Slide[] = [
   // ── שקף 10: מודלינג בגרות ─────────────────────────────────────────────────
   {
     id: "s9",
-    order: 10,
+    order: 11,
     type: "reveal",
     eyebrow: "מיומנות בגרות",
     title: "שאלת עמדה — מודלינג",
@@ -279,41 +289,6 @@ const slides: Slide[] = [
 3. **חיבור לעקרון:** לכן הסעיף יוצר אי-שוויון מובנה בין אזרחים, בסתירה לעקרון הדמוקרטי של שוויון
 
 > **טיפ:** אפשר גם לנסח עמדה **בעד** — "החוק מגן על זהות המדינה" — העיקר להציג נימוק קשור לחומר.`,
-  },
-
-  // ── שקף 11: העשרה ─────────────────────────────────────────────────────────
-  {
-    id: "s10",
-    order: 11,
-    type: "enrichment",
-    eyebrow: "העשרה",
-    title: "הצהרת העצמאות מול חוק הלאום",
-    image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Declaration_of_State_of_Israel_1948.jpg/800px-Declaration_of_State_of_Israel_1948.jpg",
-    image_position: "right",
-    image_size: "medium",
-    questions: [
-      {
-        id: "e1",
-        text: "הצהרת העצמאות (1948)",
-        options: ['"המדינה... תקיים שוויון זכויות חברתי ומדיני גמור לכל אזרחיה"'],
-        correct_index: null,
-        feedback: "השוואה",
-      },
-      {
-        id: "e2",
-        text: "חוק הלאום (2018)",
-        options: ["אין אזכור לשוויון. הזכות הלאומית — לעם היהודי בלבד."],
-        correct_index: null,
-        feedback: "השוואה",
-      },
-      {
-        id: "e3",
-        text: "שאלה לדיון",
-        options: ["אם יש סתירה בין המסמכים — מי גובר? חוק היסוד החדש, או הצהרת עצמאות בת 70 שנה?"],
-        correct_index: null,
-        feedback: "העמקה",
-      },
-    ],
   },
 
   // ── שקף 12: התאמה ─────────────────────────────────────────────────────────
@@ -356,7 +331,7 @@ const slides: Slide[] = [
     id: "s12",
     order: 13,
     type: "quiz",
-    eyebrow: "בוחן מסכם",
+    eyebrow: "בדיקת עירנות",
     title: "5 שאלות — כל מה שלמדנו",
     questions: [
       {
@@ -417,10 +392,45 @@ const slides: Slide[] = [
     ],
   },
 
+  // ── העשרה ─────────────────────────────────────────────────────────────────
+  {
+    id: "s10",
+    order: 14,
+    type: "enrichment",
+    eyebrow: "העשרה",
+    title: "הצהרת העצמאות מול חוק הלאום",
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Declaration_of_State_of_Israel_1948.jpg/800px-Declaration_of_State_of_Israel_1948.jpg",
+    image_position: "right",
+    image_size: "medium",
+    questions: [
+      {
+        id: "e1",
+        text: "הצהרת העצמאות (1948)",
+        options: ['"המדינה... תקיים שוויון זכויות חברתי ומדיני גמור לכל אזרחיה"'],
+        correct_index: null,
+        feedback: "השוואה",
+      },
+      {
+        id: "e2",
+        text: "חוק הלאום (2018)",
+        options: ["אין אזכור לשוויון. הזכות הלאומית — לעם היהודי בלבד."],
+        correct_index: null,
+        feedback: "השוואה",
+      },
+      {
+        id: "e3",
+        text: "שאלה לדיון",
+        options: ["אם יש סתירה בין המסמכים — מי גובר? חוק היסוד החדש, או הצהרת עצמאות בת 70 שנה?"],
+        correct_index: null,
+        feedback: "העמקה",
+      },
+    ],
+  },
+
   // ── שקף 14: שיעורי בית ────────────────────────────────────────────────────
   {
     id: "s13",
-    order: 14,
+    order: 15,
     type: "homework",
     eyebrow: "משימה לבית",
     title: "עמדה על סעיף 7",
@@ -449,7 +459,7 @@ const slides: Slide[] = [
   // ── שקף 15: משוב ──────────────────────────────────────────────────────────
   {
     id: "s14",
-    order: 15,
+    order: 16,
     type: "feedback",
     eyebrow: "משוב",
     title: "איך היה השיעור?",
