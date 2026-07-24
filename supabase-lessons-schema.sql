@@ -68,6 +68,7 @@ create table if not exists session_participants (
 create table if not exists responses (
   id           uuid primary key default gen_random_uuid(),
   session_id   uuid references live_sessions(id) on delete cascade,
+  lesson_id    uuid references lessons(id) not null,
   student_id   text not null,
   slide_id     text not null,
   question_id  text not null,

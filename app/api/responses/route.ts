@@ -11,9 +11,19 @@ export async function POST(req: Request) {
   const qid = (question_id as string) || slide_id
   const sid = (student_id as string) || "anonymous"
 
+  const { data: sessionRow, error: sessionError } = await sb
+    .from("live_sessions")
+    .select("lesson_id")
+    .eq("id", session_id)
+    .single()
+
+  if (sessionError || !sessionRow) {
+    return NextResponse.json({ error: "Invalid session_id" }, { status: 400 })
+  }
+
   const { error } = await sb
     .from("responses")
-    .insert({ session_id, student_id: sid, slide_id, question_id: qid, answer: String(answer) })
+    .insert({ session_id, lesson_id: sessionRow.lesson_id, student_id: sid, slide_id, question_id: qid, answer: String(answer) })
 
   if (error) {
     // 23505 = unique_violation: student already answered this question, treat as success
