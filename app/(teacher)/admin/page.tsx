@@ -9,6 +9,7 @@ interface PendingStudent { id: string; name: string | null; email: string | null
 interface ParentUser { id: string; name: string | null; email: string | null; phone: string | null; parentStudents: { student: { id: string; name: string } }[] }
 interface StudentUser { id: string; name: string | null; email: string | null; studentRecord: { id: string; name: string } | null }
 interface Student { id: string; name: string }
+interface ClassWithStudents { id: string; name: string; displayName: string; students: { id: string; name: string }[] }
 
 const IMPORT_JOBS: ImportJob[] = [
   { type: "teachers",          label: "אלפון מורים",                   accept: ".xlsx,.xls" },
@@ -50,7 +51,7 @@ function ApproveWithLink({
 
 // ── Main component ────────────────────────────────────────
 export default function AdminPage() {
-  const [tab, setTab] = useState<"import" | "users">("import")
+  const [tab, setTab] = useState<"import" | "users" | "roster">("import")
 
   // Import state
   const [results, setResults]       = useState<Record<string, string>>({})
@@ -64,6 +65,7 @@ export default function AdminPage() {
   const [approvedParents, setApprovedParents] = useState<ParentUser[]>([])
   const [approvedStudents, setApprovedStudents] = useState<StudentUser[]>([])
   const [students, setStudents]               = useState<Student[]>([])
+  const [roster, setRoster]                   = useState<ClassWithStudents[]>([])
   const [usersLoading, setUsersLoading]       = useState(false)
   const [actionLoading, setActionLoading]     = useState<string | null>(null)
   const [expandedId, setExpandedId]           = useState<string | null>(null)
@@ -76,7 +78,7 @@ export default function AdminPage() {
   const [preLoading, setPreLoading]   = useState(false)
   const [preMsg, setPreMsg]           = useState("")
 
-  useEffect(() => { if (tab === "users") fetchUsers() }, [tab])
+  useEffect(() => { if (tab === "users" || tab === "roster") fetchUsers() }, [tab])
 
   async function fetchUsers() {
     setUsersLoading(true)
@@ -86,6 +88,7 @@ export default function AdminPage() {
     setApprovedParents(d.approvedParents ?? [])
     setApprovedStudents(d.approvedStudents ?? [])
     setStudents(d.students ?? [])
+    setRoster(d.roster ?? [])
     setUsersLoading(false)
   }
 
@@ -97,6 +100,18 @@ export default function AdminPage() {
       body: JSON.stringify({ userId, action: type, studentId }),
     })
     setExpandedId(null)
+    await fetchUsers()
+    setActionLoading(null)
+  }
+
+  async function rosterAction(type: string, studentId?: string, classId?: string) {
+    const key = studentId ?? classId ?? type
+    setActionLoading(key)
+    await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: type, studentId, classId }),
+    })
     await fetchUsers()
     setActionLoading(null)
   }
@@ -142,10 +157,10 @@ export default function AdminPage() {
         <div className="max-w-3xl mx-auto">
           <h1 className="text-lg font-bold text-stone-900 mb-4">פאנל ניהול</h1>
           <div className="flex gap-6 text-sm font-medium">
-            {(["import", "users"] as const).map(t => (
+            {(["import", "users", "roster"] as const).map(t => (
               <button key={t} onClick={() => setTab(t)}
                 className={`pb-3 border-b-2 transition-colors interactive ${tab === t ? "border-stone-900 text-stone-900" : "border-transparent text-stone-400 hover:text-stone-700"}`}>
-                {t === "import" ? "ייבוא נתונים" : <>
+                {t === "import" ? "ייבוא נתונים" : t === "roster" ? "רשימת כיתה" : <>
                   ניהול משתמשים{totalPending > 0 && <span className="bg-red-500 text-white rounded-full px-1.5 py-0.5 text-xs mr-1">{totalPending}</span>}
                 </>}
               </button>
@@ -200,6 +215,52 @@ export default function AdminPage() {
               ))}
             </div>
           </>}
+
+          {/* ── Roster tab ── */}
+          {tab === "roster" && (usersLoading ? <p className="text-stone-400 text-sm">טוען...</p> : (
+            roster.length === 0
+              ? <p className="text-stone-400 text-sm text-center py-8">אין כיתות ברשימה</p>
+              : <div className="space-y-4">
+                  {roster.map(cls => (
+                    <div key={cls.id} className="bg-white border border-stone-200 rounded-xl overflow-hidden">
+                      <div className="flex items-center justify-between px-4 py-3 bg-stone-50 border-b border-stone-200">
+                        <div>
+                          <span className="font-semibold text-stone-800 text-sm">{cls.displayName || cls.name}</span>
+                          <span className="text-stone-400 text-xs mr-2">({cls.students.length} תלמידים)</span>
+                        </div>
+                        <button
+                          disabled={actionLoading === cls.id}
+                          onClick={() => {
+                            if (!confirm(`למחוק את הכיתה "${cls.displayName || cls.name}" וכל ${cls.students.length} תלמידיה? פעולה זו אינה הפיכה.`)) return
+                            rosterAction("delete-class", undefined, cls.id)
+                          }}
+                          className="text-xs text-red-400 hover:text-red-600 border border-red-200 rounded-lg px-2 py-1 disabled:opacity-50">
+                          {actionLoading === cls.id ? "מוחק..." : "מחק כיתה"}
+                        </button>
+                      </div>
+                      {cls.students.length === 0
+                        ? <p className="text-stone-400 text-xs px-4 py-3">אין תלמידים בכיתה זו</p>
+                        : <div className="divide-y divide-stone-100">
+                            {cls.students.map(s => (
+                              <div key={s.id} className="flex items-center justify-between px-4 py-2.5">
+                                <span className="text-sm text-stone-700">{s.name}</span>
+                                <button
+                                  disabled={actionLoading === s.id}
+                                  onClick={() => {
+                                    if (!confirm(`למחוק את התלמיד/ה "${s.name}"? פעולה זו אינה הפיכה.`)) return
+                                    rosterAction("delete-student", s.id)
+                                  }}
+                                  className="text-xs text-red-400 hover:text-red-600 disabled:opacity-50">
+                                  {actionLoading === s.id ? "..." : "מחק"}
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                      }
+                    </div>
+                  ))}
+                </div>
+          ))}
 
           {/* ── Users tab ── */}
           {tab === "users" && (usersLoading ? <p className="text-stone-400 text-sm">טוען...</p> : <>

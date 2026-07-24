@@ -1,11 +1,5 @@
 import { NextResponse } from "next/server"
-import { createHash } from "crypto"
 import { adminClient } from "@/lib/lessons/supabase"
-
-function toUUID(id: string): string {
-  const h = createHash("md5").update(id).digest("hex")
-  return `${h.slice(0,8)}-${h.slice(8,12)}-${h.slice(12,16)}-${h.slice(16,20)}-${h.slice(20,32)}`
-}
 
 export async function POST(req: Request) {
   const { session_id, student_id, slide_id, question_id, answer } = await req.json()
@@ -14,16 +8,15 @@ export async function POST(req: Request) {
   }
 
   const sb = adminClient()
-  const esid = toUUID(String(session_id))
-  const sid = toUUID((student_id as string) || "anonymous")
   const qid = (question_id as string) || slide_id
+  const sid = (student_id as string) || "anonymous"
 
   const { error } = await sb
     .from("responses")
-    .insert({ session_id: esid, student_id: sid, slide_id, question_id: qid, answer: String(answer) })
+    .insert({ session_id, student_id: sid, slide_id, question_id: qid, answer: String(answer) })
 
   if (error) {
-    // 23505 = unique_violation: student already answered, treat as success
+    // 23505 = unique_violation: student already answered this question, treat as success
     if (error.code === "23505") return NextResponse.json({ ok: true })
     return NextResponse.json({ error: error.message, code: error.code }, { status: 500 })
   }
@@ -43,7 +36,7 @@ export async function GET(req: Request) {
   const { data, error } = await sb
     .from("responses")
     .select("question_id, answer")
-    .eq("session_id", toUUID(session_id))
+    .eq("session_id", session_id)
     .eq("slide_id", slide_id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })

@@ -41,7 +41,7 @@ const slides: Slide[] = [
     id: "s2",
     order: 3,
     type: "poll",
-    eyebrow: "סקר פתיחה",
+    eyebrow: "מה דעתכם",
     title: "מה דעתך על חקיקה בעלת אופי יהודי?",
     questions: [
       {
@@ -112,7 +112,7 @@ const slides: Slide[] = [
     id: "s5",
     order: 6,
     type: "quiz",
-    eyebrow: "בדיקת הבנה",
+    eyebrow: "בדיקת עירנות",
     title: "קצרה — על החוקים",
     questions: [
       {
@@ -142,8 +142,17 @@ const slides: Slide[] = [
     ],
   },
   {
-    id: "s6",
+    id: "s5b",
     order: 7,
+    type: "intro",
+    eyebrow: "מנוחמוח",
+    title: "הפסקה קצרה!",
+    body: `קומו, תנועו, נשמו — ואז חזרה לעסק! 💪`,
+    animation: { name: "jumping", delay: 1, position: "corner-right", loop: false },
+  },
+  {
+    id: "s6",
+    order: 8,
     type: "definitions",
     eyebrow: "תחום ב׳: המרחב הציבורי",
     title: "האופי היהודי שנראה בכל מקום",
@@ -173,7 +182,7 @@ const slides: Slide[] = [
   },
   {
     id: "s7",
-    order: 8,
+    order: 9,
     type: "poll",
     eyebrow: "לפני התחום השלישי",
     title: "האם ישראל צריכה נישואים אזרחיים?",
@@ -196,7 +205,7 @@ const slides: Slide[] = [
   },
   {
     id: "s8",
-    order: 9,
+    order: 10,
     type: "reveal",
     eyebrow: "תחום ג׳: בין הציבורי לפרטי",
     title: "הסדר הסטטוס קוו",
@@ -225,7 +234,7 @@ const slides: Slide[] = [
   },
   {
     id: "s9",
-    order: 10,
+    order: 11,
     type: "reveal",
     eyebrow: "מיומנות בגרות",
     title: "ציין-הצג-הסבר: דוגמה מהמרחב הציבורי",
@@ -253,7 +262,7 @@ const slides: Slide[] = [
   },
   {
     id: "s10",
-    order: 11,
+    order: 12,
     type: "matching",
     eyebrow: "תרגול",
     title: "חוק + מה הוא מבטא — נסדר את זה",
@@ -298,9 +307,9 @@ const slides: Slide[] = [
   },
   {
     id: "s11",
-    order: 12,
+    order: 13,
     type: "quiz",
-    eyebrow: "בוחן סיכום",
+    eyebrow: "בדיקת עירנות",
     title: "5 שאלות — חקיקה בעלת אופי יהודי",
     questions: [
       {
@@ -367,7 +376,7 @@ const slides: Slide[] = [
   },
   {
     id: "s12",
-    order: 13,
+    order: 14,
     type: "homework",
     eyebrow: "משימה לבית",
     title: "ציין-הצג-הסבר: שאלת אירוע",
@@ -388,7 +397,7 @@ const slides: Slide[] = [
   },
   {
     id: "s13",
-    order: 14,
+    order: 15,
     type: "feedback",
     eyebrow: "משוב",
     title: "איך היה?",

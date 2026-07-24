@@ -47,6 +47,18 @@ export const authOptions: NextAuthOptions = {
         })
         if (dbUser) token.accessStatus = dbUser.accessStatus
       }
+      // Same for STUDENT: re-read when still pending OR when not yet linked to a Student record.
+      // Covers: teacher approves student after first sign-in; teacher links account to roster entry.
+      if (token.role === "STUDENT" && (token.accessStatus === "PENDING" || !token.studentId)) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.sub! },
+          select: { accessStatus: true, studentId: true },
+        })
+        if (dbUser) {
+          token.accessStatus = dbUser.accessStatus
+          token.studentId = dbUser.studentId ?? null
+        }
+      }
       return token
     },
     session({ session, token }) {

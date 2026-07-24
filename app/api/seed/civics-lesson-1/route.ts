@@ -38,7 +38,7 @@ const slides: Slide[] = [
     id: "s2",
     order: 3,
     type: "poll",
-    eyebrow: "סקר חי",
+    eyebrow: "מה דעתכם",
     title: "לדעתך, מה המרכיב החיוני ביותר למדינה?",
     questions: [
       {
@@ -67,7 +67,7 @@ const slides: Slide[] = [
     id: "s4",
     order: 5,
     type: "definitions",
-    eyebrow: "מושגי יסוד",
+    eyebrow: "הגדרות מושגים",
     title: "הגדרות ליבה",
     body: `**מדינה** — ישות פוליטית ריבונית בעלת שטח, אוכלוסייה ושלטון, שפועלת עצמאית מבלי לכפוף לסמכות חיצונית.
 
@@ -85,7 +85,7 @@ const slides: Slide[] = [
     id: "s5",
     order: 6,
     type: "quiz",
-    eyebrow: "בדיקת הבנה",
+    eyebrow: "בדיקת עירנות",
     title: "מה למדנו עד כה?",
     questions: [
       {
@@ -115,8 +115,17 @@ const slides: Slide[] = [
     ],
   },
   {
-    id: "s6",
+    id: "s5b",
     order: 7,
+    type: "intro",
+    eyebrow: "מנוחמוח",
+    title: "הפסקה קצרה!",
+    body: `קומו, תנועו, נשמו — ואז חזרה לעסק! 💪`,
+    animation: { name: "jumping", delay: 1, position: "corner-right", loop: false },
+  },
+  {
+    id: "s6",
+    order: 8,
     type: "reveal",
     eyebrow: "ניתוח המקרה",
     title: "חזרה לפלסטין — מיישמים את המרכיבים",
@@ -132,9 +141,9 @@ const slides: Slide[] = [
   },
   {
     id: "s7",
-    order: 8,
+    order: 9,
     type: "poll",
-    eyebrow: "סקר חי",
+    eyebrow: "מה דעתכם",
     title: "הכורדים — עם ללא מדינה",
     body: `כ-40 מיליון כורדים פרוסים על פני טורקיה, עיראק, סוריה ואיראן. יש להם שפה, תרבות ותודעה לאומית — אך אין מדינה.
 
@@ -155,7 +164,7 @@ const slides: Slide[] = [
   },
   {
     id: "s8",
-    order: 9,
+    order: 10,
     type: "reveal",
     eyebrow: "מיומנות בגרות",
     title: "ציין-הצג-הסבר: מודלינג",
@@ -182,21 +191,10 @@ const slides: Slide[] = [
     link_url: "https://www.civicsisrael.org.il/",
   },
   {
-    id: "s9",
-    order: 10,
-    type: "enrichment",
-    eyebrow: "העשרה",
-    title: "סרטון: מדינות ללא הכרה",
-    body: `מה קורה לישויות שיש להן שטח, שלטון ואוכלוסייה — אך העולם מסרב להכיר בהן?
-
-דוגמאות: **טייוואן, סהרה המערבית, אבחזיה, סומלילנד**.`,
-    youtube_url: "https://www.youtube.com/watch?v=3GjABpJXqE0",
-  },
-  {
     id: "s10",
     order: 11,
     type: "quiz",
-    eyebrow: "בוחן סיכום",
+    eyebrow: "בדיקת עירנות",
     title: "5 שאלות — מרכיבי המדינה",
     questions: [
       {
@@ -262,8 +260,19 @@ const slides: Slide[] = [
     ],
   },
   {
-    id: "s11",
+    id: "s9",
     order: 12,
+    type: "enrichment",
+    eyebrow: "העשרה",
+    title: "סרטון: מדינות ללא הכרה",
+    body: `מה קורה לישויות שיש להן שטח, שלטון ואוכלוסייה — אך העולם מסרב להכיר בהן?
+
+דוגמאות: **טייוואן, סהרה המערבית, אבחזיה, סומלילנד**.`,
+    youtube_url: "https://www.youtube.com/watch?v=3GjABpJXqE0",
+  },
+  {
+    id: "s11",
+    order: 13,
     type: "homework",
     eyebrow: "משימה לבית",
     title: "תרגול ציין-הצג-הסבר",
@@ -284,7 +293,7 @@ const slides: Slide[] = [
   },
   {
     id: "s12",
-    order: 13,
+    order: 14,
     type: "feedback",
     eyebrow: "משוב",
     title: "מה הרגשתם היום?",

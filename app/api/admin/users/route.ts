@@ -13,7 +13,7 @@ async function requireAdmin() {
 export async function GET() {
   if (!await requireAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const [pendingParents, pendingStudents, approvedParents, approvedStudents, students] = await Promise.all([
+  const [pendingParents, pendingStudents, approvedParents, approvedStudents, students, roster] = await Promise.all([
     prisma.user.findMany({
       where: { role: "PARENT", accessStatus: "PENDING" },
       select: { id: true, name: true, email: true, phone: true, requestedChildName: true, parentType: true, createdAt: true },
@@ -41,9 +41,13 @@ export async function GET() {
       select: { id: true, name: true },
       orderBy: { name: "asc" },
     }),
+    prisma.class.findMany({
+      include: { students: { select: { id: true, name: true }, orderBy: { name: "asc" } } },
+      orderBy: { name: "asc" },
+    }),
   ])
 
-  return NextResponse.json({ pendingParents, pendingStudents, approvedParents, approvedStudents, students })
+  return NextResponse.json({ pendingParents, pendingStudents, approvedParents, approvedStudents, students, roster })
 }
 
 export async function POST(req: NextRequest) {
@@ -82,7 +86,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   if (!await requireAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { userId, action, studentId } = await req.json()
+  const { userId, action, studentId, classId } = await req.json()
 
   if (action === "approve-parent") {
     await prisma.user.update({ where: { id: userId }, data: { accessStatus: "APPROVED" } })
@@ -110,6 +114,35 @@ export async function PATCH(req: NextRequest) {
     // Fully removes the User + cascaded Account/Session records so the Google
     // account can re-register from scratch.
     await prisma.user.delete({ where: { id: userId } })
+  } else if (action === "delete-student" && studentId) {
+    await prisma.$transaction(async (tx) => {
+      await tx.user.updateMany({ where: { studentId }, data: { studentId: null } })
+      await tx.message.deleteMany({ where: { studentId } })
+      await tx.studentRecord.deleteMany({ where: { studentId } })
+      await tx.studentGrade.deleteMany({ where: { studentId } })
+      await tx.studentAttendance.deleteMany({ where: { studentId } })
+      await tx.studentAccommodation.deleteMany({ where: { studentId } })
+      await tx.emotionalNote.deleteMany({ where: { studentId } })
+      await tx.parentStudent.deleteMany({ where: { studentId } })
+      await tx.student.delete({ where: { id: studentId } })
+    })
+  } else if (action === "delete-class" && classId) {
+    const classStudents = await prisma.student.findMany({ where: { classId }, select: { id: true } })
+    const ids = classStudents.map(s => s.id)
+    await prisma.$transaction(async (tx) => {
+      if (ids.length > 0) {
+        await tx.user.updateMany({ where: { studentId: { in: ids } }, data: { studentId: null } })
+        await tx.message.deleteMany({ where: { studentId: { in: ids } } })
+        await tx.studentRecord.deleteMany({ where: { studentId: { in: ids } } })
+        await tx.studentGrade.deleteMany({ where: { studentId: { in: ids } } })
+        await tx.studentAttendance.deleteMany({ where: { studentId: { in: ids } } })
+        await tx.studentAccommodation.deleteMany({ where: { studentId: { in: ids } } })
+        await tx.emotionalNote.deleteMany({ where: { studentId: { in: ids } } })
+        await tx.parentStudent.deleteMany({ where: { studentId: { in: ids } } })
+        await tx.student.deleteMany({ where: { classId } })
+      }
+      await tx.class.delete({ where: { id: classId } })
+    })
   }
 
   return NextResponse.json({ ok: true })
