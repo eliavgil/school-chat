@@ -30,12 +30,6 @@ const CSS = `
   .poll-opt.wrong{background:rgba(162,59,46,.12);border-color:var(--seal);color:var(--seal);}
   .poll-opt.done{cursor:default;}
   .feedback-text{margin-top:8px;font-size:13px;color:#555;padding:8px 12px;background:rgba(63,107,79,.08);border-radius:7px;}
-  .flip-card{height:100px;border-radius:10px;cursor:pointer;perspective:1000px;margin-bottom:10px;}
-  .flip-inner{position:relative;width:100%;height:100%;transition:transform .4s;transform-style:preserve-3d;}
-  .flip-card.flipped .flip-inner{transform:rotateY(180deg);}
-  .flip-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:12px;text-align:center;}
-  .flip-front{background:var(--ink);color:var(--paper);font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:14px;}
-  .flip-back{background:var(--gold);color:var(--ink);transform:rotateY(180deg);font-size:12px;line-height:1.5;font-weight:600;}
   .task-item{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);}
   .task-num{width:24px;height:24px;border-radius:50%;background:var(--seal);color:var(--paper);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
   .star-row{display:flex;gap:8px;margin-top:8px;}
@@ -62,9 +56,11 @@ const CSS = `
   .anim-corner-left{position:absolute;bottom:80px;left:20px;width:130px;height:130px;z-index:20;pointer-events:none;}
   .anim-top{position:absolute;top:70px;left:50%;transform:translateX(-50%);width:130px;height:130px;z-index:20;pointer-events:none;}
   .q-num{width:22px;height:22px;border-radius:50%;background:var(--seal);color:var(--paper);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;font-family:'Frank Ruhl Libre',serif;line-height:1;margin-left:8px;}
-  .nb-sheet{background:repeating-linear-gradient(transparent 0px,transparent 27px,rgba(27,42,74,0.07) 27px,rgba(27,42,74,0.07) 28px);background-color:#fefdf7;border-right:3px solid rgba(162,59,46,0.22);border-radius:0 8px 8px 0;padding:14px 18px 14px 10px;margin-top:10px;}
-  .nb-flip-front{background:#fff;color:var(--ink);border:1.5px solid rgba(27,42,74,0.14);}
-  .nb-flip-back{background:rgba(176,141,63,0.18);color:var(--ink);}
+  .nb-sheet{background:repeating-linear-gradient(transparent 0px,transparent 34px,rgba(27,42,74,0.08) 34px,rgba(27,42,74,0.08) 35px);background-color:#fefdf7;border-right:3px solid rgba(162,59,46,0.22);border-radius:0 8px 8px 0;padding:18px 20px 18px 12px;margin-top:10px;}
+  .nb-entry{margin-bottom:22px;}
+  .nb-entry:last-child{margin-bottom:0;}
+  .nb-term{font-family:'Frank Ruhl Libre',serif;font-weight:900;color:var(--seal);font-size:20px;line-height:1.3;margin-bottom:5px;}
+  .nb-def{font-family:'Heebo',sans-serif;font-weight:500;color:var(--ink);font-size:16px;line-height:1.65;}
 `
 
 const TYPE_LABELS: Record<string, string> = {
@@ -368,12 +364,6 @@ function StudentSlide({ slide, sessionId, studentId }: {
   sessionId: string
   studentId: string
 }) {
-  const [flipped, setFlipped] = useState<Set<number>>(new Set())
-
-  function toggleFlip(i: number) {
-    setFlipped(prev => { const n = new Set(prev); n.has(i) ? n.delete(i) : n.add(i); return n })
-  }
-
   const { type, eyebrow, title, body, questions } = slide
   const isBackground = slide.image_position === "background"
   const showQuestions = (type === "poll" || type === "quiz" || type === "feedback" || type === "assessment") && questions?.length
@@ -413,15 +403,13 @@ function StudentSlide({ slide, sessionId, studentId }: {
         <QuestionBlock key={q.id ?? qi} question={q} sessionId={sessionId} slideId={slide.id} studentId={studentId} type={type} questionIndex={qi} />
       ))}
 
-      {/* Definitions — flip cards (notebook style) */}
+      {/* Definitions — notebook page, term + definition always visible for copying */}
       {type === "definitions" && questions && (
         <div className="nb-sheet">
-          {questions.map((q, i) => (
-            <div key={q.id} className={`flip-card ${flipped.has(i) ? "flipped" : ""}`} onClick={() => toggleFlip(i)}>
-              <div className="flip-inner">
-                <div className="flip-face flip-front nb-flip-front">{q.text}</div>
-                <div className="flip-face flip-back nb-flip-back">{q.feedback ?? q.options[0]}</div>
-              </div>
+          {questions.map(q => (
+            <div key={q.id} className="nb-entry">
+              <div className="nb-term">{q.text}</div>
+              <div className="nb-def">{q.feedback ?? q.options[0]}</div>
             </div>
           ))}
         </div>

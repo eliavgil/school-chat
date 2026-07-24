@@ -39,16 +39,11 @@ const CSS = `
   .bar-label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;color:var(--ink);font-weight:600;}
   .bar-bg{height:12px;background:var(--paper2);border-radius:6px;overflow:hidden;}
   .bar-fill{height:100%;background:linear-gradient(90deg,var(--gold),var(--seal));border-radius:6px;transition:width .5s ease;}
-  .flip-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:16px;}
-  .flip-card{height:110px;border-radius:10px;cursor:pointer;perspective:1000px;}
-  .flip-inner{position:relative;width:100%;height:100%;transition:transform .5s;transform-style:preserve-3d;}
-  .flip-card.flipped .flip-inner{transform:rotateY(180deg);}
-  .flip-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:12px;text-align:center;}
-  .flip-front{background:var(--ink);color:var(--paper);font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:15px;}
-  .flip-back{background:var(--gold);color:var(--ink);transform:rotateY(180deg);font-size:12px;line-height:1.5;font-weight:600;}
-  .nb-sheet{background:repeating-linear-gradient(transparent 0px,transparent 27px,rgba(27,42,74,0.07) 27px,rgba(27,42,74,0.07) 28px);background-color:#fefdf7;border-right:3px solid rgba(162,59,46,0.22);border-radius:0 8px 8px 0;padding:18px 22px 18px 12px;margin-top:12px;}
-  .nb-flip-front{background:#fff;color:var(--ink);border:1.5px solid rgba(27,42,74,0.14);}
-  .nb-flip-back{background:rgba(176,141,63,0.18);color:var(--ink);}
+  .nb-sheet{background:repeating-linear-gradient(transparent 0px,transparent 44px,rgba(27,42,74,0.09) 44px,rgba(27,42,74,0.09) 45px);background-color:#fefdf7;border-right:3px solid rgba(162,59,46,0.22);border-radius:0 8px 8px 0;padding:26px 30px 26px 18px;margin-top:14px;}
+  .nb-entry{margin-bottom:30px;}
+  .nb-entry:last-child{margin-bottom:0;}
+  .nb-term{font-family:'Frank Ruhl Libre',serif;font-weight:900;color:var(--seal);font-size:28px;line-height:1.3;margin-bottom:6px;}
+  .nb-def{font-family:'Heebo',sans-serif;font-weight:500;color:var(--ink);font-size:21px;line-height:1.7;}
   .qz{margin-bottom:12px;padding:14px 16px;background:#fff;border:1px solid var(--line);border-radius:10px;}
   .qz .qtext{font-weight:700;color:var(--ink);margin-bottom:8px;font-size:14px;}
   .qz .opts{display:flex;flex-direction:column;gap:7px;}
@@ -94,7 +89,8 @@ const CSS = `
     .slide-inner{padding:24px 20px 100px 20px;}
     .grid2{grid-template-columns:1fr;}
     .enrich-grid{grid-template-columns:1fr;}
-    .flip-grid{grid-template-columns:1fr;}
+    .nb-term{font-size:23px;}
+    .nb-def{font-size:18px;}
     .topbar{padding:10px 12px;}
     @keyframes run-across{from{left:110%}to{left:-60%}}
     .anim-across{width:150px;height:150px;bottom:50px;}
@@ -260,12 +256,6 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
   revealOpen: boolean
   setRevealOpen: (v: boolean) => void
 }) {
-  const [flipped, setFlipped] = useState<Set<number>>(new Set())
-
-  function toggleFlip(i: number) {
-    setFlipped(prev => { const n = new Set(prev); n.has(i) ? n.delete(i) : n.add(i); return n })
-  }
-
   const { type, eyebrow, title, body, questions } = slide
   const isBackground = slide.image_position === "background"
 
@@ -341,20 +331,15 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
         </button>
       )}
 
-      {/* DEFINITIONS — flip cards (notebook style) */}
+      {/* DEFINITIONS — notebook page, term + definition always visible for copying */}
       {type === "definitions" && questions && (
         <div className="nb-sheet">
-          <div style={{ fontSize: 11, color: "rgba(162,59,46,0.5)", fontWeight: 700, letterSpacing: 1.5, marginBottom: 12, textTransform: "uppercase" }}>◀ לחצו על מושג לגילוי ההגדרה</div>
-          <div className="flip-grid">
-            {questions.map((q, i) => (
-              <div key={q.id} className={`flip-card ${flipped.has(i) ? "flipped" : ""}`} onClick={() => toggleFlip(i)}>
-                <div className="flip-inner">
-                  <div className="flip-face flip-front nb-flip-front">{q.text}</div>
-                  <div className="flip-face flip-back nb-flip-back">{q.feedback ?? q.options[0]}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+          {questions.map(q => (
+            <div key={q.id} className="nb-entry">
+              <div className="nb-term">{q.text}</div>
+              <div className="nb-def">{q.feedback ?? q.options[0]}</div>
+            </div>
+          ))}
         </div>
       )}
 
