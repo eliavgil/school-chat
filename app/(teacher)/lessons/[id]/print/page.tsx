@@ -1,6 +1,7 @@
 "use client"
 import React, { useEffect, useState, use } from "react"
 import type { Lesson, Slide } from "@/lib/lessons/types"
+import { ConceptIcon } from "@/lib/lessons/icons"
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -50,6 +51,7 @@ const TYPE_LABELS: Record<string, string> = {
   intro: "פתיחה", poll: "סקר", quiz: "חידון", definitions: "הגדרות",
   matching: "התאמה", reveal: "גילוי", enrichment: "העשרה", homework: "שיעורי בית", feedback: "משוב",
   assessment: "מבדק סוף שיעור", assessment_answers: "תשובות למבדק",
+  "concept-grid": "סקירה",
 }
 
 function renderInline(text: string): React.ReactNode[] {
@@ -210,6 +212,28 @@ function PrintSlide({ slide, num }: { slide: Slide; num: number }) {
               <span className="type-tag">{q.feedback ?? "העשרה"}</span>
               <p style={{ fontFamily: "'Frank Ruhl Libre',serif", fontWeight: 700, fontSize: 14, margin: "6px 0 4px", color: "var(--ink)" }}>{q.text}</p>
               <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: "#4a4a45" }}>{q.options[0] ?? ""}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Concept grid */}
+      {type === "concept-grid" && questions && (
+        <div style={{
+          display: slide.layout === "list" ? "flex" : "grid",
+          flexDirection: slide.layout === "list" ? "column" : undefined,
+          gridTemplateColumns: slide.layout === "list" ? undefined : "repeat(3,1fr)",
+          gap: 14, marginTop: 14,
+        }}>
+          {questions.map(q => (
+            <div key={q.id} style={{ display: "flex", alignItems: slide.layout === "list" ? "flex-start" : "center", flexDirection: slide.layout === "list" ? "row" : "column", gap: 10, textAlign: slide.layout === "list" ? "right" : "center", border: slide.layout === "list" ? "none" : "1.5px solid var(--line)", borderRadius: 12, padding: slide.layout === "list" ? 0 : "14px 12px", background: slide.layout === "list" ? "transparent" : "#fff" }}>
+              <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--paper2)", border: "1.5px solid var(--line)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--seal)", flexShrink: 0 }}>
+                <ConceptIcon name={q.icon} size={16} />
+              </div>
+              <div>
+                <p style={{ fontFamily: "'Frank Ruhl Libre',serif", fontWeight: 700, fontSize: 14, margin: "0 0 3px", color: "var(--ink)" }}>{q.text}</p>
+                <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: "#4a4a45" }}>{q.options[0] ?? ""}</p>
+              </div>
             </div>
           ))}
         </div>

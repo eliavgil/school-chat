@@ -3,6 +3,7 @@ import { useEffect, useState, useRef, use } from "react"
 import { useRouter } from "next/navigation"
 import type { Lesson, Slide, SlideType, SlideQuestion } from "@/lib/lessons/types"
 import { ANIMATION_REGISTRY, ANIMATION_DELAYS, ANIMATION_POSITIONS } from "@/lib/lessons/animations"
+import { CONCEPT_ICONS, ConceptIcon } from "@/lib/lessons/icons"
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -18,6 +19,7 @@ const SLIDE_TYPES: { value: SlideType; label: string }[] = [
   { value: "enrichment",         label: "העשרה" },
   { value: "homework",           label: "שיעורי בית" },
   { value: "feedback",           label: "משוב" },
+  { value: "concept-grid",       label: "רשת מושגים (אייקונים)" },
 ]
 
 const IMG_POSITIONS = [
@@ -70,6 +72,7 @@ const CSS = `
   .slide-item.drag-over{border:2px dashed var(--seal) !important;}
   .section-label{font-size:11px;font-weight:700;color:var(--ink);opacity:0.5;letter-spacing:.7px;text-transform:uppercase;margin-bottom:6px;}
   .media-section{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:14px;}
+  .concept-icon-preview{width:34px;height:34px;border-radius:50%;background:var(--paper2);border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--seal);}
 `
 
 function extractYouTubeId(url: string): string | null {
@@ -127,6 +130,24 @@ function QuestionEditor({ q, onChange, onDelete, type }: {
         <label>הסבר / תגובה (אופציונלי)</label>
         <input value={q.feedback ?? ""} onChange={e => onChange({ ...q, feedback: e.target.value })} placeholder="טקסט שיופיע לאחר המענה..." />
       </div>
+      {type === "concept-grid" && (
+        <div className="field" style={{ marginBottom: 0 }}>
+          <label>אייקון</label>
+          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+            <div className="concept-icon-preview"><ConceptIcon name={q.icon} size={18} /></div>
+            <input
+              list="concept-icon-options"
+              value={q.icon ?? ""}
+              onChange={e => onChange({ ...q, icon: e.target.value || undefined })}
+              placeholder="crown, scale, landmark, users, map..."
+              style={{ flex: 1 }}
+            />
+            <datalist id="concept-icon-options">
+              {Object.keys(CONCEPT_ICONS).map(key => <option key={key} value={key} />)}
+            </datalist>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -400,9 +421,28 @@ function SlideEditor({ slide, onChange, onDelete, onDuplicateAsAnswerKey, dragHa
             )}
           </div>
 
+          {/* Concept-grid layout toggle */}
+          {slide.type === "concept-grid" && (
+            <div className="field">
+              <label>פריסה</label>
+              <div className="chip-row">
+                <button className={`chip${(slide.layout ?? "grid") === "grid" ? " active" : ""}`}
+                  onClick={() => onChange({ ...slide, layout: "grid" })}>
+                  רשת כרטיסים
+                </button>
+                <button className={`chip${slide.layout === "list" ? " active" : ""}`}
+                  onClick={() => onChange({ ...slide, layout: "list" })}>
+                  רשימה אנכית
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Questions */}
           <div>
-            <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)", marginBottom: 8 }}>שאלות</div>
+            <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)", marginBottom: 8 }}>
+              {slide.type === "concept-grid" ? "פריטים (כותרת + משפט אחד + אייקון)" : "שאלות"}
+            </div>
             {(slide.questions ?? []).map((q, i) => (
               <QuestionEditor key={q.id} q={q} type={slide.type} onChange={q => setQ(i, q)} onDelete={() => delQ(i)} />
             ))}

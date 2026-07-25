@@ -1,7 +1,7 @@
 export type SlideType =
   | "intro" | "poll" | "definitions" | "quiz" | "matching"
   | "reveal" | "enrichment" | "homework" | "feedback"
-  | "assessment" | "assessment_answers"
+  | "assessment" | "assessment_answers" | "concept-grid"
 
 export interface SlideQuestion {
   id: string
@@ -9,6 +9,7 @@ export interface SlideQuestion {
   options: string[]
   correct_index: number | null
   feedback?: string
+  icon?: string          // icon key (see lib/lessons/icons.tsx) — used by concept-grid
 }
 
 export type AnimationPosition = "across" | "center" | "corner-right" | "corner-left" | "top"
@@ -36,6 +37,7 @@ export interface Slide {
   display?: { show_names: boolean }
   questions?: SlideQuestion[]
   animation?: SlideAnimation | null
+  layout?: 'grid' | 'list'   // concept-grid only: card grid vs. vertical icon list
 }
 
 export interface Lesson {

@@ -3,6 +3,7 @@ import React, { useEffect, useState, useCallback, use, useRef } from "react"
 import QRCode from "react-qr-code"
 import { browserClient } from "@/lib/lessons/supabase"
 import type { Lesson, Slide, LiveSession, SlideAnimation } from "@/lib/lessons/types"
+import { ConceptIcon } from "@/lib/lessons/icons"
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -67,6 +68,16 @@ const CSS = `
   .cond-chip{flex:1;min-width:140px;background:var(--paper2);border:1px solid var(--line);border-radius:10px;padding:12px 10px;text-align:center;}
   .cond-chip .n{font-family:'Frank Ruhl Libre',serif;font-weight:900;color:var(--seal);font-size:20px;display:block;margin-bottom:3px;}
   .cond-chip .t{font-size:13px;font-weight:700;color:var(--ink);}
+  .concept-icon-circle{width:46px;height:46px;border-radius:50%;background:var(--paper2);border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--seal);}
+  .concept-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-top:18px;}
+  .concept-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 16px;text-align:center;}
+  .concept-card .concept-icon-circle{margin:0 auto 12px;}
+  .concept-card h3{font-family:'Frank Ruhl Libre',serif;color:var(--ink);margin:0 0 5px;font-size:16px;}
+  .concept-card p{margin:0;font-size:13px;line-height:1.5;color:#4a4a45;}
+  .concept-list{display:flex;flex-direction:column;gap:16px;margin-top:20px;max-width:640px;}
+  .concept-list-item{display:flex;align-items:flex-start;gap:14px;}
+  .concept-list-item h3{font-family:'Frank Ruhl Libre',serif;color:var(--ink);margin:0 0 3px;font-size:16px;}
+  .concept-list-item p{margin:0;font-size:14px;line-height:1.55;color:#4a4a45;}
   .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:40;backdrop-filter:blur(2px);}
   .sidebar{position:fixed;top:0;right:0;bottom:0;width:280px;background:var(--ink);border-left:1px solid rgba(176,141,63,0.25);z-index:41;display:flex;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,0.4);}
   .sidebar-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid rgba(176,141,63,0.2);flex-shrink:0;}
@@ -96,6 +107,7 @@ const CSS = `
     .slide-inner{padding:24px 20px 100px 20px;}
     .grid2{grid-template-columns:1fr;}
     .enrich-grid{grid-template-columns:1fr;}
+    .concept-grid{grid-template-columns:1fr 1fr;}
     .slide-inner.nb-page{padding:0;}
     .nb-head{padding:20px 20px 10px;}
     .nb-title{font-size:24px;}
@@ -163,6 +175,7 @@ function DoodleIcon({ type }: { type: string }) {
     enrichment: <svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 00-3 11c1 .7 1 1.5 1 2h4c0-.5 0-1.3 1-2a6 6 0 00-3-11z"/></svg>,
     homework: <svg viewBox="0 0 24 24"><path d="M7 8V6a5 5 0 0110 0v2"/><rect x="4" y="8" width="16" height="12" rx="2"/></svg>,
     feedback: <svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z"/><path d="M9 10h6M9 13h4"/></svg>,
+    "concept-grid": <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>,
   }
   icons.assessment = icons.quiz
   icons.assessment_answers = icons.reveal
@@ -421,6 +434,33 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
             </div>
           ))}
         </div>
+      )}
+
+      {/* CONCEPT-GRID — icon cards (grid) or icon list (list) */}
+      {type === "concept-grid" && questions && (
+        slide.layout === "list" ? (
+          <div className="concept-list">
+            {questions.map(q => (
+              <div key={q.id} className="concept-list-item">
+                <div className="concept-icon-circle"><ConceptIcon name={q.icon} /></div>
+                <div>
+                  <h3>{q.text}</h3>
+                  <p>{q.options[0] ?? ""}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="concept-grid">
+            {questions.map(q => (
+              <div key={q.id} className="concept-card">
+                <div className="concept-icon-circle"><ConceptIcon name={q.icon} /></div>
+                <h3>{q.text}</h3>
+                <p>{q.options[0] ?? ""}</p>
+              </div>
+            ))}
+          </div>
+        )
       )}
 
       {/* INTRO — conditions strip if questions present */}

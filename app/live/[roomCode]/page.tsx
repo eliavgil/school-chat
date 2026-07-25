@@ -3,6 +3,7 @@ import { useEffect, useState, use, useRef } from "react"
 import { useSession, signIn } from "next-auth/react"
 import { browserClient } from "@/lib/lessons/supabase"
 import type { Lesson, Slide, LiveSession, SlideQuestion, SlideAnimation } from "@/lib/lessons/types"
+import { ConceptIcon } from "@/lib/lessons/icons"
 
 interface Props { params: Promise<{ roomCode: string }> }
 
@@ -37,6 +38,16 @@ const CSS = `
   .star-btn.selected{background:var(--gold);border-color:var(--gold);}
   .enrich-card{background:#fff;border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px;}
   .rtag{display:inline-block;font-size:10px;font-weight:700;color:#fff;background:var(--seal);border-radius:4px;padding:2px 6px;margin-bottom:5px;}
+  .concept-icon-circle{width:40px;height:40px;border-radius:50%;background:var(--paper2);border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--seal);}
+  .concept-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
+  .concept-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 12px;text-align:center;}
+  .concept-card .concept-icon-circle{margin:0 auto 8px;}
+  .concept-card h3{font-family:'Frank Ruhl Libre',serif;color:var(--ink);margin:0 0 4px;font-size:14px;}
+  .concept-card p{margin:0;font-size:12px;line-height:1.45;color:#4a4a45;}
+  .concept-list{display:flex;flex-direction:column;gap:14px;margin-top:16px;}
+  .concept-list-item{display:flex;align-items:flex-start;gap:12px;}
+  .concept-list-item h3{font-family:'Frank Ruhl Libre',serif;color:var(--ink);margin:0 0 2px;font-size:14px;}
+  .concept-list-item p{margin:0;font-size:13px;line-height:1.5;color:#4a4a45;}
   .bar-row{margin-bottom:8px;}
   .bar-label{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--ink);margin-bottom:3px;}
   .bar-bg{height:8px;background:var(--paper2);border-radius:4px;overflow:hidden;}
@@ -75,6 +86,7 @@ const TYPE_LABELS: Record<string, string> = {
   definitions: "הגדרות מושגים", matching: "התאמה", reveal: "גילוי",
   enrichment: "העשרה", homework: "שיעורי בית", feedback: "משוב",
   assessment: "מבדק סוף שיעור", assessment_answers: "תשובות למבדק",
+  "concept-grid": "סקירה",
 }
 
 function extractYouTubeId(url: string): string | null {
@@ -453,6 +465,33 @@ function StudentSlide({ slide, sessionId, studentId }: {
           <div style={{ fontSize: 13, lineHeight: 1.55, color: "#4a4a45" }}>{q.options[0] ?? ""}</div>
         </div>
       ))}
+
+      {/* Concept grid — icon cards (grid) or icon list (list) */}
+      {type === "concept-grid" && questions && (
+        slide.layout === "list" ? (
+          <div className="concept-list">
+            {questions.map(q => (
+              <div key={q.id} className="concept-list-item">
+                <div className="concept-icon-circle"><ConceptIcon name={q.icon} size={18} /></div>
+                <div>
+                  <h3>{q.text}</h3>
+                  <p>{q.options[0] ?? ""}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="concept-grid">
+            {questions.map(q => (
+              <div key={q.id} className="concept-card">
+                <div className="concept-icon-circle"><ConceptIcon name={q.icon} size={18} /></div>
+                <h3>{q.text}</h3>
+                <p>{q.options[0] ?? ""}</p>
+              </div>
+            ))}
+          </div>
+        )
+      )}
 
       {/* Intro chips */}
       {type === "intro" && questions && (

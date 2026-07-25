@@ -46,9 +46,47 @@ Sprinkle these through the lesson, especially in the second third (where attenti
 | `definitions` | Can be long | Terms students must memorize; use flip cards |
 | `reveal` | Short prompt, longer answer hidden | Model answers, worked examples, bagrut-style responses |
 | `enrichment` | 2–3 cards, punchy | Going deeper for curious students; optional |
+| `concept-grid` | One sentence per item, max | A set of parallel concepts (conditions, principles, branches, rights) — icon + short title + one sentence each. See below. |
 | `homework` | Numbered list | Clear tasks; each item one sentence |
 | `feedback` | One question, star rating | End of lesson only |
 | `matching` | Pairs | Terminology matching, cause-effect, law-to-principle |
+
+**Default to terse.** Every type above except `definitions`, `poll`, and `quiz` should read as a backdrop, not an essay — if a `reveal` or `intro` body runs past 3–4 short lines, cut it. When a slide is *about* a list of parallel concepts (e.g. "the five conditions for statehood," "the three branches of government"), reach for `concept-grid` instead of a wall of bulleted body text — it forces one sentence per idea and gives the eye an icon to land on.
+
+### `concept-grid` — icon cards for parallel concepts
+
+Use `questions` to carry the items (not `body`): `q.text` = short title, `q.options[0]` = one sentence (no more), `q.icon` = an icon key (see vocabulary below). Two layouts, set via the slide's `layout` field:
+- `layout: "grid"` (default) — for an overview of 3–5 parallel items side by side, e.g. the five conditions of statehood.
+- `layout: "list"` — for a vertical breakdown of one concept's sub-parts, e.g. the four dimensions of "territory" (land / sea / air / subsoil).
+
+**Icon vocabulary** (`lib/lessons/icons.tsx`, backed by lucide-react — pick the closest match, don't invent new keys without adding them there first):
+
+| Key | Use for |
+|---|---|
+| `crown` | sovereignty, supreme authority |
+| `scale` | courts, law, equality |
+| `landmark` | government institutions |
+| `users` | population, the public, a people |
+| `map` | territory |
+| `handshake` | international recognition, agreements |
+| `globe` | international, the UN, the world |
+| `shield` | security, defense |
+| `vote` | elections |
+| `gavel` | legislation, rulings |
+| `book` | education |
+| `document` | law, official document |
+| `flag` | state, nation |
+| `mountain` / `waves` / `plane` / `layers` | land / sea / air / subsoil domains |
+| `building` | a public institution |
+| `newspaper` | media, press |
+| `megaphone` | free speech |
+| `calendar` | calendar, dates |
+| `language` | language |
+| `scroll` | a declaration or founding document |
+| `quote` | a testimony or quotation |
+| `identity` | identity, citizenship |
+| `lock` | a restriction or prohibition |
+| `alert` | emergency, crisis |
 
 ## Lesson flow
 
