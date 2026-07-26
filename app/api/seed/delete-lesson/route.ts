@@ -3,23 +3,24 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { adminClient } from "@/lib/lessons/supabase"
 
-// One-time cleanup route — deletes a single lesson (by exact title match)
-// along with any live_sessions / responses tied to it (required first —
-// foreign keys block deleting the lesson otherwise). Pass ?title=...
-// Remove this file after running it.
+// One-time cleanup route — deletes a single lesson (by exact title or slug
+// match) along with any live_sessions / responses tied to it (required
+// first — foreign keys block deleting the lesson otherwise).
+// Pass ?title=... or ?slug=... Remove this file after running it.
 export async function GET(request: Request) {
   const session = await getServerSession(authOptions)
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const title = new URL(request.url).searchParams.get("title")
-  if (!title) return NextResponse.json({ error: "Missing ?title=" }, { status: 400 })
+  const params = new URL(request.url).searchParams
+  const title = params.get("title")
+  const slug = params.get("slug")
+  if (!title && !slug) return NextResponse.json({ error: "Missing ?title= or ?slug=" }, { status: 400 })
 
   const sb = adminClient()
 
-  const { data: lessons, error: selectError } = await sb
-    .from("lessons")
-    .select("id, title, slug")
-    .eq("title", title)
+  let query = sb.from("lessons").select("id, title, slug")
+  query = slug ? query.eq("slug", slug) : query.eq("title", title as string)
+  const { data: lessons, error: selectError } = await query
 
   if (selectError) return NextResponse.json({ error: selectError.message }, { status: 500 })
 
@@ -50,10 +51,10 @@ export async function GET(request: Request) {
     .in("lesson_id", lessonIds)
   if (sessionsError) return NextResponse.json({ error: sessionsError.message }, { status: 500 })
 
-  const { error: deleteError } = await sb
-    .from("lessons")
-    .delete()
-    .eq("title", title)
+  const deleteQuery = sb.from("lessons").delete()
+  const { error: deleteError } = await (slug
+    ? deleteQuery.eq("slug", slug)
+    : deleteQuery.eq("title", title as string))
 
   if (deleteError) return NextResponse.json({ error: deleteError.message }, { status: 500 })
 
