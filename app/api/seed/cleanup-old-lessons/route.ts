@@ -49,7 +49,11 @@ export async function GET() {
       .from("student_activity")
       .delete()
       .in("session_id", sessionIds)
-    if (activityError) return NextResponse.json({ error: activityError.message }, { status: 500 })
+    // The live schema doesn't always match supabase-lessons-schema.sql exactly;
+    // if this table/column isn't actually present, there's nothing to clean up here.
+    if (activityError && !activityError.message.includes("does not exist")) {
+      return NextResponse.json({ error: activityError.message }, { status: 500 })
+    }
   }
 
   const { error: responsesError } = await sb
