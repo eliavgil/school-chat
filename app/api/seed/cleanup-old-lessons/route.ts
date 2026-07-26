@@ -4,8 +4,10 @@ import { authOptions } from "@/lib/auth"
 import { adminClient } from "@/lib/lessons/supabase"
 
 // One-time cleanup route — deletes the pre-redesign lessons that were
-// replaced by the new civics-lesson-1 (formerly -6) and civics-lesson-2.
-// Remove this file after running it once.
+// replaced by the new civics-lesson-1 (formerly -6) and civics-lesson-2,
+// along with any live_sessions / responses / student_activity tied to
+// them (required first — foreign keys block deleting the lessons
+// otherwise). Remove this file after running it once.
 const SLUGS_TO_DELETE = [
   "civics-state-components-1",
   "civics-nation-state-law-3",
@@ -20,16 +22,47 @@ export async function GET() {
 
   const sb = adminClient()
 
-  const { data: existing, error: selectError } = await sb
+  const { data: lessons, error: selectError } = await sb
     .from("lessons")
     .select("id, title, slug")
     .in("slug", SLUGS_TO_DELETE)
 
   if (selectError) return NextResponse.json({ error: selectError.message }, { status: 500 })
 
-  if (!existing || existing.length === 0) {
+  if (!lessons || lessons.length === 0) {
     return NextResponse.json({ message: "Nothing to delete — no matching lessons found", deleted: [] })
   }
+
+  const lessonIds = lessons.map(l => l.id)
+
+  const { data: sessions, error: sessionsSelectError } = await sb
+    .from("live_sessions")
+    .select("id")
+    .in("lesson_id", lessonIds)
+
+  if (sessionsSelectError) return NextResponse.json({ error: sessionsSelectError.message }, { status: 500 })
+
+  const sessionIds = (sessions ?? []).map(s => s.id)
+
+  if (sessionIds.length > 0) {
+    const { error: activityError } = await sb
+      .from("student_activity")
+      .delete()
+      .in("session_id", sessionIds)
+    if (activityError) return NextResponse.json({ error: activityError.message }, { status: 500 })
+  }
+
+  const { error: responsesError } = await sb
+    .from("responses")
+    .delete()
+    .in("lesson_id", lessonIds)
+  if (responsesError) return NextResponse.json({ error: responsesError.message }, { status: 500 })
+
+  const { error: sessionsError } = await sb
+    .from("live_sessions")
+    .delete()
+    .in("lesson_id", lessonIds)
+  if (sessionsError) return NextResponse.json({ error: sessionsError.message }, { status: 500 })
 
   const { error: deleteError } = await sb
     .from("lessons")
@@ -40,6 +73,7 @@ export async function GET() {
 
   return NextResponse.json({
     message: "Deleted",
-    deleted: existing.map(l => ({ id: l.id, title: l.title, slug: l.slug })),
+    deleted: lessons.map(l => ({ id: l.id, title: l.title, slug: l.slug })),
+    sessionsDeleted: sessionIds.length,
   })
 }
