@@ -383,6 +383,8 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
   const [fit, setFit] = useState(1)
 
   useLayoutEffect(() => {
+    // Assessment slides are fine to scroll — never shrink their text.
+    if (type === "assessment" || type === "assessment_answers") return
     const inner = slideInnerRef.current
     const content = contentRef.current
     if (!inner || !content) return
