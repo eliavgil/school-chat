@@ -4,9 +4,10 @@ import { authOptions } from "@/lib/auth"
 import { adminClient } from "@/lib/lessons/supabase"
 import type { Slide } from "@/lib/lessons/types"
 
-const LESSON_TITLE = 'שיעור 11: תנאי יסוד לבחירות דמוקרטיות (כ"ח מש"ה)'
+export const LESSON_TITLE = 'שיעור 11: תנאי יסוד לבחירות דמוקרטיות (כ"ח מש"ה)'
+export const SLUG = "democracy-election-conditions-11"
 
-const slides: Slide[] = [
+export const slides: Slide[] = [
   // ── שקף 1: נושא השיעור ────────────────────────────────────────────────────
   {
     id: "s1",
@@ -28,9 +29,9 @@ const slides: Slide[] = [
     eyebrow: "מטרות השיעור",
     title: "מה נלמד היום",
     questions: [
-      { id: "obj1", icon: "vote", text: "ימנה", options: ['את חמשת התנאים ההכרחיים לקיום בחירות דמוקרטיות (כ"ח מש"ה).'], correct_index: null },
-      { id: "obj2", icon: "scale", text: "יסביר", options: ["את החשיבות של כל תנאי להבטחת הליך דמוקרטי תקין וחילופי שלטון."], correct_index: null },
-      { id: "obj3", icon: "alert", text: "יזהה", options: ["פגיעה בתנאי בחירות מתוך תיאור מקרה של בחירות שאינן תקינות."], correct_index: null },
+      { id: "obj1", icon: "vote", text: "נמנה", options: ['את חמשת התנאים ההכרחיים לקיום בחירות דמוקרטיות (כ"ח מש"ה).'], correct_index: null },
+      { id: "obj2", icon: "scale", text: "נסביר", options: ["את החשיבות של כל תנאי להבטחת הליך דמוקרטי תקין וחילופי שלטון."], correct_index: null },
+      { id: "obj3", icon: "alert", text: "נזהה", options: ["פגיעה בתנאי בחירות מתוך תיאור מקרה של בחירות שאינן תקינות."], correct_index: null },
     ],
   },
 
@@ -287,12 +288,11 @@ export async function GET() {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const sb = adminClient()
-  const slug = "democracy-election-conditions-11"
 
   const { data: existing, error: existingError } = await sb
     .from("lessons")
     .select("id, title")
-    .eq("slug", slug)
+    .eq("slug", SLUG)
     .maybeSingle()
 
   if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 })
@@ -311,7 +311,7 @@ export async function GET() {
     .insert({
       title: LESSON_TITLE,
       subject: "אזרחות",
-      slug,
+      slug: SLUG,
       slides,
     })
     .select()

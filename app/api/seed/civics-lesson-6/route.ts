@@ -4,9 +4,10 @@ import { authOptions } from "@/lib/auth"
 import { adminClient } from "@/lib/lessons/supabase"
 import type { Slide } from "@/lib/lessons/types"
 
-const LESSON_TITLE = "שיעור 6: חוק הלאום"
+export const LESSON_TITLE = "שיעור 6: חוק הלאום"
+export const SLUG = "civics-nation-state-law-6"
 
-const slides: Slide[] = [
+export const slides: Slide[] = [
   // ── שקף 1: נושא השיעור ────────────────────────────────────────────────────
   {
     id: "s1",
@@ -28,9 +29,9 @@ const slides: Slide[] = [
     eyebrow: "מטרות השיעור",
     title: "מה נלמד היום",
     questions: [
-      { id: "obj1", icon: "scale", text: "יסביר", options: ["את מעמדו של חוק הלאום כחוק יסוד המהווה תשתית חוקתית למדינת ישראל."], correct_index: null },
-      { id: "obj2", icon: "scroll", text: "יזהה ויפרט", options: ["את עיקרי סעיפי החוק המעגנים את זהות המדינה כביתו הלאומי של העם היהודי."], correct_index: null },
-      { id: "obj3", icon: "document", text: "יישם", options: ["את הידע בפתרון שאלת ידע מתוך בחינת הבגרות העוסקת בתוכן החוק."], correct_index: null },
+      { id: "obj1", icon: "scale", text: "נסביר", options: ["את מעמדו של חוק הלאום כחוק יסוד המהווה תשתית חוקתית למדינת ישראל."], correct_index: null },
+      { id: "obj2", icon: "scroll", text: "נזהה ונפרט", options: ["את עיקרי סעיפי החוק המעגנים את זהות המדינה כביתו הלאומי של העם היהודי."], correct_index: null },
+      { id: "obj3", icon: "document", text: "ניישם", options: ["את הידע בפתרון שאלת ידע מתוך בחינת הבגרות העוסקת בתוכן החוק."], correct_index: null },
     ],
   },
 
@@ -294,12 +295,11 @@ export async function GET() {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const sb = adminClient()
-  const slug = "civics-nation-state-law-6"
 
   const { data: existing, error: existingError } = await sb
     .from("lessons")
     .select("id, title")
-    .eq("slug", slug)
+    .eq("slug", SLUG)
     .maybeSingle()
 
   if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 })
@@ -318,7 +318,7 @@ export async function GET() {
     .insert({
       title: LESSON_TITLE,
       subject: "אזרחות",
-      slug,
+      slug: SLUG,
       slides,
     })
     .select()

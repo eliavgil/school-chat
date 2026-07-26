@@ -62,7 +62,7 @@ Sprinkle these through the lesson, especially in the second third (where attenti
 
 Every lesson opens with exactly these three slides, in this order, before anything else:
 1. `lesson-topic` — a title, an image (often `image_position: "background"`), and — rarely — one or two short sentences under the title. Nothing else; don't put the lesson's hook argument here, just the subject.
-2. `objectives` — 3–4 learning goals as icon items (`questions`, same shape as `concept-grid`): `q.text` = short goal, `q.options[0]` = one clause of detail, `q.icon` = closest fit from the vocabulary.
+2. `objectives` — 3–4 learning goals as icon items (`questions`, same shape as `concept-grid`): `q.text` = short goal, `q.options[0]` = one clause of detail, `q.icon` = closest fit from the vocabulary. Phrase the verb in first-person-plural future ("נסביר", "ננתח", "נזהה") rather than third-person-singular ("יסביר") or infinitive ("להסביר") — including any second verb embedded in `q.options[0]` (e.g. "...ונתאר את...").
 3. `media-only` — no `title`, no `eyebrow`, no `body` — just `image_url`/`youtube_url`/`audio_url`, chosen to spark interest in the lesson's topic. The teacher usually fills this in by hand after seeding, or asks for a specific piece of media on a specific slide — don't invent `image_url` values for it speculatively.
 
 ### `study` (הקניה) — the teaching slide

@@ -4,9 +4,10 @@ import { authOptions } from "@/lib/auth"
 import { adminClient } from "@/lib/lessons/supabase"
 import type { Slide } from "@/lib/lessons/types"
 
-const LESSON_TITLE = "שיעור 7: מבוא לרעיון הדמוקרטי"
+export const LESSON_TITLE = "שיעור 7: מבוא לרעיון הדמוקרטי"
+export const SLUG = "democracy-intro-concept-7"
 
-const slides: Slide[] = [
+export const slides: Slide[] = [
   // ── שקף 1: נושא השיעור ────────────────────────────────────────────────────
   {
     id: "s1",
@@ -28,9 +29,9 @@ const slides: Slide[] = [
     eyebrow: "מטרות השיעור",
     title: "מה נלמד היום",
     questions: [
-      { id: "obj1", icon: "quote", text: "יסביר", options: ['את מקור המילה "דמוקרטיה" ואת תפיסת העם כריבון ומקור הסמכות.'], correct_index: null },
-      { id: "obj2", icon: "scale", text: "יבחין", options: ["בין המובן הפורמלי של הדמוקרטיה (צורת ממשל) למובן המהותי שלה (ערך ואורח חיים)."], correct_index: null },
-      { id: "obj3", icon: "identity", text: "יזהה", options: ['את הערכים הדמוקרטיים של "האדם במרכז" ו"האדם כיצור תבוני" כבסיס לרעיון הדמוקרטי.'], correct_index: null },
+      { id: "obj1", icon: "quote", text: "נסביר", options: ['את מקור המילה "דמוקרטיה" ואת תפיסת העם כריבון ומקור הסמכות.'], correct_index: null },
+      { id: "obj2", icon: "scale", text: "נבחין", options: ["בין המובן הפורמלי של הדמוקרטיה (צורת ממשל) למובן המהותי שלה (ערך ואורח חיים)."], correct_index: null },
+      { id: "obj3", icon: "identity", text: "נזהה", options: ['את הערכים הדמוקרטיים של "האדם במרכז" ו"האדם כיצור תבוני" כבסיס לרעיון הדמוקרטי.'], correct_index: null },
     ],
   },
 
@@ -347,12 +348,11 @@ export async function GET() {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const sb = adminClient()
-  const slug = "democracy-intro-concept-7"
 
   const { data: existing, error: existingError } = await sb
     .from("lessons")
     .select("id, title")
-    .eq("slug", slug)
+    .eq("slug", SLUG)
     .maybeSingle()
 
   if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 })
@@ -371,7 +371,7 @@ export async function GET() {
     .insert({
       title: LESSON_TITLE,
       subject: "אזרחות",
-      slug,
+      slug: SLUG,
       slides,
     })
     .select()

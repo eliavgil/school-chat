@@ -4,9 +4,10 @@ import { authOptions } from "@/lib/auth"
 import { adminClient } from "@/lib/lessons/supabase"
 import type { Slide } from "@/lib/lessons/types"
 
-const LESSON_TITLE = "שיעור 8: היסטוריה של הדמוקרטיה"
+export const LESSON_TITLE = "שיעור 8: היסטוריה של הדמוקרטיה"
+export const SLUG = "democracy-history-athens-8"
 
-const slides: Slide[] = [
+export const slides: Slide[] = [
   // ── שקף 1: נושא השיעור ────────────────────────────────────────────────────
   {
     id: "s1",
@@ -28,9 +29,9 @@ const slides: Slide[] = [
     eyebrow: "מטרות השיעור",
     title: "מה נלמד היום",
     questions: [
-      { id: "obj1", icon: "landmark", text: "יתאר", options: ["את מאפייני הדמוקרטיה הישירה באתונה העתיקה כערש הרעיון הדמוקרטי."], correct_index: null },
-      { id: "obj2", icon: "vote", text: "יסביר", options: ["את הסיבות למעבר ההיסטורי מדמוקרטיה ישירה לדמוקרטיה עקיפה/ייצוגית בעת המודרנית."], correct_index: null },
-      { id: "obj3", icon: "scale", text: "יזהה", options: ["את שלבי התפתחות זכות הבחירה והפיכתה מנחלתם של מעטים לזכות כללית ושוויונית לכלל האזרחים."], correct_index: null },
+      { id: "obj1", icon: "landmark", text: "נתאר", options: ["את מאפייני הדמוקרטיה הישירה באתונה העתיקה כערש הרעיון הדמוקרטי."], correct_index: null },
+      { id: "obj2", icon: "vote", text: "נסביר", options: ["את הסיבות למעבר ההיסטורי מדמוקרטיה ישירה לדמוקרטיה עקיפה/ייצוגית בעת המודרנית."], correct_index: null },
+      { id: "obj3", icon: "scale", text: "נזהה", options: ["את שלבי התפתחות זכות הבחירה והפיכתה מנחלתם של מעטים לזכות כללית ושוויונית לכלל האזרחים."], correct_index: null },
     ],
   },
 
@@ -302,12 +303,11 @@ export async function GET() {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const sb = adminClient()
-  const slug = "democracy-history-athens-8"
 
   const { data: existing, error: existingError } = await sb
     .from("lessons")
     .select("id, title")
-    .eq("slug", slug)
+    .eq("slug", SLUG)
     .maybeSingle()
 
   if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 })
@@ -326,7 +326,7 @@ export async function GET() {
     .insert({
       title: LESSON_TITLE,
       subject: "אזרחות",
-      slug,
+      slug: SLUG,
       slides,
     })
     .select()

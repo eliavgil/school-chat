@@ -4,9 +4,10 @@ import { authOptions } from "@/lib/auth"
 import { adminClient } from "@/lib/lessons/supabase"
 import type { Slide } from "@/lib/lessons/types"
 
-const LESSON_TITLE = "שיעור 3: הכרזת העצמאות — חלק א'"
+export const LESSON_TITLE = "שיעור 3: הכרזת העצמאות — חלק א'"
+export const SLUG = "civics-declaration-of-independence-part1-3"
 
-const slides: Slide[] = [
+export const slides: Slide[] = [
   // ── שקף 1: נושא השיעור ────────────────────────────────────────────────────
   {
     id: "s1",
@@ -28,9 +29,9 @@ const slides: Slide[] = [
     eyebrow: "מטרות השיעור",
     title: "מה נלמד היום",
     questions: [
-      { id: "obj1", icon: "calendar", text: "יתאר", options: ["את השתלשלות האירועים ההיסטוריים המרכזיים שהובילו להכרזת העצמאות."], correct_index: null },
-      { id: "obj2", icon: "scale", text: "יזהה ויסווג", options: ["את שלושת סוגי ההצדקות להקמת המדינה: היסטוריות, בינלאומיות (משפטיות) וטבעית/אוניברסלית."], correct_index: null },
-      { id: "obj3", icon: "scroll", text: "יפרט", options: ["את החלק האופרטיבי (המעשי) של ההכרזה — ההכרזה הרשמית ושם המדינה."], correct_index: null },
+      { id: "obj1", icon: "calendar", text: "נתאר", options: ["את השתלשלות האירועים ההיסטוריים המרכזיים שהובילו להכרזת העצמאות."], correct_index: null },
+      { id: "obj2", icon: "scale", text: "נזהה ונסווג", options: ["את שלושת סוגי ההצדקות להקמת המדינה: היסטוריות, בינלאומיות (משפטיות) וטבעית/אוניברסלית."], correct_index: null },
+      { id: "obj3", icon: "scroll", text: "נפרט", options: ["את החלק האופרטיבי (המעשי) של ההכרזה — ההכרזה הרשמית ושם המדינה."], correct_index: null },
     ],
   },
 
@@ -296,12 +297,11 @@ export async function GET() {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const sb = adminClient()
-  const slug = "civics-declaration-of-independence-part1-3"
 
   const { data: existing, error: existingError } = await sb
     .from("lessons")
     .select("id, title")
-    .eq("slug", slug)
+    .eq("slug", SLUG)
     .maybeSingle()
 
   if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 })
@@ -320,7 +320,7 @@ export async function GET() {
     .insert({
       title: LESSON_TITLE,
       subject: "אזרחות",
-      slug,
+      slug: SLUG,
       slides,
     })
     .select()

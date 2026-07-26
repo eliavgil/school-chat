@@ -4,9 +4,10 @@ import { authOptions } from "@/lib/auth"
 import { adminClient } from "@/lib/lessons/supabase"
 import type { Slide } from "@/lib/lessons/types"
 
-const LESSON_TITLE = "שיעור 2: לאום ולאומיות"
+export const LESSON_TITLE = "שיעור 2: לאום ולאומיות"
+export const SLUG = "civics-nation-nationalism-2"
 
-const slides: Slide[] = [
+export const slides: Slide[] = [
   // ── שקף 1: נושא השיעור ────────────────────────────────────────────────────
   {
     id: "s1",
@@ -28,9 +29,9 @@ const slides: Slide[] = [
     eyebrow: "מטרות השיעור",
     title: "מה נלמד היום",
     questions: [
-      { id: "obj1", icon: "book", text: "להגדיר", options: ['"קבוצה אתנית" ו"לאום" ולהסביר את ההבדל ביניהם על בסיס השאיפה להגדרה עצמית.'], correct_index: null },
-      { id: "obj2", icon: "scale", text: "להבחין", options: ["בין לאומיות אתנית-תרבותית ללאומיות פוליטית/אזרחית, לפי סוג היסודות המגבשים."], correct_index: null },
-      { id: "obj3", icon: "globe", text: "לזהות וליישם", options: ["את סוגי הלאומיות בדוגמאות ממדינות העולם (ישראל, ארה\"ב, קנדה)."], correct_index: null },
+      { id: "obj1", icon: "book", text: "נגדיר", options: ['"קבוצה אתנית" ו"לאום" ונסביר את ההבדל ביניהם על בסיס השאיפה להגדרה עצמית.'], correct_index: null },
+      { id: "obj2", icon: "scale", text: "נבחין", options: ["בין לאומיות אתנית-תרבותית ללאומיות פוליטית/אזרחית, לפי סוג היסודות המגבשים."], correct_index: null },
+      { id: "obj3", icon: "globe", text: "נזהה וניישם", options: ["את סוגי הלאומיות בדוגמאות ממדינות העולם (ישראל, ארה\"ב, קנדה)."], correct_index: null },
     ],
   },
 
@@ -289,12 +290,11 @@ export async function GET() {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const sb = adminClient()
-  const slug = "civics-nation-nationalism-2"
 
   const { data: existing, error: existingError } = await sb
     .from("lessons")
     .select("id, title")
-    .eq("slug", slug)
+    .eq("slug", SLUG)
     .maybeSingle()
 
   if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 })
@@ -313,7 +313,7 @@ export async function GET() {
     .insert({
       title: LESSON_TITLE,
       subject: "אזרחות",
-      slug,
+      slug: SLUG,
       slides,
     })
     .select()

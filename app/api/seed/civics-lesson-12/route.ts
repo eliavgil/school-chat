@@ -4,9 +4,10 @@ import { authOptions } from "@/lib/auth"
 import { adminClient } from "@/lib/lessons/supabase"
 import type { Slide } from "@/lib/lessons/types"
 
-const LESSON_TITLE = "שיעור 12: שיטת הבחירות בישראל ומרכיביה"
+export const LESSON_TITLE = "שיעור 12: שיטת הבחירות בישראל ומרכיביה"
+export const SLUG = "democracy-israel-election-system-12"
 
-const slides: Slide[] = [
+export const slides: Slide[] = [
   // ── שקף 1: נושא השיעור ────────────────────────────────────────────────────
   {
     id: "s1",
@@ -28,9 +29,9 @@ const slides: Slide[] = [
     eyebrow: "מטרות השיעור",
     title: "מה נלמד היום",
     questions: [
-      { id: "obj1", icon: "flag", text: "יציג", options: ["את שלושת מאפייני שיטת הבחירות בישראל (ארצית, יחסית, רשימתית)."], correct_index: null },
-      { id: "obj2", icon: "scale", text: "יסביר", options: ["מהו אחוז החסימה ויתאר את השפעתו על ייצוג המפלגות בכנסת."], correct_index: null },
-      { id: "obj3", icon: "users", text: "ינתח", options: ["את היתרונות והחסרונות של השיטה היחסית בייצוג קבוצות שונות בחברה."], correct_index: null },
+      { id: "obj1", icon: "flag", text: "נציג", options: ["את שלושת מאפייני שיטת הבחירות בישראל (ארצית, יחסית, רשימתית)."], correct_index: null },
+      { id: "obj2", icon: "scale", text: "נסביר", options: ["מהו אחוז החסימה ונתאר את השפעתו על ייצוג המפלגות בכנסת."], correct_index: null },
+      { id: "obj3", icon: "users", text: "ננתח", options: ["את היתרונות והחסרונות של השיטה היחסית בייצוג קבוצות שונות בחברה."], correct_index: null },
     ],
   },
 
@@ -265,12 +266,11 @@ export async function GET() {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const sb = adminClient()
-  const slug = "democracy-israel-election-system-12"
 
   const { data: existing, error: existingError } = await sb
     .from("lessons")
     .select("id, title")
-    .eq("slug", slug)
+    .eq("slug", SLUG)
     .maybeSingle()
 
   if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 })
@@ -289,7 +289,7 @@ export async function GET() {
     .insert({
       title: LESSON_TITLE,
       subject: "אזרחות",
-      slug,
+      slug: SLUG,
       slides,
     })
     .select()

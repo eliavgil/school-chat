@@ -4,9 +4,10 @@ import { authOptions } from "@/lib/auth"
 import { adminClient } from "@/lib/lessons/supabase"
 import type { Slide } from "@/lib/lessons/types"
 
-const LESSON_TITLE = "שיעור 10: עקרון שלטון העם"
+export const LESSON_TITLE = "שיעור 10: עקרון שלטון העם"
+export const SLUG = "democracy-popular-sovereignty-10"
 
-const slides: Slide[] = [
+export const slides: Slide[] = [
   // ── שקף 1: נושא השיעור ────────────────────────────────────────────────────
   {
     id: "s1",
@@ -28,9 +29,9 @@ const slides: Slide[] = [
     eyebrow: "מטרות השיעור",
     title: "מה נלמד היום",
     questions: [
-      { id: "obj1", icon: "crown", text: "יגדיר", options: ["את עקרון שלטון העם ויתאר את העם כריבון ומקור הסמכות."], correct_index: null },
-      { id: "obj2", icon: "vote", text: "יבחין", options: ["בין דמוקרטיה ישירה (אתונה) לדמוקרטיה עקיפה/ייצוגית (מודרנית) ויסביר את הסיבות למעבר ביניהן."], correct_index: null },
-      { id: "obj3", icon: "megaphone", text: "יסביר", options: ["מהו משאל עם ויתאר אותו ככלי של דמוקרטיה ישירה המופעל בתוך משטר ייצוגי."], correct_index: null },
+      { id: "obj1", icon: "crown", text: "נגדיר", options: ["את עקרון שלטון העם ונתאר את העם כריבון ומקור הסמכות."], correct_index: null },
+      { id: "obj2", icon: "vote", text: "נבחין", options: ["בין דמוקרטיה ישירה (אתונה) לדמוקרטיה עקיפה/ייצוגית (מודרנית) ונסביר את הסיבות למעבר ביניהן."], correct_index: null },
+      { id: "obj3", icon: "megaphone", text: "נסביר", options: ["מהו משאל עם ונתאר אותו ככלי של דמוקרטיה ישירה המופעל בתוך משטר ייצוגי."], correct_index: null },
     ],
   },
 
@@ -271,12 +272,11 @@ export async function GET() {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const sb = adminClient()
-  const slug = "democracy-popular-sovereignty-10"
 
   const { data: existing, error: existingError } = await sb
     .from("lessons")
     .select("id, title")
-    .eq("slug", slug)
+    .eq("slug", SLUG)
     .maybeSingle()
 
   if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 })
@@ -295,7 +295,7 @@ export async function GET() {
     .insert({
       title: LESSON_TITLE,
       subject: "אזרחות",
-      slug,
+      slug: SLUG,
       slides,
     })
     .select()

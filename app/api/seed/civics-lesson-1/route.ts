@@ -4,9 +4,10 @@ import { authOptions } from "@/lib/auth"
 import { adminClient } from "@/lib/lessons/supabase"
 import type { Slide } from "@/lib/lessons/types"
 
-const LESSON_TITLE = "שיעור 1: תנאים לקיומה של מדינה"
+export const LESSON_TITLE = "שיעור 1: תנאים לקיומה של מדינה"
+export const SLUG = `civics-statehood-conditions-6`
 
-const slides: Slide[] = [
+export const slides: Slide[] = [
   // ── שקף 1: נושא השיעור ────────────────────────────────────────────────────
   {
     id: "s1",
@@ -28,9 +29,9 @@ const slides: Slide[] = [
     eyebrow: "מטרות השיעור",
     title: "מה נלמד היום",
     questions: [
-      { id: "obj1", icon: "book", text: "להגדיר מדינה", options: ["ולמנות את חמשת התנאים ההכרחיים לקיומה."], correct_index: null },
-      { id: "obj2", icon: "scale", text: "ליישם את הידע", options: ["בזיהוי מרכיבי מדינה חסרים או קיימים מתוך מקרי בוחן אקטואליים."], correct_index: null },
-      { id: "obj3", icon: "quote", text: "להתנסות", options: ["במענה לשאלת אירוע."], correct_index: null },
+      { id: "obj1", icon: "book", text: "נגדיר מדינה", options: ["ונמנה את חמשת התנאים ההכרחיים לקיומה."], correct_index: null },
+      { id: "obj2", icon: "scale", text: "ניישם את הידע", options: ["בזיהוי מרכיבי מדינה חסרים או קיימים מתוך מקרי בוחן אקטואליים."], correct_index: null },
+      { id: "obj3", icon: "quote", text: "נתנסה", options: ["במענה לשאלת אירוע."], correct_index: null },
     ],
   },
 
@@ -259,12 +260,11 @@ export async function GET() {
   const sb = adminClient()
   // Slug kept as-is (this lesson was originally numbered 6) so the lookup
   // below still finds the existing DB row instead of creating a duplicate.
-  const slug = `civics-statehood-conditions-6`
 
   const { data: existing, error: existingError } = await sb
     .from("lessons")
     .select("id, title")
-    .eq("slug", slug)
+    .eq("slug", SLUG)
     .maybeSingle()
 
   if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 })
@@ -283,7 +283,7 @@ export async function GET() {
     .insert({
       title: LESSON_TITLE,
       subject: "אזרחות",
-      slug,
+      slug: SLUG,
       slides,
     })
     .select()

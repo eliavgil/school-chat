@@ -4,9 +4,10 @@ import { authOptions } from "@/lib/auth"
 import { adminClient } from "@/lib/lessons/supabase"
 import type { Slide } from "@/lib/lessons/types"
 
-const LESSON_TITLE = "שיעור 5: המאפיינים היהודיים של מדינת ישראל"
+export const LESSON_TITLE = "שיעור 5: המאפיינים היהודיים של מדינת ישראל"
+export const SLUG = "civics-jewish-characteristics-5"
 
-const slides: Slide[] = [
+export const slides: Slide[] = [
   // ── שקף 1: נושא השיעור ────────────────────────────────────────────────────
   {
     id: "s1",
@@ -28,10 +29,10 @@ const slides: Slide[] = [
     eyebrow: "מטרות השיעור",
     title: "מה נלמד היום",
     questions: [
-      { id: "obj1", icon: "gavel", text: "יציג", options: ["חוקים מרכזיים המבטאים את אופייה היהודי של המדינה (חוק השבות, חוק שעות עבודה ומנוחה, חוק חג המצות ועוד)."], correct_index: null },
-      { id: "obj2", icon: "language", text: "יתאר", options: ["את ביטויי הזהות היהודית במרחב הציבורי דרך סמלים, שפה ולוח השנה העברי."], correct_index: null },
-      { id: "obj3", icon: "scale", text: "יסביר", options: ["את מהות הסדר הסטטוס-קוו וארבעת הנושאים הכלולים בו כפשרה בין דתיים לחילוניים."], correct_index: null },
-      { id: "obj4", icon: "document", text: "יישם", options: ['את מיומנות ה"ציין-הצג-הסבר" על שאלת בגרות בנושא חקיקה אתנית.'], correct_index: null },
+      { id: "obj1", icon: "gavel", text: "נציג", options: ["חוקים מרכזיים המבטאים את אופייה היהודי של המדינה (חוק השבות, חוק שעות עבודה ומנוחה, חוק חג המצות ועוד)."], correct_index: null },
+      { id: "obj2", icon: "language", text: "נתאר", options: ["את ביטויי הזהות היהודית במרחב הציבורי דרך סמלים, שפה ולוח השנה העברי."], correct_index: null },
+      { id: "obj3", icon: "scale", text: "נסביר", options: ["את מהות הסדר הסטטוס-קוו וארבעת הנושאים הכלולים בו כפשרה בין דתיים לחילוניים."], correct_index: null },
+      { id: "obj4", icon: "document", text: "ניישם", options: ['את מיומנות ה"ציין-הצג-הסבר" על שאלת בגרות בנושא חקיקה אתנית.'], correct_index: null },
     ],
   },
 
@@ -303,12 +304,11 @@ export async function GET() {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const sb = adminClient()
-  const slug = "civics-jewish-characteristics-5"
 
   const { data: existing, error: existingError } = await sb
     .from("lessons")
     .select("id, title")
-    .eq("slug", slug)
+    .eq("slug", SLUG)
     .maybeSingle()
 
   if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 })
@@ -327,7 +327,7 @@ export async function GET() {
     .insert({
       title: LESSON_TITLE,
       subject: "אזרחות",
-      slug,
+      slug: SLUG,
       slides,
     })
     .select()

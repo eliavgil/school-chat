@@ -4,9 +4,10 @@ import { authOptions } from "@/lib/auth"
 import { adminClient } from "@/lib/lessons/supabase"
 import type { Slide } from "@/lib/lessons/types"
 
-const LESSON_TITLE = "שיעור 9: דמוקרטיה במאה ה-21"
+export const LESSON_TITLE = "שיעור 9: דמוקרטיה במאה ה-21"
+export const SLUG = "democracy-21st-century-9"
 
-const slides: Slide[] = [
+export const slides: Slide[] = [
   // ── שקף 1: נושא השיעור ────────────────────────────────────────────────────
   {
     id: "s1",
@@ -28,9 +29,9 @@ const slides: Slide[] = [
     eyebrow: "מטרות השיעור",
     title: "מה נלמד היום",
     questions: [
-      { id: "obj1", icon: "globe", text: "יבחין", options: ["בין המודלים השונים של הדמוקרטיות הליברליות בעולם (אינדיבידואלית, רפובליקנית ורב-תרבותית)."], correct_index: null },
-      { id: "obj2", icon: "globe", text: "ינתח", options: ['את השפעת הגלובליזציה על טשטוש גבולות המדינה והיווצרות ה"כפר הגלובלי".'], correct_index: null },
-      { id: "obj3", icon: "megaphone", text: "יסביר", options: ['את תפקיד הרשתות החברתיות כמנגנון פיקוח בלתי פורמלי ואת האתגרים המודרניים של "פייק ניוז" וגירעון דמוקרטי.'], correct_index: null },
+      { id: "obj1", icon: "globe", text: "נבחין", options: ["בין המודלים השונים של הדמוקרטיות הליברליות בעולם (אינדיבידואלית, רפובליקנית ורב-תרבותית)."], correct_index: null },
+      { id: "obj2", icon: "globe", text: "ננתח", options: ['את השפעת הגלובליזציה על טשטוש גבולות המדינה והיווצרות ה"כפר הגלובלי".'], correct_index: null },
+      { id: "obj3", icon: "megaphone", text: "נסביר", options: ['את תפקיד הרשתות החברתיות כמנגנון פיקוח בלתי פורמלי ואת האתגרים המודרניים של "פייק ניוז" וגירעון דמוקרטי.'], correct_index: null },
     ],
   },
 
@@ -314,12 +315,11 @@ export async function GET() {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const sb = adminClient()
-  const slug = "democracy-21st-century-9"
 
   const { data: existing, error: existingError } = await sb
     .from("lessons")
     .select("id, title")
-    .eq("slug", slug)
+    .eq("slug", SLUG)
     .maybeSingle()
 
   if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 })
@@ -338,7 +338,7 @@ export async function GET() {
     .insert({
       title: LESSON_TITLE,
       subject: "אזרחות",
-      slug,
+      slug: SLUG,
       slides,
     })
     .select()
