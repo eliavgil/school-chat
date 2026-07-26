@@ -39,6 +39,7 @@ export const ANIMATION_DELAYS = [
 export const ANIMATION_POSITIONS = [
   { value: "across",       label: "חוצה את המסך" },
   { value: "center",       label: "מרכז" },
+  { value: "big-center",   label: "מרכז גדול (למנוחמוח)" },
   { value: "corner-right", label: "פינה ימין" },
   { value: "corner-left",  label: "פינה שמאל" },
   { value: "top",          label: "למעלה" },

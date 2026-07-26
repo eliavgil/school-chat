@@ -3,7 +3,7 @@ import {
   Crown, Scale, Landmark, Users, Map, Handshake, Globe, ShieldCheck,
   Vote, Gavel, BookOpen, FileText, Flag, Mountain, Waves, Plane, Layers,
   Building2, Newspaper, Megaphone, CalendarDays, Languages, Scroll,
-  MessageSquareQuote, Gauge, Fingerprint, Lock, Siren,
+  MessageSquareQuote, Gauge, Fingerprint, Lock, Siren, UtensilsCrossed, Heart,
 } from "lucide-react"
 
 // Icon vocabulary for concept-grid slides. Keep keys short & topic-agnostic
@@ -37,6 +37,8 @@ export const CONCEPT_ICONS: Record<string, ComponentType<{ size?: number; stroke
   identity: Fingerprint,  // זהות / אזרחות
   lock: Lock,             // הגבלה / איסור
   alert: Siren,           // חירום / משבר
+  food: UtensilsCrossed,  // כשרות / מזון
+  family: Heart,          // נישואין / משפחה / מעמד אישי
 }
 
 export function ConceptIcon({ name, size = 22 }: { name?: string; size?: number }) {

@@ -26,8 +26,8 @@ export async function POST(req: Request) {
   if (!title) return NextResponse.json({ error: "title required" }, { status: 400 })
 
   const defaultSlide: Slide = {
-    id: "s1", order: 1, type: "intro",
-    eyebrow: "פתיחה",
+    id: "s1", order: 1, type: "lesson-topic",
+    eyebrow: "נושא השיעור",
     title: "שיעור חדש",
     body: "כאן יבוא תוכן השיעור.",
   }

@@ -40,18 +40,46 @@ Sprinkle these through the lesson, especially in the second third (where attenti
 
 | Type | Default length | Use it for |
 |---|---|---|
-| `intro` | 2–4 lines max | Opening hook, section transitions, "map of what's coming" |
-| `poll` | Question + 4 short options | Opinion or prediction before the lesson teaches the answer |
-| `quiz` | Question + 4 options, one correct | Check understanding; mark `correct_index` |
-| `definitions` | Can be long | Terms students must memorize; use flip cards |
-| `reveal` | Short prompt, longer answer hidden | Model answers, worked examples, bagrut-style responses |
-| `enrichment` | 2–3 cards, punchy | Going deeper for curious students; optional |
+| `lesson-topic` | Title + image, occasionally 1–2 lines | **Slide 1 only.** The lesson's title screen — nothing more. |
+| `media-only` | No text at all | Usually slide 2, right after `lesson-topic`. Just an image/video/audio — no eyebrow, no title, no body. Media is often added by hand after the seed runs; leave `image_url: null` unless a specific URL was requested. |
+| `opinion` | Question + 4 short options, sometimes 2 questions | "מה דעתכם?" — opinion or prediction before the lesson teaches the answer. No `correct_index`. |
+| `alertness-check` | 1–2 easy questions, 4 options each | Quick check that students followed the last slide or two — mark `correct_index`. Not a deep-understanding test, just "were you paying attention." |
+| `definitions` | Can be long | Terms students must copy into their notebook. See below — the on-screen title is fixed, not yours to write. |
 | `concept-grid` | One sentence per item, max | A set of parallel concepts (conditions, principles, branches, rights) — icon + short title + one sentence each. See below. |
+| `study` | Structured, not prose — see below | The core teaching content: explaining a concept beyond its bare definition. No type label or title shown on screen — maximize space for content. One concept per slide. |
+| `practice` | Full, verbatim exam text | Real bagrut questions, reproduced exactly, tagged by question type. See below. |
+| `brain-break` | None — fixed | "מנוחמוח." One per lesson, roughly in the middle. Nothing to write; see below. |
+| `enrichment` | 2–3 cards, punchy | Going deeper for curious students; optional |
 | `homework` | Numbered list | Clear tasks; each item one sentence |
 | `feedback` | One question, star rating | End of lesson only |
-| `matching` | Pairs | Terminology matching, cause-effect, law-to-principle |
 
-**Default to terse.** Every type above except `definitions`, `poll`, and `quiz` should read as a backdrop, not an essay — if a `reveal` or `intro` body runs past 3–4 short lines, cut it. When a slide is *about* a list of parallel concepts (e.g. "the five conditions for statehood," "the three branches of government"), reach for `concept-grid` instead of a wall of bulleted body text — it forces one sentence per idea and gives the eye an icon to land on.
+**Default to terse.** Every type above except `definitions`, `opinion`, `alertness-check`, and `practice` should read as a backdrop, not an essay. When a slide is *about* a list of parallel concepts (e.g. "the five conditions for statehood," "the three branches of government"), reach for `concept-grid` instead of a wall of bulleted body text — it forces one sentence per idea and gives the eye an icon to land on.
+
+### `lesson-topic` and `media-only` — the opening two slides
+
+`lesson-topic` is always slide 1: a title, an image (often `image_position: "background"`), and — rarely — one or two short sentences under the title. Nothing else; don't put the lesson's hook argument here, just the subject.
+
+`media-only` typically comes right after: no `title`, no `eyebrow`, no `body` — just `image_url`/`youtube_url`/`audio_url`. The teacher usually fills this in by hand after seeding, or asks for a specific piece of media on a specific slide — don't invent `image_url` values for it speculatively.
+
+### `study` — the teaching slide
+
+This is where you actually explain the material beyond what's in the notebook definitions: elaboration, mechanism, examples, nuance. No slide-type label and no title render on screen, so every pixel is content. Prefer structure over paragraphs:
+- Use `questions` (icon + short title + one sentence, same shape as `concept-grid`) whenever the explanation breaks into parallel parts — reuses the same `layout: "grid" | "list"` mechanism.
+- Use `body` only for a short paragraph that doesn't decompose into parts; keep it a few lines, not a wall of text.
+- The two can combine: a one-line `body` framing sentence, then an icon breakdown via `questions`.
+- One concept per `study` slide. If you're covering two concepts, that's two slides.
+
+### `practice` — real bagrut questions
+
+Full exam questions, reproduced **exactly** — including the entire event/scenario passage where the original has one. Never paraphrase, shorten, or drop a sentence from the source text. Each item in `questions` needs `q.tag` set to one of: `"שאלת אירוע"`, `"שאלת אירוע כפול"`, `"שאלת ידע"`, `"שאלת עמדה"` — matching the real question type. `q.text` carries the full question (scenario + prompt, with `\n` between paragraphs); leave `q.options` empty for open-ended bagrut questions, or fill it in only if the original question is genuinely multiple-choice.
+
+### `brain-break` — מנוחמוח
+
+Always renders as a fixed, empty "מנוחמוח" slide with a big animation — there's no title or body to write. Just add one per lesson (roughly the middle third; the teacher will move it if needed) with:
+```
+animation: { name: "giraffe", delay: 0, position: "big-center", loop: true }
+```
+`giraffe` (ג'ירפה מתמתחת — stretching) is the closest match in the animation registry; there's no meditating-giraffe asset. Check `lib/lessons/animations.ts` before using any other animation name.
 
 ### `concept-grid` — icon cards for parallel concepts
 
@@ -87,6 +115,8 @@ Use `questions` to carry the items (not `body`): `q.text` = short title, `q.opti
 | `identity` | identity, citizenship |
 | `lock` | a restriction or prohibition |
 | `alert` | emergency, crisis |
+| `food` | kashrut, dietary law |
+| `family` | marriage, divorce, personal status |
 
 ### `definitions` — notebook page
 
@@ -94,10 +124,12 @@ On the projected/live view this always renders as a fixed instruction — **"ל�
 
 ## Lesson flow
 
-- **Slide 1**: Hook — an image, headline, or question that lands in the real world. Don't start with a definition.
-- **Slide 2**: Poll — get every student to commit to a position before they know the answer.
-- **Middle third**: The peak. This is where the hardest concept goes, with the most support: a definition slide, a quiz, a worked example (reveal type).
-- **Last slides**: Summary, then homework or feedback. End with something that makes the lesson feel finished, not truncated.
+- **Slide 1**: `lesson-topic` — title + image. Nothing more.
+- **Slide 2** (usually): `media-only` — a hook image/video, often filled in by hand later.
+- **Early on**: `opinion` — get every student to commit to a position before they know the answer.
+- **Middle third**: The peak. This is where the hardest concept goes, with the most support: `definitions`, `study`, `alertness-check`. Put the `brain-break` slide somewhere in here.
+- **Practice**: `practice` slides with real bagrut questions, once the underlying concept has been taught.
+- **Last slides**: Summary, then `homework` or `feedback`. End with something that makes the lesson feel finished, not truncated.
 
 ## Body text rules
 

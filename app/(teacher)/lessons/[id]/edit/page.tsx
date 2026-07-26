@@ -8,18 +8,20 @@ import { CONCEPT_ICONS, ConceptIcon } from "@/lib/lessons/icons"
 interface Props { params: Promise<{ id: string }> }
 
 const SLIDE_TYPES: { value: SlideType; label: string }[] = [
-  { value: "intro",              label: "פתיחה" },
-  { value: "poll",               label: "סקר" },
-  { value: "quiz",               label: "חידון" },
+  { value: "lesson-topic",       label: "נושא השיעור" },
+  { value: "media-only",         label: "מדיה בלבד" },
+  { value: "opinion",            label: "מה דעתכם?" },
+  { value: "alertness-check",    label: "בדיקת עירנות" },
   { value: "assessment",         label: "מבדק סוף שיעור" },
   { value: "assessment_answers", label: "תשובות למבדק" },
-  { value: "definitions",        label: "הגדרות" },
-  { value: "matching",           label: "התאמה" },
-  { value: "reveal",             label: "גילוי" },
+  { value: "definitions",        label: "הגדרות (להעתקה למחברת)" },
+  { value: "concept-grid",       label: "רשת מושגים (אייקונים)" },
+  { value: "study",              label: "לימוד" },
+  { value: "practice",           label: "תרגול (שאלות בגרות)" },
+  { value: "brain-break",        label: "מנוחמוח" },
   { value: "enrichment",         label: "העשרה" },
   { value: "homework",           label: "שיעורי בית" },
   { value: "feedback",           label: "משוב" },
-  { value: "concept-grid",       label: "רשת מושגים (אייקונים)" },
 ]
 
 const IMG_POSITIONS = [
@@ -90,7 +92,7 @@ function QuestionEditor({ q, onChange, onDelete, type }: {
   onDelete: () => void
   type: SlideType
 }) {
-  const showCorrect = type === "quiz" || type === "matching" || type === "assessment" || type === "assessment_answers"
+  const showCorrect = type === "alertness-check" || type === "assessment" || type === "assessment_answers"
 
   function setOpt(i: number, val: string) {
     const opts = [...q.options]; opts[i] = val
@@ -130,7 +132,7 @@ function QuestionEditor({ q, onChange, onDelete, type }: {
         <label>הסבר / תגובה (אופציונלי)</label>
         <input value={q.feedback ?? ""} onChange={e => onChange({ ...q, feedback: e.target.value })} placeholder="טקסט שיופיע לאחר המענה..." />
       </div>
-      {type === "concept-grid" && (
+      {(type === "concept-grid" || type === "study") && (
         <div className="field" style={{ marginBottom: 0 }}>
           <label>אייקון</label>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -145,6 +147,19 @@ function QuestionEditor({ q, onChange, onDelete, type }: {
             <datalist id="concept-icon-options">
               {Object.keys(CONCEPT_ICONS).map(key => <option key={key} value={key} />)}
             </datalist>
+          </div>
+        </div>
+      )}
+      {type === "practice" && (
+        <div className="field" style={{ marginBottom: 0 }}>
+          <label>סוג שאלה</label>
+          <div className="chip-row">
+            {["שאלת אירוע", "שאלת אירוע כפול", "שאלת ידע", "שאלת עמדה"].map(tag => (
+              <button key={tag} className={`chip${q.tag === tag ? " active" : ""}`}
+                onClick={() => onChange({ ...q, tag })}>
+                {tag}
+              </button>
+            ))}
           </div>
         </div>
       )}
@@ -421,8 +436,8 @@ function SlideEditor({ slide, onChange, onDelete, onDuplicateAsAnswerKey, dragHa
             )}
           </div>
 
-          {/* Concept-grid layout toggle */}
-          {slide.type === "concept-grid" && (
+          {/* Concept-grid / study layout toggle */}
+          {(slide.type === "concept-grid" || slide.type === "study") && (
             <div className="field">
               <label>פריסה</label>
               <div className="chip-row">
@@ -441,7 +456,9 @@ function SlideEditor({ slide, onChange, onDelete, onDuplicateAsAnswerKey, dragHa
           {/* Questions */}
           <div>
             <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)", marginBottom: 8 }}>
-              {slide.type === "concept-grid" ? "פריטים (כותרת + משפט אחד + אייקון)" : "שאלות"}
+              {slide.type === "concept-grid" || slide.type === "study" ? "פריטים (כותרת + משפט אחד + אייקון)"
+                : slide.type === "practice" ? "שאלות בגרות (טקסט מלא)"
+                : "שאלות"}
             </div>
             {(slide.questions ?? []).map((q, i) => (
               <QuestionEditor key={q.id} q={q} type={slide.type} onChange={q => setQ(i, q)} onDelete={() => delQ(i)} />
@@ -483,7 +500,7 @@ export default function EditLessonPage({ params }: Props) {
     setSlides(slides.filter((_, idx) => idx !== i).map((s, idx) => ({ ...s, order: idx + 1 })))
   }
   function addSlide() {
-    const s: Slide = { id: `s${Date.now()}`, order: slides.length + 1, type: "poll", eyebrow: "סקר", title: "שאלה חדשה", questions: [newQuestion()] }
+    const s: Slide = { id: `s${Date.now()}`, order: slides.length + 1, type: "opinion", eyebrow: "מה דעתכם?", title: "שאלה חדשה", questions: [newQuestion()] }
     setSlides([...slides, s])
   }
   function duplicateAsAnswerKey(i: number) {

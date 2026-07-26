@@ -1,7 +1,7 @@
 export type SlideType =
-  | "intro" | "poll" | "definitions" | "quiz" | "matching"
-  | "reveal" | "enrichment" | "homework" | "feedback"
-  | "assessment" | "assessment_answers" | "concept-grid"
+  | "lesson-topic" | "media-only" | "opinion" | "definitions" | "alertness-check"
+  | "concept-grid" | "study" | "practice" | "brain-break" | "enrichment" | "homework" | "feedback"
+  | "assessment" | "assessment_answers"
 
 export interface SlideQuestion {
   id: string
@@ -9,10 +9,11 @@ export interface SlideQuestion {
   options: string[]
   correct_index: number | null
   feedback?: string
-  icon?: string          // icon key (see lib/lessons/icons.tsx) — used by concept-grid
+  icon?: string          // icon key (see lib/lessons/icons.tsx) — used by concept-grid / study
+  tag?: string           // small label above the question — used by practice (e.g. "שאלת אירוע")
 }
 
-export type AnimationPosition = "across" | "center" | "corner-right" | "corner-left" | "top"
+export type AnimationPosition = "across" | "center" | "big-center" | "corner-right" | "corner-left" | "top"
 
 export interface SlideAnimation {
   name: string                  // key in ANIMATION_REGISTRY
@@ -37,7 +38,7 @@ export interface Slide {
   display?: { show_names: boolean }
   questions?: SlideQuestion[]
   animation?: SlideAnimation | null
-  layout?: 'grid' | 'list'   // concept-grid only: card grid vs. vertical icon list
+  layout?: 'grid' | 'list'   // concept-grid / study (when using icon items): card grid vs. vertical icon list
 }
 
 export interface Lesson {

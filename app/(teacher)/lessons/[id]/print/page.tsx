@@ -118,8 +118,8 @@ function PrintSlide({ slide, num }: { slide: Slide; num: number }) {
 
       {body && <div>{renderBody(body)}</div>}
 
-      {/* Poll / Quiz / Assessment — show options, mark correct */}
-      {(type === "poll" || type === "quiz" || type === "assessment" || type === "assessment_answers") && questions && questions.map((q, qi) => {
+      {/* Opinion / Alertness-check / Assessment — show options, mark correct */}
+      {(type === "opinion" || type === "alertness-check" || type === "assessment" || type === "assessment_answers") && questions && questions.map((q, qi) => {
         const letters = ["א", "ב", "ג", "ד", "ה"]
         return (
           <div key={q.id} className="q-block">
@@ -135,7 +135,7 @@ function PrintSlide({ slide, num }: { slide: Slide; num: number }) {
                 </div>
               ))}
             </div>
-            {q.feedback && (type === "quiz" || type === "assessment" || type === "assessment_answers") && (
+            {q.feedback && (type === "alertness-check" || type === "assessment" || type === "assessment_answers") && (
               <p style={{ fontSize: 13, color: "var(--ok)", marginTop: 8, fontWeight: 600 }}>💡 {q.feedback}</p>
             )}
           </div>
@@ -154,13 +154,23 @@ function PrintSlide({ slide, num }: { slide: Slide; num: number }) {
         </div>
       )}
 
-      {/* Reveal — show answer open */}
-      {type === "reveal" && questions && questions[0] && (
-        <div className="reveal-box">
-          {questions[0].feedback && <p style={{ margin: 0, fontSize: 14, lineHeight: 1.7 }}><strong>תשובת מודל:</strong> {questions[0].feedback}</p>}
-          {questions[0].text && <p style={{ margin: "6px 0 0", fontSize: 14, lineHeight: 1.7 }}>{questions[0].text}</p>}
+      {/* Practice — full bagrut-style questions, tagged by question type */}
+      {type === "practice" && questions && questions.map(q => (
+        <div key={q.id} className="q-block">
+          {q.tag && <span className="type-tag">{q.tag}</span>}
+          <p style={{ margin: "6px 0 0", fontSize: 14, lineHeight: 1.7, whiteSpace: "pre-line" }}>{q.text}</p>
+          {q.options.filter(Boolean).length > 0 && (
+            <div className="options-list">
+              {q.options.filter(Boolean).map((opt, oi) => (
+                <div key={oi} className="option">
+                  <span className="opt-letter">{["א", "ב", "ג", "ד", "ה"][oi] ?? oi + 1}.</span>
+                  <span>{opt}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-      )}
+      ))}
 
       {/* Homework — numbered tasks */}
       {type === "homework" && questions && (
@@ -169,18 +179,6 @@ function PrintSlide({ slide, num }: { slide: Slide; num: number }) {
             <div key={q.id} className="task-item">
               <div className="task-num">{i + 1}</div>
               <div style={{ fontSize: 14, lineHeight: 1.6 }}>{q.text}</div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Matching */}
-      {type === "matching" && questions && (
-        <div className="def-grid">
-          {questions.map(q => (
-            <div key={q.id} className="def-card">
-              <div className="def-term">{q.text}</div>
-              <div className="def-body" style={{ color: "var(--ok)", fontWeight: 600 }}>{q.options[q.correct_index ?? 0]}</div>
             </div>
           ))}
         </div>
@@ -217,8 +215,8 @@ function PrintSlide({ slide, num }: { slide: Slide; num: number }) {
         </div>
       )}
 
-      {/* Concept grid */}
-      {type === "concept-grid" && questions && (
+      {/* Concept grid / Study */}
+      {(type === "concept-grid" || type === "study") && questions && (
         <div style={{
           display: slide.layout === "list" ? "flex" : "grid",
           flexDirection: slide.layout === "list" ? "column" : undefined,

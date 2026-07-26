@@ -64,6 +64,13 @@ const CSS = `
   .anim-across.once{animation:run-across 5s linear forwards;}
   .anim-across.loop{animation:run-across 6s linear infinite;}
   .anim-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:180px;height:180px;z-index:20;pointer-events:none;}
+  .anim-big-center{position:absolute;top:58%;left:50%;transform:translate(-50%,-50%);width:280px;height:280px;z-index:20;pointer-events:none;}
+  .brain-break-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+  .brain-break-title{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:40px;color:var(--ink);text-align:center;}
+  .practice-item{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--line);}
+  .practice-item:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+  .practice-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;color:#fff;background:var(--seal);border-radius:6px;padding:3px 9px;margin-bottom:8px;}
+  .practice-text{font-size:14px;line-height:1.75;color:var(--ink);white-space:pre-line;}
   .anim-corner-right{position:absolute;bottom:80px;right:20px;width:130px;height:130px;z-index:20;pointer-events:none;}
   .anim-corner-left{position:absolute;bottom:80px;left:20px;width:130px;height:130px;z-index:20;pointer-events:none;}
   .anim-top{position:absolute;top:70px;left:50%;transform:translateX(-50%);width:130px;height:130px;z-index:20;pointer-events:none;}
@@ -83,11 +90,11 @@ const CSS = `
 `
 
 const TYPE_LABELS: Record<string, string> = {
-  intro: "פתיחה", poll: "מה דעתכם", quiz: "בדיקת עירנות",
-  definitions: "הגדרות מושגים", matching: "התאמה", reveal: "גילוי",
+  "lesson-topic": "נושא השיעור", "media-only": "מדיה בלבד", opinion: "מה דעתכם?",
+  "alertness-check": "בדיקת עירנות", definitions: "הגדרות מושגים", "concept-grid": "רשת מושגים",
+  study: "לימוד", practice: "תרגול", "brain-break": "מנוחמוח",
   enrichment: "העשרה", homework: "שיעורי בית", feedback: "משוב",
   assessment: "מבדק סוף שיעור", assessment_answers: "תשובות למבדק",
-  "concept-grid": "סקירה",
 }
 
 function extractYouTubeId(url: string): string | null {
@@ -210,8 +217,8 @@ function QuestionBlock({ question, sessionId, slideId, studentId, type, question
   const [starPick, setStarPick] = useState<number | null>(null)
 
   const isFeedback = type === "feedback"
-  const isQuiz = type === "quiz" || type === "assessment"
-  const showLiveAgg = done && (type === "poll" || type === "quiz" || type === "feedback")
+  const isQuiz = type === "alertness-check" || type === "assessment"
+  const showLiveAgg = done && (type === "opinion" || type === "alertness-check" || type === "feedback")
   const questionId = question.id || `${slideId}-${questionIndex}`
 
   async function submit(optIdx: number) {
@@ -413,9 +420,16 @@ function StudentSlide({ slide, sessionId, studentId }: {
   const { type, eyebrow, title, body, questions } = slide
 
   if (type === "definitions") return <NotebookSlide slide={slide} />
+  if (type === "brain-break") return (
+    <div className="slide-card">
+      <div className="brain-break-wrap"><h1 className="brain-break-title">מנוחמוח</h1></div>
+      <div className="seal-stamp">{slide.order ?? "•"}</div>
+    </div>
+  )
 
   const isBackground = slide.image_position === "background"
-  const showQuestions = (type === "poll" || type === "quiz" || type === "feedback" || type === "assessment") && questions?.length
+  const hideHeader = type === "study" || type === "media-only"
+  const showQuestions = (type === "opinion" || type === "alertness-check" || type === "feedback" || type === "assessment") && questions?.length
   const imageAtTop = !slide.image_position || slide.image_position === "top"
 
   const cardStyle: React.CSSProperties = {
@@ -434,8 +448,8 @@ function StudentSlide({ slide, sessionId, studentId }: {
       {/* Image at top (default) */}
       {imageAtTop && <MediaBlock slide={{ ...slide, link_url: null, youtube_url: null }} />}
 
-      <div className="eyebrow">{eyebrow || TYPE_LABELS[type] || type}</div>
-      <h1 className="stitle">{title}</h1>
+      {!hideHeader && <div className="eyebrow">{eyebrow || TYPE_LABELS[type] || type}</div>}
+      {!hideHeader && <h1 className="stitle">{title}</h1>}
       {body && <div>{renderBody(body)}</div>}
 
       {/* YouTube + link (always after title/body) */}
@@ -470,8 +484,29 @@ function StudentSlide({ slide, sessionId, studentId }: {
         </div>
       ))}
 
-      {/* Concept grid — icon cards (grid) or icon list (list) */}
-      {type === "concept-grid" && questions && (
+      {/* Practice — full bagrut-style questions, tagged by question type */}
+      {type === "practice" && questions && (
+        <div style={{ marginTop: 8 }}>
+          {questions.map(q => (
+            <div key={q.id} className="practice-item">
+              {q.tag && <span className="practice-tag">{q.tag}</span>}
+              <div className="practice-text">{q.text}</div>
+              {q.options.filter(Boolean).length > 0 && (
+                <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 5 }}>
+                  {q.options.filter(Boolean).map((opt, oi) => (
+                    <div key={oi} style={{ fontSize: 13, color: "var(--ink)" }}>
+                      <strong>{["א", "ב", "ג", "ד", "ה"][oi] ?? oi + 1}.</strong> {opt}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Concept grid / Study — icon cards (grid) or icon list (list) */}
+      {(type === "concept-grid" || type === "study") && questions && (
         slide.layout === "list" ? (
           <div className="concept-list">
             {questions.map(q => (
@@ -495,18 +530,6 @@ function StudentSlide({ slide, sessionId, studentId }: {
             ))}
           </div>
         )
-      )}
-
-      {/* Intro chips */}
-      {type === "intro" && questions && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 16 }}>
-          {questions.map((q, i) => (
-            <div key={q.id} style={{ flex: "1 1 130px", background: "var(--paper2)", border: "1px solid var(--line)", borderRadius: 10, padding: "10px", textAlign: "center" }}>
-              <span style={{ fontFamily: "'Frank Ruhl Libre',serif", fontWeight: 900, color: "var(--seal)", fontSize: 18, display: "block" }}>{i + 1}</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>{q.text}</span>
-            </div>
-          ))}
-        </div>
       )}
 
       <div className="seal-stamp">{slide.order ?? "•"}</div>

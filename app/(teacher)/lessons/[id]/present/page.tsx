@@ -32,7 +32,6 @@ const CSS = `
   .navbtn:disabled:hover{background:var(--paper);color:var(--ink);}
   .doodle{width:48px;height:48px;border:2px dashed var(--seal);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:10px;background:#fff;}
   .doodle svg{width:24px;height:24px;stroke:var(--seal);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
-  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:16px;}
   .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;}
   .card h3{font-family:'Frank Ruhl Libre',serif;color:var(--ink);margin:0 0 6px;font-size:16px;}
   .card p{margin:0;font-size:14px;line-height:1.6;color:#4a4a45;}
@@ -62,13 +61,6 @@ const CSS = `
   .task-num{width:26px;height:26px;border-radius:50%;background:var(--seal);color:var(--paper);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
   .enrich-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-top:16px;}
   .rtag{display:inline-block;font-size:10px;font-weight:700;color:#fff;background:var(--seal);border-radius:5px;padding:2px 7px;margin-bottom:6px;}
-  .reveal-box{margin-top:14px;background:var(--paper2);border-radius:10px;overflow:hidden;max-height:0;transition:max-height .4s ease;}
-  .reveal-box.open{max-height:400px;}
-  .reveal-inner{padding:16px 18px;white-space:pre-line;}
-  .conditions-strip{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;}
-  .cond-chip{flex:1;min-width:140px;background:var(--paper2);border:1px solid var(--line);border-radius:10px;padding:12px 10px;text-align:center;}
-  .cond-chip .n{font-family:'Frank Ruhl Libre',serif;font-weight:900;color:var(--seal);font-size:20px;display:block;margin-bottom:3px;}
-  .cond-chip .t{font-size:13px;font-weight:700;color:var(--ink);}
   .concept-icon-circle{width:46px;height:46px;border-radius:50%;background:var(--paper2);border:1.5px solid var(--line);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--seal);}
   .concept-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-top:18px;}
   .concept-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 16px;text-align:center;}
@@ -79,6 +71,12 @@ const CSS = `
   .concept-list-item{display:flex;align-items:flex-start;gap:14px;}
   .concept-list-item h3{font-family:'Frank Ruhl Libre',serif;color:var(--ink);margin:0 0 3px;font-size:16px;}
   .concept-list-item p{margin:0;font-size:14px;line-height:1.55;color:#4a4a45;}
+  .brain-break-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+  .brain-break-title{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:clamp(40px,6vw,72px);color:var(--ink);text-align:center;}
+  .practice-item{margin-bottom:26px;padding-bottom:26px;border-bottom:1px solid var(--line);}
+  .practice-item:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
+  .practice-tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.5px;color:#fff;background:var(--seal);border-radius:6px;padding:3px 10px;margin-bottom:10px;}
+  .practice-text{font-size:15px;line-height:1.8;color:var(--ink);white-space:pre-line;}
   .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:40;backdrop-filter:blur(2px);}
   .sidebar{position:fixed;top:0;right:0;bottom:0;width:280px;background:var(--ink);border-left:1px solid rgba(176,141,63,0.25);z-index:41;display:flex;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,0.4);}
   .sidebar-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid rgba(176,141,63,0.2);flex-shrink:0;}
@@ -101,12 +99,12 @@ const CSS = `
   .anim-across.once{animation:run-across 5s linear forwards;}
   .anim-across.loop{animation:run-across 6s linear infinite;}
   .anim-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:280px;height:280px;z-index:20;pointer-events:none;}
+  .anim-big-center{position:absolute;top:58%;left:50%;transform:translate(-50%,-50%);width:460px;height:460px;z-index:20;pointer-events:none;}
   .anim-corner-right{position:absolute;bottom:80px;right:80px;width:200px;height:200px;z-index:20;pointer-events:none;}
   .anim-corner-left{position:absolute;bottom:80px;left:80px;width:200px;height:200px;z-index:20;pointer-events:none;}
   .anim-top{position:absolute;top:20px;left:50%;transform:translateX(-50%);width:200px;height:200px;z-index:20;pointer-events:none;}
   @media (max-width: 767px) {
     .slide-inner{padding:24px 20px 100px 20px;}
-    .grid2{grid-template-columns:1fr;}
     .enrich-grid{grid-template-columns:1fr;}
     .concept-grid{grid-template-columns:1fr 1fr;}
     .slide-inner.nb-page{padding:0;}
@@ -120,6 +118,8 @@ const CSS = `
     @keyframes run-across{from{left:110%}to{left:-60%}}
     .anim-across{width:150px;height:150px;bottom:50px;}
     .anim-center{width:180px;height:180px;}
+    .anim-big-center{width:260px;height:260px;}
+    .brain-break-title{font-size:36px;}
     .anim-corner-right,.anim-corner-left{width:130px;height:130px;}
     .anim-top{width:130px;height:130px;}
   }
@@ -167,20 +167,22 @@ function SlideMedia({ slide }: { slide: Slide }) {
 
 function DoodleIcon({ type }: { type: string }) {
   const icons: Record<string, React.ReactElement> = {
-    intro: <svg viewBox="0 0 24 24"><path d="M12 2l2.5 6.5L21 9l-5 4.5 1.5 7L12 17l-5.5 3.5 1.5-7L3 9l6.5-.5z"/></svg>,
-    poll: <svg viewBox="0 0 24 24"><path d="M12 3v10M8 8l4-4 4 4"/><path d="M5 15c0 3 3 6 7 6s7-3 7-6"/></svg>,
-    quiz: <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>,
+    "lesson-topic": <svg viewBox="0 0 24 24"><path d="M12 2l2.5 6.5L21 9l-5 4.5 1.5 7L12 17l-5.5 3.5 1.5-7L3 9l6.5-.5z"/></svg>,
+    "media-only": <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="M21 15l-5.5-5.5L4 21"/></svg>,
+    opinion: <svg viewBox="0 0 24 24"><path d="M12 3v10M8 8l4-4 4 4"/><path d="M5 15c0 3 3 6 7 6s7-3 7-6"/></svg>,
+    "alertness-check": <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>,
     definitions: <svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="16" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="8" y1="16" x2="13" y2="16"/></svg>,
-    matching: <svg viewBox="0 0 24 24"><path d="M9 3h4v4h4v4h-4a2 2 0 100 4h4v4h-4v-4a2 2 0 10-4 0v4H5v-4h4a2 2 0 100-4H5V7h4z"/></svg>,
-    reveal: <svg viewBox="0 0 24 24"><path d="M4 20l4-1 10-10-3-3L5 16z"/><path d="M14 7l3 3"/></svg>,
+    "concept-grid": <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>,
+    study: <svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 016.5 3H20v16H6.5A2.5 2.5 0 004 21.5z"/><path d="M4 5.5v13A2.5 2.5 0 006.5 21H20"/></svg>,
+    practice: <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg>,
     enrichment: <svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4"/><path d="M12 3a6 6 0 00-3 11c1 .7 1 1.5 1 2h4c0-.5 0-1.3 1-2a6 6 0 00-3-11z"/></svg>,
     homework: <svg viewBox="0 0 24 24"><path d="M7 8V6a5 5 0 0110 0v2"/><rect x="4" y="8" width="16" height="12" rx="2"/></svg>,
     feedback: <svg viewBox="0 0 24 24"><path d="M4 5h16v11H8l-4 4z"/><path d="M9 10h6M9 13h4"/></svg>,
-    "concept-grid": <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>,
+    _answerKey: <svg viewBox="0 0 24 24"><path d="M4 20l4-1 10-10-3-3L5 16z"/><path d="M14 7l3 3"/></svg>,
   }
-  icons.assessment = icons.quiz
-  icons.assessment_answers = icons.reveal
-  return <div className="doodle">{icons[type] ?? icons.intro}</div>
+  icons.assessment = icons["alertness-check"]
+  icons.assessment_answers = icons._answerKey
+  return <div className="doodle">{icons[type] ?? icons["lesson-topic"]}</div>
 }
 
 function renderInline(text: string): React.ReactNode[] {
@@ -301,6 +303,16 @@ function NotebookSlide({ slide }: { slide: Slide }) {
   )
 }
 
+function BrainBreakSlide() {
+  return (
+    <div className="slide-inner">
+      <div className="brain-break-wrap">
+        <h1 className="brain-break-title">מנוחמוח</h1>
+      </div>
+    </div>
+  )
+}
+
 function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
   slide: Slide
   agg: AggResult
@@ -310,8 +322,10 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
   const { type, eyebrow, title, body, questions } = slide
 
   if (type === "definitions") return <NotebookSlide slide={slide} />
+  if (type === "brain-break") return <BrainBreakSlide />
 
   const isBackground = slide.image_position === "background"
+  const hideHeader = type === "study" || type === "media-only"
 
   const bgStyle: React.CSSProperties = isBackground && slide.image_url ? {
     backgroundImage: `url(${slide.image_url})`,
@@ -325,9 +339,9 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
         <div style={{ position: "absolute", inset: 0, background: "rgba(245,241,230,0.88)", borderRadius: 16 }} />
       )}
       <div style={{ position: "relative", zIndex: 1 }}>
-      <DoodleIcon type={type} />
-      <div className="eyebrow">{eyebrow || type}</div>
-      <h1 className="stitle">{title}</h1>
+      {!hideHeader && <DoodleIcon type={type} />}
+      {!hideHeader && <div className="eyebrow">{eyebrow || type}</div>}
+      {!hideHeader && <h1 className="stitle">{title}</h1>}
 
       {/* Media: image (non-background) + YouTube + link */}
       <SlideMedia slide={slide} />
@@ -337,8 +351,8 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
 
       {body && <div>{renderBody(body)}</div>}
 
-      {/* POLL / QUIZ / ASSESSMENT — bar chart results */}
-      {(type === "poll" || type === "quiz" || type === "assessment" || type === "assessment_answers") && questions && questions.map((q, qi) => {
+      {/* OPINION / ALERTNESS-CHECK / ASSESSMENT — bar chart results */}
+      {(type === "opinion" || type === "alertness-check" || type === "assessment" || type === "assessment_answers") && questions && questions.map((q, qi) => {
         const qAgg = agg[q.id] ?? {}
         const total = Object.values(qAgg).reduce((s, v) => s + v, 0)
         const letters = ["א", "ב", "ג", "ד", "ה"]
@@ -376,8 +390,8 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
         )
       })}
 
-      {/* Reveal-answer toggle — quiz / assessment only (never auto-shown while projected) */}
-      {(type === "quiz" || type === "assessment") && questions?.some(q => q.correct_index !== null) && (
+      {/* Reveal-answer toggle — alertness-check / assessment only (never auto-shown while projected) */}
+      {(type === "alertness-check" || type === "assessment") && questions?.some(q => q.correct_index !== null) && (
         <button
           onClick={() => setRevealOpen(!revealOpen)}
           style={{ background: "var(--ink)", color: "var(--paper)", border: "none", borderRadius: 8, padding: "10px 20px", fontFamily: "'Heebo'", fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 4 }}>
@@ -385,34 +399,25 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
         </button>
       )}
 
-
-      {/* MATCHING — static view for teacher */}
-      {type === "matching" && questions && (
-        <div className="grid2" style={{ marginTop: 16 }}>
+      {/* PRACTICE — full bagrut-style questions, tagged by question type */}
+      {type === "practice" && questions && (
+        <div style={{ marginTop: 16, maxWidth: 760 }}>
           {questions.map(q => (
-            <div key={q.id} className="card">
-              <h3>{q.text}</h3>
-              <p style={{ color: "var(--ok)", fontWeight: 600 }}>{q.options[q.correct_index ?? 0]}</p>
+            <div key={q.id} className="practice-item">
+              {q.tag && <span className="practice-tag">{q.tag}</span>}
+              <div className="practice-text">{q.text}</div>
+              {q.options.filter(Boolean).length > 0 && (
+                <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
+                  {q.options.filter(Boolean).map((opt, oi) => (
+                    <div key={oi} style={{ fontSize: 14, color: "var(--ink)" }}>
+                      <strong>{["א", "ב", "ג", "ד", "ה"][oi] ?? oi + 1}.</strong> {opt}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
-      )}
-
-      {/* REVEAL — hidden answer */}
-      {type === "reveal" && questions && (
-        <>
-          <button
-            onClick={() => setRevealOpen(!revealOpen)}
-            style={{ background: "var(--ink)", color: "var(--paper)", border: "none", borderRadius: 8, padding: "10px 20px", fontFamily: "'Heebo'", fontWeight: 700, fontSize: 14, cursor: "pointer", marginTop: 12 }}>
-            {revealOpen ? "הסתר תשובת מודל" : "הצג תשובת מודל"}
-          </button>
-          <div className={`reveal-box ${revealOpen ? "open" : ""}`}>
-            <div className="reveal-inner">
-              {questions[0]?.feedback && <p><strong>תשובה:</strong> {questions[0].feedback}</p>}
-              {questions[0]?.text && <p>{questions[0].text}</p>}
-            </div>
-          </div>
-        </>
       )}
 
       {/* HOMEWORK — task list */}
@@ -440,8 +445,8 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
         </div>
       )}
 
-      {/* CONCEPT-GRID — icon cards (grid) or icon list (list) */}
-      {type === "concept-grid" && questions && (
+      {/* CONCEPT-GRID / STUDY — icon cards (grid) or icon list (list) */}
+      {(type === "concept-grid" || type === "study") && questions && (
         slide.layout === "list" ? (
           <div className="concept-list">
             {questions.map(q => (
@@ -465,18 +470,6 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
             ))}
           </div>
         )
-      )}
-
-      {/* INTRO — conditions strip if questions present */}
-      {type === "intro" && questions && (
-        <div className="conditions-strip">
-          {questions.map((q, i) => (
-            <div key={q.id} className="cond-chip">
-              <span className="n">{i + 1}</span>
-              <span className="t">{q.text}</span>
-            </div>
-          ))}
-        </div>
       )}
 
       {/* FEEDBACK — show question text */}
@@ -780,8 +773,10 @@ export default function PresentPage({ params }: Props) {
   const total = lesson.slides.length
 
   const TYPE_LABELS: Record<string, string> = {
-    intro: "פתיחה", poll: "מה דעתכם", quiz: "בדיקת עירנות", definitions: "הגדרות מושגים",
-    matching: "התאמה", reveal: "גילוי", enrichment: "העשרה", homework: "שיעורי בית", feedback: "משוב",
+    "lesson-topic": "נושא השיעור", "media-only": "מדיה בלבד", opinion: "מה דעתכם?",
+    "alertness-check": "בדיקת עירנות", definitions: "הגדרות מושגים", "concept-grid": "רשת מושגים",
+    study: "לימוד", practice: "תרגול", "brain-break": "מנוחמוח",
+    enrichment: "העשרה", homework: "שיעורי בית", feedback: "משוב",
     assessment: "מבדק סוף שיעור", assessment_answers: "תשובות למבדק",
   }
 
