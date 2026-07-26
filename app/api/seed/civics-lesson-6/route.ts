@@ -76,7 +76,7 @@ const slides: Slide[] = [
     id: "s4",
     order: 5,
     type: "definitions",
-    eyebrow: "מושגי יסוד",
+    eyebrow: "מושגים למבחן",
     title: "ריבונות, ישות, והכרה — מה ההבדל?",
     questions: [
       { id: "t1", text: "ריבונות", options: [""], feedback: "עצמאות מלאה של מדינה בניהול מדיניות הפנים והחוץ שלה, בלי כפייה מגורם חוץ.", correct_index: null },

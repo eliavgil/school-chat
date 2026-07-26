@@ -4,6 +4,7 @@ import { useSession, signIn } from "next-auth/react"
 import { browserClient } from "@/lib/lessons/supabase"
 import type { Lesson, Slide, LiveSession, SlideQuestion, SlideAnimation } from "@/lib/lessons/types"
 import { ConceptIcon } from "@/lib/lessons/icons"
+import { NotebookPen } from "lucide-react"
 
 interface Props { params: Promise<{ roomCode: string }> }
 
@@ -71,7 +72,7 @@ const CSS = `
   .nb-head{padding:22px 22px 10px;}
   .nb-tab{display:inline-block;background:var(--seal);color:#fff;font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;padding:4px 12px;border-radius:0 0 7px 7px;margin-bottom:12px;}
   .nb-title{display:inline;font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:22px;color:var(--ink);margin:0;line-height:1.35;background:linear-gradient(transparent 62%,rgba(176,141,63,0.4) 62%);}
-  .nb-rules{padding:30px 22px 90px;background-image:linear-gradient(to left,transparent 22px,rgba(196,44,44,0.5) 22px,rgba(196,44,44,0.5) 24px,transparent 24px),repeating-linear-gradient(transparent 0px,transparent 29px,rgba(70,110,190,0.32) 29px,rgba(70,110,190,0.32) 30px);}
+  .nb-rules{padding:30px 22px 90px;background-image:repeating-linear-gradient(transparent 0px,transparent 29px,rgba(70,110,190,0.32) 29px,rgba(70,110,190,0.32) 30px);}
   .nb-entry{margin-bottom:30px;}
   .nb-entry:last-child{margin-bottom:0;}
   .nb-line{margin:0;font-size:17px;line-height:30px;}
@@ -379,12 +380,15 @@ function renderBody(text: string) {
 }
 
 function NotebookSlide({ slide }: { slide: Slide }) {
-  const { eyebrow, title, body, questions } = slide
+  const { eyebrow, body, questions } = slide
   return (
     <div className="slide-card nb-page">
       <div className="nb-head">
-        <div className="nb-tab">{eyebrow || "מושגי יסוד"}</div>
-        <h1 className="nb-title">{title}</h1>
+        <div className="nb-tab">{eyebrow || "מושגים למבחן"}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <NotebookPen size={20} strokeWidth={2.2} color="var(--seal)" />
+          <h1 className="nb-title">להעתיק למחברת!</h1>
+        </div>
       </div>
       <div className="nb-rules">
         {questions

@@ -88,6 +88,10 @@ Use `questions` to carry the items (not `body`): `q.text` = short title, `q.opti
 | `lock` | a restriction or prohibition |
 | `alert` | emergency, crisis |
 
+### `definitions` — notebook page
+
+On the projected/live view this always renders as a fixed instruction — **"להעתיק למחברת!"** with a notebook/pen icon — never the slide's `title`. Still write a real, descriptive `title` (it's what shows in the editor sidebar and the printed handout); just don't expect students to see it on screen. `eyebrow` is the small tab label — leave it blank to get the default ("מושגים למבחן"), or set a topic-specific tag (e.g. "תחום א׳: חקיקה") if the lesson has multiple definition slides that need telling apart.
+
 ## Lesson flow
 
 - **Slide 1**: Hook — an image, headline, or question that lands in the real world. Don't start with a definition.

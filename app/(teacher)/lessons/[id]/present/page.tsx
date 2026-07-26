@@ -4,6 +4,7 @@ import QRCode from "react-qr-code"
 import { browserClient } from "@/lib/lessons/supabase"
 import type { Lesson, Slide, LiveSession, SlideAnimation } from "@/lib/lessons/types"
 import { ConceptIcon } from "@/lib/lessons/icons"
+import { NotebookPen } from "lucide-react"
 
 interface Props { params: Promise<{ id: string }> }
 
@@ -44,7 +45,7 @@ const CSS = `
   .nb-head{padding:26px 34px 14px;}
   .nb-tab{display:inline-block;background:var(--seal);color:#fff;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:5px 14px;border-radius:0 0 8px 8px;margin-bottom:16px;}
   .nb-title{display:inline;font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:34px;color:var(--ink);margin:0;line-height:1.3;background:linear-gradient(transparent 62%,rgba(176,141,63,0.4) 62%);}
-  .nb-rules{padding:42px 34px 26px;background-image:linear-gradient(to left,transparent 38px,rgba(196,44,44,0.5) 38px,rgba(196,44,44,0.5) 40px,transparent 40px),repeating-linear-gradient(transparent 0px,transparent 41px,rgba(70,110,190,0.32) 41px,rgba(70,110,190,0.32) 42px);}
+  .nb-rules{padding:42px 34px 26px;background-image:repeating-linear-gradient(transparent 0px,transparent 41px,rgba(70,110,190,0.32) 41px,rgba(70,110,190,0.32) 42px);}
   .nb-entry{margin-bottom:42px;}
   .nb-entry:last-child{margin-bottom:0;}
   .nb-line{margin:0;font-size:22px;line-height:42px;}
@@ -111,7 +112,7 @@ const CSS = `
     .slide-inner.nb-page{padding:0;}
     .nb-head{padding:20px 20px 10px;}
     .nb-title{font-size:24px;}
-    .nb-rules{padding:34px 20px 20px;background-image:linear-gradient(to left,transparent 24px,rgba(196,44,44,0.5) 24px,rgba(196,44,44,0.5) 26px,transparent 26px),repeating-linear-gradient(transparent 0px,transparent 33px,rgba(70,110,190,0.32) 33px,rgba(70,110,190,0.32) 34px);}
+    .nb-rules{padding:34px 20px 20px;background-image:repeating-linear-gradient(transparent 0px,transparent 33px,rgba(70,110,190,0.32) 33px,rgba(70,110,190,0.32) 34px);}
     .nb-entry{margin-bottom:34px;}
     .nb-line{font-size:17px;line-height:34px;}
     .nb-freetext .lead{font-size:17px!important;line-height:34px!important;margin:0 0 34px 0!important;}
@@ -276,12 +277,15 @@ function AudioButton({ url }: { url: string }) {
 }
 
 function NotebookSlide({ slide }: { slide: Slide }) {
-  const { eyebrow, title, body, questions } = slide
+  const { eyebrow, body, questions } = slide
   return (
     <div className="slide-inner nb-page">
       <div className="nb-head">
-        <div className="nb-tab">{eyebrow || "מושגי יסוד"}</div>
-        <h1 className="nb-title">{title}</h1>
+        <div className="nb-tab">{eyebrow || "מושגים למבחן"}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <NotebookPen size={30} strokeWidth={2.2} color="var(--seal)" />
+          <h1 className="nb-title">להעתיק למחברת!</h1>
+        </div>
       </div>
       <div className="nb-rules">
         {questions
