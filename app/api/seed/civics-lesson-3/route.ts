@@ -532,21 +532,23 @@ export async function GET() {
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const sb = adminClient()
+  const slug = "civics-nation-state-law-3"
 
+  // Check if lesson already exists (by slug — titles can change between edits)
   const { data: existing } = await sb
     .from("lessons")
     .select("id, title")
-    .eq("title", LESSON_TITLE)
+    .eq("slug", slug)
     .maybeSingle()
 
   if (existing) {
     const { error: updateError } = await sb
       .from("lessons")
-      .update({ slides })
+      .update({ title: LESSON_TITLE, slides })
       .eq("id", existing.id)
 
     if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
-    return NextResponse.json({ message: "Lesson updated", id: existing.id, title: existing.title, slideCount: slides.length })
+    return NextResponse.json({ message: "Lesson updated", id: existing.id, title: LESSON_TITLE, slideCount: slides.length })
   }
 
   const { data, error } = await sb
@@ -554,7 +556,7 @@ export async function GET() {
     .insert({
       title: LESSON_TITLE,
       subject: "אזרחות",
-      slug: "civics-nation-state-law-3",
+      slug,
       slides,
     })
     .select()
