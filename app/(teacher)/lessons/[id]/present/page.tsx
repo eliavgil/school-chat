@@ -326,7 +326,7 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
   if (type === "brain-break") return <BrainBreakSlide />
 
   const isBackground = slide.image_position === "background"
-  const hideHeader = type === "study" || type === "media-only" || type === "answer"
+  const hideHeader = type === "media-only" || type === "answer"
 
   const bgStyle: React.CSSProperties = isBackground && slide.image_url ? {
     backgroundImage: `url(${slide.image_url})`,
@@ -480,24 +480,23 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
             <span style={{ background: "#A23B2E", color: "#F5F1E6", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, flexShrink: 0, fontFamily: "'Frank Ruhl Libre',serif", lineHeight: 1 }}>{qi + 1}</span>
             <div className="qbox" style={{ flex: 1 }}>{q.text}</div>
           </div>
-          {agg[q.id] && (
-            <div style={{ marginTop: 10, maxWidth: 480 }}>
-              {q.options.map((opt, oi) => {
-                const cnt = (agg[q.id] ?? {})[String(oi)] ?? 0
-                const total = Object.values(agg[q.id] ?? {}).reduce((s, v) => s + v, 0)
-                const pct = total ? Math.round((cnt / total) * 100) : 0
-                return (
-                  <div key={oi} className="bar-row">
-                    <div className="bar-label">
-                      <span>{"★".repeat(oi + 1)} {opt}</span>
-                      <span>{cnt}</span>
-                    </div>
-                    <div className="bar-bg"><div className="bar-fill" style={{ width: `${pct}%` }} /></div>
+          <div style={{ marginTop: 10, maxWidth: 480 }}>
+            {Array.from({ length: q.options.length || 5 }, (_, oi) => {
+              const opt = q.options[oi]
+              const cnt = (agg[q.id] ?? {})[String(oi)] ?? 0
+              const total = Object.values(agg[q.id] ?? {}).reduce((s, v) => s + v, 0)
+              const pct = total ? Math.round((cnt / total) * 100) : 0
+              return (
+                <div key={oi} className="bar-row">
+                  <div className="bar-label">
+                    <span>{"★".repeat(oi + 1)}{opt ? ` ${opt}` : ""}</span>
+                    <span>{cnt}</span>
                   </div>
-                )
-              })}
-            </div>
-          )}
+                  <div className="bar-bg"><div className="bar-fill" style={{ width: `${pct}%` }} /></div>
+                </div>
+              )
+            })}
+          </div>
         </div>
       ))}
       </div>{/* /relative z-1 */}

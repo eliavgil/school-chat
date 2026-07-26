@@ -80,7 +80,7 @@ const slides: Slide[] = [
     type: "study",
     layout: "grid",
     eyebrow: "הקניה",
-    title: "חמשת התנאים",
+    title: "5 התנאים לקיומה של מדינה",
     questions: [
       { id: "c1", icon: "map", text: "שטח (טריטוריה)", options: ["אזור גיאוגרפי מוגדר הכולל יבשה, מים טריטוריאליים, מרחב אווירי ותת-קרקע. גודל ורציפות אינם הכרחיים."], correct_index: null },
       { id: "c2", icon: "users", text: "אוכלוסייה", options: ["ציבור אנשים קבוע בעל מעמד חוקי מוכר (אזרחים ותושבים)."], correct_index: null },

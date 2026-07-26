@@ -182,13 +182,14 @@ function LiveAgg({ question, sessionId, slideId, questionId }: {
   return (
     <div className="live-agg">
       <div className="live-agg-title">תוצאות חיות</div>
-      {question.options.map((opt, oi) => {
+      {Array.from({ length: question.options.length || 5 }, (_, oi) => {
+        const opt = question.options[oi]
         const cnt = agg[String(oi)] ?? 0
         const pct = total ? Math.round((cnt / total) * 100) : 0
         return (
           <div key={oi} className="bar-row">
             <div className="bar-label">
-              <span>{opt}</span>
+              <span>{opt ? opt : "★".repeat(oi + 1)}</span>
               <span style={{ color: "rgba(27,42,74,0.5)" }}>{pct}%</span>
             </div>
             <div className="bar-bg">
@@ -428,7 +429,7 @@ function StudentSlide({ slide, sessionId, studentId }: {
   )
 
   const isBackground = slide.image_position === "background"
-  const hideHeader = type === "study" || type === "media-only" || type === "answer"
+  const hideHeader = type === "media-only" || type === "answer"
   const showQuestions = (type === "opinion" || type === "alertness-check" || type === "feedback" || type === "assessment") && questions?.length
   const imageAtTop = !slide.image_position || slide.image_position === "top"
 
