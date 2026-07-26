@@ -23,7 +23,7 @@ const CSS = `
   .stage{flex:1;position:relative;overflow:hidden;}
   .slide-inner{position:absolute;inset:0;padding:40px 64px 90px 64px;overflow-y:auto;}
   .eyebrow{font-size:12px;letter-spacing:2.5px;color:var(--seal);font-weight:700;margin-bottom:6px;text-transform:uppercase;}
-  h1.stitle{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:clamp(24px,3vw,38px);color:var(--ink);margin:0 0 18px;line-height:1.2;border-bottom:2px solid var(--line);padding-bottom:14px;}
+  h1.stitle{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:38px;color:var(--ink);margin:0 0 18px;line-height:1.2;border-bottom:2px solid var(--line);padding-bottom:14px;}
   .lead{font-size:16px;line-height:1.85;color:var(--ink);}
   .seal-stamp{position:absolute;left:28px;bottom:28px;width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#7E2E24,var(--seal) 70%);color:var(--paper);display:flex;align-items:center;justify-content:center;font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:22px;box-shadow:0 4px 14px rgba(0,0,0,0.25),inset 0 0 0 2px rgba(245,241,230,0.35);z-index:5;}
   .navbtns{position:absolute;bottom:24px;right:28px;display:flex;gap:10px;z-index:6;}
@@ -86,7 +86,7 @@ const CSS = `
   .timeline-year{font-family:'Frank Ruhl Libre',serif;font-weight:800;color:var(--seal);font-size:14px;margin:0 0 3px;direction:ltr;unicode-bidi:isolate;}
   .timeline-event{margin:0;font-size:11.5px;line-height:1.4;color:#4a4a45;}
   .brain-break-wrap{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;padding-top:64px;}
-  .brain-break-title{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:clamp(40px,6vw,72px);color:var(--ink);text-align:center;}
+  .brain-break-title{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:72px;color:var(--ink);text-align:center;}
   .practice-item{margin-bottom:26px;padding-bottom:26px;border-bottom:1px solid var(--line);}
   .practice-item:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
   .practice-tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.5px;color:#fff;background:var(--seal);border-radius:6px;padding:3px 10px;margin-bottom:10px;}
@@ -119,6 +119,7 @@ const CSS = `
   .anim-top{position:absolute;top:20px;left:50%;transform:translateX(-50%);width:200px;height:200px;z-index:20;pointer-events:none;}
   @media (max-width: 767px) {
     .slide-inner{padding:24px 20px 100px 20px;}
+    h1.stitle{font-size:26px;}
     .enrich-grid{grid-template-columns:1fr;}
     .concept-grid{grid-template-columns:1fr 1fr;}
     .timeline-track{min-height:300px;}
@@ -159,7 +160,7 @@ function SlideMedia({ slide }: { slide: Slide }) {
   return (
     <>
       {gallery && gallery.length > 0 && (
-        <div style={{ display: "flex", gap: 12, marginBottom: 16, height: "clamp(200px, 40vh, 420px)" }}>
+        <div style={{ display: "flex", gap: 12, marginBottom: 16, height: 320 }}>
           {gallery.map((url, i) => (
             <div key={i} style={{ flex: 1, minWidth: 0, height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#fff", border: "1px solid var(--line)", borderRadius: 10, overflow: "hidden" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
