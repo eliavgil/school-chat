@@ -71,10 +71,10 @@ const CSS = `
   .concept-list-item{display:flex;align-items:flex-start;gap:14px;}
   .concept-list-item h3{font-family:'Frank Ruhl Libre',serif;color:var(--ink);margin:0 0 3px;font-size:16px;}
   .concept-list-item p{margin:0;font-size:14px;line-height:1.55;color:#4a4a45;}
-  .timeline-wrap{position:relative;margin-top:70px;overflow-x:auto;overflow-y:visible;padding-bottom:4px;}
-  .timeline-track{position:relative;display:flex;min-height:230px;min-width:min-content;}
+  .timeline-wrap{position:relative;margin-top:40px;overflow-x:auto;padding-bottom:4px;}
+  .timeline-track{position:relative;display:flex;min-height:360px;min-width:min-content;}
   .timeline-line{position:absolute;top:50%;left:0;right:0;height:2px;background:var(--ink);opacity:.28;transform:translateY(-50%);}
-  .timeline-item{position:relative;flex:1 0 128px;min-width:128px;height:230px;}
+  .timeline-item{position:relative;flex:1 0 128px;min-width:128px;height:360px;}
   .timeline-dot{position:absolute;top:50%;left:50%;width:13px;height:13px;border-radius:50%;background:var(--seal);border:3px solid var(--paper);box-shadow:0 0 0 2px var(--ink);transform:translate(-50%,-50%);z-index:2;}
   .timeline-connector{position:absolute;left:50%;width:2px;background:var(--ink);opacity:.28;transform:translateX(-50%);}
   .timeline-connector.above{bottom:50%;height:24px;}
@@ -120,7 +120,8 @@ const CSS = `
     .slide-inner{padding:24px 20px 100px 20px;}
     .enrich-grid{grid-template-columns:1fr;}
     .concept-grid{grid-template-columns:1fr 1fr;}
-    .timeline-item{flex:1 0 104px;min-width:104px;height:200px;}
+    .timeline-track{min-height:300px;}
+    .timeline-item{flex:1 0 104px;min-width:104px;height:300px;}
     .timeline-card{width:104px;padding:7px 8px;}
     .timeline-year{font-size:12px;}
     .timeline-event{font-size:10.5px;}
