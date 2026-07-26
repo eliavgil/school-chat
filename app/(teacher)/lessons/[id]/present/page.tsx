@@ -158,10 +158,12 @@ function SlideMedia({ slide }: { slide: Slide }) {
   return (
     <>
       {gallery && gallery.length > 0 && (
-        <div style={{ display: "flex", gap: 12, marginBottom: 16, height: "clamp(180px, 34vh, 340px)" }}>
+        <div style={{ display: "flex", gap: 12, marginBottom: 16, height: "clamp(200px, 40vh, 420px)" }}>
           {gallery.map((url, i) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={i} src={url} alt="" style={{ flex: 1, minWidth: 0, height: "100%", objectFit: "cover", borderRadius: 10 }} />
+            <div key={i} style={{ flex: 1, minWidth: 0, height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#fff", border: "1px solid var(--line)", borderRadius: 10, overflow: "hidden" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={url} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+            </div>
           ))}
         </div>
       )}
@@ -366,7 +368,7 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
       {isBackground && slide.image_url && (
         <div style={{ position: "absolute", inset: 0, background: "rgba(245,241,230,0.88)", borderRadius: 16 }} />
       )}
-      <div style={{ position: "relative", zIndex: 1 }}>
+      <div style={{ position: "relative", zIndex: 1, ...(type === "media-only" ? { display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "100%" } : {}) }}>
       {!hideHeader && <DoodleIcon type={type} />}
       {!hideHeader && <div className="eyebrow">{eyebrow || type}</div>}
       {!hideHeader && <h1 className="stitle">{title}</h1>}

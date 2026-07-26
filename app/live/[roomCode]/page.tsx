@@ -318,10 +318,12 @@ function MediaBlock({ slide }: { slide: Slide }) {
     <>
       {/* Gallery — 2-3 photos side by side */}
       {gallery && gallery.length > 0 && (
-        <div style={{ display: "flex", gap: 10, marginBottom: 14, height: "clamp(140px, 28vh, 260px)" }}>
+        <div style={{ display: "flex", gap: 10, marginBottom: 14, height: "clamp(160px, 34vh, 320px)" }}>
           {gallery.map((url, i) => (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={i} src={url} alt="" style={{ flex: 1, minWidth: 0, height: "100%", objectFit: "cover", borderRadius: 10 }} />
+            <div key={i} style={{ flex: 1, minWidth: 0, height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#fff", border: "1px solid var(--line)", borderRadius: 10, overflow: "hidden" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={url} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+            </div>
           ))}
         </div>
       )}
