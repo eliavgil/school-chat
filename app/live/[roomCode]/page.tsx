@@ -64,8 +64,8 @@ const CSS = `
   .anim-across.once{animation:run-across 5s linear forwards;}
   .anim-across.loop{animation:run-across 6s linear infinite;}
   .anim-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:180px;height:180px;z-index:20;pointer-events:none;}
-  .anim-big-center{position:absolute;top:58%;left:50%;transform:translate(-50%,-50%);width:280px;height:280px;z-index:20;pointer-events:none;}
-  .brain-break-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+  .anim-big-center{position:absolute;top:70%;left:50%;transform:translate(-50%,-50%);width:240px;height:240px;z-index:20;pointer-events:none;}
+  .brain-break-wrap{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;padding-top:36px;}
   .brain-break-title{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:40px;color:var(--ink);text-align:center;}
   .practice-item{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--line);}
   .practice-item:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}

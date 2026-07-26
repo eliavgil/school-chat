@@ -71,7 +71,7 @@ const CSS = `
   .concept-list-item{display:flex;align-items:flex-start;gap:14px;}
   .concept-list-item h3{font-family:'Frank Ruhl Libre',serif;color:var(--ink);margin:0 0 3px;font-size:16px;}
   .concept-list-item p{margin:0;font-size:14px;line-height:1.55;color:#4a4a45;}
-  .brain-break-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+  .brain-break-wrap{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;padding-top:64px;}
   .brain-break-title{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:clamp(40px,6vw,72px);color:var(--ink);text-align:center;}
   .practice-item{margin-bottom:26px;padding-bottom:26px;border-bottom:1px solid var(--line);}
   .practice-item:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
@@ -99,7 +99,7 @@ const CSS = `
   .anim-across.once{animation:run-across 5s linear forwards;}
   .anim-across.loop{animation:run-across 6s linear infinite;}
   .anim-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:280px;height:280px;z-index:20;pointer-events:none;}
-  .anim-big-center{position:absolute;top:58%;left:50%;transform:translate(-50%,-50%);width:460px;height:460px;z-index:20;pointer-events:none;}
+  .anim-big-center{position:absolute;top:68%;left:50%;transform:translate(-50%,-50%);width:400px;height:400px;z-index:20;pointer-events:none;}
   .anim-corner-right{position:absolute;bottom:80px;right:80px;width:200px;height:200px;z-index:20;pointer-events:none;}
   .anim-corner-left{position:absolute;bottom:80px;left:80px;width:200px;height:200px;z-index:20;pointer-events:none;}
   .anim-top{position:absolute;top:20px;left:50%;transform:translateX(-50%);width:200px;height:200px;z-index:20;pointer-events:none;}
