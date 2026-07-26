@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useState, useCallback, use, useRef } from "react"
+import React, { useEffect, useLayoutEffect, useState, useCallback, use, useRef } from "react"
 import QRCode from "react-qr-code"
 import { browserClient } from "@/lib/lessons/supabase"
 import type { Lesson, Slide, LiveSession, SlideAnimation } from "@/lib/lessons/types"
@@ -10,6 +10,7 @@ interface Props { params: Promise<{ id: string }> }
 
 const SLIDE_W = 1280
 const SLIDE_H = 720
+const MIN_FIT_SCALE = 0.62 // below this, dense slides (e.g. 5-question assessments) fall back to scrolling instead of illegible text
 
 interface AggResult { [questionId: string]: { [answer: string]: number } }
 
@@ -310,8 +311,28 @@ function AudioButton({ url }: { url: string }) {
 
 function NotebookSlide({ slide }: { slide: Slide }) {
   const { eyebrow, body, questions } = slide
+  const pageRef = useRef<HTMLDivElement>(null)
+  const rulesRef = useRef<HTMLDivElement>(null)
+  const [fit, setFit] = useState(1)
+
+  useLayoutEffect(() => {
+    const page = pageRef.current
+    const rules = rulesRef.current
+    if (!page || !rules) return
+    const headEl = page.querySelector<HTMLDivElement>(".nb-head")
+    const available = page.clientHeight - (headEl?.offsetHeight ?? 0)
+    const natural = rules.scrollHeight
+    const factor = natural > available ? Math.max(available / natural, MIN_FIT_SCALE) : 1
+    setFit(Math.round(factor * 1000) / 1000)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slide.id])
+
+  const fitStyle: React.CSSProperties = fit < 1
+    ? { transform: `scale(${fit})`, transformOrigin: "top right", width: `${100 / fit}%` }
+    : {}
+
   return (
-    <div className="slide-inner nb-page">
+    <div className="slide-inner nb-page" ref={pageRef}>
       <div className="nb-head">
         <div className="nb-tab">{eyebrow || "מושגים למבחן"}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -319,7 +340,7 @@ function NotebookSlide({ slide }: { slide: Slide }) {
           <h1 className="nb-title">להעתיק למחברת!</h1>
         </div>
       </div>
-      <div className="nb-rules">
+      <div className="nb-rules" ref={rulesRef} style={fitStyle}>
         {questions
           ? questions.map(q => (
               <div key={q.id} className="nb-entry">
@@ -351,6 +372,27 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
 }) {
   const { type, eyebrow, title, body, questions } = slide
 
+  // Auto-shrink dense slides so they fit without scrolling; slides that still
+  // don't fit at MIN_FIT_SCALE (e.g. long assessments) just fall back to the
+  // container's own overflow-y:auto scroll. Hooks must run unconditionally
+  // (before the definitions/brain-break early returns below) — they simply
+  // no-op there since slideInnerRef/contentRef never get attached.
+  const slideInnerRef = useRef<HTMLDivElement>(null)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [fit, setFit] = useState(1)
+
+  useLayoutEffect(() => {
+    const inner = slideInnerRef.current
+    const content = contentRef.current
+    if (!inner || !content) return
+    const cs = getComputedStyle(inner)
+    const available = inner.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)
+    const natural = content.scrollHeight
+    const factor = natural > available ? Math.max(available / natural, MIN_FIT_SCALE) : 1
+    setFit(Math.round(factor * 1000) / 1000)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slide.id])
+
   if (type === "definitions") return <NotebookSlide slide={slide} />
   if (type === "brain-break") return <BrainBreakSlide />
 
@@ -363,12 +405,16 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
     backgroundPosition: "center",
   } : {}
 
+  const fitStyle: React.CSSProperties = fit < 1
+    ? { transform: `scale(${fit})`, transformOrigin: "top right", width: `${100 / fit}%` }
+    : {}
+
   return (
-    <div className="slide-inner" style={bgStyle}>
+    <div className="slide-inner" ref={slideInnerRef} style={bgStyle}>
       {isBackground && slide.image_url && (
         <div style={{ position: "absolute", inset: 0, background: "rgba(245,241,230,0.88)", borderRadius: 16 }} />
       )}
-      <div style={{ position: "relative", zIndex: 1, ...(type === "media-only" ? { display: "flex", flexDirection: "column", justifyContent: "center", minHeight: "100%" } : {}) }}>
+      <div ref={contentRef} style={{ position: "relative", zIndex: 1, ...fitStyle, ...(type === "media-only" ? { display: "flex", flexDirection: "column", justifyContent: "center", minHeight: fit < 1 ? undefined : "100%" } : {}) }}>
       {!hideHeader && <DoodleIcon type={type} />}
       {!hideHeader && <div className="eyebrow">{eyebrow || type}</div>}
       {!hideHeader && <h1 className="stitle">{title}</h1>}
@@ -916,7 +962,7 @@ export default function PresentPage({ params }: Props) {
           // Mobile: native width, no scale transform
           <div style={{ position: "absolute", inset: 0, background: "var(--paper)", overflow: "hidden" }}>
             {slide && (
-              <SlideView slide={slide} agg={agg} revealOpen={revealOpen} setRevealOpen={setRevealOpen} />
+              <SlideView key={slide.id} slide={slide} agg={agg} revealOpen={revealOpen} setRevealOpen={setRevealOpen} />
             )}
             {animActive && slide?.animation && (
               <AnimOverlay anim={slide.animation} lottieDivRef={lottieDivRef} />
@@ -942,7 +988,7 @@ export default function PresentPage({ params }: Props) {
             overflow: "hidden",
           }}>
             {slide && (
-              <SlideView slide={slide} agg={agg} revealOpen={revealOpen} setRevealOpen={setRevealOpen} />
+              <SlideView key={slide.id} slide={slide} agg={agg} revealOpen={revealOpen} setRevealOpen={setRevealOpen} />
             )}
 
             {animActive && slide?.animation && (
