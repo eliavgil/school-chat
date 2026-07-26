@@ -312,11 +312,22 @@ function MediaBlock({ slide }: { slide: Slide }) {
 
   const isTopOrDefault = !slide.image_position || slide.image_position === "top"
   const isBackground = slide.image_position === "background"
+  const gallery = !isBackground ? slide.images?.filter(Boolean) : null
 
   return (
     <>
+      {/* Gallery — 2-3 photos side by side */}
+      {gallery && gallery.length > 0 && (
+        <div style={{ display: "flex", gap: 10, marginBottom: 14, height: "clamp(140px, 28vh, 260px)" }}>
+          {gallery.map((url, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={i} src={url} alt="" style={{ flex: 1, minWidth: 0, height: "100%", objectFit: "cover", borderRadius: 10 }} />
+          ))}
+        </div>
+      )}
+
       {/* Image — top/right/left show inline (background handled by parent) */}
-      {slide.image_url && !isBackground && (
+      {!gallery?.length && slide.image_url && !isBackground && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={slide.image_url} alt="" className="slide-img" style={imageSizeStyle(slide.image_size)} />
       )}
@@ -467,7 +478,7 @@ function StudentSlide({ slide, sessionId, studentId }: {
       {body && <div>{renderBody(body)}</div>}
 
       {/* YouTube + link (always after title/body) */}
-      <MediaBlock slide={{ ...slide, image_url: null }} />
+      <MediaBlock slide={{ ...slide, image_url: null, images: null }} />
 
       {/* Image at non-top positions */}
       {!imageAtTop && slide.image_url && !isBackground && (

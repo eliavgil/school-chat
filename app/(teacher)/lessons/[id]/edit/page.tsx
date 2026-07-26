@@ -180,6 +180,9 @@ function SlideEditor({ slide, onChange, onDelete, onDuplicateAsAnswerKey, dragHa
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [galleryUploading, setGalleryUploading] = useState(false)
+  const [galleryError, setGalleryError] = useState<string | null>(null)
+  const galleryInputRef = useRef<HTMLInputElement>(null)
   const ytId = slide.youtube_url ? extractYouTubeId(slide.youtube_url) : null
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -203,6 +206,33 @@ function SlideEditor({ slide, onChange, onDelete, onDuplicateAsAnswerKey, dragHa
       setUploading(false)
       e.target.value = ""
     }
+  }
+
+  async function handleGalleryUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setGalleryUploading(true)
+    setGalleryError(null)
+    const fd = new FormData()
+    fd.append("file", file)
+    try {
+      const res = await fetch("/api/upload", { method: "POST", body: fd })
+      const data = await res.json()
+      if (data.url) {
+        onChange({ ...slide, images: [...(slide.images ?? []), data.url].slice(0, 3) })
+      } else {
+        setGalleryError(data.error ?? "שגיאה בהעלאה")
+      }
+    } catch {
+      setGalleryError("שגיאה בהעלאה")
+    } finally {
+      setGalleryUploading(false)
+      e.target.value = ""
+    }
+  }
+
+  function removeGalleryImage(i: number) {
+    onChange({ ...slide, images: (slide.images ?? []).filter((_, idx) => idx !== i) })
   }
 
   function setQ(i: number, q: SlideQuestion) {
@@ -326,6 +356,42 @@ function SlideEditor({ slide, onChange, onDelete, onDuplicateAsAnswerKey, dragHa
                 </div>
               </>
             )}
+
+            {/* Gallery — 2-3 images, mainly for media-only slides */}
+            <div className="field">
+              <label>תמונות (2–3, בעיקר לשקפי מדיה)</label>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+                {(slide.images ?? []).map((url, i) => (
+                  <div key={i} style={{ position: "relative", width: 84, height: 84, borderRadius: 8, overflow: "hidden", border: "1px solid var(--line)" }}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
+                    <button
+                      onClick={() => removeGalleryImage(i)}
+                      style={{ position: "absolute", top: 2, left: 2, background: "rgba(0,0,0,0.55)", color: "#fff", border: "none", borderRadius: "50%", width: 20, height: 20, fontSize: 13, cursor: "pointer", lineHeight: 1 }}>
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+              {(slide.images?.length ?? 0) < 3 && (
+                <>
+                  <input
+                    ref={galleryInputRef}
+                    type="file"
+                    accept="image/*"
+                    style={{ display: "none" }}
+                    onChange={handleGalleryUpload}
+                  />
+                  <button
+                    onClick={() => galleryInputRef.current?.click()}
+                    disabled={galleryUploading}
+                    style={{ padding: "8px 12px", borderRadius: 8, border: "1.5px dashed var(--ink)", background: "#fff", color: "var(--ink)", fontSize: 12, fontWeight: 700, cursor: galleryUploading ? "default" : "pointer", fontFamily: "'Heebo'", opacity: galleryUploading ? 0.6 : 1 }}>
+                    {galleryUploading ? "מעלה..." : "+ הוספת תמונה"}
+                  </button>
+                </>
+              )}
+              {galleryError && <div style={{ fontSize: 12, color: "var(--seal)", marginTop: 4 }}>{galleryError}</div>}
+            </div>
 
             {/* YouTube */}
             <div className="field">

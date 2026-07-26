@@ -152,10 +152,19 @@ function extractYouTubeId(url: string): string | null {
 function SlideMedia({ slide }: { slide: Slide }) {
   const ytUrl = slide.youtube_url || slide.link_url || ""
   const ytId = ytUrl ? extractYouTubeId(ytUrl) : null
-  const showImg = slide.image_url && slide.image_position !== "background"
+  const gallery = slide.image_position !== "background" ? slide.images?.filter(Boolean) : null
+  const showImg = !gallery?.length && slide.image_url && slide.image_position !== "background"
 
   return (
     <>
+      {gallery && gallery.length > 0 && (
+        <div style={{ display: "flex", gap: 12, marginBottom: 16, height: "clamp(180px, 34vh, 340px)" }}>
+          {gallery.map((url, i) => (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={i} src={url} alt="" style={{ flex: 1, minWidth: 0, height: "100%", objectFit: "cover", borderRadius: 10 }} />
+          ))}
+        </div>
+      )}
       {showImg && (
         // eslint-disable-next-line @next/next/no-img-element
         <img src={slide.image_url!} alt="" style={{

@@ -32,6 +32,7 @@ export interface Slide {
   image_url?: string | null
   image_position?: 'top' | 'right' | 'left' | 'background' | null
   image_size?: 'small' | 'medium' | 'large' | 'full' | null
+  images?: string[] | null   // 2-3 photos shown as a gallery row instead of one image (mainly media-only slides)
   youtube_url?: string | null
   link_url?: string | null
   audio_url?: string | null
