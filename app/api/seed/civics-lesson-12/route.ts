@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { adminClient } from "@/lib/lessons/supabase"
 import type { Slide } from "@/lib/lessons/types"
+import { preserveManualMedia } from "@/lib/lessons/seedHelpers"
 
 export const LESSON_TITLE = "שיעור 12: שיטת הבחירות בישראל ומרכיביה"
 export const SLUG = "democracy-israel-election-system-12"
@@ -269,19 +270,20 @@ export async function GET() {
 
   const { data: existing, error: existingError } = await sb
     .from("lessons")
-    .select("id, title")
+    .select("id, title, slides")
     .eq("slug", SLUG)
     .maybeSingle()
 
   if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 })
 
   if (existing) {
+    const mergedSlides = preserveManualMedia(slides, existing.slides)
     const { error: updateError } = await sb
       .from("lessons")
-      .update({ title: LESSON_TITLE, slides })
+      .update({ title: LESSON_TITLE, slides: mergedSlides })
       .eq("id", existing.id)
     if (updateError) return NextResponse.json({ error: updateError.message }, { status: 500 })
-    return NextResponse.json({ message: "Lesson updated", id: existing.id, title: LESSON_TITLE, slideCount: slides.length })
+    return NextResponse.json({ message: "Lesson updated", id: existing.id, title: LESSON_TITLE, slideCount: mergedSlides.length })
   }
 
   const { data, error } = await sb

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { adminClient } from "@/lib/lessons/supabase"
 import type { Slide } from "@/lib/lessons/types"
+import { preserveManualMedia } from "@/lib/lessons/seedHelpers"
 
 import * as lesson1 from "../civics-lesson-1/route"
 import * as lesson2 from "../civics-lesson-2/route"
@@ -34,7 +35,7 @@ export async function GET() {
   for (const { title, slug, slides } of LESSONS) {
     const { data: existing, error: existingError } = await sb
       .from("lessons")
-      .select("id")
+      .select("id, slides")
       .eq("slug", slug)
       .maybeSingle()
 
@@ -44,9 +45,10 @@ export async function GET() {
     }
 
     if (existing) {
+      const mergedSlides = preserveManualMedia(slides, existing.slides)
       const { error: updateError } = await sb
         .from("lessons")
-        .update({ title, slides })
+        .update({ title, slides: mergedSlides })
         .eq("id", existing.id)
       results.push({ slug, title, status: "updated", ...(updateError ? { error: updateError.message } : {}) })
     } else {
