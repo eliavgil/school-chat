@@ -54,7 +54,7 @@ Sprinkle these through the lesson, especially in the second third (where attenti
 | `feedback` | Exactly 3 rating questions | End of lesson only. Each question is rated 1–5 (renders as a star picker) — no need to spell out the 1–5 options in `options`. |
 | `enrichment` | 2–3 cards, punchy | **Always the last slide.** Links/pointers for curious students who want to go deeper; optional reading. |
 | `concept-grid` | One sentence per item, max | A set of parallel concepts (conditions, principles, branches, rights) — icon + short title + one sentence each, used *within* a `study` block when the explanation itself has this shape. See below. |
-| `alertness-check` | 1–2 easy questions, 4 options each | An extra, optional quick check mid-lesson (not part of the fixed flow) — "were you paying attention," not a deep test. |
+| `alertness-check` | 2 easy questions, 4 options each | **Fixed flow, right after `study` and before `definitions`, every lesson.** A quick check on the study content just covered — "were you paying attention," not a deep test. |
 
 **Default to terse.** Every type above except `definitions`, `opinion`, `assessment`, and `practice` should read as a backdrop, not an essay. When a slide is *about* a list of parallel concepts (e.g. "the five conditions for statehood," "the three branches of government"), reach for `concept-grid` instead of a wall of bulleted body text — it forces one sentence per idea and gives the eye an icon to land on.
 
@@ -138,14 +138,15 @@ Every lesson follows this exact sequence. The only part that varies in length is
 3. `media-only` — hook image/video/audio
 4. `opinion` — one short question, commit before learning
 5. `study` (הקניה) — the teaching content, 3–4 slides as needed
-6. `definitions` — full notebook definitions, *after* the concept is taught
-7. `brain-break` — מנוחמוח, roughly here (the teacher may move it)
-8. `practice` — one real bagrut question
-9. `answer` — its model answer, immediately after
-10. `assessment` — 5 varying-difficulty questions covering the whole lesson
-11. `homework` — a short, more-engaging-than-drilling task
-12. `feedback` — exactly 3 rating questions (1–5)
-13. `enrichment` — always last; optional deeper reading
+6. `alertness-check` — 2 easy questions checking the study content just covered, right after `study` and before `definitions`
+7. `definitions` — full notebook definitions, *after* the concept is taught
+8. `brain-break` — מנוחמוח, roughly here (the teacher may move it)
+9. `practice` — one real bagrut question
+10. `answer` — its model answer, immediately after
+11. `assessment` — 5 varying-difficulty questions covering the whole lesson
+12. `homework` — a short, more-engaging-than-drilling task
+13. `feedback` — exactly 3 rating questions (1–5)
+14. `enrichment` — always last; optional deeper reading
 
 ## Body text rules
 
@@ -158,6 +159,19 @@ Every lesson follows this exact sequence. The only part that varies in length is
 ## Image guidance
 
 When writing a slide that would benefit from an image, add an `image_url` field with a descriptive comment about what kind of image would work. Even if no URL is available yet, write: `image_url: null, // suggested: [description of ideal image]` in a comment so it's easy to fill in later.
+
+## Animation guidance
+
+Animations (`slide.animation`, see `lib/lessons/animations.ts`) are a light touch of fun, not decoration on every slide:
+
+- **2–3 per lesson**, not per slide — never two in a row.
+- **Where**: `media-only`, `opinion`, `study`, `homework`, `enrichment`. **Never**: `definitions`, `practice`, `answer`, `assessment`, `alertness-check` — content the student needs to focus on or copy.
+- **Every `opinion` slide** gets `{ name: "loading_hand", delay: 3, position: ... }` — the waving hand fits "what do you think?" naturally.
+- `delay: 3` (seconds) as the default elsewhere too — let the slide settle before anything moves.
+- **Position**: prefer `corner-right`/`corner-left`/`top` so nothing covers the content; `center`/`across` only on slides with little else on them (media-only, a short opinion question).
+- **Vary it** — don't reuse the same animal/position twice in one lesson, and don't lean on the same 2–3 favorites across every lesson; draw from the full registry.
+- `loop: false` for all of this — one playful pass, not a repeating distraction. `loop: true` stays reserved for `brain-break`'s giraffe.
+- Skip anything unsettling (frankenstein, death_dance, crying) on slides covering heavy material (e.g. the Holocaust on a timeline slide).
 
 ---
 name: frontend-design
