@@ -183,6 +183,7 @@ function SlideEditor({ slide, onChange, onDelete, onDuplicateAsAnswerKey, dragHa
   const [galleryUploading, setGalleryUploading] = useState(false)
   const [galleryError, setGalleryError] = useState<string | null>(null)
   const galleryInputRef = useRef<HTMLInputElement>(null)
+  const [galleryUrlInput, setGalleryUrlInput] = useState("")
   const ytId = slide.youtube_url ? extractYouTubeId(slide.youtube_url) : null
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -208,6 +209,16 @@ function SlideEditor({ slide, onChange, onDelete, onDuplicateAsAnswerKey, dragHa
     }
   }
 
+  // Folds the existing single image_url into the gallery (once, the first time
+  // an image is added to it) so it isn't silently replaced/hidden, then appends
+  // the new url — capped at 3 total.
+  function mergeIntoGallery(newUrl: string): Pick<Slide, "images" | "image_url"> {
+    const hadGallery = (slide.images?.length ?? 0) > 0
+    const base = hadGallery ? slide.images! : (slide.image_url ? [slide.image_url] : [])
+    const images = [...base, newUrl].slice(0, 3)
+    return !hadGallery && slide.image_url ? { images, image_url: null } : { images, image_url: slide.image_url }
+  }
+
   async function handleGalleryUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file) return
@@ -219,7 +230,7 @@ function SlideEditor({ slide, onChange, onDelete, onDuplicateAsAnswerKey, dragHa
       const res = await fetch("/api/upload", { method: "POST", body: fd })
       const data = await res.json()
       if (data.url) {
-        onChange({ ...slide, images: [...(slide.images ?? []), data.url].slice(0, 3) })
+        onChange({ ...slide, ...mergeIntoGallery(data.url) })
       } else {
         setGalleryError(data.error ?? "שגיאה בהעלאה")
       }
@@ -231,8 +242,26 @@ function SlideEditor({ slide, onChange, onDelete, onDuplicateAsAnswerKey, dragHa
     }
   }
 
+  function addGalleryUrl() {
+    const url = galleryUrlInput.trim()
+    if (!url) return
+    onChange({ ...slide, ...mergeIntoGallery(url) })
+    setGalleryUrlInput("")
+  }
+
+  // What the gallery effectively shows: the real array once it exists, or the
+  // legacy single image_url as an implicit first slot before anything's merged.
+  const effectiveGalleryImages = (slide.images?.length ?? 0) > 0
+    ? slide.images!
+    : (slide.image_url ? [slide.image_url] : [])
+
   function removeGalleryImage(i: number) {
-    onChange({ ...slide, images: (slide.images ?? []).filter((_, idx) => idx !== i) })
+    if ((slide.images?.length ?? 0) > 0) {
+      onChange({ ...slide, images: slide.images!.filter((_, idx) => idx !== i) })
+    } else {
+      // Removing the implicit (unmerged) legacy image
+      onChange({ ...slide, image_url: null })
+    }
   }
 
   function setQ(i: number, q: SlideQuestion) {
@@ -361,7 +390,7 @@ function SlideEditor({ slide, onChange, onDelete, onDuplicateAsAnswerKey, dragHa
             <div className="field">
               <label>תמונות (2–3, בעיקר לשקפי מדיה)</label>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-                {(slide.images ?? []).map((url, i) => (
+                {effectiveGalleryImages.map((url, i) => (
                   <div key={i} style={{ position: "relative", width: 84, height: 84, borderRadius: 8, overflow: "hidden", border: "1px solid var(--line)" }}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={url} alt="" style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} />
@@ -373,8 +402,23 @@ function SlideEditor({ slide, onChange, onDelete, onDuplicateAsAnswerKey, dragHa
                   </div>
                 ))}
               </div>
-              {(slide.images?.length ?? 0) < 3 && (
+              {effectiveGalleryImages.length < 3 && (
                 <>
+                  <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 8 }}>
+                    <input
+                      value={galleryUrlInput}
+                      onChange={e => setGalleryUrlInput(e.target.value)}
+                      placeholder="https://... (URL)"
+                      type="url"
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      onClick={addGalleryUrl}
+                      disabled={!galleryUrlInput.trim()}
+                      style={{ whiteSpace: "nowrap", padding: "9px 14px", borderRadius: 8, border: "1.5px solid var(--ink)", background: "#fff", color: "var(--ink)", fontSize: 13, fontWeight: 700, cursor: galleryUrlInput.trim() ? "pointer" : "default", fontFamily: "'Heebo'", opacity: galleryUrlInput.trim() ? 1 : 0.5, flexShrink: 0 }}>
+                      הוספה
+                    </button>
+                  </div>
                   <input
                     ref={galleryInputRef}
                     type="file"
@@ -386,7 +430,7 @@ function SlideEditor({ slide, onChange, onDelete, onDuplicateAsAnswerKey, dragHa
                     onClick={() => galleryInputRef.current?.click()}
                     disabled={galleryUploading}
                     style={{ padding: "8px 12px", borderRadius: 8, border: "1.5px dashed var(--ink)", background: "#fff", color: "var(--ink)", fontSize: 12, fontWeight: 700, cursor: galleryUploading ? "default" : "pointer", fontFamily: "'Heebo'", opacity: galleryUploading ? 0.6 : 1 }}>
-                    {galleryUploading ? "מעלה..." : "+ הוספת תמונה"}
+                    {galleryUploading ? "מעלה..." : "+ הוספת תמונה (קובץ)"}
                   </button>
                 </>
               )}
