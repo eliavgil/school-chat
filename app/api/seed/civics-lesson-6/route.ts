@@ -259,11 +259,13 @@ export async function GET() {
   const sb = adminClient()
   const slug = `civics-statehood-conditions-6`
 
-  const { data: existing } = await sb
+  const { data: existing, error: existingError } = await sb
     .from("lessons")
     .select("id, title")
     .eq("slug", slug)
     .maybeSingle()
+
+  if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 })
 
   if (existing) {
     const { error: updateError } = await sb

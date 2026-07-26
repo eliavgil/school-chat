@@ -418,11 +418,13 @@ export async function GET() {
   const slug = `civics-declaration-of-independence-5`
 
   // Check if lesson already exists (by slug — titles can change between edits)
-  const { data: existing } = await sb
+  const { data: existing, error: existingError } = await sb
     .from("lessons")
     .select("id, title")
     .eq("slug", slug)
     .maybeSingle()
+
+  if (existingError) return NextResponse.json({ error: existingError.message }, { status: 500 })
 
   if (existing) {
     const { error: updateError } = await sb
