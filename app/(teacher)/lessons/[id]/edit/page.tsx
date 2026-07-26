@@ -451,6 +451,12 @@ function SlideEditor({ slide, onChange, onDelete, onDuplicateAsAnswerKey, dragHa
                   onClick={() => onChange({ ...slide, layout: "list" })}>
                   רשימה אנכית
                 </button>
+                {slide.type === "study" && (
+                  <button className={`chip${slide.layout === "timeline" ? " active" : ""}`}
+                    onClick={() => onChange({ ...slide, layout: "timeline" })}>
+                    ציר זמן
+                  </button>
+                )}
               </div>
             </div>
           )}

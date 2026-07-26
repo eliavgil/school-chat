@@ -49,6 +49,19 @@ const CSS = `
   .concept-list-item{display:flex;align-items:flex-start;gap:12px;}
   .concept-list-item h3{font-family:'Frank Ruhl Libre',serif;color:var(--ink);margin:0 0 2px;font-size:14px;}
   .concept-list-item p{margin:0;font-size:13px;line-height:1.5;color:#4a4a45;}
+  .timeline-wrap{position:relative;margin-top:28px;overflow-x:auto;padding-bottom:4px;}
+  .timeline-track{position:relative;display:flex;min-height:190px;min-width:min-content;}
+  .timeline-line{position:absolute;top:50%;left:0;right:0;height:2px;background:var(--ink);opacity:.28;transform:translateY(-50%);}
+  .timeline-item{position:relative;flex:1 0 104px;min-width:104px;height:190px;}
+  .timeline-dot{position:absolute;top:50%;left:50%;width:11px;height:11px;border-radius:50%;background:var(--seal);border:2.5px solid var(--paper);box-shadow:0 0 0 2px var(--ink);transform:translate(-50%,-50%);z-index:2;}
+  .timeline-connector{position:absolute;left:50%;width:2px;background:var(--ink);opacity:.28;transform:translateX(-50%);}
+  .timeline-connector.above{bottom:50%;height:18px;}
+  .timeline-connector.below{top:50%;height:18px;}
+  .timeline-card{position:absolute;left:50%;transform:translateX(-50%);width:104px;text-align:center;background:#fff;border:1px solid var(--line);border-radius:9px;padding:7px 8px;}
+  .timeline-card.above{bottom:calc(50% + 18px);}
+  .timeline-card.below{top:calc(50% + 18px);}
+  .timeline-year{font-family:'Frank Ruhl Libre',serif;font-weight:800;color:var(--seal);font-size:12px;margin:0 0 2px;direction:ltr;unicode-bidi:isolate;}
+  .timeline-event{margin:0;font-size:10.5px;line-height:1.35;color:#4a4a45;}
   .bar-row{margin-bottom:8px;}
   .bar-label{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--ink);margin-bottom:3px;}
   .bar-bg{height:8px;background:var(--paper2);border-radius:4px;overflow:hidden;}
@@ -506,8 +519,27 @@ function StudentSlide({ slide, sessionId, studentId }: {
         </div>
       )}
 
+      {/* Study (timeline layout) — horizontal line with events alternating above/below */}
+      {type === "study" && slide.layout === "timeline" && questions && (
+        <div className="timeline-wrap">
+          <div className="timeline-track">
+            <div className="timeline-line" />
+            {questions.map((q, qi) => (
+              <div key={q.id} className="timeline-item">
+                <div className="timeline-dot" />
+                <div className={`timeline-connector ${qi % 2 === 0 ? "above" : "below"}`} />
+                <div className={`timeline-card ${qi % 2 === 0 ? "above" : "below"}`}>
+                  <p className="timeline-year">{q.text}</p>
+                  <p className="timeline-event">{q.options[0] ?? ""}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Concept grid / Study — icon cards (grid) or icon list (list) */}
-      {(type === "concept-grid" || type === "study" || type === "objectives") && questions && (
+      {(type === "concept-grid" || type === "study" || type === "objectives") && slide.layout !== "timeline" && questions && (
         slide.layout === "list" ? (
           <div className="concept-list">
             {questions.map(q => (

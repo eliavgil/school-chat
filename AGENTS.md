@@ -72,6 +72,7 @@ This is where you actually explain the material beyond what's in the notebook de
 - Use `body` only for a short paragraph that doesn't decompose into parts; keep it a few lines, not a wall of text.
 - The two can combine: a one-line `body` framing sentence, then an icon breakdown via `questions`.
 - One concept per `study` slide. If you're covering two concepts, that's two slides — use as many as the material actually needs (typically 3–4); this is the one part of the flow whose slide count varies lesson to lesson.
+- `layout: "timeline"` (study only) — for a chronological sequence of dated events (e.g. the events leading to the Declaration of Independence). Renders as a horizontal line with events alternating above/below, connected by a dot. Use `questions`: `q.text` = the date/year, `q.options[0]` = the event description; `q.icon` is unused. Order items chronologically — the RTL layout places the first item on the right automatically.
 
 ### `practice` + `answer` — real bagrut question, then its model answer
 

@@ -216,21 +216,29 @@ function PrintSlide({ slide, num }: { slide: Slide; num: number }) {
         </div>
       )}
 
-      {/* Concept grid / Study */}
+      {/* Concept grid / Study — timeline prints as a plain chronological list */}
       {(type === "concept-grid" || type === "study" || type === "objectives") && questions && (
         <div style={{
-          display: slide.layout === "list" ? "flex" : "grid",
-          flexDirection: slide.layout === "list" ? "column" : undefined,
-          gridTemplateColumns: slide.layout === "list" ? undefined : "repeat(3,1fr)",
+          display: slide.layout === "list" || slide.layout === "timeline" ? "flex" : "grid",
+          flexDirection: slide.layout === "list" || slide.layout === "timeline" ? "column" : undefined,
+          gridTemplateColumns: slide.layout === "list" || slide.layout === "timeline" ? undefined : "repeat(3,1fr)",
           gap: 14, marginTop: 14,
         }}>
           {questions.map(q => (
-            <div key={q.id} style={{ display: "flex", alignItems: slide.layout === "list" ? "flex-start" : "center", flexDirection: slide.layout === "list" ? "row" : "column", gap: 10, textAlign: slide.layout === "list" ? "right" : "center", border: slide.layout === "list" ? "none" : "1.5px solid var(--line)", borderRadius: 12, padding: slide.layout === "list" ? 0 : "14px 12px", background: slide.layout === "list" ? "transparent" : "#fff" }}>
-              <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--paper2)", border: "1.5px solid var(--line)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--seal)", flexShrink: 0 }}>
-                <ConceptIcon name={q.icon} size={16} />
-              </div>
+            <div key={q.id} style={{ display: "flex", alignItems: slide.layout === "list" || slide.layout === "timeline" ? "flex-start" : "center", flexDirection: slide.layout === "list" || slide.layout === "timeline" ? "row" : "column", gap: 10, textAlign: slide.layout === "list" || slide.layout === "timeline" ? "right" : "center", border: slide.layout === "list" || slide.layout === "timeline" ? "none" : "1.5px solid var(--line)", borderRadius: 12, padding: slide.layout === "list" || slide.layout === "timeline" ? 0 : "14px 12px", background: slide.layout === "list" || slide.layout === "timeline" ? "transparent" : "#fff" }}>
+              {slide.layout === "timeline" ? (
+                <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--paper2)", border: "1.5px solid var(--line)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'Frank Ruhl Libre',serif", fontWeight: 800, fontSize: 10.5, color: "var(--seal)", flexShrink: 0, textAlign: "center", direction: "ltr", unicodeBidi: "isolate" }}>
+                  {q.text}
+                </div>
+              ) : (
+                <div style={{ width: 36, height: 36, borderRadius: "50%", background: "var(--paper2)", border: "1.5px solid var(--line)", display: "flex", alignItems: "center", justifyContent: "center", color: "var(--seal)", flexShrink: 0 }}>
+                  <ConceptIcon name={q.icon} size={16} />
+                </div>
+              )}
               <div>
-                <p style={{ fontFamily: "'Frank Ruhl Libre',serif", fontWeight: 700, fontSize: 14, margin: "0 0 3px", color: "var(--ink)" }}>{q.text}</p>
+                {slide.layout !== "timeline" && (
+                  <p style={{ fontFamily: "'Frank Ruhl Libre',serif", fontWeight: 700, fontSize: 14, margin: "0 0 3px", color: "var(--ink)" }}>{q.text}</p>
+                )}
                 <p style={{ margin: 0, fontSize: 12, lineHeight: 1.5, color: "#4a4a45" }}>{q.options[0] ?? ""}</p>
               </div>
             </div>

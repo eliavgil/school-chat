@@ -71,7 +71,7 @@ const slides: Slide[] = [
     id: "s5",
     order: 5,
     type: "study",
-    layout: "list",
+    layout: "timeline",
     eyebrow: "הקניה",
     title: "רקע היסטורי — ציר הזמן אל ההכרזה",
     questions: [
@@ -79,7 +79,7 @@ const slides: Slide[] = [
       { id: "t2", icon: "calendar", text: "1897", options: ["הקונגרס הציוני הראשון בראשות הרצל — הכרזה על זכות העם לתקומה לאומית."], correct_index: null },
       { id: "t3", icon: "calendar", text: "1917", options: ["הצהרת בלפור — ממשלת בריטניה מודיעה שתעזור להקים בית לאומי לעם היהודי."], correct_index: null },
       { id: "t4", icon: "calendar", text: "1922", options: ["כתב המנדט — חבר הלאומים נותן לבריטניה מנדט ליישום הצהרת בלפור."], correct_index: null },
-      { id: "t5", icon: "calendar", text: "1939–1945", options: ["השואה — טבח מיליוני יהודים שהוכיח את ההכרח בפתרון בעיית חוסר המולדת."], correct_index: null },
+      { id: "t5", icon: "calendar", text: "1939-1945", options: ["השואה — טבח מיליוני יהודים שהוכיח את ההכרח בפתרון בעיית חוסר המולדת."], correct_index: null },
       { id: "t6", icon: "calendar", text: "29.11.1947", options: ['החלטה 181 של האו"ם (תוכנית החלוקה) — הקמת מדינה יהודית ומדינה ערבית.'], correct_index: null },
       { id: "t7", icon: "calendar", text: "14.5.1948", options: ["הכרזת העצמאות — מועצת העם מכריזה על הקמת מדינת ישראל."], correct_index: null },
     ],

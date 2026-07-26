@@ -38,7 +38,7 @@ export interface Slide {
   display?: { show_names: boolean }
   questions?: SlideQuestion[]
   animation?: SlideAnimation | null
-  layout?: 'grid' | 'list'   // concept-grid / objectives / study (icon items): card grid vs. vertical icon list
+  layout?: 'grid' | 'list' | 'timeline'   // concept-grid / objectives / study (icon items): card grid vs. vertical icon list vs. horizontal timeline (study only)
 }
 
 export interface Lesson {

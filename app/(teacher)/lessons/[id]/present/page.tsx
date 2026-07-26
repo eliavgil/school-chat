@@ -71,6 +71,19 @@ const CSS = `
   .concept-list-item{display:flex;align-items:flex-start;gap:14px;}
   .concept-list-item h3{font-family:'Frank Ruhl Libre',serif;color:var(--ink);margin:0 0 3px;font-size:16px;}
   .concept-list-item p{margin:0;font-size:14px;line-height:1.55;color:#4a4a45;}
+  .timeline-wrap{position:relative;margin-top:44px;overflow-x:auto;padding-bottom:4px;}
+  .timeline-track{position:relative;display:flex;min-height:230px;min-width:min-content;}
+  .timeline-line{position:absolute;top:50%;left:0;right:0;height:2px;background:var(--ink);opacity:.28;transform:translateY(-50%);}
+  .timeline-item{position:relative;flex:1 0 128px;min-width:128px;height:230px;}
+  .timeline-dot{position:absolute;top:50%;left:50%;width:13px;height:13px;border-radius:50%;background:var(--seal);border:3px solid var(--paper);box-shadow:0 0 0 2px var(--ink);transform:translate(-50%,-50%);z-index:2;}
+  .timeline-connector{position:absolute;left:50%;width:2px;background:var(--ink);opacity:.28;transform:translateX(-50%);}
+  .timeline-connector.above{bottom:50%;height:24px;}
+  .timeline-connector.below{top:50%;height:24px;}
+  .timeline-card{position:absolute;left:50%;transform:translateX(-50%);width:132px;text-align:center;background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 10px;}
+  .timeline-card.above{bottom:calc(50% + 24px);}
+  .timeline-card.below{top:calc(50% + 24px);}
+  .timeline-year{font-family:'Frank Ruhl Libre',serif;font-weight:800;color:var(--seal);font-size:14px;margin:0 0 3px;direction:ltr;unicode-bidi:isolate;}
+  .timeline-event{margin:0;font-size:11.5px;line-height:1.4;color:#4a4a45;}
   .brain-break-wrap{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;padding-top:64px;}
   .brain-break-title{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:clamp(40px,6vw,72px);color:var(--ink);text-align:center;}
   .practice-item{margin-bottom:26px;padding-bottom:26px;border-bottom:1px solid var(--line);}
@@ -107,6 +120,10 @@ const CSS = `
     .slide-inner{padding:24px 20px 100px 20px;}
     .enrich-grid{grid-template-columns:1fr;}
     .concept-grid{grid-template-columns:1fr 1fr;}
+    .timeline-item{flex:1 0 104px;min-width:104px;height:200px;}
+    .timeline-card{width:104px;padding:7px 8px;}
+    .timeline-year{font-size:12px;}
+    .timeline-event{font-size:10.5px;}
     .slide-inner.nb-page{padding:0;}
     .nb-head{padding:20px 20px 10px;}
     .nb-title{font-size:24px;}
@@ -446,8 +463,27 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
         </div>
       )}
 
+      {/* STUDY (timeline layout) — horizontal line with events alternating above/below */}
+      {type === "study" && slide.layout === "timeline" && questions && (
+        <div className="timeline-wrap">
+          <div className="timeline-track">
+            <div className="timeline-line" />
+            {questions.map((q, qi) => (
+              <div key={q.id} className="timeline-item">
+                <div className="timeline-dot" />
+                <div className={`timeline-connector ${qi % 2 === 0 ? "above" : "below"}`} />
+                <div className={`timeline-card ${qi % 2 === 0 ? "above" : "below"}`}>
+                  <p className="timeline-year">{q.text}</p>
+                  <p className="timeline-event">{q.options[0] ?? ""}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* CONCEPT-GRID / STUDY / OBJECTIVES — icon cards (grid) or icon list (list) */}
-      {(type === "concept-grid" || type === "study" || type === "objectives") && questions && (
+      {(type === "concept-grid" || type === "study" || type === "objectives") && slide.layout !== "timeline" && questions && (
         slide.layout === "list" ? (
           <div className="concept-list">
             {questions.map(q => (
