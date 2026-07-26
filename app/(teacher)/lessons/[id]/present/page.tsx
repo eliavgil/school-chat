@@ -168,6 +168,7 @@ function SlideMedia({ slide }: { slide: Slide }) {
 function DoodleIcon({ type }: { type: string }) {
   const icons: Record<string, React.ReactElement> = {
     "lesson-topic": <svg viewBox="0 0 24 24"><path d="M12 2l2.5 6.5L21 9l-5 4.5 1.5 7L12 17l-5.5 3.5 1.5-7L3 9l6.5-.5z"/></svg>,
+    objectives: <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>,
     "media-only": <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="M21 15l-5.5-5.5L4 21"/></svg>,
     opinion: <svg viewBox="0 0 24 24"><path d="M12 3v10M8 8l4-4 4 4"/><path d="M5 15c0 3 3 6 7 6s7-3 7-6"/></svg>,
     "alertness-check": <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></svg>,
@@ -325,7 +326,7 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
   if (type === "brain-break") return <BrainBreakSlide />
 
   const isBackground = slide.image_position === "background"
-  const hideHeader = type === "study" || type === "media-only"
+  const hideHeader = type === "study" || type === "media-only" || type === "answer"
 
   const bgStyle: React.CSSProperties = isBackground && slide.image_url ? {
     backgroundImage: `url(${slide.image_url})`,
@@ -445,8 +446,8 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
         </div>
       )}
 
-      {/* CONCEPT-GRID / STUDY — icon cards (grid) or icon list (list) */}
-      {(type === "concept-grid" || type === "study") && questions && (
+      {/* CONCEPT-GRID / STUDY / OBJECTIVES — icon cards (grid) or icon list (list) */}
+      {(type === "concept-grid" || type === "study" || type === "objectives") && questions && (
         slide.layout === "list" ? (
           <div className="concept-list">
             {questions.map(q => (
@@ -773,9 +774,9 @@ export default function PresentPage({ params }: Props) {
   const total = lesson.slides.length
 
   const TYPE_LABELS: Record<string, string> = {
-    "lesson-topic": "נושא השיעור", "media-only": "מדיה בלבד", opinion: "מה דעתכם?",
+    "lesson-topic": "נושא השיעור", objectives: "מטרות", "media-only": "מדיה בלבד", opinion: "מה דעתכם?",
     "alertness-check": "בדיקת עירנות", definitions: "הגדרות מושגים", "concept-grid": "רשת מושגים",
-    study: "לימוד", practice: "תרגול", "brain-break": "מנוחמוח",
+    study: "הקניה", practice: "תרגול", answer: "תשובה", "brain-break": "מנוחמוח",
     enrichment: "העשרה", homework: "שיעורי בית", feedback: "משוב",
     assessment: "מבדק סוף שיעור", assessment_answers: "תשובות למבדק",
   }

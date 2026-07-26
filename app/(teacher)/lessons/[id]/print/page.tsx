@@ -48,10 +48,11 @@ const PRINT_CSS = `
 `
 
 const TYPE_LABELS: Record<string, string> = {
-  intro: "פתיחה", poll: "סקר", quiz: "חידון", definitions: "הגדרות",
-  matching: "התאמה", reveal: "גילוי", enrichment: "העשרה", homework: "שיעורי בית", feedback: "משוב",
+  "lesson-topic": "נושא השיעור", objectives: "מטרות", "media-only": "מדיה בלבד", opinion: "מה דעתכם?",
+  "alertness-check": "בדיקת עירנות", definitions: "הגדרות", "concept-grid": "רשת מושגים",
+  study: "הקניה", practice: "תרגול", answer: "תשובה", "brain-break": "מנוחמוח",
+  enrichment: "העשרה", homework: "שיעורי בית", feedback: "משוב",
   assessment: "מבדק סוף שיעור", assessment_answers: "תשובות למבדק",
-  "concept-grid": "סקירה",
 }
 
 function renderInline(text: string): React.ReactNode[] {
@@ -216,7 +217,7 @@ function PrintSlide({ slide, num }: { slide: Slide; num: number }) {
       )}
 
       {/* Concept grid / Study */}
-      {(type === "concept-grid" || type === "study") && questions && (
+      {(type === "concept-grid" || type === "study" || type === "objectives") && questions && (
         <div style={{
           display: slide.layout === "list" ? "flex" : "grid",
           flexDirection: slide.layout === "list" ? "column" : undefined,

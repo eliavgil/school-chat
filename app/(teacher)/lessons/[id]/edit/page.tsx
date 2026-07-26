@@ -9,6 +9,7 @@ interface Props { params: Promise<{ id: string }> }
 
 const SLIDE_TYPES: { value: SlideType; label: string }[] = [
   { value: "lesson-topic",       label: "נושא השיעור" },
+  { value: "objectives",         label: "מטרות" },
   { value: "media-only",         label: "מדיה בלבד" },
   { value: "opinion",            label: "מה דעתכם?" },
   { value: "alertness-check",    label: "בדיקת עירנות" },
@@ -16,8 +17,9 @@ const SLIDE_TYPES: { value: SlideType; label: string }[] = [
   { value: "assessment_answers", label: "תשובות למבדק" },
   { value: "definitions",        label: "הגדרות (להעתקה למחברת)" },
   { value: "concept-grid",       label: "רשת מושגים (אייקונים)" },
-  { value: "study",              label: "לימוד" },
+  { value: "study",              label: "הקניה" },
   { value: "practice",           label: "תרגול (שאלות בגרות)" },
+  { value: "answer",             label: "תשובה (מודל אחרי תרגול)" },
   { value: "brain-break",        label: "מנוחמוח" },
   { value: "enrichment",         label: "העשרה" },
   { value: "homework",           label: "שיעורי בית" },
@@ -132,7 +134,7 @@ function QuestionEditor({ q, onChange, onDelete, type }: {
         <label>הסבר / תגובה (אופציונלי)</label>
         <input value={q.feedback ?? ""} onChange={e => onChange({ ...q, feedback: e.target.value })} placeholder="טקסט שיופיע לאחר המענה..." />
       </div>
-      {(type === "concept-grid" || type === "study") && (
+      {(type === "concept-grid" || type === "study" || type === "objectives") && (
         <div className="field" style={{ marginBottom: 0 }}>
           <label>אייקון</label>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -436,8 +438,8 @@ function SlideEditor({ slide, onChange, onDelete, onDuplicateAsAnswerKey, dragHa
             )}
           </div>
 
-          {/* Concept-grid / study layout toggle */}
-          {(slide.type === "concept-grid" || slide.type === "study") && (
+          {/* Concept-grid / study / objectives layout toggle */}
+          {(slide.type === "concept-grid" || slide.type === "study" || slide.type === "objectives") && (
             <div className="field">
               <label>פריסה</label>
               <div className="chip-row">
@@ -456,7 +458,7 @@ function SlideEditor({ slide, onChange, onDelete, onDuplicateAsAnswerKey, dragHa
           {/* Questions */}
           <div>
             <div style={{ fontWeight: 700, fontSize: 13, color: "var(--ink)", marginBottom: 8 }}>
-              {slide.type === "concept-grid" || slide.type === "study" ? "פריטים (כותרת + משפט אחד + אייקון)"
+              {slide.type === "concept-grid" || slide.type === "study" || slide.type === "objectives" ? "פריטים (כותרת + משפט אחד + אייקון)"
                 : slide.type === "practice" ? "שאלות בגרות (טקסט מלא)"
                 : "שאלות"}
             </div>

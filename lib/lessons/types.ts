@@ -1,6 +1,6 @@
 export type SlideType =
-  | "lesson-topic" | "media-only" | "opinion" | "definitions" | "alertness-check"
-  | "concept-grid" | "study" | "practice" | "brain-break" | "enrichment" | "homework" | "feedback"
+  | "lesson-topic" | "objectives" | "media-only" | "opinion" | "definitions" | "alertness-check"
+  | "concept-grid" | "study" | "practice" | "answer" | "brain-break" | "enrichment" | "homework" | "feedback"
   | "assessment" | "assessment_answers"
 
 export interface SlideQuestion {
@@ -38,7 +38,7 @@ export interface Slide {
   display?: { show_names: boolean }
   questions?: SlideQuestion[]
   animation?: SlideAnimation | null
-  layout?: 'grid' | 'list'   // concept-grid / study (when using icon items): card grid vs. vertical icon list
+  layout?: 'grid' | 'list'   // concept-grid / objectives / study (icon items): card grid vs. vertical icon list
 }
 
 export interface Lesson {

@@ -90,9 +90,9 @@ const CSS = `
 `
 
 const TYPE_LABELS: Record<string, string> = {
-  "lesson-topic": "נושא השיעור", "media-only": "מדיה בלבד", opinion: "מה דעתכם?",
+  "lesson-topic": "נושא השיעור", objectives: "מטרות", "media-only": "מדיה בלבד", opinion: "מה דעתכם?",
   "alertness-check": "בדיקת עירנות", definitions: "הגדרות מושגים", "concept-grid": "רשת מושגים",
-  study: "לימוד", practice: "תרגול", "brain-break": "מנוחמוח",
+  study: "הקניה", practice: "תרגול", answer: "תשובה", "brain-break": "מנוחמוח",
   enrichment: "העשרה", homework: "שיעורי בית", feedback: "משוב",
   assessment: "מבדק סוף שיעור", assessment_answers: "תשובות למבדק",
 }
@@ -428,7 +428,7 @@ function StudentSlide({ slide, sessionId, studentId }: {
   )
 
   const isBackground = slide.image_position === "background"
-  const hideHeader = type === "study" || type === "media-only"
+  const hideHeader = type === "study" || type === "media-only" || type === "answer"
   const showQuestions = (type === "opinion" || type === "alertness-check" || type === "feedback" || type === "assessment") && questions?.length
   const imageAtTop = !slide.image_position || slide.image_position === "top"
 
@@ -506,7 +506,7 @@ function StudentSlide({ slide, sessionId, studentId }: {
       )}
 
       {/* Concept grid / Study — icon cards (grid) or icon list (list) */}
-      {(type === "concept-grid" || type === "study") && questions && (
+      {(type === "concept-grid" || type === "study" || type === "objectives") && questions && (
         slide.layout === "list" ? (
           <div className="concept-list">
             {questions.map(q => (
