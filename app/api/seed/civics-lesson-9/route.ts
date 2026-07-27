@@ -43,6 +43,7 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
+    animation: { name: "toucan", delay: 3, position: "across", loop: true },
     image_url: null, // suggested: מסך טלפון עם פיד רשתות חברתיות, לצד גלובוס מקושר
   },
 
@@ -91,6 +92,7 @@ export const slides: Slide[] = [
     type: "study",
     eyebrow: "הקניה",
     title: "דמוקרטיה בעידן הגלובליזציה",
+    animation: { name: "frog", delay: 3, position: "corner-right", loop: true },
     body: '' + 'העולם הופך ל"כפר גלובלי" וזה משפיע ישירות על המשטר הדמוקרטי:',
     questions: [
       { id: "g1", icon: "globe", text: "טשטוש גבולות", options: ["מעבר מהיר של מידע, רעיונות ובני אדם בין מדינות."], correct_index: null },
@@ -263,6 +265,7 @@ export const slides: Slide[] = [
     type: "homework",
     eyebrow: 'משימת "האזרח הדיגיטלי"',
     title: "פוסט ויראלי שהשפיע על החלטה",
+    animation: { name: "bird", delay: 3, position: "across", loop: true },
     questions: [
       {
         id: "hw1",
@@ -300,6 +303,7 @@ export const slides: Slide[] = [
     type: "enrichment",
     eyebrow: "העשרה",
     title: "לסקרנים",
+    animation: { name: "piggy", delay: 3, position: "corner-left", loop: true },
     questions: [
       {
         id: "e1",

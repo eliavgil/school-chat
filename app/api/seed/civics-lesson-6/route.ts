@@ -43,6 +43,7 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
+    animation: { name: "dog", delay: 3, position: "across", loop: true },
     image_url: null, // suggested: תצלום מרגע ההצבעה על חוק הלאום בכנסת, יולי 2018
   },
 
@@ -88,6 +89,7 @@ export const slides: Slide[] = [
     type: "study",
     eyebrow: "הקניה",
     title: "סמלים, בירה ושפה",
+    animation: { name: "jumping", delay: 3, position: "corner-left", loop: true },
     body: "החוק מעגן מספר סמלים וערכים מרכזיים של המדינה:",
     questions: [
       { id: "c1", icon: "flag", text: "סמלי המדינה", options: ['הדגל (מגן דוד ופסי טלית), סמל המדינה (מנורה וענפי זית) וההמנון ("התקווה").'], correct_index: null },
@@ -250,6 +252,7 @@ export const slides: Slide[] = [
     type: "homework",
     eyebrow: "משימה",
     title: "סעיף נוסף בחוק הלאום",
+    animation: { name: "totoro", delay: 3, position: "across", loop: true },
     questions: [
       {
         id: "hw1",
@@ -287,6 +290,7 @@ export const slides: Slide[] = [
     type: "enrichment",
     eyebrow: "העשרה",
     title: "לסקרנים",
+    animation: { name: "pencil", delay: 3, position: "corner-right", loop: true },
     questions: [
       {
         id: "e1",

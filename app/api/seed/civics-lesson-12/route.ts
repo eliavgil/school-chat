@@ -43,6 +43,7 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
+    animation: { name: "frog", delay: 3, position: "corner-right", loop: true },
     image_url: null, // suggested: תצלום של פתק הצבעה למפלגה עם אות בחירות
   },
 
@@ -86,6 +87,7 @@ export const slides: Slide[] = [
     type: "study",
     eyebrow: "הקניה",
     title: "חלוקת מנדטים — יחסית",
+    animation: { name: "bear", delay: 3, position: "corner-left", loop: true },
     body: `חלוקת המושבים בפרלמנט נעשית **יחסית** למספר הקולות שקיבלה כל מפלגה.
 
 > אם מפלגה קיבלה 10% מהקולות, היא תקבל 10% מהמושבים (בתנאי שעברה את אחוז החסימה).`,
@@ -234,6 +236,7 @@ export const slides: Slide[] = [
     type: "homework",
     eyebrow: "שאלה למחשבה",
     title: "האם להעלות את אחוז החסימה?",
+    animation: { name: "chicken", delay: 3, position: "across", loop: true },
     questions: [
       {
         id: "hw1",
@@ -265,6 +268,7 @@ export const slides: Slide[] = [
     type: "enrichment",
     eyebrow: "העשרה",
     title: "לסקרנים",
+    animation: { name: "cat", delay: 3, position: "top", loop: true },
     questions: [
       {
         id: "e1",

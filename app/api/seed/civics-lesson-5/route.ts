@@ -44,6 +44,7 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
+    animation: { name: "camel", delay: 3, position: "across", loop: true },
     image_url: null, // suggested: תצלום רחוב ישראלי בערב שבת (חנויות סגורות, שלטים) לצד תמונת מליאת הכנסת
   },
 
@@ -107,6 +108,7 @@ export const slides: Slide[] = [
     type: "study",
     eyebrow: "הקניה",
     title: "סמלי המדינה כביטוי לזהות",
+    animation: { name: "survey", delay: 3, position: "corner-right", loop: true },
     questions: [
       { id: "s_1", icon: "flag", text: "הדגל", options: ["מורכב ממגן דוד (סמל מסורתי) וצבעי תכלת-לבן הלקוחים מצבעי הטלית."], correct_index: null },
       { id: "s_2", icon: "shield", text: "הסמל", options: ["המנורה שעמדה בבית המקדש בירושלים (עפ\"י נבואת זכריה) וענפי זית לסמל השלום."], correct_index: null },
@@ -259,6 +261,7 @@ export const slides: Slide[] = [
     type: "homework",
     eyebrow: 'משימת "היהדות שמעבר לחוק"',
     title: "מאפיין יהודי בסביבה הקרובה",
+    animation: { name: "elephant", delay: 3, position: "across", loop: true },
     questions: [
       {
         id: "hw1",
@@ -296,6 +299,7 @@ export const slides: Slide[] = [
     type: "enrichment",
     eyebrow: "העשרה",
     title: "לסקרנים",
+    animation: { name: "snowman", delay: 3, position: "corner-left", loop: true },
     questions: [
       {
         id: "e1",

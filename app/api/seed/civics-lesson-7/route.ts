@@ -43,6 +43,7 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
+    animation: { name: "runner", delay: 3, position: "across", loop: true },
     image_url: null, // suggested: תצלום של אקרופוליס/אגורה באתונה, או תור ארוך לקלפי בבחירות
   },
 
@@ -103,6 +104,7 @@ export const slides: Slide[] = [
     type: "study",
     eyebrow: "הקניה",
     title: "דמוקרטיה כערך — המובן המהותי",
+    animation: { name: "strawberry", delay: 3, position: "corner-left", loop: true },
     body: `מובן זה רואה בדמוקרטיה השקפת עולם ואורח חיים המושתתים על ערכים הומניסטיים.
 
 **הדגש:** זכויות האדם והאזרח, שוויון, חירות וסובלנות.
@@ -303,6 +305,7 @@ export const slides: Slide[] = [
     type: "homework",
     eyebrow: 'משימת "הדמוקרטיה בבית שלי"',
     title: "כלל או נוהל מהבית",
+    animation: { name: "turkey", delay: 3, position: "across", loop: true },
     questions: [
       {
         id: "hw1",
@@ -340,6 +343,7 @@ export const slides: Slide[] = [
     type: "enrichment",
     eyebrow: "העשרה",
     title: "לסקרנים",
+    animation: { name: "dancing_bug", delay: 3, position: "corner-right", loop: true },
     questions: [
       {
         id: "e1",

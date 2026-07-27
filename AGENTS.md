@@ -164,13 +164,13 @@ When writing a slide that would benefit from an image, add an `image_url` field 
 
 Animations (`slide.animation`, see `lib/lessons/animations.ts`) are a light touch of fun, not decoration on every slide:
 
-- **2–3 per lesson**, not per slide — never two in a row.
-- **Where**: `media-only`, `opinion`, `study`, `homework`, `enrichment`. **Never**: `definitions`, `practice`, `answer`, `assessment` — content the student needs to focus on or copy.
-- **Every `opinion` and `alertness-check` slide** gets `{ name: "loading_hand", delay: 3, position: "corner-right", loop: true }` — the waving hand fits "what do you think?" / "quick check" naturally, and stays looping (not a one-off) on these two types specifically.
-- `delay: 3` (seconds) as the default elsewhere too — let the slide settle before anything moves.
-- **Position**: prefer `corner-right`/`corner-left`/`top` so nothing covers the content; `center`/`across` only on slides with little else on them (media-only, a short opinion question).
+- **3–4 per lesson** on top of the fixed `opinion`/`alertness-check` ones below (one each on `media-only`, one `study` slide, `homework`, `enrichment`) — not per slide, never two in a row.
+- **Where**: `media-only`, `opinion`, `study` (pick one slide, not every study slide), `homework`, `enrichment`. **Never**: `definitions`, `practice`, `answer`, `assessment` — content the student needs to focus on or copy.
+- **Every `opinion` and `alertness-check` slide** gets `{ name: "loading_hand", delay: 3, position: "corner-right", loop: true }` — the waving hand fits "what do you think?" / "quick check" naturally.
+- `delay: 3` (seconds) as the default everywhere — let the slide settle before anything moves.
+- `loop: true` always — every animation in the lesson stays persistent, not a single pass. (This applies lesson-wide now, not just to `loading_hand`.)
+- **Walking/flying animals cross the screen**: if the animal's label implies locomotion (הולך/הולכת/עפה — elephant, dog, turkey, bird, totoro, runner, frankenstein, chicken, camel, toucan), use `position: "across"` so it actually walks/flies across, rather than parking it in a corner. Stationary or in-place animations (dancing, jumping, drawing, waiting — robot, death_dance, dancing_bug, cat, crying, snowman, bear, piggy, survey, frog, watermelon, strawberry, pencil, jumping) use `corner-right`/`corner-left`/`top`/`center` instead.
 - **Vary it** — don't reuse the same animal/position twice in one lesson, and don't lean on the same 2–3 favorites across every lesson; draw from the full registry.
-- `loop: false` for one-off placements elsewhere (media-only/study/homework/enrichment) — a single playful pass, not a repeating distraction. `loop: true` is reserved for `brain-break`'s giraffe and the `loading_hand` on opinion/alertness-check.
 - Skip anything unsettling (frankenstein, death_dance, crying) on slides covering heavy material (e.g. the Holocaust on a timeline slide).
 
 ---

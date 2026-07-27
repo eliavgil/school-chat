@@ -43,6 +43,7 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
+    animation: { name: "elephant", delay: 3, position: "across", loop: true },
     image_url: null,
   },
 
@@ -71,6 +72,7 @@ export const slides: Slide[] = [
     type: "study",
     eyebrow: "הקניה",
     title: "מהי מדינה?",
+    animation: { name: "strawberry", delay: 3, position: "corner-left", loop: true },
     body: `מדינה היא ארגון חברתי הכולל שלטון, על אוכלוסייה היושבת בשטח מוגדר, בעל ריבונות פנימית וחיצונית, והזוכה להכרה בינלאומית.
 
 כדי שישות תוגדר כמדינה, עליה להחזיק בכל חמשת המרכיבים הללו **בו-זמנית**.`,
@@ -218,6 +220,7 @@ export const slides: Slide[] = [
     type: "homework",
     eyebrow: "משימת \"מדינות הנייר\"",
     title: "אכזיב או סילנד?",
+    animation: { name: "dog", delay: 3, position: "across", loop: true },
     questions: [
       {
         id: "hw1",
@@ -249,6 +252,7 @@ export const slides: Slide[] = [
     type: "enrichment",
     eyebrow: "העשרה",
     title: "לסקרנים",
+    animation: { name: "pencil", delay: 3, position: "corner-right", loop: true },
     questions: [
       {
         id: "e1",

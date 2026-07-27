@@ -43,6 +43,7 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
+    animation: { name: "turkey", delay: 3, position: "across", loop: true },
     image_url: null, // suggested: תצלום של קלפי בבחירות, או שלט הצבעה במשאל עם
   },
 
@@ -88,6 +89,7 @@ export const slides: Slide[] = [
     type: "study",
     eyebrow: "הקניה",
     title: "דמוקרטיה ישירה מול עקיפה",
+    animation: { name: "snowman", delay: 3, position: "corner-left", loop: true },
     body: `בעבר (אתונה) התקיימה **דמוקרטיה ישירה** בה כולם החליטו יחד. כיום נהוגה **דמוקרטיה עקיפה**, בשל ארבע סיבות:
 
 גודל האוכלוסייה, היעדר זמן ומשאבים של הציבור, הצורך במומחיות לקבלת החלטות מורכבות, ואדישות פוליטית.`,
@@ -234,6 +236,7 @@ export const slides: Slide[] = [
     type: "homework",
     eyebrow: "משימה",
     title: "משאל עם בעולם",
+    animation: { name: "dog", delay: 3, position: "across", loop: true },
     questions: [
       {
         id: "hw1",
@@ -271,6 +274,7 @@ export const slides: Slide[] = [
     type: "enrichment",
     eyebrow: "העשרה",
     title: "לסקרנים",
+    animation: { name: "survey", delay: 3, position: "corner-right", loop: true },
     questions: [
       {
         id: "e1",
