@@ -17,10 +17,17 @@ import * as lesson9 from "../civics-lesson-9/route"
 import * as lesson10 from "../civics-lesson-10/route"
 import * as lesson11 from "../civics-lesson-11/route"
 import * as lesson12 from "../civics-lesson-12/route"
+import * as lesson13 from "../civics-lesson-13/route"
+import * as lesson14 from "../civics-lesson-14/route"
+import * as lesson15 from "../civics-lesson-15/route"
+import * as lesson16 from "../civics-lesson-16/route"
+import * as lesson17 from "../civics-lesson-17/route"
+import * as lesson18 from "../civics-lesson-18/route"
 
 const LESSONS: { title: string; slug: string; slides: Slide[] }[] = [
   lesson1, lesson2, lesson3, lesson4, lesson5, lesson6,
   lesson7, lesson8, lesson9, lesson10, lesson11, lesson12,
+  lesson13, lesson14, lesson15, lesson16, lesson17, lesson18,
 ].map(m => ({ title: m.LESSON_TITLE, slug: m.SLUG, slides: m.slides }))
 
 // Re-seeds every lesson in one request instead of hitting each
