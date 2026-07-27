@@ -16,8 +16,8 @@ export const slides: Slide[] = [
     type: "lesson-topic",
     eyebrow: "שיעור 7 | אזרחות כיתה י",
     title: "מבוא לרעיון הדמוקרטי",
-    image_url: null, // suggested: קולאז' של קלפי הצבעה לצד ציור פרשנות אתונה העתיקה
-    image_position: "background",
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/f/f2/The_Acropolis_of_Athens_from_the_Pnyx_on_February_26%2C_2020.jpg", // האקרופוליס נשקף מהפניקס — הכיכר שבה נאספו אזרחי אתונה להצביע. Wikimedia Commons, CC BY-SA 4.0, George E. Koronaios
+    image_position: "top",
     image_size: "full",
   },
 
@@ -44,7 +44,7 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
-    image_url: null, // suggested: תצלום של אקרופוליס/אגורה באתונה, או תור ארוך לקלפי בבחירות
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/0/02/Ostraka_for_Ostracism%2C_5th_century_BC%2C_Museum_of_the_Ancient_Agora%2C_Athens%2C_Greece_%2813896440260%29.jpg", // חרסים ("אוסטרקה") ששימשו את אזרחי אתונה להצביע על גירוש פוליטיקאי — כך הצביעו לפני 2,500 שנה. Wikimedia Commons, CC BY-SA 2.0, Carole Raddato
   },
 
   // ── שקף 4: מה דעתכם ───────────────────────────────────────────────────────

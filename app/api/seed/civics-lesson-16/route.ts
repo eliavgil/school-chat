@@ -16,8 +16,8 @@ export const slides: Slide[] = [
     type: "lesson-topic",
     eyebrow: "שיעור 16 | אזרחות כיתה י",
     title: "הזכות לשוויון: אפליה פסולה, הבחנה מותרת והעדפה מתקנת",
-    image_url: null, // suggested: איור של מאזני צדק, או תמונת ידיים שונות המחזיקות באותו שלט "שוויון"
-    image_position: "background",
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Civil_Rights_March_on_Washington%2C_D.C._%28Crowd_of_marchers_at_the_Lincoln_Memorial.%29_-_NARA_-_542055.tif/lossy-page1-1920px-Civil_Rights_March_on_Washington%2C_D.C._%28Crowd_of_marchers_at_the_Lincoln_Memorial.%29_-_NARA_-_542055.tif.jpg", // המצעד למען זכויות האזרח, וושינגטון 1963 — הרגע שבו מרטין לותר קינג נשא את נאום "יש לי חלום". ארכיון לאומי אמריקאי, נחלת הכלל
+    image_position: "top",
     image_size: "full",
   },
 
@@ -44,7 +44,7 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
-    image_url: null, // suggested: תצלום המחיש הבדל בין שוויון פורמלי לשוויון מהותי (איור עם ארגזים בגבהים שונים)
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/e/ed/New_Orleans_-_Whites_Only_-_Maids_in_Uniform_Accepted.jpg", // שלט הפרדה גזעית בחלון חנות בניו אורלינס, ארה"ב, סוף שנות ה-60 — דוגמה היסטורית לאפליה פסולה. Wikimedia Commons, נחלת הכלל
   },
 
   // ── שקף 4: מה דעתכם ───────────────────────────────────────────────────────

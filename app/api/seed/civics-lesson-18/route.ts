@@ -16,8 +16,8 @@ export const slides: Slide[] = [
     type: "lesson-topic",
     eyebrow: "שיעור 18 | אזרחות כיתה י",
     title: "זכויות קבוצתיות / תרבותיות",
-    image_url: null, // suggested: תמונה המשלבת סמלים של כמה תרבויות/מיעוטים זה לצד זה (שלטים דו-לשוניים, בגדים מסורתיים)
-    image_position: "background",
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/3/3c/2007_Powwow_%282536710352%29.jpg", // רקדנים בטקס "פאו-וואו" של אינדיאנים אמריקאים, וושינגטון — מימוש הזכות הקבוצתית לשמר תרבות ומורשת. Wikimedia Commons, ללא זכויות ידועות
+    image_position: "top",
     image_size: "full",
   },
 
@@ -44,7 +44,7 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
-    image_url: null, // suggested: תצלום של שלט רחוב דו-לשוני (עברית וערבית) או בית ספר עם מורשת תרבותית ייחודית
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/3/3f/Bilingual_street_sign_Brussels.jpg", // שלט רחוב דו-לשוני (צרפתית והולנדית) בבריסלים, בלגיה — דוגמה גלובלית להכרה בזכות השפה של קבוצה. Wikimedia Commons, CC BY-SA 2.0
   },
 
   // ── שקף 4: מה דעתכם ───────────────────────────────────────────────────────

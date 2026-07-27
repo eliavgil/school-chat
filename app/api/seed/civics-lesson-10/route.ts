@@ -16,8 +16,8 @@ export const slides: Slide[] = [
     type: "lesson-topic",
     eyebrow: "שיעור 10 | אזרחות כיתה י",
     title: "עקרון שלטון העם: בין דמוקרטיה ישירה לייצוגית",
-    image_url: null, // suggested: קלפי מודרנית לצד ציור/תצלום של האגורה באתונה
-    image_position: "background",
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/b/bf/Ballot_paper_European_Parliament_elections_2014_in_Luxembourg.JPG", // פתק הצבעה אמיתי לבחירות לפרלמנט האירופי, לוקסמבורג 2014 — כך העם מממש בפועל את הריבונות שלו. Wikimedia Commons, נחלת הכלל
+    image_position: "top",
     image_size: "full",
   },
 
@@ -43,7 +43,7 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
-    image_url: null, // suggested: תצלום של קלפי בבחירות, או שלט הצבעה במשאל עם
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/f/f7/Voting_booths_inside_Combined_Polling_Place_Zion_Lutheran_Church_in_Grand_Rapids%2C_Minnesota_on_Election_Day_%2853317086671%29.jpg", // תאי הצבעה חשאיים ביום הבחירות, מינסוטה — הדמוקרטיה הייצוגית המודרנית בפעולה. Wikimedia Commons, CC BY 2.0
   },
 
   // ── שקף 4: מה דעתכם ───────────────────────────────────────────────────────

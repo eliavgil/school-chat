@@ -16,8 +16,8 @@ export const slides: Slide[] = [
     type: "lesson-topic",
     eyebrow: "שיעור 14 | אזרחות כיתה י",
     title: "זכויות טבעיות: חיים וביטחון, קניין, הליך הוגן והזכות לכבוד ונגזרותיה",
-    image_url: null, // suggested: איקונים המנגידים מגן (ביטחון), מפתח בית (קניין), פטיש שופט (הליך הוגן) ומעטפה (פרטיות)
-    image_position: "background",
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/9/92/Declaration_of_the_Rights_of_Man_and_of_the_Citizen_in_1789_%28brighter%29.jpg", // "הכרזת זכויות האדם והאזרח", צרפת 1789 — המסמך המכונן שעיגן לראשונה את רעיון הזכויות הטבעיות. Wikimedia Commons, נחלת הכלל
+    image_position: "top",
     image_size: "full",
   },
 
@@ -45,7 +45,7 @@ export const slides: Slide[] = [
     eyebrow: "",
     title: "",
     animation: { name: "toucan", delay: 3, position: "across", loop: true },
-    image_url: null, // suggested: תצלום של אולם בית משפט, או סמל של מאזני צדק
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/4/4b/Supreme_Court_Of_The_United_States_%28193413861%29.jpeg", // בניין בית המשפט העליון של ארה"ב — סמל גלובלי להליך הוגן ולשלטון החוק. Wikimedia Commons, CC BY 3.0
   },
 
   // ── שקף 4: מה דעתכם ───────────────────────────────────────────────────────

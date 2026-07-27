@@ -16,8 +16,8 @@ export const slides: Slide[] = [
     type: "lesson-topic",
     eyebrow: "שיעור 11 | אזרחות כיתה י",
     title: 'תנאי יסוד לבחירות דמוקרטיות (כ"ח מש"ה)',
-    image_url: null, // suggested: תצלום של תא הצבעה חשאי בקלפי
-    image_position: "background",
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/3/37/Port_Elizabeth_Donkin_reserve_voting_line.JPG", // פסל "תור המצביעים" בדרום אפריקה, המנציח את התורים הארוכים בבחירות החופשיות הראשונות ב-1994 — הרגע שבו כל אזרח קיבל לראשונה זכות בחירה שווה. Wikimedia Commons, CC BY-SA 3.0
+    image_position: "top",
     image_size: "full",
   },
 
@@ -43,7 +43,7 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
-    image_url: null, // suggested: תצלום של פתק הצבעה ומעטפה בקלפי ישראלית
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/f/fe/Postal_voting_pack_for_the_2021_United_Kingdom_local_elections.jpg", // ערכת הצבעה בדואר לבחירות המקומיות בבריטניה, 2021 — פתק, מעטפה וחותמת חשאיות. Wikimedia Commons, CC BY 4.0
   },
 
   // ── שקף 4: מה דעתכם ───────────────────────────────────────────────────────

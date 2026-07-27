@@ -16,8 +16,8 @@ export const slides: Slide[] = [
     type: "lesson-topic",
     eyebrow: "שיעור 15 | אזרחות כיתה י",
     title: "הזכות לחירות ונגזרותיה",
-    image_url: null, // suggested: קולאז' של סמלי חופש ביטוי, תנועה, עיסוק ודת
-    image_position: "background",
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/0/0f/View_of_the_crowd_-WomensMarch_-WomensMarch2018_-SenecaFalls_-NY_%2838908937755%29.jpg", // המונים במצעד נשים, סניקה פולס ארה"ב 2018 — מימוש המוני של הזכות לחירות הביטוי וההתאספות. Wikimedia Commons, CC BY 2.0
+    image_position: "top",
     image_size: "full",
   },
 
@@ -44,7 +44,7 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
-    image_url: null, // suggested: תצלום של הפגנה עם שלטים, כביטוי לחופש הביטוי
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/2/29/Womens-March-MadisonWI-Jan212017-11.jpg", // מפגינות עם שלטים במצעד נשים, מדיסון ויסקונסין 2017. Wikimedia Commons, CC BY-SA 4.0
   },
 
   // ── שקף 4: מה דעתכם ───────────────────────────────────────────────────────

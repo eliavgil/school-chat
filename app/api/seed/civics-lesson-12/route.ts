@@ -17,8 +17,8 @@ export const slides: Slide[] = [
     eyebrow: "שיעור 12 | אזרחות כיתה י",
     title: "שיטת הבחירות בישראל: ארצית, יחסית ורשימתית",
     animation: { name: "chicken", delay: 3, position: "across", loop: true },
-    image_url: null, // suggested: תצלום של מליאת הכנסת, או פתקי הצבעה של מפלגות שונות
-    image_position: "background",
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/0/0b/Knesset_Hall.JPG", // מליאת הכנסת — 120 המושבים שמתחלקים בין המפלגות לפי השיטה היחסית. Wikimedia Commons
+    image_position: "top",
     image_size: "full",
   },
 
@@ -44,7 +44,7 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
-    image_url: null, // suggested: תצלום של פתק הצבעה למפלגה עם אות בחירות
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/0/0a/IDF_in_the_2022_Israeli_legislative_election_III.jpg", // חיילי צה"ל מצביעים בקלפי, בחירות 2022 — הצבעה רשימתית בקלפי אמיתית. Wikimedia Commons, CC BY-SA 3.0, דובר צה"ל
   },
 
   // ── שקף 4: מה דעתכם ───────────────────────────────────────────────────────

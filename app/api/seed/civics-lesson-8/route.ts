@@ -16,8 +16,8 @@ export const slides: Slide[] = [
     type: "lesson-topic",
     eyebrow: "שיעור 8 | אזרחות כיתה י",
     title: "היסטוריה של הדמוקרטיה: מהכיכר באתונה ועד לקלפי המודרנית",
-    image_url: null, // suggested: קולאז' של האגורה באתונה לצד קלפי מודרנית
-    image_position: "background",
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/d/d5/Stoa_of_Attalos_at_the_Ancient_Agora_of_Athens_2.jpg", // האגורה של אתונה — הלב הציבורי של הדמוקרטיה העתיקה. Wikimedia Commons, CC BY-SA 3.0
+    image_position: "top",
     image_size: "full",
   },
 
@@ -43,7 +43,7 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
-    image_url: null, // suggested: תצלום/ציור של האגורה באתונה, או תור לקלפי בבחירות מודרניות
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/3/32/Charles_Th%C3%A9venin_-_Prise_de_la_Bastille%2C_le_14_juillet_1789_-_P572_-_Mus%C3%A9e_Carnavalet.jpg", // "כיבוש הבסטיליה", 14 ביולי 1789 — ציור מאת שארל תבנין, מוזיאון קרנבלה. אחד הרגעים המכוננים בהיסטוריה של הדמוקרטיה המודרנית. נחלת הכלל
   },
 
   // ── שקף 4: מה דעתכם ───────────────────────────────────────────────────────

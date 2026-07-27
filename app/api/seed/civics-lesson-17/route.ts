@@ -16,8 +16,8 @@ export const slides: Slide[] = [
     type: "lesson-topic",
     eyebrow: "שיעור 17 | אזרחות כיתה י",
     title: "זכויות חברתיות וכלכליות",
-    image_url: null, // suggested: איקונים של בית חולים, בית מגורים, בית ספר וחבילת שכר לצד סמל מדינת הרווחה
-    image_position: "background",
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/2/20/Urban_Redevelopment_Authority_car_park_in_a_Housing_and_Development_Board_estate%2C_Singapore_-_20140816.jpg", // שכונת דיור ציבורי (HDB) בסינגפור — אחד ממודלי מדינת הרווחה המוכרים בעולם, המבטיח דיור לכלל האזרחים. Wikimedia Commons, CC BY-SA 3.0
+    image_position: "top",
     image_size: "full",
   },
 
@@ -44,7 +44,7 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
-    image_url: null, // suggested: תצלום של שכונת מגורים לצד בית חולים ובית ספר ציבורי
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/b/bd/Protest_demanding_%2415-hr_minimum_wage_%2831289972956%29.jpg", // מפגינים דורשים שכר מינימום של 15$ לשעה, ארה"ב — מאבק גלובלי על זכויות עובדים ותנאי העסקה. Wikimedia Commons, CC BY 2.0
   },
 
   // ── שקף 4: מה דעתכם ───────────────────────────────────────────────────────

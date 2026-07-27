@@ -16,8 +16,8 @@ export const slides: Slide[] = [
     type: "lesson-topic",
     eyebrow: "שיעור 9 | אזרחות כיתה י",
     title: "דמוקרטיה במאה ה-21: טכנולוגיה, גלובליזציה ומודלים שונים בעולם",
-    image_url: null, // suggested: קולאז' של גלובוס דיגיטלי לצד לוגואים של רשתות חברתיות
-    image_position: "background",
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/c/c9/Tahrir_Square_29_January_2011_-_%22The_people_and_the_army_are_one_hand%22_%2840339040312%29.jpg", // מיליוני מפגינים בכיכר תחריר, מצרים 2011 — מהפכה שהתארגנה ברשתות החברתיות. Wikimedia Commons, CC BY-SA 2.0
+    image_position: "top",
     image_size: "full",
   },
 
@@ -43,7 +43,7 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
-    image_url: null, // suggested: מסך טלפון עם פיד רשתות חברתיות, לצד גלובוס מקושר
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/a/a0/Tahrir_Square_-_Protesters_Charging_Mobile_Phones_%286620193705%29.jpg", // מפגינים בכיכר תחריר טוענים סוללות טלפון על גנרטור מאולתר — הטלפון הפך לכלי מרכזי במחאה האזרחית. Wikimedia Commons, CC BY-SA 2.0
   },
 
   // ── שקף 4: מה דעתכם ───────────────────────────────────────────────────────

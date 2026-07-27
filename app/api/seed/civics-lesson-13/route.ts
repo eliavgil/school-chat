@@ -17,8 +17,8 @@ export const slides: Slide[] = [
     eyebrow: "שיעור 13 | אזרחות כיתה י",
     title: "חירות ושוויון כערכי יסוד ורעיון הזכויות הטבעיות",
     animation: { name: "elephant", delay: 3, position: "across", loop: true },
-    image_url: null, // suggested: איורי מאזניים המנוגדים בין סמל חירות (שרשרת שבורה) לסמל שוויון (מאזניים)
-    image_position: "background",
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/2/26/Statue_of_Liberty_at_sunset_01.jpg", // פסל החירות, ניו יורק — הסמל הגלובלי המוכר ביותר לרעיון החירות. Wikimedia Commons, CC BY-SA 4.0
+    image_position: "top",
     image_size: "full",
   },
 
@@ -44,7 +44,7 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
-    image_url: null, // suggested: איור המנגיד סמל חירות (ציפור פורחת) מול סמל שוויון (מאזניים)
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/7/74/Lady_Justice_%2836495562115%29.jpg", // פסל "גברת הצדק" (Themis) עם מאזני השוויון, הונולולו — הסמל הגלובלי המקביל לערך השוויון. Wikimedia Commons, CC BY 2.0
   },
 
   // ── שקף 4: מה דעתכם ───────────────────────────────────────────────────────
