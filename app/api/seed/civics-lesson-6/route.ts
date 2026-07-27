@@ -16,7 +16,7 @@ export const slides: Slide[] = [
     type: "lesson-topic",
     eyebrow: "שיעור 6 | אזרחות כיתה י",
     title: 'חוק יסוד: ישראל – מדינת הלאום של העם היהודי (חוק הלאום)',
-    image_url: null, // suggested: תצלום מליאת הכנסת בהצבעה, או עמוד השער של ספר החוקים עם חוק הלאום
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/a/af/Israeli_Druze_rally_against_Nation-State_Law.jpg", // עשרות אלפי דרוזים ויהודים בהפגנה נגד חוק הלאום, תל אביב, 4.8.2018 — Wikimedia Commons, CC BY-SA 4.0
     image_position: "background",
     image_size: "full",
   },
@@ -43,7 +43,7 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
-    image_url: null, // suggested: תצלום מרגע ההצבעה על חוק הלאום בכנסת, יולי 2018
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/1/15/Protest_against_Basic_Law_Israel_as_the_Nation_State_of_the_Jewish_People_2.jpg", // הפגנת ערבים ישראלים ותומכיהם עם דגלי פלסטין נגד חוק הלאום, תל אביב, 11.8.2018 — Wikimedia Commons, CC BY-SA 4.0
   },
 
   // ── שקף 4: מה דעתכם ───────────────────────────────────────────────────────

@@ -16,7 +16,7 @@ export const slides: Slide[] = [
     type: "lesson-topic",
     eyebrow: "שיעור 5 | אזרחות כיתה י",
     title: "המאפיינים היהודיים של מדינת ישראל",
-    image_url: null, // suggested: קולאז' של דגל ישראל, מטבע עם מנורה, ולוח שנה עברי
+    image_url: "https://upload.wikimedia.org/wikipedia/commons/e/e8/Yom_Kippur_on_Highway_20_Tel-Aviv.jpg", // כביש איילון ריק לגמרי ביום כיפור — Wikimedia Commons, CC BY-SA 3.0, Roy Boshi
     image_position: "background",
     image_size: "full",
   },
@@ -44,7 +44,10 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
-    image_url: null, // suggested: תצלום רחוב ישראלי בערב שבת (חנויות סגורות, שלטים) לצד תמונת מליאת הכנסת
+    images: [
+      "https://upload.wikimedia.org/wikipedia/commons/b/bd/Kosher_McDonalds_Jerusalem.jpg", // מקדונלד'ס כשר בתחנה המרכזית בירושלים — Wikimedia Commons, CC BY-SA 4.0
+      "https://upload.wikimedia.org/wikipedia/commons/8/89/Rabbinical_Court_of_Tel_Aviv.jpg", // בית הדין הרבני בתל אביב — Wikimedia Commons, CC BY 3.0
+    ],
   },
 
   // ── שקף 4: מה דעתכם ───────────────────────────────────────────────────────
