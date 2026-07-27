@@ -116,6 +116,7 @@ export const slides: Slide[] = [
     type: "study",
     eyebrow: "הקניה",
     title: "התמודדות חופשית / הוגנת",
+    animation: { name: "dog", delay: 3, position: "across", loop: true },
     body: "תחרות הוגנת המבוססת על **חירויות פוליטיות** (חופש הביטוי, התאגדות) המאפשרת למועמדים שונים להציג את דעתם.",
   },
 
@@ -273,6 +274,7 @@ export const slides: Slide[] = [
     type: "feedback",
     eyebrow: "משוב",
     title: "איך היה השיעור?",
+    animation: { name: "piggy", delay: 3, position: "top", loop: true },
     questions: [
       { id: "f1", text: 'האם ראשי התיבות כ"ח מש"ה עזרו לך לזכור את החומר?', options: [], correct_index: null },
       { id: "f2", text: "עד כמה ברור לך למה חשוב שהבחירות יהיו חשאיות?", options: [], correct_index: null },

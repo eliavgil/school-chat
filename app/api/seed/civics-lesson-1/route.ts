@@ -29,6 +29,7 @@ export const slides: Slide[] = [
     layout: "grid",
     eyebrow: "מטרות השיעור",
     title: "מה נלמד היום",
+    animation: { name: "camel", delay: 3, position: "across", loop: true },
     questions: [
       { id: "obj1", icon: "book", text: "נגדיר מדינה", options: ["ונמנה את חמשת התנאים ההכרחיים לקיומה."], correct_index: null },
       { id: "obj2", icon: "scale", text: "ניישם את הידע", options: ["בזיהוי מרכיבי מדינה חסרים או קיימים מתוך מקרי בוחן אקטואליים."], correct_index: null },
@@ -183,6 +184,7 @@ export const slides: Slide[] = [
     type: "assessment",
     eyebrow: "מבדק סוף שיעור",
     title: "תנאים לקיומה של מדינה",
+    animation: { name: "crying", delay: 3, position: "center", loop: true },
     questions: [
       {
         id: "aq1",

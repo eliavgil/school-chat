@@ -118,6 +118,7 @@ export const slides: Slide[] = [
     type: "study",
     eyebrow: "הקניה",
     title: "הקשר בין המדינה ליהדות התפוצות",
+    animation: { name: "frankenstein", delay: 3, position: "across", loop: true },
     body: `חוק הלאום מעגן גם את האחריות של המדינה כלפי העם היהודי בתפוצות. המדינה תפעל לשמור על זיקת העם היהודי בתפוצות למדינה, תפעל בתוך התפוצות לשימור המורשת היהודית ותסייע ליהודים הנמצאים במצוקה בשל יהדותם.`,
   },
 
@@ -287,6 +288,7 @@ export const slides: Slide[] = [
     type: "enrichment",
     eyebrow: "העשרה",
     title: "לסקרנים",
+    animation: { name: "dog", delay: 3, position: "across", loop: true },
     questions: [
       {
         id: "e1",

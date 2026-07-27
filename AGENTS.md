@@ -164,14 +164,13 @@ When writing a slide that would benefit from an image, add an `image_url` field 
 
 Animations (`slide.animation`, see `lib/lessons/animations.ts`) are a light touch of fun, not decoration on every slide:
 
-- **2–3 per lesson**, not per slide — never two in a row.
-- **Where**: `media-only`, `opinion`, `study`, `homework`, `enrichment`. **Never**: `definitions`, `practice`, `answer`, `assessment` — content the student needs to focus on or copy.
-- **Every `opinion` and `alertness-check` slide** gets `{ name: "loading_hand", delay: 3, position: "corner-right", loop: true }` — the waving hand fits "what do you think?" / "quick check" naturally, and stays looping (not a one-off) on these two types specifically.
-- `delay: 3` (seconds) as the default elsewhere too — let the slide settle before anything moves.
-- **Position**: prefer `corner-right`/`corner-left`/`top` so nothing covers the content; `center`/`across` only on slides with little else on them (media-only, a short opinion question).
+- **At least 4 animated slides per lesson**, picked at random from across the *entire* deck each time — no slide type is off-limits, and it shouldn't be the same handful of "safe" types every lesson. Vary which slides get one, lesson to lesson.
+- **Every `opinion` and `alertness-check` slide** gets `{ name: "loading_hand", delay: 3, position: "corner-right", loop: true }` — the waving hand fits "what do you think?" / "quick check" naturally. These count toward the 4, but don't stop there — add more picked randomly from the rest of the deck (`lesson-topic`, `objectives`, `media-only`, `study`, `definitions`, `practice`, `answer`, `assessment`, `homework`, `feedback`, `enrichment` are all fair game).
+- `delay: 3` (seconds) as the default everywhere — let the slide settle before anything moves.
+- `loop: true` always — every animation stays persistent, not a single pass.
+- **Walking/flying animals cross the screen**: if the animal's label implies locomotion (הולך/הולכת/עפה — elephant, dog, turkey, bird, totoro, runner, frankenstein, chicken, camel, toucan), use `position: "across"`. Stationary ones (robot, death_dance, dancing_bug, cat, crying, snowman, bear, piggy, survey, frog, watermelon, strawberry, pencil, jumping) use `corner-right`/`corner-left`/`top`/`center` instead.
 - **Vary it** — don't reuse the same animal/position twice in one lesson, and don't lean on the same 2–3 favorites across every lesson; draw from the full registry.
-- `loop: false` for one-off placements elsewhere (media-only/study/homework/enrichment) — a single playful pass, not a repeating distraction. `loop: true` is reserved for `brain-break`'s giraffe and the `loading_hand` on opinion/alertness-check.
-- Skip anything unsettling (frankenstein, death_dance, crying) on slides covering heavy material (e.g. the Holocaust on a timeline slide).
+- One exception, on content grounds rather than slide type: avoid pairing anything unsettling (frankenstein, death_dance, crying) with the specific slide covering the Holocaust (the historical-background timeline) — everywhere else, any animation is fine.
 
 ---
 name: frontend-design

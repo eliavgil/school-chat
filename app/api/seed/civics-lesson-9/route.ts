@@ -107,6 +107,7 @@ export const slides: Slide[] = [
     layout: "list",
     eyebrow: "הקניה",
     title: "טכנולוגיה כמנגנון פיקוח בלתי פורמלי",
+    animation: { name: "cat", delay: 3, position: "center", loop: true },
     body: "בדמוקרטיה המודרנית, הטכנולוגיה משמשת כלי עוצמתי להגבלת השלטון:",
     questions: [
       { id: "t1", icon: "megaphone", text: "פיקוח אזרחי", options: ["הרשתות החברתיות מאפשרות לאזרחים לחשוף שחיתויות, לארגן הפגנות (כמו בתוניסיה) ולהפעיל לחץ ישיר על מקבלי החלטות."], correct_index: null },
@@ -150,6 +151,7 @@ export const slides: Slide[] = [
     type: "definitions",
     eyebrow: "מושגים למבחן",
     title: "דמוקרטיה במאה ה-21 — הגדרות (מחוון 2017)",
+    animation: { name: "totoro", delay: 3, position: "across", loop: true },
     questions: [
       { id: "def1", text: "דמוקרטיה ליברלית-אינדיבידואלית", options: [""], feedback: "תפיסה המעמידה במרכז את הפרט ואת זכויותיו. תפקיד המדינה לאפשר לכל אזרח מימוש מרבי של רצונותיו ללא התייחסות להשתייכותו האתנית.", correct_index: null },
       { id: "def2", text: "דמוקרטיה סוציאל-דמוקרטית", options: [""], feedback: "גישה המדגישה את השוויון החברתי-כלכלי ומחויבת להבטיח קיום בסיסי בכבוד לכל אדם דרך מעורבות רבה של המדינה.", correct_index: null },

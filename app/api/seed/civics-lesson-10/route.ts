@@ -100,6 +100,7 @@ export const slides: Slide[] = [
     type: "study",
     eyebrow: "הקניה",
     title: "משאל עם",
+    animation: { name: "runner", delay: 3, position: "across", loop: true },
     body: `כלי של דמוקרטיה ישירה בתוך משטר ייצוגי. הממשל מפנה שאלה מוגדרת לכלל ציבור הבוחרים כדי לשקף את עמדתם ישירות.
 
 > בחלק מהמדינות הוא **מחייב**, ובחלקן הוא כלי **מייעץ** בלבד.`,
@@ -126,6 +127,7 @@ export const slides: Slide[] = [
     type: "definitions",
     eyebrow: "מושגים למבחן",
     title: "עקרון שלטון העם — הגדרות",
+    animation: { name: "dancing_bug", delay: 3, position: "corner-left", loop: true },
     questions: [
       { id: "def1", text: "עקרון שלטון העם", options: [""], feedback: "עקרון יסוד לפיו כלל האזרחים הם הריבון ומקור הסמכות. האזרחים בוחרים שלטון נציגים לזמן קצוב המוגדר בחוק.", correct_index: null },
       { id: "def2", text: "דמוקרטיה ישירה", options: [""], feedback: "מצב בו כלל האזרחים מקבלים את ההחלטות בענייני המדינה ללא מתווכים או נציגים.", correct_index: null },

@@ -16,6 +16,7 @@ export const slides: Slide[] = [
     type: "lesson-topic",
     eyebrow: "שיעור 12 | אזרחות כיתה י",
     title: "שיטת הבחירות בישראל: ארצית, יחסית ורשימתית",
+    animation: { name: "chicken", delay: 3, position: "across", loop: true },
     image_url: null, // suggested: תצלום של מליאת הכנסת, או פתקי הצבעה של מפלגות שונות
     image_position: "background",
     image_size: "full",
@@ -108,6 +109,7 @@ export const slides: Slide[] = [
     type: "study",
     eyebrow: "הקניה",
     title: "אחוז החסימה",
+    animation: { name: "frog", delay: 3, position: "corner-left", loop: true },
     body: `אחוז הקולות המינימלי שמפלגה חייבת לקבל כדי לזכות בייצוג בפרלמנט. בישראל הוא עומד על **3.25%** (כ-4 מנדטים).
 
 > מטרתו לצמצם את מספר המפלגות הקטנות ולהגביר את יציבות הממשלה.`,

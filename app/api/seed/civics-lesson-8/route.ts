@@ -175,6 +175,7 @@ export const slides: Slide[] = [
     type: "practice",
     eyebrow: "תרגול",
     title: "דמוקרטיה ישירה מול ייצוגית",
+    animation: { name: "turkey", delay: 3, position: "across", loop: true },
     questions: [
       {
         id: "pq1",
@@ -281,6 +282,7 @@ export const slides: Slide[] = [
     type: "feedback",
     eyebrow: "משוב",
     title: "איך היה השיעור?",
+    animation: { name: "death_dance", delay: 3, position: "corner-right", loop: true },
     questions: [
       { id: "f1", text: "עד כמה השיעור עזר לך להבין מדוע אנחנו לא מחליטים הכל בעצמנו היום?", options: [], correct_index: null },
       { id: "f2", text: "כמה עניין מצאת בסיפור על אתונה העתיקה?", options: [], correct_index: null },

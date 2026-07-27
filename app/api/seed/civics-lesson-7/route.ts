@@ -29,6 +29,7 @@ export const slides: Slide[] = [
     layout: "grid",
     eyebrow: "מטרות השיעור",
     title: "מה נלמד היום",
+    animation: { name: "pencil", delay: 3, position: "top", loop: true },
     questions: [
       { id: "obj1", icon: "quote", text: "נסביר", options: ['את מקור המילה "דמוקרטיה" ואת תפיסת העם כריבון ומקור הסמכות.'], correct_index: null },
       { id: "obj2", icon: "scale", text: "נבחין", options: ["בין המובן הפורמלי של הדמוקרטיה (צורת ממשל) למובן המהותי שלה (ערך ואורח חיים)."], correct_index: null },
@@ -303,6 +304,7 @@ export const slides: Slide[] = [
     type: "homework",
     eyebrow: 'משימת "הדמוקרטיה בבית שלי"',
     title: "כלל או נוהל מהבית",
+    animation: { name: "survey", delay: 3, position: "corner-right", loop: true },
     questions: [
       {
         id: "hw1",

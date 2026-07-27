@@ -77,6 +77,7 @@ export const slides: Slide[] = [
     layout: "list",
     eyebrow: "הקניה",
     title: "קבוצה אתנית מול לאום",
+    animation: { name: "watermelon", delay: 3, position: "corner-right", loop: true },
     questions: [
       { id: "c1", icon: "identity", text: "קבוצה אתנית", options: ["סימני היכר משותפים שאינם פרי בחירה (מוצא, שפה, היסטוריה) — לא בהכרח שואפת למדינה. למשל: הדרוזים בישראל."], correct_index: null },
       { id: "c2", icon: "flag", text: "לאום", options: ["יסודות משותפים ושאיפה להגדרה עצמית במסגרת מדינה ריבונית או אוטונומיה. למשל: הפלסטינים או הכורדים."], correct_index: null },
@@ -178,6 +179,7 @@ export const slides: Slide[] = [
     type: "answer",
     eyebrow: "תשובת מודל",
     title: "נאום ראש ממשלת קנדה — תשובה מלאה",
+    animation: { name: "pencil", delay: 3, position: "center", loop: true },
     body: `### ציין
 לאומיות פוליטית / אזרחית
 

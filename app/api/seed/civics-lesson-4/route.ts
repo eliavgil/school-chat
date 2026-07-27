@@ -16,6 +16,7 @@ export const slides: Slide[] = [
     type: "lesson-topic",
     eyebrow: "שיעור 4 | אזרחות כיתה י",
     title: "הכרזת העצמאות (חלק ב'): מדינה יהודית ודמוקרטית",
+    animation: { name: "strawberry", delay: 3, position: "corner-left", loop: true },
     image_url: null, // suggested: דגל ישראל לצד ספר חוקה/מגילת זכויות, או קולאז' המשלב סמלים יהודיים ודמוקרטיים
     image_position: "background",
     image_size: "full",
@@ -299,6 +300,7 @@ export const slides: Slide[] = [
     type: "feedback",
     eyebrow: "משוב",
     title: "איך היה השיעור?",
+    animation: { name: "piggy", delay: 3, position: "top", loop: true },
     questions: [
       { id: "f1", text: 'עד כמה אתה מבין את ההבדל בין מאפיין "יהודי" למאפיין "דמוקרטי" בהכרזה?', options: [], correct_index: null },
       { id: "f2", text: "עד כמה ברור לך למי המדינה פנתה ב-1948 ומה היא הבטיחה להם?", options: [], correct_index: null },

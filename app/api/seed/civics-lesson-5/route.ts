@@ -107,6 +107,7 @@ export const slides: Slide[] = [
     type: "study",
     eyebrow: "הקניה",
     title: "סמלי המדינה כביטוי לזהות",
+    animation: { name: "piggy", delay: 3, position: "top", loop: true },
     questions: [
       { id: "s_1", icon: "flag", text: "הדגל", options: ["מורכב ממגן דוד (סמל מסורתי) וצבעי תכלת-לבן הלקוחים מצבעי הטלית."], correct_index: null },
       { id: "s_2", icon: "shield", text: "הסמל", options: ["המנורה שעמדה בבית המקדש בירושלים (עפ\"י נבואת זכריה) וענפי זית לסמל השלום."], correct_index: null },
@@ -121,6 +122,7 @@ export const slides: Slide[] = [
     type: "study",
     eyebrow: "הקניה",
     title: "בין הציבורי לפרטי — הסדר הסטטוס קוו",
+    animation: { name: "frog", delay: 3, position: "top", loop: true },
     body: "הסדר שנועד למנוע מחלוקות עמוקות ולאפשר חיים משותפים בין דתיים לחילוניים. הוא עוסק בארבעה תחומים:",
     questions: [
       { id: "st1", icon: "calendar", text: "שבת", options: ["הגדרת השבת כיום המנוחה במדינה (ליהודים)."], correct_index: null },

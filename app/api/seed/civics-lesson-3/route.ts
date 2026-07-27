@@ -29,6 +29,7 @@ export const slides: Slide[] = [
     layout: "grid",
     eyebrow: "מטרות השיעור",
     title: "מה נלמד היום",
+    animation: { name: "jumping", delay: 3, position: "corner-left", loop: true },
     questions: [
       { id: "obj1", icon: "calendar", text: "נתאר", options: ["את השתלשלות האירועים ההיסטוריים המרכזיים שהובילו להכרזת העצמאות."], correct_index: null },
       { id: "obj2", icon: "scale", text: "נזהה ונסווג", options: ["את שלושת סוגי ההצדקות להקמת המדינה: היסטוריות, בינלאומיות (משפטיות) וטבעית/אוניברסלית."], correct_index: null },
@@ -110,6 +111,7 @@ export const slides: Slide[] = [
     type: "study",
     eyebrow: "הקניה",
     title: "הצדקות בינלאומיות וטבעיות — מה הזכות שלנו?",
+    animation: { name: "survey", delay: 3, position: "center", loop: true },
     questions: [
       { id: "i1", icon: "handshake", text: "הצדקות בינלאומיות (משפטיות)", options: ['נובעות מהחלטות רשמיות של מדינות וגופים בינלאומיים — הצהרת בלפור, כתב המנדט והחלטת האו"ם 181.'], correct_index: null },
       { id: "i2", icon: "globe", text: "הצדקה טבעית / אוניברסלית", options: ["הזכות הטבעית של כל עם להיות אדון לגורלו במדינתו הריבונית — הזכות להגדרה עצמית."], correct_index: null },
