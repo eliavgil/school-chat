@@ -53,7 +53,7 @@ export const slides: Slide[] = [
     type: "opinion",
     eyebrow: "מה דעתכם?",
     title: "הרשתות החברתיות — מחזקות או פוגעות בדמוקרטיה?",
-    animation: { name: "loading_hand", delay: 3, position: "corner-right" },
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       {
         id: "q1",
@@ -136,6 +136,7 @@ export const slides: Slide[] = [
     type: "alertness-check",
     eyebrow: "בדיקת עירנות",
     title: "דמוקרטיה במאה ה-21",
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       { id: "ac1", text: "איזה מודל דמוקרטי מדגיש את הפרט וזכויותיו מעל הקולקטיב?", options: ["אינדיבידואלי", "רפובליקני", "רב-תרבותי", "סוציאליסטי"], correct_index: 0 },
       { id: "ac2", text: "מה נקרא \"מנגנון פיקוח בלתי פורמלי\"?", options: ["ביקורת אזרחים דרך רשתות חברתיות", "חוקי הכנסת", "בית המשפט העליון", "מבקר המדינה"], correct_index: 0 },

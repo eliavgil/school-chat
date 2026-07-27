@@ -53,7 +53,7 @@ export const slides: Slide[] = [
     type: "opinion",
     eyebrow: "מה דעתכם?",
     title: "עליונות הדת היהודית — במחיר של פגיעה?",
-    animation: { name: "loading_hand", delay: 3, position: "corner-right" },
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       {
         id: "q1",
@@ -128,6 +128,7 @@ export const slides: Slide[] = [
     type: "alertness-check",
     eyebrow: "בדיקת עירנות",
     title: "חוק הלאום",
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       { id: "ac1", text: "מהו המעמד המשפטי של חוק הלאום?", options: ["חוק רגיל", "חוק יסוד", "תקנת שעת חירום", "הצעת חוק בלבד"], correct_index: 1 },
       { id: "ac2", text: "מהי בירת ישראל לפי חוק הלאום?", options: ["תל אביב", "חיפה", "ירושלים השלמה והמאוחדת", "באר שבע"], correct_index: 2 },

@@ -53,7 +53,7 @@ export const slides: Slide[] = [
     type: "opinion",
     eyebrow: "מה דעתכם?",
     title: "מפלגה גדולה, או מפלגה שמייצגת אתכם?",
-    animation: { name: "loading_hand", delay: 3, position: "corner-right" },
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       {
         id: "q1",
@@ -120,6 +120,7 @@ export const slides: Slide[] = [
     type: "alertness-check",
     eyebrow: "בדיקת עירנות",
     title: "שיטת הבחירות בישראל",
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       { id: "ac1", text: "מהו אחוז החסימה הנוכחי בישראל?", options: ["3.25%", "1%", "5%", "10%"], correct_index: 0 },
       { id: "ac2", text: "בשיטה ה\"ארצית\", כמה אזורי בחירה יש בישראל?", options: ["אחד", "שניים", "שלושה עשר", "עשרים"], correct_index: 0 },

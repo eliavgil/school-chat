@@ -53,7 +53,7 @@ export const slides: Slide[] = [
     type: "opinion",
     eyebrow: "מה דעתכם?",
     title: "להצביע בעצמכם על כל חוק, או לבחור נציגים?",
-    animation: { name: "loading_hand", delay: 3, position: "corner-right" },
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       {
         id: "q1",
@@ -137,6 +137,7 @@ export const slides: Slide[] = [
     type: "alertness-check",
     eyebrow: "בדיקת עירנות",
     title: "היסטוריה של הדמוקרטיה",
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       { id: "ac1", text: "היכן התקיימה הדמוקרטיה הישירה הראשונה?", options: ["רומא", "אתונה", "ירושלים", "לונדון"], correct_index: 1 },
       { id: "ac2", text: "איזו מהסיבות הבאות גרמה למעבר לדמוקרטיה עקיפה?", options: ["גודל האוכלוסייה", "מזג האוויר", "מלחמות דת", "חוסר בכסף"], correct_index: 0 },

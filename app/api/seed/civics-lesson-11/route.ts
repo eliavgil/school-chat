@@ -53,7 +53,7 @@ export const slides: Slide[] = [
     type: "opinion",
     eyebrow: "מה דעתכם?",
     title: "בחירות עם מועמד אחד — עדיין דמוקרטיה?",
-    animation: { name: "loading_hand", delay: 3, position: "corner-right" },
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       {
         id: "q1",
@@ -126,6 +126,7 @@ export const slides: Slide[] = [
     type: "alertness-check",
     eyebrow: "בדיקת עירנות",
     title: "תנאי יסוד לבחירות דמוקרטיות",
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       { id: "ac1", text: "מה מבטיח תנאי ה\"שוויוניות\" בבחירות?", options: ["שכל קול שווה בכוחו לאחר", "שכולם מצביעים באותו יום", "שיש רק מפלגה אחת", "שההצבעה חשאית"], correct_index: 0 },
       { id: "ac2", text: "מה ראשי התיבות \"כ\"ח מש\"ה\" מייצגים?", options: ["את 5 תנאי הבחירות הדמוקרטיות", "את שמות המפלגות", "את סוגי המשטרים", "את זכויות האדם"], correct_index: 0 },

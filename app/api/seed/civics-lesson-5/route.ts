@@ -54,7 +54,7 @@ export const slides: Slide[] = [
     type: "opinion",
     eyebrow: "מה דעתכם?",
     title: "מה נותן למדינה את הצביון היהודי הכי חזק?",
-    animation: { name: "loading_hand", delay: 3, position: "corner-right" },
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       {
         id: "q1",
@@ -137,6 +137,7 @@ export const slides: Slide[] = [
     type: "alertness-check",
     eyebrow: "בדיקת עירנות",
     title: "המאפיינים היהודיים של מדינת ישראל",
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       { id: "ac1", text: "איזה חוק מאפשר לכל יהודי לעלות ולהתיישב בישראל?", options: ["חוק השבות", "חוק שעות עבודה ומנוחה", "חוק חג המצות", "חוק בתי דין רבניים"], correct_index: 0 },
       { id: "ac2", text: "כמה נושאים כלולים בהסדר הסטטוס-קוו?", options: ["2", "3", "4", "5"], correct_index: 2 },

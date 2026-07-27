@@ -53,7 +53,7 @@ export const slides: Slide[] = [
     type: "opinion",
     eyebrow: "מה דעתכם?",
     title: "תחת איזו צורת משטר הכי היית רוצה לחיות?",
-    animation: { name: "loading_hand", delay: 3, position: "corner-right" },
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       {
         id: "q1",
@@ -176,6 +176,7 @@ export const slides: Slide[] = [
     type: "alertness-check",
     eyebrow: "בדיקת עירנות",
     title: "מבוא לרעיון הדמוקרטי",
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       { id: "ac1", text: "מהיכן מגיעה המילה \"דמוקרטיה\"?", options: ["מיוונית: עם ושלטון", "מלטינית: חוק וסדר", "מעברית: שוויון", "מערבית: עצה"], correct_index: 0 },
       { id: "ac2", text: "מי טען שהאדם הוא יצור תבוני ומוסרי, ושתפקיד המדינה הוא להגן על זכויותיו הטבעיות?", options: ["תומס הובס", "ג'ון לוק", "קרל מרקס", "אריסטו"], correct_index: 1 },

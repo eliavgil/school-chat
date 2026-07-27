@@ -53,7 +53,7 @@ export const slides: Slide[] = [
     type: "opinion",
     eyebrow: "מה דעתכם?",
     title: "יהודית וגם דמוקרטית — בלי סתירה?",
-    animation: { name: "loading_hand", delay: 3, position: "corner-right" },
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       {
         id: "q1",
@@ -138,6 +138,7 @@ export const slides: Slide[] = [
     type: "alertness-check",
     eyebrow: "בדיקת עירנות",
     title: "הכרזת העצמאות — חלק ב'",
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       { id: "ac1", text: "לכמה גורמים פונה ההכרזה בקריאה לשלום ולשיתוף פעולה?", options: ["2", "3", "4", "5"], correct_index: 2 },
       { id: "ac2", text: "איזה מהבאים הוא ביטוי ל\"מדינה יהודית\" בהכרזה?", options: ["פתיחת שערים לעלייה יהודית", "שוויון זכויות לכולם", "בחירות לאסיפה מכוננת", "נאמנות למגילת האו\"ם"], correct_index: 0 },
@@ -257,7 +258,7 @@ export const slides: Slide[] = [
     type: "opinion",
     eyebrow: "מה דעתכם?",
     title: "יהדות או דמוקרטיה — מה חשוב יותר?",
-    animation: { name: "loading_hand", delay: 3, position: "corner-right" },
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       {
         id: "q2",

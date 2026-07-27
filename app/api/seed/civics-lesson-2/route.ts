@@ -53,7 +53,7 @@ export const slides: Slide[] = [
     type: "opinion",
     eyebrow: "מה דעתכם?",
     title: "מה הופך קבוצת אנשים ל'עם'?",
-    animation: { name: "loading_hand", delay: 3, position: "corner-right" },
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       {
         id: "q1",
@@ -118,6 +118,7 @@ export const slides: Slide[] = [
     type: "alertness-check",
     eyebrow: "בדיקת עירנות",
     title: "לאום ולאומיות",
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       { id: "ac1", text: "מה ההבדל המרכזי בין \"קבוצה אתנית\" ל\"לאום\"?", options: ["השאיפה להגדרה עצמית או ריבונות", "השפה המדוברת", "הדת", "הגודל"], correct_index: 0 },
       { id: "ac2", text: "לאומיות המבוססת על ערכים משותפים ולא על מוצא נקראת:", options: ["אתנית-תרבותית", "פוליטית / אזרחית", "דתית", "גזעית"], correct_index: 1 },

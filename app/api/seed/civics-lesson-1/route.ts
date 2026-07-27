@@ -53,7 +53,7 @@ export const slides: Slide[] = [
     type: "opinion",
     eyebrow: "מה דעתכם?",
     title: "לדעתכם, איזה מהבאים אינו תנאי הכרחי לקיום מדינה?",
-    animation: { name: "loading_hand", delay: 3, position: "corner-right" },
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       {
         id: "q1",
@@ -100,6 +100,7 @@ export const slides: Slide[] = [
     type: "alertness-check",
     eyebrow: "בדיקת עירנות",
     title: "מהי מדינה?",
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       { id: "ac1", text: "כמה תנאים נדרשים לקיומה של מדינה?", options: ["3", "4", "5", "6"], correct_index: 2 },
       { id: "ac2", text: "איזה מהבאים הוא אחד מתנאי קיום המדינה?", options: ["שטח (טריטוריה)", "דגל", "המנון", "בירה"], correct_index: 0 },

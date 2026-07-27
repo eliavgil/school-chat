@@ -53,7 +53,7 @@ export const slides: Slide[] = [
     type: "opinion",
     eyebrow: "מה דעתכם?",
     title: "מה הטיעון הכי חזק להקמת מדינה?",
-    animation: { name: "loading_hand", delay: 3, position: "corner-right" },
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       {
         id: "q1",
@@ -138,6 +138,7 @@ export const slides: Slide[] = [
     type: "alertness-check",
     eyebrow: "בדיקת עירנות",
     title: "הכרזת העצמאות — חלק א'",
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       { id: "ac1", text: "איזו הצהרה בריטית הבטיחה בית לאומי לעם היהודי?", options: ["הצהרת בלפור", "כתב המנדט", "החלטה 181 של האו\"ם", "מגילת העצמאות"], correct_index: 0 },
       { id: "ac2", text: "מה כולל החלק ה\"מעשי\" (האופרטיבי) של ההכרזה?", options: ["שם המדינה ומוסדות השלטון", "תיאור השואה", "הקשר לתנ\"ך", "הצהרת בלפור"], correct_index: 0 },

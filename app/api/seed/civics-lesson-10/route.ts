@@ -53,7 +53,7 @@ export const slides: Slide[] = [
     type: "opinion",
     eyebrow: "מה דעתכם?",
     title: "להחליט בעצמנו, או להשאיר לנציגים?",
-    animation: { name: "loading_hand", delay: 3, position: "corner-right" },
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       {
         id: "q1",
@@ -112,6 +112,7 @@ export const slides: Slide[] = [
     type: "alertness-check",
     eyebrow: "בדיקת עירנות",
     title: "עקרון שלטון העם",
+    animation: { name: "loading_hand", delay: 3, position: "corner-right", loop: true },
     questions: [
       { id: "ac1", text: "מיהו ה\"ריבון\" לפי עקרון שלטון העם?", options: ["כלל האזרחים", "הממשלה", "הכנסת", "הנשיא"], correct_index: 0 },
       { id: "ac2", text: "מהו משאל עם?", options: ["כלי של דמוקרטיה ישירה בתוך משטר ייצוגי", "בחירות לכנסת", "ישיבת ממשלה", "הצבעת אמון"], correct_index: 0 },

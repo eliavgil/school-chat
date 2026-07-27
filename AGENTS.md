@@ -165,12 +165,12 @@ When writing a slide that would benefit from an image, add an `image_url` field 
 Animations (`slide.animation`, see `lib/lessons/animations.ts`) are a light touch of fun, not decoration on every slide:
 
 - **2–3 per lesson**, not per slide — never two in a row.
-- **Where**: `media-only`, `opinion`, `study`, `homework`, `enrichment`. **Never**: `definitions`, `practice`, `answer`, `assessment`, `alertness-check` — content the student needs to focus on or copy.
-- **Every `opinion` slide** gets `{ name: "loading_hand", delay: 3, position: ... }` — the waving hand fits "what do you think?" naturally.
+- **Where**: `media-only`, `opinion`, `study`, `homework`, `enrichment`. **Never**: `definitions`, `practice`, `answer`, `assessment` — content the student needs to focus on or copy.
+- **Every `opinion` and `alertness-check` slide** gets `{ name: "loading_hand", delay: 3, position: "corner-right", loop: true }` — the waving hand fits "what do you think?" / "quick check" naturally, and stays looping (not a one-off) on these two types specifically.
 - `delay: 3` (seconds) as the default elsewhere too — let the slide settle before anything moves.
 - **Position**: prefer `corner-right`/`corner-left`/`top` so nothing covers the content; `center`/`across` only on slides with little else on them (media-only, a short opinion question).
 - **Vary it** — don't reuse the same animal/position twice in one lesson, and don't lean on the same 2–3 favorites across every lesson; draw from the full registry.
-- `loop: false` for all of this — one playful pass, not a repeating distraction. `loop: true` stays reserved for `brain-break`'s giraffe.
+- `loop: false` for one-off placements elsewhere (media-only/study/homework/enrichment) — a single playful pass, not a repeating distraction. `loop: true` is reserved for `brain-break`'s giraffe and the `loading_hand` on opinion/alertness-check.
 - Skip anything unsettling (frankenstein, death_dance, crying) on slides covering heavy material (e.g. the Holocaust on a timeline slide).
 
 ---
