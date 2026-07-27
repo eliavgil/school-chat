@@ -43,7 +43,6 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
-    animation: { name: "toucan", delay: 3, position: "across", loop: true },
     image_url: null, // suggested: תצלום או קטע וידאו של בן גוריון מקריא את המגילה באולם המוזיאון
   },
 
@@ -111,7 +110,6 @@ export const slides: Slide[] = [
     type: "study",
     eyebrow: "הקניה",
     title: "הצדקות בינלאומיות וטבעיות — מה הזכות שלנו?",
-    animation: { name: "robot", delay: 3, position: "corner-right", loop: true },
     questions: [
       { id: "i1", icon: "handshake", text: "הצדקות בינלאומיות (משפטיות)", options: ['נובעות מהחלטות רשמיות של מדינות וגופים בינלאומיים — הצהרת בלפור, כתב המנדט והחלטת האו"ם 181.'], correct_index: null },
       { id: "i2", icon: "globe", text: "הצדקה טבעית / אוניברסלית", options: ["הזכות הטבעית של כל עם להיות אדון לגורלו במדינתו הריבונית — הזכות להגדרה עצמית."], correct_index: null },
@@ -254,7 +252,6 @@ export const slides: Slide[] = [
     type: "homework",
     eyebrow: 'משימת "הזכות האישית"',
     title: "סיפור משפחתי שמתחבר להצדקה",
-    animation: { name: "turkey", delay: 3, position: "across", loop: true },
     questions: [
       {
         id: "hw1",
@@ -292,7 +289,6 @@ export const slides: Slide[] = [
     type: "enrichment",
     eyebrow: "העשרה",
     title: "לסקרנים",
-    animation: { name: "watermelon", delay: 3, position: "corner-left", loop: true },
     questions: [
       {
         id: "e1",

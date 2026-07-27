@@ -43,7 +43,6 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
-    animation: { name: "bird", delay: 3, position: "across", loop: true },
     image_url: null, // suggested: תצלום או קטע וידאו מהכרזת המדינה, או ויזואל המנגיד סמל יהודי מול סמל דמוקרטי
   },
 
@@ -93,7 +92,6 @@ export const slides: Slide[] = [
     type: "study",
     eyebrow: "הקניה",
     title: "המדינה כדמוקרטית — ביטויים בהכרזה",
-    animation: { name: "frog", delay: 3, position: "corner-left", loop: true },
     body: "לצד זהותה היהודית, ההכרזה כוללת התחייבויות לערכים דמוקרטיים אוניברסליים.",
     questions: [
       { id: "d1", icon: "scale", text: "שוויון זכויות", options: ["הבטחה לשוויון זכויות חברתי ומדיני גמור לכל האזרחים ללא הבדל דת, גזע ומין."], correct_index: null },
@@ -278,7 +276,6 @@ export const slides: Slide[] = [
     type: "homework",
     eyebrow: 'משימת "המגילה במבחן המציאות"',
     title: "המגילה בחדשות השבוע",
-    animation: { name: "chicken", delay: 3, position: "across", loop: true },
     questions: [
       {
         id: "hw1",
@@ -316,7 +313,6 @@ export const slides: Slide[] = [
     type: "enrichment",
     eyebrow: "העשרה",
     title: "לסקרנים",
-    animation: { name: "cat", delay: 3, position: "corner-right", loop: true },
     questions: [
       {
         id: "e1",

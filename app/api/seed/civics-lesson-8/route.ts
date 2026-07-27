@@ -43,7 +43,6 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
-    animation: { name: "chicken", delay: 3, position: "across", loop: true },
     image_url: null, // suggested: תצלום/ציור של האגורה באתונה, או תור לקלפי בבחירות מודרניות
   },
 
@@ -92,7 +91,6 @@ export const slides: Slide[] = [
     type: "study",
     eyebrow: "הקניה",
     title: "המעבר לדמוקרטיה עקיפה / ייצוגית",
-    animation: { name: "robot", delay: 3, position: "corner-left", loop: true },
     body: "כיום, כל הדמוקרטיות המערביות בעולם הן עקיפות. המעבר נבע מארבע סיבות מרכזיות:",
     questions: [
       { id: "b1", icon: "users", text: "גודל האוכלוסייה", options: ["בלתי אפשרי טכנית לכנס מיליוני אזרחים לקבלת החלטות יומיומית."], correct_index: null },
@@ -260,7 +258,6 @@ export const slides: Slide[] = [
     type: "homework",
     eyebrow: 'משימת "לוח הזמנים של החופש"',
     title: "זכות הבחירה לנשים",
-    animation: { name: "camel", delay: 3, position: "across", loop: true },
     questions: [
       {
         id: "hw1",
@@ -298,7 +295,6 @@ export const slides: Slide[] = [
     type: "enrichment",
     eyebrow: "העשרה",
     title: "לסקרנים",
-    animation: { name: "watermelon", delay: 3, position: "corner-right", loop: true },
     questions: [
       {
         id: "e1",

@@ -43,7 +43,6 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
-    animation: { name: "camel", delay: 3, position: "across", loop: true },
     image_url: null, // suggested: תצלום של פתק הצבעה ומעטפה בקלפי ישראלית
   },
 
@@ -104,7 +103,6 @@ export const slides: Slide[] = [
     layout: "list",
     eyebrow: "הקניה",
     title: "מחזוריות ושוויוניות",
-    animation: { name: "jumping", delay: 3, position: "corner-right", loop: true },
     questions: [
       { id: "m1", icon: "calendar", text: "מחזוריות", options: ["הבחירות חוזרות במרווחי זמן ידועים וסדירים הקבועים בחוק."], correct_index: null },
       { id: "m2", icon: "scale", text: "שוויוניות", options: ['"אדם אחד — קול אחד" — כל קול שווה למשנהו בכוחו.'], correct_index: null },
@@ -252,7 +250,6 @@ export const slides: Slide[] = [
     type: "homework",
     eyebrow: "משימה",
     title: "בחירות בדיקטטורה",
-    animation: { name: "elephant", delay: 3, position: "across", loop: true },
     questions: [
       {
         id: "hw1",
@@ -290,7 +287,6 @@ export const slides: Slide[] = [
     type: "enrichment",
     eyebrow: "העשרה",
     title: "לסקרנים",
-    animation: { name: "pencil", delay: 3, position: "corner-left", loop: true },
     questions: [
       {
         id: "e1",

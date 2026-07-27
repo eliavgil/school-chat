@@ -43,7 +43,6 @@ export const slides: Slide[] = [
     type: "media-only",
     eyebrow: "",
     title: "",
-    animation: { name: "totoro", delay: 3, position: "across", loop: true },
     image_url: null,
   },
 
@@ -91,7 +90,6 @@ export const slides: Slide[] = [
     type: "study",
     eyebrow: "הקניה",
     title: "לאומיות אתנית-תרבותית",
-    animation: { name: "bear", delay: 3, position: "corner-right", loop: true },
     body: `השאיפה המשותפת לבני לאום לשלטון עצמי במדינה ריבונית, המבוססת על יסודות אתניים ותרבותיים שאינם פרי בחירה — מוצא, שפה, היסטוריה, ולפעמים דת.
 
 **הדגש: הלאומיות קודמת למדינה.** האדם נולד לתוך הזהות הלאומית שלו.
@@ -247,7 +245,6 @@ export const slides: Slide[] = [
     type: "homework",
     eyebrow: 'משימת "הדרכון החדש"',
     title: "מקימים מדינה על אי בודד",
-    animation: { name: "camel", delay: 3, position: "across", loop: true },
     questions: [
       {
         id: "hw1",
@@ -285,7 +282,6 @@ export const slides: Slide[] = [
     type: "enrichment",
     eyebrow: "העשרה",
     title: "לסקרנים",
-    animation: { name: "survey", delay: 3, position: "corner-left", loop: true },
     questions: [
       {
         id: "e1",
