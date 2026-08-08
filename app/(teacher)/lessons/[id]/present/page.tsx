@@ -151,7 +151,7 @@ function extractYouTubeId(url: string): string | null {
   return m ? m[1] : null
 }
 
-function SlideMedia({ slide }: { slide: Slide }) {
+function SlideMedia({ slide, onMediaLoad }: { slide: Slide, onMediaLoad?: () => void }) {
   const ytUrl = slide.youtube_url || slide.link_url || ""
   const ytId = ytUrl ? extractYouTubeId(ytUrl) : null
   const gallery = slide.image_position !== "background" ? slide.images?.filter(Boolean) : null
@@ -164,14 +164,14 @@ function SlideMedia({ slide }: { slide: Slide }) {
           {gallery.map((url, i) => (
             <div key={i} style={{ flex: 1, minWidth: 0, height: "100%", display: "flex", alignItems: "center", justifyContent: "center", background: "#fff", border: "1px solid var(--line)", borderRadius: 10, overflow: "hidden" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={url} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
+              <img src={url} alt="" onLoad={onMediaLoad} onError={onMediaLoad} style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
             </div>
           ))}
         </div>
       )}
       {showImg && (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={slide.image_url!} alt="" style={{
+        <img src={slide.image_url!} alt="" onLoad={onMediaLoad} onError={onMediaLoad} style={{
           width: slide.image_size === "small" ? "40%" : slide.image_size === "medium" ? "65%" : slide.image_size === "large" ? "85%" : "100%",
           maxHeight: "42%", borderRadius: 10, marginBottom: 16, display: "block", objectFit: "cover",
         }} />
@@ -382,7 +382,7 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
   const contentRef = useRef<HTMLDivElement>(null)
   const [fit, setFit] = useState(1)
 
-  useLayoutEffect(() => {
+  const recomputeFit = useCallback(() => {
     // Assessment slides are fine to scroll — never shrink their text.
     if (type === "assessment" || type === "assessment_answers") return
     const inner = slideInnerRef.current
@@ -393,6 +393,10 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
     const natural = content.scrollHeight
     const factor = natural > available ? Math.max(available / natural, MIN_FIT_SCALE) : 1
     setFit(Math.round(factor * 1000) / 1000)
+  }, [type])
+
+  useLayoutEffect(() => {
+    recomputeFit()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slide.id])
 
@@ -423,7 +427,7 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
       {!hideHeader && <h1 className="stitle">{title}</h1>}
 
       {/* Media: image (non-background) + YouTube + link */}
-      <SlideMedia slide={slide} />
+      <SlideMedia slide={slide} onMediaLoad={recomputeFit} />
 
       {/* Audio player */}
       {slide.audio_url && <AudioButton url={slide.audio_url} key={slide.id} />}
