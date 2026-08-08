@@ -112,11 +112,13 @@ const CSS = `
   .anim-across{position:absolute;bottom:70px;width:220px;height:220px;z-index:20;pointer-events:none;}
   .anim-across.once{animation:run-across 5s linear forwards;}
   .anim-across.loop{animation:run-across 6s linear infinite;}
-  .anim-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:280px;height:280px;z-index:20;pointer-events:none;}
-  .anim-big-center{position:absolute;top:68%;left:50%;transform:translate(-50%,-50%);width:400px;height:400px;z-index:20;pointer-events:none;}
-  .anim-corner-right{position:absolute;bottom:80px;right:80px;width:200px;height:200px;z-index:20;pointer-events:none;}
-  .anim-corner-left{position:absolute;bottom:80px;left:80px;width:200px;height:200px;z-index:20;pointer-events:none;}
-  .anim-top{position:absolute;top:20px;left:50%;transform:translateX(-50%);width:200px;height:200px;z-index:20;pointer-events:none;}
+  /* Stationary positions sit behind the slide content (negative z-index) so they never
+     cover text — unlike "across", which passes through briefly and stays on top. */
+  .anim-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:280px;height:280px;z-index:-1;pointer-events:none;}
+  .anim-big-center{position:absolute;top:68%;left:50%;transform:translate(-50%,-50%);width:400px;height:400px;z-index:-1;pointer-events:none;}
+  .anim-corner-right{position:absolute;bottom:80px;right:80px;width:200px;height:200px;z-index:-1;pointer-events:none;}
+  .anim-corner-left{position:absolute;bottom:80px;left:80px;width:200px;height:200px;z-index:-1;pointer-events:none;}
+  .anim-top{position:absolute;top:20px;left:50%;transform:translateX(-50%);width:200px;height:200px;z-index:-1;pointer-events:none;}
   @media (max-width: 767px) {
     .slide-inner{padding:24px 20px 100px 20px;}
     h1.stitle{font-size:26px;}
@@ -973,8 +975,12 @@ export default function PresentPage({ params }: Props) {
       {/* Slide stage */}
       <div className="stage" ref={stageRef}>
         {isMobile ? (
-          // Mobile: native width, no scale transform
-          <div style={{ position: "absolute", inset: 0, background: "var(--paper)", overflow: "hidden" }}>
+          // Mobile: native width, no scale transform. zIndex:0 (not "auto") makes this its
+          // own stacking context, so a stationary animation's negative z-index (used to
+          // keep it from covering text) stays scoped here instead of escaping to compare
+          // against ancestors — which would otherwise render it invisible, behind this
+          // div's own background.
+          <div style={{ position: "absolute", inset: 0, zIndex: 0, background: "var(--paper)", overflow: "hidden" }}>
             {slide && (
               <SlideView key={slide.id} slide={slide} agg={agg} revealOpen={revealOpen} setRevealOpen={setRevealOpen} />
             )}
