@@ -177,7 +177,7 @@ function SlideMedia({ slide, onMediaLoad }: { slide: Slide, onMediaLoad?: () => 
           // resolves a percentage max-height against an auto-height container to
           // "none" (no constraint at all), so the image would render at its full
           // natural height instead of being capped.
-          maxHeight: Math.round(SLIDE_H * 0.42), borderRadius: 10, marginBottom: 16, display: "block", objectFit: "cover",
+          maxHeight: Math.round(SLIDE_H * 0.42), borderRadius: 10, marginBottom: 16, display: "block", objectFit: "contain", margin: "0 auto 16px",
         }} />
       )}
       {ytId && (
