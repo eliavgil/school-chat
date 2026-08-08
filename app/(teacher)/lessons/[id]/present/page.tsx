@@ -173,7 +173,11 @@ function SlideMedia({ slide, onMediaLoad }: { slide: Slide, onMediaLoad?: () => 
         // eslint-disable-next-line @next/next/no-img-element
         <img src={slide.image_url!} alt="" onLoad={onMediaLoad} onError={onMediaLoad} style={{
           width: slide.image_size === "small" ? "40%" : slide.image_size === "medium" ? "65%" : slide.image_size === "large" ? "85%" : "100%",
-          maxHeight: "42%", borderRadius: 10, marginBottom: 16, display: "block", objectFit: "cover",
+          // Fixed px, not "%" — the parent (contentRef) has an auto height, and CSS
+          // resolves a percentage max-height against an auto-height container to
+          // "none" (no constraint at all), so the image would render at its full
+          // natural height instead of being capped.
+          maxHeight: Math.round(SLIDE_H * 0.42), borderRadius: 10, marginBottom: 16, display: "block", objectFit: "cover",
         }} />
       )}
       {ytId && (
