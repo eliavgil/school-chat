@@ -10,6 +10,16 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      // Google is the only provider here, and the "existing account" it might
+      // link to is always one we created ourselves (pre-registered by email
+      // in /manage, or a prior sign-in) — never a third-party account, so the
+      // usual phishing risk this flag is named for doesn't apply. Without it,
+      // a teacher pre-registering a student's email before their first sign-in
+      // (app/api/admin/users POST) leaves a User row with no linked Account
+      // and no emailVerified — NextAuth then refuses to link the student's
+      // real Google sign-in to it (OAuthAccountNotLinked) instead of just
+      // signing them in.
+      allowDangerousEmailAccountLinking: true,
     }),
   ],
   callbacks: {

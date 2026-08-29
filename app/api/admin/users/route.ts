@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
   if (existing) {
     await prisma.user.update({
       where: { email: normalizedEmail },
-      data: { role: "STUDENT", accessStatus: "APPROVED", studentId },
+      data: { role: "STUDENT", accessStatus: "APPROVED", studentId, emailVerified: new Date() },
     })
   } else {
     await prisma.user.create({
@@ -76,6 +76,7 @@ export async function POST(req: NextRequest) {
         accessStatus: "APPROVED",
         studentId,
         classId: "class-y",
+        emailVerified: new Date(),
       },
     })
   }
@@ -123,6 +124,7 @@ export async function PATCH(req: NextRequest) {
       await tx.studentAttendance.deleteMany({ where: { studentId } })
       await tx.studentAccommodation.deleteMany({ where: { studentId } })
       await tx.emotionalNote.deleteMany({ where: { studentId } })
+      await tx.surveyCompletion.deleteMany({ where: { studentId } })
       await tx.parentStudent.deleteMany({ where: { studentId } })
       await tx.student.delete({ where: { id: studentId } })
     })
@@ -138,6 +140,7 @@ export async function PATCH(req: NextRequest) {
         await tx.studentAttendance.deleteMany({ where: { studentId: { in: ids } } })
         await tx.studentAccommodation.deleteMany({ where: { studentId: { in: ids } } })
         await tx.emotionalNote.deleteMany({ where: { studentId: { in: ids } } })
+        await tx.surveyCompletion.deleteMany({ where: { studentId: { in: ids } } })
         await tx.parentStudent.deleteMany({ where: { studentId: { in: ids } } })
         await tx.student.deleteMany({ where: { classId } })
       }

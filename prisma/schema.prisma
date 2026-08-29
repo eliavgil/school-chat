@@ -125,6 +125,7 @@ model Student {
   userAccount     User?
   accommodations  StudentAccommodation[]
   emotionalNotes  EmotionalNote[]
+  surveyCompletions SurveyCompletion[]
 }
 
 model ParentStudent {
@@ -325,6 +326,31 @@ model StudentAccommodation {
   student     Student  @relation(fields: [studentId], references: [id])
 
   @@index([classId])
+  @@index([studentId])
+}
+
+// ── Questionnaires / surveys (Google Forms links for now) ─
+model Survey {
+  id          String             @id @default(cuid())
+  title       String
+  url         String             @db.Text
+  classId     String?            // null = visible to every class
+  dueDate     DateTime?
+  createdAt   DateTime           @default(now())
+  completions SurveyCompletion[]
+
+  @@index([classId])
+}
+
+model SurveyCompletion {
+  id          String   @id @default(cuid())
+  surveyId    String
+  studentId   String
+  completedAt DateTime @default(now())
+  survey      Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
+  student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([surveyId, studentId])
   @@index([studentId])
 }
 

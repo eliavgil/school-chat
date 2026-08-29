@@ -5,7 +5,6 @@ import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import BottomNav from "@/app/components/BottomNav"
-import ComingSoon from "@/app/components/ComingSoon"
 import { getPersonalDisplayName } from "@/app/components/personalStore"
 
 interface Message {
@@ -22,8 +21,8 @@ const QUICK_ACTIONS = [
 
 const IconHome = () => <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" /></svg>
 const IconInfo = () => <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-const IconBook = () => <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" /></svg>
-const IconStar = () => <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" /></svg>
+const IconCalendar = () => <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+const IconTrophy = () => <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 4h6v5a3 3 0 11-6 0V4z" /><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H6a1 1 0 00-1 1v1a3 3 0 003 3M15 5h3a1 1 0 011 1v1a3 3 0 01-3 3m-6 6h6m-3-3v3m-3 3h6" /></svg>
 
 function BotThinking() {
   return (
@@ -41,6 +40,231 @@ function BotThinking() {
 }
 
 const CHAT_STORAGE_KEY = "student-chat-history"
+
+/* ── Board tab: countdowns + today's schedule + upcoming events ────── */
+const HEB_DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי"]
+
+interface ScheduleSlotT { id: string; dayHeb: string; period: string; content: string }
+interface EventT { id: string; date: string; description: string; type: string | null; note: string | null }
+
+function parsePeriod(period: string): { num: number; start?: string; end?: string } {
+  const [numPart, timePart] = period.split(",").map(s => s.trim())
+  const num = parseInt(numPart, 10) || 0
+  if (!timePart) return { num }
+  const [start, end] = timePart.split("-").map(s => s.trim())
+  return { num, start, end }
+}
+
+function timeToMinutes(t?: string): number | null {
+  if (!t) return null
+  const m = t.match(/(\d{1,2}):(\d{2})/)
+  if (!m) return null
+  return parseInt(m[1], 10) * 60 + parseInt(m[2], 10)
+}
+
+function daysUntil(dateStr: string): number {
+  const target = new Date(dateStr); target.setHours(0, 0, 0, 0)
+  const today = new Date(); today.setHours(0, 0, 0, 0)
+  return Math.round((target.getTime() - today.getTime()) / 86400000)
+}
+
+function fmtEventDate(dateStr: string) {
+  return new Date(dateStr).toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit" })
+}
+
+// Matched against free-text type/description fields from the school's own event
+// spreadsheet — there's no fixed category enum, so this is a best-effort keyword
+// match rather than a guaranteed classification.
+function isVacationEvent(ev: EventT) { return /חופש/.test(`${ev.type ?? ""} ${ev.description ?? ""}`) }
+function isSummerEvent(ev: EventT) { return /(חופש[^׀-ת]{0,6}גדול|קיץ)/.test(`${ev.type ?? ""} ${ev.description ?? ""}`) }
+function isExamEvent(ev: EventT) { return /(מבחן|בוחן)/.test(`${ev.type ?? ""} ${ev.description ?? ""}`) }
+
+function CountdownCard({ emoji, label, event }: { emoji: string; label: string; event: EventT | null }) {
+  return (
+    <div className="bg-white rounded-2xl border border-stone-200 px-4 py-3 flex-1 min-w-[112px]">
+      <div className="text-2xl mb-1">{emoji}</div>
+      <div className="text-[11px] text-stone-400 mb-1">{label}</div>
+      {event ? (
+        <>
+          <div className="text-2xl font-bold text-stone-900">{daysUntil(event.date)}</div>
+          <div className="text-[11px] text-stone-500 mt-0.5 truncate" title={event.description}>{event.description}</div>
+        </>
+      ) : (
+        <div className="text-sm text-stone-300">—</div>
+      )}
+    </div>
+  )
+}
+
+function BoardTab() {
+  const [slots, setSlots] = useState<ScheduleSlotT[]>([])
+  const [events, setEvents] = useState<EventT[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/student/schedule").then(r => r.ok ? r.json() : { slots: [] }).catch(() => ({ slots: [] })),
+      fetch("/api/student/events").then(r => r.ok ? r.json() : { events: [] }).catch(() => ({ events: [] })),
+    ]).then(([sc, ev]) => {
+      setSlots(sc.slots ?? [])
+      setEvents(ev.events ?? [])
+      setLoading(false)
+    })
+  }, [])
+
+  const todayIdx = new Date().getDay() // 0=Sunday .. 6=Saturday
+  const todayHeb = HEB_DAYS[todayIdx] // undefined on Saturday — no school
+  const nowMin = new Date().getHours() * 60 + new Date().getMinutes()
+
+  const todaySlots = slots
+    .filter(s => s.dayHeb === todayHeb)
+    .map(s => ({ ...s, ...parsePeriod(s.period) }))
+    .sort((a, b) => a.num - b.num)
+
+  // First slot that hasn't ended yet — the one to highlight as "next up".
+  const nextIdx = todayHeb ? todaySlots.findIndex(s => {
+    const end = timeToMinutes(s.end)
+    return end === null || end > nowMin
+  }) : -1
+
+  const nextVacation = events.find(isVacationEvent) ?? null
+  const summerBreak = events.find(isSummerEvent) ?? null
+  const nextExam = events.find(isExamEvent) ?? null
+
+  if (loading) return <div className="flex-1 flex items-center justify-center text-stone-400 text-sm">טוען...</div>
+
+  return (
+    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 bg-[#faf9f6]">
+      {/* Countdowns */}
+      <div className="flex gap-2.5 overflow-x-auto pb-1">
+        <CountdownCard emoji="🏖️" label="לחופשה הקרובה" event={nextVacation} />
+        <CountdownCard emoji="☀️" label="לחופש הגדול" event={summerBreak} />
+        <CountdownCard emoji="📝" label="למבחן הבא" event={nextExam} />
+      </div>
+
+      {/* Today's schedule */}
+      <div>
+        <h3 className="text-sm font-bold text-stone-800 mb-2">היום{todayHeb ? ` · יום ${todayHeb}` : ""}</h3>
+        {!todayHeb ? (
+          <div className="bg-white rounded-2xl border border-stone-200 px-4 py-6 text-center text-stone-400 text-sm">שבת שלום, אין לימודים היום 🌿</div>
+        ) : todaySlots.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-stone-200 px-4 py-6 text-center text-stone-400 text-sm">אין עדיין מערכת שעות טעונה</div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-stone-200 divide-y divide-stone-100 overflow-hidden">
+            {todaySlots.map((s, i) => {
+              const isNext = i === nextIdx
+              return (
+                <div key={s.id} className={`px-4 py-3 flex items-center gap-3 ${isNext ? "bg-orange-50" : ""}`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${isNext ? "bg-orange-500 text-white" : "bg-stone-100 text-stone-500"}`}>
+                    {s.num || "•"}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className={`text-sm truncate ${isNext ? "font-bold text-orange-900" : "text-stone-700"}`}>{s.content.split("  ")[0]}</div>
+                    {s.start && <div className="text-[11px] text-stone-400" dir="ltr">{s.start}{s.end ? ` – ${s.end}` : ""}</div>}
+                  </div>
+                  {isNext && <span className="text-[10px] font-bold text-orange-600 bg-orange-100 rounded-full px-2 py-0.5 flex-shrink-0">הבא</span>}
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Upcoming events */}
+      <div>
+        <h3 className="text-sm font-bold text-stone-800 mb-2">אירועים קרובים</h3>
+        {events.length === 0 ? (
+          <div className="bg-white rounded-2xl border border-stone-200 px-4 py-6 text-center text-stone-400 text-sm">אין אירועים קרובים</div>
+        ) : (
+          <div className="bg-white rounded-2xl border border-stone-200 divide-y divide-stone-100 overflow-hidden">
+            {events.slice(0, 10).map(ev => (
+              <div key={ev.id} className="px-4 py-3 flex items-center gap-3">
+                <div className="text-xs font-mono text-stone-400 w-11 flex-shrink-0" dir="ltr">{fmtEventDate(ev.date)}</div>
+                <div className="flex-1 min-w-0 text-sm text-stone-700 truncate">{ev.description}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/* ── Surveys tab: assigned questionnaires + self-reported completion ── */
+interface SurveyT { id: string; title: string; url: string; dueDate: string | null; completed: boolean; completedAt: string | null }
+
+function SurveysTab() {
+  const [surveys, setSurveys] = useState<SurveyT[]>([])
+  const [loading, setLoading] = useState(true)
+  const [busyId, setBusyId] = useState<string | null>(null)
+
+  async function load() {
+    const d = await fetch("/api/student/surveys").then(r => r.ok ? r.json() : { surveys: [] }).catch(() => ({ surveys: [] }))
+    setSurveys(d.surveys ?? [])
+    setLoading(false)
+  }
+  useEffect(() => { load() }, [])
+
+  async function toggle(s: SurveyT) {
+    setBusyId(s.id)
+    await fetch("/api/student/surveys", {
+      method: s.completed ? "DELETE" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ surveyId: s.id }),
+    })
+    await load()
+    setBusyId(null)
+  }
+
+  if (loading) return <div className="flex-1 flex items-center justify-center text-stone-400 text-sm">טוען...</div>
+
+  const total = surveys.length
+  const done = surveys.filter(s => s.completed).length
+  const allDone = total > 0 && done === total
+
+  return (
+    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 bg-[#faf9f6]">
+      {/* Summary */}
+      <div className={`rounded-2xl px-5 py-4 flex items-center justify-between ${allDone ? "bg-gradient-to-br from-amber-400 to-orange-500" : "bg-white border border-stone-200"}`}>
+        <div>
+          <div className={`text-xs ${allDone ? "text-white/80" : "text-stone-400"}`}>שאלונים שמולאו</div>
+          <div className={`text-2xl font-bold ${allDone ? "text-white" : "text-stone-900"}`}>{done} מתוך {total}</div>
+        </div>
+        {allDone && <div className="text-4xl">👑</div>}
+      </div>
+
+      {total === 0 ? (
+        <div className="bg-white rounded-2xl border border-stone-200 px-4 py-8 text-center text-stone-400 text-sm">אין שאלונים פעילים כרגע</div>
+      ) : (
+        <div className="space-y-2.5">
+          {surveys.map(s => (
+            <div key={s.id} className={`bg-white rounded-2xl border px-4 py-3.5 ${s.completed ? "border-green-200 bg-green-50/40" : "border-stone-200"}`}>
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-stone-900 text-sm">{s.title}</div>
+                  {s.dueDate && <div className="text-xs text-stone-400 mt-0.5">עד {new Date(s.dueDate).toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit" })}</div>}
+                </div>
+                {s.completed && <span className="text-lg flex-shrink-0">✅</span>}
+              </div>
+              <div className="flex gap-2 mt-3">
+                <a href={s.url} target="_blank" rel="noopener noreferrer"
+                  className="flex-1 text-center bg-stone-900 text-white text-xs font-bold py-2 rounded-xl hover:bg-stone-800 interactive btn-press">
+                  פתח שאלון
+                </a>
+                <button onClick={() => toggle(s)} disabled={busyId === s.id}
+                  className={`flex-1 text-xs font-bold py-2 rounded-xl interactive btn-press disabled:opacity-50 ${
+                    s.completed ? "bg-stone-100 text-stone-500 hover:bg-stone-200" : "bg-green-600 text-white hover:bg-green-700"
+                  }`}>
+                  {busyId === s.id ? "..." : s.completed ? "בטל סימון" : "סימנתי שמילאתי"}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function StudentPage() {
   const { data: session, status } = useSession()
@@ -139,10 +363,10 @@ export default function StudentPage() {
   }
 
   const navTabs = [
-    { label: "בית",  href: "/home",  icon: <IconHome /> },
-    { label: "מידע", icon: <IconInfo /> },
-    { label: "לימוד",icon: <IconBook />, comingSoon: true },
-    { label: "עוזר", icon: <IconStar />, comingSoon: true },
+    { label: "בית",     href: "/home", icon: <IconHome /> },
+    { label: "מידע",    icon: <IconInfo /> },
+    { label: "לוח",     icon: <IconCalendar /> },
+    { label: "שאלונים", icon: <IconTrophy /> },
   ]
 
   if (status === "loading") return null
@@ -296,17 +520,9 @@ export default function StudentPage() {
           </>
         )}
 
-        {mainTab === "לימוד" && (
-          <ComingSoon icon="📚" title="עזרה לימודית"
-            description="בוט שמכיר את חומרי הלימוד שלך — שאל שאלות, קבל הסברים, תרגל לקראת מבחנים."
-            featureKey="student-learning-bot" accentColor="bg-stone-900" accentLight="bg-stone-100" accentText="text-stone-700" />
-        )}
+        {mainTab === "לוח" && <BoardTab />}
 
-        {mainTab === "עוזר" && (
-          <ComingSoon icon="🧠" title="עוזר אישי"
-            description="תכנון שבועי, מעקב משימות ותזכורות חכמות — כדי שלא תפספס כלום."
-            featureKey="student-assistant" accentColor="bg-stone-900" accentLight="bg-stone-100" accentText="text-stone-700" />
-        )}
+        {mainTab === "שאלונים" && <SurveysTab />}
 
       </div>
 

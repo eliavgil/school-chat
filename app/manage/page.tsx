@@ -376,6 +376,109 @@ function ScheduleTab() {
 }
 
 // ────────────────────────────────────────────────────────────
+// Teacher: Surveys tab
+// ────────────────────────────────────────────────────────────
+interface SurveyRow {
+  id: string; title: string; url: string; classId: string | null; className: string | null
+  dueDate: string | null; createdAt: string; completedCount: number; totalStudents: number
+}
+
+function SurveysTab() {
+  const [surveys, setSurveys] = useState<SurveyRow[]>([])
+  const [classes, setClasses] = useState<{ id: string; name: string }[]>([])
+  const [loading, setLoading] = useState(true)
+  const [title, setTitle] = useState("")
+  const [url, setUrl] = useState("")
+  const [classId, setClassId] = useState("")
+  const [dueDate, setDueDate] = useState("")
+  const [saving, setSaving] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  async function load() {
+    setLoading(true)
+    const d = await fetch("/api/admin/surveys").then(r => r.json())
+    setSurveys(d.surveys ?? [])
+    setClasses(d.classes ?? [])
+    setLoading(false)
+  }
+  useEffect(() => { load() }, [])
+
+  async function add() {
+    if (!title.trim() || !url.trim()) return
+    setSaving(true)
+    await fetch("/api/admin/surveys", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: title.trim(), url: url.trim(), classId: classId || null, dueDate: dueDate || null }),
+    })
+    setTitle(""); setUrl(""); setClassId(""); setDueDate("")
+    await load()
+    setSaving(false)
+  }
+
+  async function remove(id: string) {
+    if (!confirm("למחוק שאלון זה? כל נתוני המילוי יימחקו.")) return
+    setDeletingId(id)
+    await fetch("/api/admin/surveys", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) })
+    await load()
+    setDeletingId(null)
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="bg-white/8 border border-white/10 rounded-2xl p-4 space-y-3">
+        <h3 className="text-sm font-semibold text-white">שאלון / סקר חדש</h3>
+        <input placeholder="כותרת (למשל: סקר שביעות רצון)" value={title} onChange={e => setTitle(e.target.value)}
+          className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/30" />
+        <input placeholder="קישור לגוגל פורמס" value={url} onChange={e => setUrl(e.target.value)} dir="ltr"
+          className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/30" />
+        <div className="flex gap-2 flex-wrap">
+          <select value={classId} onChange={e => setClassId(e.target.value)}
+            className="flex-1 min-w-40 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white/30">
+            <option value="">כל הכיתות</option>
+            {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}
+            className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white/30" />
+        </div>
+        <button onClick={add} disabled={saving || !title.trim() || !url.trim()}
+          className="w-full bg-white/20 hover:bg-white/30 text-white rounded-lg py-2.5 text-sm font-medium disabled:opacity-50 btn-press interactive">
+          {saving ? "שומר..." : "+ הוסף שאלון"}
+        </button>
+      </div>
+
+      {loading ? (
+        <p className="text-white/40 text-sm text-center py-8">טוען...</p>
+      ) : surveys.length === 0 ? (
+        <p className="text-white/30 text-xs text-center">אין שאלונים עדיין</p>
+      ) : (
+        <div className="space-y-2">
+          {surveys.map(s => (
+            <div key={s.id} className="bg-white/8 border border-white/10 rounded-xl px-4 py-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="text-sm font-medium text-white truncate">{s.title}</div>
+                  <div className="text-xs text-white/40 mt-0.5">{s.className ?? "כל הכיתות"}{s.dueDate ? ` · עד ${new Date(s.dueDate).toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit" })}` : ""}</div>
+                </div>
+                <button onClick={() => remove(s.id)} disabled={deletingId === s.id}
+                  className="text-xs text-red-400/70 hover:text-red-400 interactive disabled:opacity-40 flex-shrink-0">
+                  {deletingId === s.id ? "..." : "מחק"}
+                </button>
+              </div>
+              <div className="mt-2 flex items-center gap-2">
+                <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                  <div className="h-full bg-amber-400 rounded-full transition-all" style={{ width: s.totalStudents > 0 ? `${(s.completedCount / s.totalStudents) * 100}%` : "0%" }} />
+                </div>
+                <span className="text-xs text-white/50 flex-shrink-0">{s.completedCount}/{s.totalStudents}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ────────────────────────────────────────────────────────────
 // Teacher: Users tab (from admin page)
 // ────────────────────────────────────────────────────────────
 interface PendingParent  { id: string; name: string | null; email: string | null; phone: string | null; requestedChildName: string | null; parentType: string | null }
@@ -815,7 +918,7 @@ function NotifyClassButton() {
 // ────────────────────────────────────────────────────────────
 // Main page
 // ────────────────────────────────────────────────────────────
-type TeacherTab = "settings" | "import" | "users" | "roster"
+type TeacherTab = "settings" | "import" | "users" | "roster" | "surveys"
 type UserTab    = "settings" | "events" | "notes" | "design"
 
 export default function ManagePage() {
@@ -847,6 +950,7 @@ export default function ManagePage() {
     ["import",   "ייבוא נתונים"],
     ["users",    "ניהול משתמשים"],
     ["roster",   "רשימת כיתה"],
+    ["surveys",  "שאלונים"],
   ]
 
   const userTabs: [UserTab, string][] = [
@@ -917,6 +1021,7 @@ export default function ManagePage() {
         {isTeacher && teacherTab === "import"    && <ImportTab />}
         {isTeacher && teacherTab === "users"     && <UsersTab />}
         {isTeacher && teacherTab === "roster"    && <RosterTab />}
+        {isTeacher && teacherTab === "surveys"   && <SurveysTab />}
 
         {!isTeacher && userTab === "settings"   && (
           <>
