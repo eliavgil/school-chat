@@ -54,7 +54,10 @@ export async function middleware(req: NextRequest) {
   }
 
   if (studentRoutes.some((r) => pathname.startsWith(r))) {
-    if (role !== "STUDENT") {
+    // Teachers/admins can also open this in preview mode (see "גרסת תלמיד"
+    // on the teacher home) — the page itself detects the role and adjusts
+    // what it shows instead of pretending to be a real student.
+    if (role !== "STUDENT" && role !== "TEACHER" && role !== "ADMIN") {
       return NextResponse.redirect(new URL("/", req.url))
     }
   }

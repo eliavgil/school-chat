@@ -193,7 +193,7 @@ function BoardTab() {
 /* ── Surveys tab: assigned questionnaires + self-reported completion ── */
 interface SurveyT { id: string; title: string; url: string; dueDate: string | null; completed: boolean; completedAt: string | null }
 
-function SurveysTab() {
+function SurveysTab({ isPreview }: { isPreview: boolean }) {
   const [surveys, setSurveys] = useState<SurveyT[]>([])
   const [loading, setLoading] = useState(true)
   const [busyId, setBusyId] = useState<string | null>(null)
@@ -251,12 +251,18 @@ function SurveysTab() {
                   className="flex-1 text-center bg-stone-900 text-white text-xs font-bold py-2 rounded-xl hover:bg-stone-800 interactive btn-press">
                   פתח שאלון
                 </a>
-                <button onClick={() => toggle(s)} disabled={busyId === s.id}
-                  className={`flex-1 text-xs font-bold py-2 rounded-xl interactive btn-press disabled:opacity-50 ${
-                    s.completed ? "bg-stone-100 text-stone-500 hover:bg-stone-200" : "bg-green-600 text-white hover:bg-green-700"
-                  }`}>
-                  {busyId === s.id ? "..." : s.completed ? "בטל סימון" : "סימנתי שמילאתי"}
-                </button>
+                {isPreview ? (
+                  <div className="flex-1 text-center text-[11px] text-stone-400 py-2 rounded-xl bg-stone-50 border border-dashed border-stone-200 flex items-center justify-center">
+                    סימון זמין לתלמיד/ה בלבד
+                  </div>
+                ) : (
+                  <button onClick={() => toggle(s)} disabled={busyId === s.id}
+                    className={`flex-1 text-xs font-bold py-2 rounded-xl interactive btn-press disabled:opacity-50 ${
+                      s.completed ? "bg-stone-100 text-stone-500 hover:bg-stone-200" : "bg-green-600 text-white hover:bg-green-700"
+                    }`}>
+                    {busyId === s.id ? "..." : s.completed ? "בטל סימון" : "סימנתי שמילאתי"}
+                  </button>
+                )}
               </div>
             </div>
           ))}
@@ -374,12 +380,21 @@ export default function StudentPage() {
   const [personalName, setPersonalName] = useState("")
   useEffect(() => { setPersonalName(getPersonalDisplayName()) }, [])
   const firstName = personalName || (session?.user?.name?.split(" ")[0] ?? "")
+  const role = (session?.user as any)?.role as string | undefined
+  const isPreview = !!role && role !== "STUDENT"
 
   return (
     <div className="flex flex-col h-screen bg-[#faf9f6]" dir="rtl">
 
+      {/* Preview-mode banner — shown when a teacher/admin opens "גרסת תלמיד" */}
+      {isPreview && (
+        <div className="bg-amber-400 text-amber-950 text-xs font-bold px-4 py-1.5 flex items-center justify-center gap-1.5 flex-shrink-0 safe-top">
+          🎒 תצוגה מקדימה — כך התלמיד/ה רואה את האפליקציה
+        </div>
+      )}
+
       {/* Header */}
-      <header className="bg-white border-b border-stone-200 px-4 py-3 flex-shrink-0 safe-top">
+      <header className={`bg-white border-b border-stone-200 px-4 py-3 flex-shrink-0${isPreview ? "" : " safe-top"}`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 bg-orange-100 rounded-xl flex items-center justify-center">
@@ -435,7 +450,20 @@ export default function StudentPage() {
 
         {mainTab === "מידע" && (
           <>
-            {noStudent ? (
+            {isPreview ? (
+              <div className="flex-1 flex items-center justify-center p-6 text-center">
+                <div>
+                  <div className="w-14 h-14 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md">
+                    <span className="text-white text-2xl font-bold">S</span>
+                  </div>
+                  <p className="text-stone-800 font-bold">סילבר בוט</p>
+                  <p className="text-stone-500 text-sm mt-2 max-w-xs mx-auto leading-relaxed">
+                    כאן התלמיד/ה שואל/ת על ציונים, מבחנים ומערכת שעות אישית — מבוסס על הנתונים שלו/ה בפועל.
+                  </p>
+                  <p className="text-stone-400 text-xs mt-2">בתצוגה מקדימה זו לא מוצגות תשובות חיות, כדי לא להציג נתונים של תלמיד/ה אמיתי/ת.</p>
+                </div>
+              </div>
+            ) : noStudent ? (
               <div className="flex-1 flex items-center justify-center p-6 text-center">
                 <div>
                   <div className="text-4xl mb-3">🔗</div>
@@ -522,7 +550,7 @@ export default function StudentPage() {
 
         {mainTab === "לוח" && <BoardTab />}
 
-        {mainTab === "שאלונים" && <SurveysTab />}
+        {mainTab === "שאלונים" && <SurveysTab isPreview={isPreview} />}
 
       </div>
 

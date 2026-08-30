@@ -668,7 +668,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
     { label: "מורה מקצועי",       href: "/teacher/subject",        emoji: "📚", soon: false },
     { label: "ניהול שכבה",        href: "/teacher/grade-hub",      emoji: "🏫", soon: false },
     { label: "הגדרות",            href: "/manage",                 emoji: "⚙️", soon: false },
-    { label: "גרסת תלמיד",        href: "#",                       emoji: "🎒", soon: true  },
+    { label: "גרסת תלמיד",        href: "/student",                emoji: "🎒", soon: false },
   ]
 
   // Swipe handlers — distinguish horizontal (page) from vertical (scroll)

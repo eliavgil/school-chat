@@ -19,14 +19,27 @@ async function getStudentId(): Promise<{ studentId: string; classId: string } | 
 // GET — surveys assigned to the student's class (or all classes), each flagged with completed/not.
 // Completion is self-reported by the student (there's no live Google Forms integration yet),
 // so this reflects "the student says they filled it out," not a verified submission.
+// A teacher/admin previewing the student app (see "גרסת תלמיד") has no student identity of
+// their own to attach completions to — they see the default class's surveys, always unchecked.
 export async function GET() {
-  const resolved = await getStudentId()
-  if ("error" in resolved) return resolved.error
-  const { studentId, classId } = resolved
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const role = (session.user as any).role as string | undefined
+
+  let studentId: string | null = null
+  let classId: string
+  if (role === "TEACHER" || role === "ADMIN") {
+    classId = "class-y"
+  } else {
+    const resolved = await getStudentId()
+    if ("error" in resolved) return resolved.error
+    studentId = resolved.studentId
+    classId = resolved.classId
+  }
 
   const surveys = await prisma.survey.findMany({
     where: { OR: [{ classId: null }, { classId }] },
-    include: { completions: { where: { studentId }, select: { completedAt: true } } },
+    include: { completions: studentId ? { where: { studentId }, select: { completedAt: true } } : false },
     orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
   })
 
@@ -36,14 +49,15 @@ export async function GET() {
     url: s.url,
     dueDate: s.dueDate,
     createdAt: s.createdAt,
-    completed: s.completions.length > 0,
-    completedAt: s.completions[0]?.completedAt ?? null,
+    completed: studentId ? (s as any).completions.length > 0 : false,
+    completedAt: studentId ? ((s as any).completions[0]?.completedAt ?? null) : null,
   }))
 
   return NextResponse.json({
     surveys: result,
     totalCount: result.length,
     completedCount: result.filter(s => s.completed).length,
+    preview: !studentId,
   })
 }
 
