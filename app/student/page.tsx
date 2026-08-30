@@ -274,6 +274,8 @@ function SurveysTab({ isPreview }: { isPreview: boolean }) {
 
 export default function StudentPage() {
   const { data: session, status } = useSession()
+  const role = (session?.user as any)?.role as string | undefined
+  const isPreview = !!role && role !== "STUDENT"
   const router = useRouter()
   const [mainTab, setMainTab] = useState("מידע")
   const [joinCode, setJoinCode] = useState("")
@@ -369,7 +371,7 @@ export default function StudentPage() {
   }
 
   const navTabs = [
-    { label: "בית",     href: "/home", icon: <IconHome /> },
+    { label: "בית",     href: isPreview ? "/home?preview=student" : "/home", icon: <IconHome /> },
     { label: "מידע",    icon: <IconInfo /> },
     { label: "לוח",     icon: <IconCalendar /> },
     { label: "שאלונים", icon: <IconTrophy /> },
@@ -380,8 +382,6 @@ export default function StudentPage() {
   const [personalName, setPersonalName] = useState("")
   useEffect(() => { setPersonalName(getPersonalDisplayName()) }, [])
   const firstName = personalName || (session?.user?.name?.split(" ")[0] ?? "")
-  const role = (session?.user as any)?.role as string | undefined
-  const isPreview = !!role && role !== "STUDENT"
 
   return (
     <div className="flex flex-col h-screen bg-[#faf9f6]" dir="rtl">

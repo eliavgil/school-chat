@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState, useCallback, useRef } from "react"
+import { useEffect, useState, useCallback, useRef, Suspense } from "react"
 import { useSession, signOut } from "next-auth/react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import BottomNav from "@/app/components/BottomNav"
 import { NatureBackground, BG_OPTIONS } from "@/app/components/NatureBackground"
@@ -174,7 +174,7 @@ function EventsCard({ merged, editHref }: {
 // ══════════════════════════════════════════════════════════
 // STUDENT HOME — full-screen immersive
 // ══════════════════════════════════════════════════════════
-function StudentHome({ session, data }: { session: any; data: HomeData | null }) {
+function StudentHome({ session, data, isPreview }: { session: any; data: HomeData | null; isPreview?: boolean }) {
   const now = useTick()
   const router = useRouter()
   const { bgId, customUrl } = useBg("student")
@@ -248,6 +248,13 @@ function StudentHome({ session, data }: { session: any; data: HomeData | null })
       <div className="fixed inset-0" style={{ zIndex: -2 }}><NatureBackground bgId={bgId} customUrl={customUrl} /></div>
       <div className="fixed inset-0 pointer-events-none bg-gradient-to-b from-black/50 via-black/10 to-black/70" style={{ zIndex: -1 }} />
 
+      {/* Preview-mode banner — shown when a teacher/admin opens "גרסת תלמיד" */}
+      {isPreview && (
+        <div className="relative z-20 bg-amber-400 text-amber-950 text-xs font-bold px-4 py-1.5 flex items-center justify-center gap-1.5 flex-shrink-0">
+          🎒 תצוגה מקדימה — כך התלמיד/ה רואה את עמוד הבית
+        </div>
+      )}
+
       {/* ── Header ── */}
       <header className="relative z-20 flex items-center justify-between px-5 pb-2 header-pt flex-shrink-0" dir="ltr">
         <div className="flex items-center gap-3">
@@ -276,7 +283,7 @@ function StudentHome({ session, data }: { session: any; data: HomeData | null })
             </div>
             <nav className="flex-1 px-4 py-4 space-y-1">
               {[
-                { label: "עמוד הבית", href: "/home", emoji: "🏠" },
+                { label: "עמוד הבית", href: isPreview ? "/home?preview=student" : "/home", emoji: "🏠" },
                 { label: "בוט לימוד", href: "/student", emoji: "🤖" },
                 { label: "הגדרות אישיות", href: "/manage", emoji: "⚙️" },
               ].map(item => (
@@ -1403,27 +1410,40 @@ function loadCachedHomeData(): HomeData | null {
 }
 
 export default function HomePage() {
+  return (
+    <Suspense fallback={<LoadingSkeleton />}>
+      <HomePageInner />
+    </Suspense>
+  )
+}
+
+function HomePageInner() {
   const { data: session, status } = useSession()
+  const searchParams = useSearchParams()
   const [data, setData] = useState<HomeData | null>(() => {
     if (typeof window === "undefined") return null
     return loadCachedHomeData()
   })
   const role = (session?.user as any)?.role as string | undefined
+  const previewAsStudent = searchParams.get("preview") === "student" && (role === "TEACHER" || role === "ADMIN")
 
   const fetchData = useCallback(async () => {
-    const res = await fetch("/api/home")
+    const res = await fetch(previewAsStudent ? "/api/home?preview=student" : "/api/home")
     if (res.ok) {
       const json = await res.json()
       setData(json)
-      try { localStorage.setItem(HOME_CACHE_KEY, JSON.stringify(json)) } catch {}
+      // Don't cache a teacher's preview payload under the shared home-data key —
+      // it would leak into their own real teacher home on next load.
+      if (!previewAsStudent) { try { localStorage.setItem(HOME_CACHE_KEY, JSON.stringify(json)) } catch {} }
     }
-  }, [])
+  }, [previewAsStudent])
 
   useEffect(() => { if (status !== "loading") fetchData() }, [fetchData, status])
 
   // Block render until role is known — avoids flash of wrong role
   if (status === "loading" || !role) return <LoadingSkeleton />
 
+  if (previewAsStudent) return <StudentHome session={session} data={data} isPreview />
   if (role === "STUDENT") return <StudentHome session={session} data={data} />
   if (role === "TEACHER" || role === "ADMIN") return <TeacherHome session={session} data={data} />
   return <ParentHome session={session} data={data} />

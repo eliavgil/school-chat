@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db/prisma"
@@ -11,7 +11,7 @@ function nextSchoolDay(jsDay: number): number {
   return (jsDay + 1) % 7
 }
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
@@ -20,8 +20,15 @@ export async function GET() {
     select: { classId: true, role: true, studentId: true, parentStudents: { select: { studentId: true } } },
   })
 
-  const isStudent = user?.role === "STUDENT"
-  const isTeacher = user?.role === "TEACHER" || user?.role === "ADMIN"
+  // "גרסת תלמיד" preview mode: a teacher/admin looking at the student home
+  // page shape their own data would never have (no studentId of their own),
+  // so this just widens which branches of the query below run — it never
+  // grants a teacher's session more access than it already has.
+  const previewAsStudent = new URL(req.url).searchParams.get("preview") === "student"
+    && (user?.role === "TEACHER" || user?.role === "ADMIN")
+
+  const isStudent = user?.role === "STUDENT" || previewAsStudent
+  const isTeacher = (user?.role === "TEACHER" || user?.role === "ADMIN") && !previewAsStudent
   const isParent  = !isStudent && !isTeacher
 
   const parentStudentId = isParent ? (user?.parentStudents?.[0]?.studentId ?? null) : null
