@@ -76,17 +76,22 @@ const CSS = `
   .anim-across{position:absolute;bottom:50px;width:150px;height:150px;z-index:20;pointer-events:none;}
   .anim-across.once{animation:run-across 5s linear forwards;}
   .anim-across.loop{animation:run-across 6s linear infinite;}
-  .anim-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:180px;height:180px;z-index:20;pointer-events:none;}
-  .anim-big-center{position:absolute;top:70%;left:50%;transform:translate(-50%,-50%);width:240px;height:240px;z-index:20;pointer-events:none;}
+  /* Stationary positions have no z-index (unlike "across", which stays on top since it
+     passes through briefly) — they're rendered as the first child inside .slide-card, so
+     plain DOM order already puts them above the card's own background paint but below
+     the real content that follows. Negative z-index here would sit *behind* .slide-card
+     itself instead — invisible, since the card paints its own opaque background. */
+  .anim-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:180px;height:180px;pointer-events:none;}
+  .anim-big-center{position:absolute;top:70%;left:50%;transform:translate(-50%,-50%);width:240px;height:240px;pointer-events:none;}
   .brain-break-wrap{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;padding-top:36px;}
   .brain-break-title{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:40px;color:var(--ink);text-align:center;}
   .practice-item{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--line);}
   .practice-item:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
   .practice-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;color:#fff;background:var(--seal);border-radius:6px;padding:3px 9px;margin-bottom:8px;}
   .practice-text{font-size:14px;line-height:1.75;color:var(--ink);white-space:pre-line;}
-  .anim-corner-right{position:absolute;bottom:80px;right:20px;width:130px;height:130px;z-index:20;pointer-events:none;}
-  .anim-corner-left{position:absolute;bottom:80px;left:20px;width:130px;height:130px;z-index:20;pointer-events:none;}
-  .anim-top{position:absolute;top:70px;left:50%;transform:translateX(-50%);width:130px;height:130px;z-index:20;pointer-events:none;}
+  .anim-corner-right{position:absolute;bottom:80px;right:20px;width:130px;height:130px;pointer-events:none;}
+  .anim-corner-left{position:absolute;bottom:80px;left:20px;width:130px;height:130px;pointer-events:none;}
+  .anim-top{position:absolute;top:70px;left:50%;transform:translateX(-50%);width:130px;height:130px;pointer-events:none;}
   .q-num{width:22px;height:22px;border-radius:50%;background:var(--seal);color:var(--paper);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;font-family:'Frank Ruhl Libre',serif;line-height:1;margin-left:8px;}
   .slide-card.nb-page{background:#FFFCF2;padding:0;}
   .nb-head{padding:22px 22px 10px;}
@@ -413,10 +418,11 @@ function renderBody(text: string) {
   })
 }
 
-function NotebookSlide({ slide }: { slide: Slide }) {
+function NotebookSlide({ slide, animOverlay }: { slide: Slide; animOverlay?: React.ReactNode }) {
   const { eyebrow, body, questions } = slide
   return (
     <div className="slide-card nb-page">
+      {animOverlay}
       <div className="nb-head">
         <div className="nb-tab">{eyebrow || "מושגים למבחן"}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -439,16 +445,18 @@ function NotebookSlide({ slide }: { slide: Slide }) {
   )
 }
 
-function StudentSlide({ slide, sessionId, studentId }: {
+function StudentSlide({ slide, sessionId, studentId, animOverlay }: {
   slide: Slide
   sessionId: string
   studentId: string
+  animOverlay?: React.ReactNode
 }) {
   const { type, eyebrow, title, body, questions } = slide
 
-  if (type === "definitions") return <NotebookSlide slide={slide} />
+  if (type === "definitions") return <NotebookSlide slide={slide} animOverlay={animOverlay} />
   if (type === "brain-break") return (
     <div className="slide-card">
+      {animOverlay}
       <div className="brain-break-wrap"><h1 className="brain-break-title">מנוחמוח</h1></div>
       <div className="seal-stamp">{slide.order ?? "•"}</div>
     </div>
@@ -472,6 +480,7 @@ function StudentSlide({ slide, sessionId, studentId }: {
       className={`slide-card${isBackground && slide.image_url ? " has-bg" : ""}`}
       style={cardStyle}
     >
+      {animOverlay}
       {/* Image at top (default) */}
       {imageAtTop && <MediaBlock slide={{ ...slide, link_url: null, youtube_url: null }} />}
 
@@ -698,11 +707,12 @@ export default function LivePage({ params }: Props) {
         <div className="code-badge">🔴 {code}</div>
       </div>
 
-      <StudentSlide slide={slide} sessionId={sessionData.session.id} studentId={studentId} />
-
-      {animActive && slide?.animation && (
-        <AnimOverlay anim={slide.animation} lottieDivRef={lottieDivRef} />
-      )}
+      <StudentSlide
+        slide={slide}
+        sessionId={sessionData.session.id}
+        studentId={studentId}
+        animOverlay={animActive && slide?.animation ? <AnimOverlay anim={slide.animation} lottieDivRef={lottieDivRef} /> : null}
+      />
 
       {/* Progress dots */}
       <div style={{ display: "flex", justifyContent: "center", gap: 5, padding: "10px 0 16px", flexShrink: 0 }}>
