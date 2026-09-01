@@ -35,7 +35,7 @@ export async function GET() {
     date: m.createdAt.toLocaleDateString("he-IL"),
   }))
 
-  const prompt = `אתה עוזר למחנכ/ת של כיתה י2 בבית ספר כפר סילבר.
+  const prompt = `אתה עוזר למחנכ/ת כיתה.
 להלן רשימת הפניות שהגיעו בשבוע האחרון (${messages.length} פניות סה"כ):
 
 ${JSON.stringify(summary, null, 2)}

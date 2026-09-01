@@ -521,7 +521,7 @@ export default function TeacherDashboard() {
                           <div className="flex justify-start">
                             <div className="max-w-sm">
                               <div className="glass rounded-2xl rounded-tl-sm px-4 py-2">
-                                <div className="text-xs text-white/50 font-medium mb-1">✨ סילבר בוט</div>
+                                <div className="text-xs text-white/50 font-medium mb-1">✨ בוט הכיתה</div>
                                 <div className="text-sm text-white/85 whitespace-pre-wrap">{msg.botResponse}</div>
                                 <div className="flex items-center justify-between mt-2">
                                   <div className="text-xs text-white/25">

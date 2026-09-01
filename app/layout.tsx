@@ -12,13 +12,13 @@ const heebo = Heebo({
 })
 
 export const metadata: Metadata = {
-  title: "כפר סילבר",
-  description: "מערכת תקשורת בית ספרית — כיתה י4 סילבר",
+  title: "מערכת הכיתה",
+  description: "מערכת תקשורת בית ספרית",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "כפר סילבר",
+    title: "מערכת הכיתה",
   },
 }
 

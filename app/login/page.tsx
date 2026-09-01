@@ -26,7 +26,7 @@ export default function LoginPage() {
             <path d="M2 12l10 5 10-5"/>
           </svg>
         </div>
-        <span className="text-stone-800 font-semibold text-sm tracking-tight">כפר סילבר</span>
+        <span className="text-stone-800 font-semibold text-sm tracking-tight">מערכת הכיתה</span>
       </div>
 
       {/* Hero area — takes most of screen */}
@@ -35,7 +35,7 @@ export default function LoginPage() {
         {/* Pill announcement — Duna style */}
         <div className="inline-flex items-center gap-2 bg-stone-900/85 text-white text-xs rounded-full px-3.5 py-1.5 w-fit mb-8 animate-fade-in stagger-1">
           <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span>
-          כיתה י4 סילבר · שנה"ל תשפ"ו
+          כניסה עם חשבון Google של בית הספר
         </div>
 
         {/* Big editorial headline */}

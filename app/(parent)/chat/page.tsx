@@ -78,9 +78,9 @@ function SilverBotThinking() {
           <div className="absolute inset-0 rounded-xl border-2 border-stone-400 animate-ping opacity-30" />
         </div>
         <div>
-          <div className="text-stone-700 font-bold text-sm">סילבר בוט</div>
+          <div className="text-stone-700 font-bold text-sm">בוט הכיתה</div>
           <div className="text-stone-400 text-xs flex items-center gap-1">
-            סילבר בוט בודק
+            בוט הכיתה בודק
             <span className="flex gap-0.5">
               <span className="w-1 h-1 bg-stone-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
               <span className="w-1 h-1 bg-stone-400 rounded-full animate-bounce" style={{ animationDelay: "150ms" }} />
@@ -125,8 +125,8 @@ function WelcomeMessages({
         <p>שלום רב, כאן תוכלו לכתוב פניה למחנך בכל נושא.</p>
         <p className="mt-2">כלל הפניות מגיעות למחנך והוא עונה עליהן בשעות העבודה המוגדרות לו לכך.</p>
         <p className="mt-2">
-          הפניות מגיעות תחילה ל<strong>סילבר בוט</strong>, בוט ייעודי שמוזן על ידי המחנך במידע הרלוונטי עבור תלמידי הכיתה.
-          במידה וסילבר בוט משוכנע שהוא יודע לענות תשובה נכונה, הוא יענה. במידה ולא — הוא יעדכן שהמחנך יענה.
+          הפניות מגיעות תחילה ל<strong>בוט הכיתה</strong>, בוט ייעודי שמוזן על ידי המחנך במידע הרלוונטי עבור תלמידי הכיתה.
+          במידה ובוט הכיתה משוכנע שהוא יודע לענות תשובה נכונה, הוא יענה. במידה ולא — הוא יעדכן שהמחנך יענה.
         </p>
         <p className="mt-2">בכל מקרה, גם כאשר הבוט עונה, המחנך עובר על כל ההודעות.</p>
         <button onClick={onDismiss} className="mt-3 text-xs text-stone-400 underline hover:text-stone-700">
@@ -135,7 +135,7 @@ function WelcomeMessages({
       </div>
 
       <div className="bg-white border border-stone-200 rounded-2xl px-4 py-3 text-sm text-stone-700">
-        <p className="font-semibold text-stone-800 mb-2">פניות שסילבר בוט יודע לענות:</p>
+        <p className="font-semibold text-stone-800 mb-2">פניות שבוט הכיתה יודע לענות:</p>
         <ul className="space-y-3">
           {[
             { label: 'שאלות בנוגע לתאריכים ולו"ז', example: examples[0] },
@@ -394,7 +394,7 @@ export default function ParentChat() {
                 return `${firstName} · ${type}${student ? ` של ${student.name}` : ""}`
               })()}
             </div>
-            <div className="text-xs text-white/50 mt-0.5">פניות למחנך · סילבר בוט</div>
+            <div className="text-xs text-white/50 mt-0.5">פניות למחנך · בוט הכיתה</div>
           </div>
           <button onClick={() => signOut({ callbackUrl: "/login" })}
             className="text-xs text-white/50 hover:text-white interactive px-2 py-1">
@@ -427,7 +427,7 @@ export default function ParentChat() {
                   <div className="flex justify-start items-start gap-2">
                     <BotAvatar />
                     <div className="bg-stone-100 rounded-2xl rounded-tl-sm px-4 py-3 max-w-sm">
-                      <div className="text-xs font-bold text-stone-500 mb-1">סילבר בוט</div>
+                      <div className="text-xs font-bold text-stone-500 mb-1">בוט הכיתה</div>
                       <div className="text-sm whitespace-pre-wrap text-stone-800">{msg.botResponse}</div>
                       {msg.dataAsOf && (
                         <div className="text-xs text-stone-400 mt-1">
@@ -467,7 +467,7 @@ export default function ParentChat() {
             <div className="flex justify-start items-start gap-2">
               <BotAvatar />
               <div className="bg-stone-100 rounded-2xl rounded-tl-sm px-4 py-3 max-w-sm">
-                <div className="text-xs font-bold text-stone-500 mb-1">סילבר בוט</div>
+                <div className="text-xs font-bold text-stone-500 mb-1">בוט הכיתה</div>
                 <div className="text-sm text-stone-800 whitespace-pre-wrap">{streamingText}<span className="inline-block w-0.5 h-3.5 bg-stone-400 animate-pulse ml-0.5 align-middle" /></div>
               </div>
             </div>
