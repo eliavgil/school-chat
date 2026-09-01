@@ -87,9 +87,36 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   if (!await requireAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { userId, action, studentId, classId } = await req.json()
+  const { userId, action, studentId, classId, name, displayName, teacherDisplayName, schoolName, names } = await req.json()
 
-  if (action === "approve-parent") {
+  if (action === "create-class") {
+    if (!name?.trim()) return NextResponse.json({ error: "Missing name" }, { status: 400 })
+    // A handful of features (the student chat bot's schedule lookup, the quick
+    // pre-register default) still hardcode "class-y" as *the* single class,
+    // a leftover from before multi-class support existed. Give the very first
+    // class that exact id so those keep working out of the box; later classes
+    // get a normal generated id — real multi-class support (letting a teacher
+    // create several classes that all just work) needs a follow-up pass to
+    // remove those hardcodes rather than papering over it here.
+    const isFirstClass = (await prisma.class.count()) === 0
+    const cls = await prisma.class.create({
+      data: {
+        ...(isFirstClass ? { id: "class-y" } : {}),
+        name: name.trim(),
+        displayName: displayName?.trim() || name.trim(),
+        teacherDisplayName: teacherDisplayName?.trim() || "",
+        schoolName: schoolName?.trim() || "",
+      },
+    })
+    return NextResponse.json({ ok: true, class: cls })
+  } else if (action === "add-students") {
+    if (!classId) return NextResponse.json({ error: "Missing classId" }, { status: 400 })
+    const list: string[] = Array.isArray(names) ? names : []
+    const clean = list.map(n => n.trim()).filter(Boolean)
+    if (clean.length === 0) return NextResponse.json({ error: "Missing names" }, { status: 400 })
+    await prisma.student.createMany({ data: clean.map(n => ({ name: n, classId })) })
+    return NextResponse.json({ ok: true, count: clean.length })
+  } else if (action === "approve-parent") {
     await prisma.user.update({ where: { id: userId }, data: { accessStatus: "APPROVED" } })
     if (studentId) {
       await prisma.parentStudent.upsert({

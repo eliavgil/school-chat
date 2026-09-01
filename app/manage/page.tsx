@@ -745,6 +745,114 @@ function UsersTab() {
 // ────────────────────────────────────────────────────────────
 // Teacher: Roster tab (class + student management)
 // ────────────────────────────────────────────────────────────
+function NewClassForm({ onCreated }: { onCreated: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState("")
+  const [displayName, setDisplayName] = useState("")
+  const [teacherDisplayName, setTeacherDisplayName] = useState("")
+  const [schoolName, setSchoolName] = useState("")
+  const [saving, setSaving] = useState(false)
+
+  async function create() {
+    if (!name.trim()) return
+    setSaving(true)
+    await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "create-class", name, displayName, teacherDisplayName, schoolName }),
+    })
+    setName(""); setDisplayName(""); setTeacherDisplayName(""); setSchoolName("")
+    setOpen(false)
+    setSaving(false)
+    onCreated()
+  }
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)}
+        className="w-full border-2 border-dashed border-white/15 rounded-2xl py-4 text-sm text-white/40 hover:border-white/30 hover:text-white/70 interactive transition-colors">
+        + כיתה חדשה
+      </button>
+    )
+  }
+
+  return (
+    <div className="bg-white/8 border border-white/10 rounded-2xl p-4 space-y-3">
+      <h3 className="text-sm font-semibold text-white">כיתה חדשה</h3>
+      <div className="flex gap-2 flex-wrap">
+        <input placeholder="שם פנימי (למשל: י2)" value={name} onChange={e => setName(e.target.value)}
+          className="flex-1 min-w-32 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/30" />
+        <input placeholder="שם לתצוגה (למשל: י2 סילבר)" value={displayName} onChange={e => setDisplayName(e.target.value)}
+          className="flex-1 min-w-32 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/30" />
+      </div>
+      <div className="flex gap-2 flex-wrap">
+        <input placeholder="שם המחנך/ת" value={teacherDisplayName} onChange={e => setTeacherDisplayName(e.target.value)}
+          className="flex-1 min-w-32 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/30" />
+        <input placeholder="שם בית הספר" value={schoolName} onChange={e => setSchoolName(e.target.value)}
+          className="flex-1 min-w-32 bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/30" />
+      </div>
+      <div className="flex gap-2">
+        <button onClick={create} disabled={saving || !name.trim()}
+          className="flex-1 bg-white/20 hover:bg-white/30 text-white rounded-lg py-2 text-sm font-medium disabled:opacity-50 btn-press interactive">
+          {saving ? "יוצר..." : "צור כיתה"}
+        </button>
+        <button onClick={() => setOpen(false)} className="text-white/40 text-sm px-3 hover:text-white interactive">ביטול</button>
+      </div>
+    </div>
+  )
+}
+
+function AddStudentsForm({ classId, onAdded }: { classId: string; onAdded: () => void }) {
+  const [open, setOpen] = useState(false)
+  const [text, setText] = useState("")
+  const [saving, setSaving] = useState(false)
+
+  async function add() {
+    const names = text.split("\n").map(n => n.trim()).filter(Boolean)
+    if (names.length === 0) return
+    setSaving(true)
+    await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "add-students", classId, names }),
+    })
+    setText("")
+    setOpen(false)
+    setSaving(false)
+    onAdded()
+  }
+
+  if (!open) {
+    return (
+      <button onClick={() => setOpen(true)}
+        className="w-full text-xs text-white/40 hover:text-white/70 interactive px-4 py-2.5 text-center border-t border-white/5">
+        + הוסף תלמידים
+      </button>
+    )
+  }
+
+  return (
+    <div className="px-4 py-3 border-t border-white/5 space-y-2">
+      <p className="text-xs text-white/40">שם אחד בכל שורה</p>
+      <textarea
+        autoFocus
+        value={text}
+        onChange={e => setText(e.target.value)}
+        placeholder={"ישראל ישראלי\nדנה כהן\n..."}
+        rows={4}
+        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-white/30 resize-y"
+      />
+      <div className="flex gap-2">
+        <button onClick={add} disabled={saving || !text.trim()}
+          className="bg-white/20 hover:bg-white/30 text-white rounded-lg px-4 py-1.5 text-xs font-medium disabled:opacity-50 btn-press interactive">
+          {saving ? "מוסיף..." : "הוסף"}
+        </button>
+        <button onClick={() => { setOpen(false); setText("") }} className="text-white/40 text-xs px-2 hover:text-white interactive">ביטול</button>
+      </div>
+    </div>
+  )
+}
+
 function RosterTab() {
   const [roster, setRoster] = useState<ClassWithStudents[]>([])
   const [loading, setLoading] = useState(false)
@@ -772,10 +880,13 @@ function RosterTab() {
   }
 
   if (loading) return <p className="text-white/40 text-sm text-center py-8">טוען...</p>
-  if (roster.length === 0) return <p className="text-white/30 text-sm text-center py-8">אין כיתות ברשימה</p>
 
   return (
     <div className="space-y-4">
+      <NewClassForm onCreated={fetchRoster} />
+
+      {roster.length === 0 && <p className="text-white/30 text-sm text-center py-4">אין כיתות ברשימה עדיין</p>}
+
       {roster.map(cls => (
         <div key={cls.id} className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
           <div className="flex items-center justify-between px-4 py-3 bg-white/8 border-b border-white/10">
@@ -812,6 +923,7 @@ function RosterTab() {
                 ))}
               </div>
           }
+          <AddStudentsForm classId={cls.id} onAdded={fetchRoster} />
         </div>
       ))}
     </div>
