@@ -5,6 +5,7 @@ import {
   importGrades,
   importAttendance,
   importSchedule,
+  importBellSchedule,
   importCalendarRows,
 } from "@/lib/csv/importHandlers"
 
@@ -51,6 +52,9 @@ export async function POST(req: NextRequest) {
         break
       case "schedule":
         count = await importSchedule(sheets, classId)
+        break
+      case "bell-schedule":
+        count = await importBellSchedule(sheets)
         break
       default:
         return NextResponse.json({ error: `Unknown type: ${type}` }, { status: 400 })

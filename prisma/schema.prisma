@@ -248,6 +248,22 @@ model ScheduleSlot {
   @@index([classId, dayHeb])
 }
 
+// Bell schedule — school-wide period → clock-time mapping (לוח צלצולים).
+// Separate from ScheduleSlot.period (which is per-class, per-day subject content and
+// may or may not embed its own time range as raw text) — this is the canonical times,
+// shared by every class, used to show real start/end times even for schedule rows that
+// only give a bare period number.
+model BellSlot {
+  id        String @id @default(cuid())
+  period    String // "1", "2", ... — matched against the leading number in ScheduleSlot.period
+  startTime String // "08:45"
+  endTime   String // "09:30"
+  dayType   String @default("רגיל") // "רגיל" | any label for a shortened/alternate day (e.g. "שישי")
+  order     Int    @default(0)
+
+  @@index([dayType, order])
+}
+
 // Calendar events — exams, trips, events (לוח מבחנים + לוח פעילויות)
 model CalendarEvent {
   id           String   @id @default(cuid())

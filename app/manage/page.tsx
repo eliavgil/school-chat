@@ -212,23 +212,27 @@ function ScheduleNotesEditor() {
 // ────────────────────────────────────────────────────────────
 // Teacher: Import tab
 // ────────────────────────────────────────────────────────────
-const CLASS_OPTIONS = ["י1","י2","י3","י4","י5","י6","י7"]
-const CLASS_ID_MAP: Record<string, string> = {
-  "י1":"class-y1","י2":"class-y2","י3":"class-y3","י4":"class-y4",
-  "י5":"class-y5","י6":"class-y6","י7":"class-y7",
-}
-
-interface FileJob { type: string; label: string; emoji: string }
+interface FileJob { type: string; label: string; emoji: string; scope: "class" | "school" }
 const FILE_JOBS: FileJob[] = [
-  { type: "grades",    label: "ציונים שוטפים",       emoji: "📊" },
-  { type: "attendance",label: "מונה התנהגות",         emoji: "📋" },
-  { type: "schedule",  label: "מערכת שעות כיתה",     emoji: "🏫" },
-  { type: "homeroom-schedule", label: "מערכת שעות מחנך", emoji: "👩‍🏫" },
+  { type: "grades",    label: "ציונים שוטפים",       emoji: "📊", scope: "class" },
+  { type: "attendance",label: "מונה התנהגות",         emoji: "📋", scope: "class" },
+  { type: "schedule",  label: "מערכת שעות כיתה",     emoji: "🏫", scope: "class" },
+  { type: "homeroom-schedule", label: "מערכת שעות מחנך", emoji: "👩‍🏫", scope: "class" },
+  { type: "bell-schedule", label: "לוח צלצולים",     emoji: "🔔", scope: "school" },
 ]
 
 function ImportTab() {
-  const [classLabel, setClassLabel] = useState("י1")
-  const classId = CLASS_ID_MAP[classLabel] ?? "class-y1"
+  const [classes, setClasses] = useState<{ id: string; name: string }[]>([])
+  const [classId, setClassId] = useState("")
+
+  useEffect(() => {
+    fetch("/api/admin/users").then(r => r.json()).then(d => {
+      const roster = (d.roster ?? []) as { id: string; name: string; displayName: string }[]
+      const opts = roster.map(c => ({ id: c.id, name: c.displayName || c.name }))
+      setClasses(opts)
+      setClassId(prev => prev || opts[0]?.id || "")
+    }).catch(() => {})
+  }, [])
 
   const [mainLoading, setMainLoading] = useState(false)
   const [mainResult,  setMainResult]  = useState<{ ok: boolean; text: string } | null>(null)
@@ -260,7 +264,7 @@ function ImportTab() {
     try {
       const fd = new FormData()
       fd.append("type", job.type === "homeroom-schedule" ? "schedule" : job.type)
-      fd.append("classId", classId)
+      if (job.scope === "class") fd.append("classId", classId)
       fd.append("file", file)
       const d = await fetch("/api/admin/import", { method: "POST", body: fd }).then(r => r.json())
       setFileResults(r => ({ ...r, [job.type]: d.ok ? `✓ ${d.count} רשומות` : `✗ ${d.error}` }))
@@ -276,13 +280,17 @@ function ImportTab() {
         ייבוא נתונים משפיע על <strong>כל המשתמשים</strong>
       </div>
 
-      {/* Class selector */}
+      {/* Class selector — used only for class-scoped imports below */}
       <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-xl px-4 py-3">
         <label className="text-sm text-white/60 flex-shrink-0">כיתה:</label>
-        <select value={classLabel} onChange={e => setClassLabel(e.target.value)}
-          className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white/30">
-          {CLASS_OPTIONS.map(c => <option key={c} value={c}>{c}</option>)}
-        </select>
+        {classes.length === 0 ? (
+          <span className="text-white/30 text-xs">אין כיתות עדיין — צור כיתה בלשונית "כיתה"</span>
+        ) : (
+          <select value={classId} onChange={e => setClassId(e.target.value)}
+            className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white/30">
+            {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        )}
       </div>
 
       {/* ── Main sync button ── */}
@@ -320,13 +328,13 @@ function ImportTab() {
                 </span>
               )}
             </div>
-            <label className="cursor-pointer block">
+            <label className={`block ${job.scope === "class" && !classId ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}>
               <div className="border-2 border-dashed border-white/15 rounded-xl py-3 text-center hover:border-white/30 transition-colors">
                 {fileLoading[job.type]
                   ? <span className="text-white/50 text-sm">מייבא...</span>
                   : <><span className="text-white/50 text-sm">בחר קובץ </span><span className="text-white/70 text-xs">.xlsx</span></>}
               </div>
-              <input type="file" accept=".xlsx,.xls" className="hidden" disabled={fileLoading[job.type]}
+              <input type="file" accept=".xlsx,.xls" className="hidden" disabled={fileLoading[job.type] || (job.scope === "class" && !classId)}
                 onChange={e => { const f = e.target.files?.[0]; if (f) { runFileImport(job, f); e.target.value = "" } }} />
             </label>
           </div>

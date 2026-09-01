@@ -26,12 +26,12 @@ export const SCHOOL_VACATIONS: Vacation[] = [
   { name: "פסח",          start: "2027-03-22", end: "2027-03-31" },
   { name: "יום העצמאות",  start: "2027-04-22", end: "2027-04-23" },
   { name: "שבועות",       start: "2027-06-11", end: "2027-06-14" },
-  { name: "חופש גדול",    start: "2027-06-25", end: "2028-09-01" },
+  { name: "חופש גדול",    start: "2027-06-20", end: "2028-09-01" },
 ]
 
 // Start of current school year (used for remaining-days baseline)
 export const SCHOOL_YEAR_START = new Date("2026-09-01T00:00:00")
-export const SUMMER_START      = new Date("2027-06-25T00:00:00")
+export const SUMMER_START      = new Date("2027-06-20T00:00:00")
 
 function dateStr(d: Date): string { return d.toISOString().slice(0, 10) }
 
@@ -40,7 +40,7 @@ export function isVacationDay(date: Date): boolean {
   return SCHOOL_VACATIONS.some(v => ds >= v.start && ds < v.end)
 }
 
-export function isWeekend(date: Date): boolean { return date.getDay() === 6 }
+export function isWeekend(date: Date): boolean { return date.getDay() === 5 || date.getDay() === 6 }
 
 export function isSchoolDay(date: Date): boolean {
   return !isWeekend(date) && !isVacationDay(date)

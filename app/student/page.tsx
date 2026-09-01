@@ -49,6 +49,7 @@ const HEB_DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמיש�
 
 interface ScheduleSlotT { id: string; dayHeb: string; period: string; content: string }
 interface EventT { id: string; date: string; description: string; type: string | null; note: string | null }
+interface BellSlotT { id: string; period: string; startTime: string; endTime: string; dayType: string; order: number }
 
 function parsePeriod(period: string): { num: number; start?: string; end?: string } {
   const [numPart, timePart] = period.split(",").map(s => s.trim())
@@ -102,26 +103,39 @@ function CountdownCard({ emoji, label, event }: { emoji: string; label: string; 
 function BoardTab() {
   const [slots, setSlots] = useState<ScheduleSlotT[]>([])
   const [events, setEvents] = useState<EventT[]>([])
+  const [bellSlots, setBellSlots] = useState<BellSlotT[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([
       fetch("/api/student/schedule").then(r => r.ok ? r.json() : { slots: [] }).catch(() => ({ slots: [] })),
       fetch("/api/student/events").then(r => r.ok ? r.json() : { events: [] }).catch(() => ({ events: [] })),
-    ]).then(([sc, ev]) => {
+      fetch("/api/student/bell-schedule").then(r => r.ok ? r.json() : { slots: [] }).catch(() => ({ slots: [] })),
+    ]).then(([sc, ev, bell]) => {
       setSlots(sc.slots ?? [])
       setEvents(ev.events ?? [])
+      setBellSlots(bell.slots ?? [])
       setLoading(false)
     })
   }, [])
 
   const todayIdx = new Date().getDay() // 0=Sunday .. 6=Saturday
   const todayHeb = HEB_DAYS[todayIdx] // undefined on Saturday — no school
+
+  // Canonical period → clock-time lookup, for schedule rows that only give a bare
+  // period number and rely on the school-wide bell schedule for actual times.
+  const bellByPeriod = new Map(
+    bellSlots.filter(b => b.dayType === "רגיל").map(b => [b.period, { start: b.startTime, end: b.endTime }])
+  )
   const nowMin = new Date().getHours() * 60 + new Date().getMinutes()
 
   const todaySlots = slots
     .filter(s => s.dayHeb === todayHeb)
-    .map(s => ({ ...s, ...parsePeriod(s.period) }))
+    .map(s => {
+      const parsed = parsePeriod(s.period)
+      const bell = bellByPeriod.get(String(parsed.num))
+      return { ...s, ...parsed, start: parsed.start ?? bell?.start, end: parsed.end ?? bell?.end }
+    })
     .sort((a, b) => a.num - b.num)
 
   // First slot that hasn't ended yet — the one to highlight as "next up".
