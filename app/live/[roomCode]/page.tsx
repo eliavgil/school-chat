@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState, use, useRef } from "react"
+import { useEffect, useLayoutEffect, useState, use, useRef } from "react"
 import { useSession, signIn } from "next-auth/react"
 import { browserClient } from "@/lib/lessons/supabase"
 import type { Lesson, Slide, LiveSession, SlideQuestion, SlideAnimation } from "@/lib/lessons/types"
@@ -22,10 +22,10 @@ const CSS = `
   .slide-card.has-bg::before{content:'';position:absolute;inset:0;border-radius:20px;background:rgba(245,241,230,0.88);}
   .slide-card.has-bg>*{position:relative;z-index:1;}
   .eyebrow{font-size:11px;letter-spacing:2.5px;color:var(--seal);font-weight:700;margin-bottom:5px;text-transform:uppercase;}
-  h1.stitle{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:22px;color:var(--ink);margin:0 0 14px;line-height:1.25;border-bottom:2px solid var(--line);padding-bottom:12px;}
-  .body-text{font-size:14px;line-height:1.75;color:var(--ink);}
+  h1.stitle{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:24px;color:var(--ink);margin:0 0 14px;line-height:1.3;border-bottom:2px solid var(--line);padding-bottom:12px;}
+  .body-text{font-size:16px;line-height:1.75;color:var(--ink);}
   .seal-stamp{position:absolute;left:16px;bottom:16px;width:52px;height:52px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#7E2E24,var(--seal) 70%);color:var(--paper);display:flex;align-items:center;justify-content:center;font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:18px;box-shadow:0 3px 10px rgba(0,0,0,0.25);}
-  .poll-opt{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border:1.5px solid var(--ink);border-radius:10px;cursor:pointer;background:#fff;font-weight:600;font-size:14px;margin-bottom:10px;transition:.15s;}
+  .poll-opt{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border:1.5px solid var(--ink);border-radius:10px;cursor:pointer;background:#fff;font-weight:600;font-size:16px;margin-bottom:10px;transition:.15s;}
   .poll-opt:hover{background:var(--paper2);}
   .poll-opt.selected{background:var(--ink);color:var(--paper);border-color:var(--ink);}
   .poll-opt.correct{background:rgba(63,107,79,.15);border-color:var(--ok);color:var(--ok);}
@@ -43,12 +43,12 @@ const CSS = `
   .concept-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px;}
   .concept-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 12px;text-align:center;}
   .concept-card .concept-icon-circle{margin:0 auto 8px;}
-  .concept-card h3{font-family:'Frank Ruhl Libre',serif;color:var(--ink);margin:0 0 4px;font-size:14px;}
-  .concept-card p{margin:0;font-size:12px;line-height:1.45;color:#4a4a45;}
+  .concept-card h3{font-family:'Frank Ruhl Libre',serif;color:var(--ink);margin:0 0 4px;font-size:15px;}
+  .concept-card p{margin:0;font-size:13px;line-height:1.5;color:#4a4a45;}
   .concept-list{display:flex;flex-direction:column;gap:14px;margin-top:16px;}
   .concept-list-item{display:flex;align-items:flex-start;gap:12px;}
-  .concept-list-item h3{font-family:'Frank Ruhl Libre',serif;color:var(--ink);margin:0 0 2px;font-size:14px;}
-  .concept-list-item p{margin:0;font-size:13px;line-height:1.5;color:#4a4a45;}
+  .concept-list-item h3{font-family:'Frank Ruhl Libre',serif;color:var(--ink);margin:0 0 2px;font-size:15px;}
+  .concept-list-item p{margin:0;font-size:14px;line-height:1.55;color:#4a4a45;}
   .timeline-wrap{position:relative;margin-top:30px;overflow-x:auto;padding-bottom:4px;}
   .timeline-track{position:relative;display:flex;min-height:280px;min-width:min-content;}
   .timeline-line{position:absolute;top:50%;left:0;right:0;height:2px;background:var(--ink);opacity:.28;transform:translateY(-50%);}
@@ -88,7 +88,7 @@ const CSS = `
   .practice-item{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--line);}
   .practice-item:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
   .practice-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;color:#fff;background:var(--seal);border-radius:6px;padding:3px 9px;margin-bottom:8px;}
-  .practice-text{font-size:14px;line-height:1.75;color:var(--ink);white-space:pre-line;}
+  .practice-text{font-size:16px;line-height:1.75;color:var(--ink);white-space:pre-line;}
   .anim-corner-right{position:absolute;bottom:80px;right:20px;width:130px;height:130px;pointer-events:none;}
   .anim-corner-left{position:absolute;bottom:80px;left:20px;width:130px;height:130px;pointer-events:none;}
   .anim-top{position:absolute;top:70px;left:50%;transform:translateX(-50%);width:130px;height:130px;pointer-events:none;}
@@ -96,14 +96,14 @@ const CSS = `
   .slide-card.nb-page{background:#FFFCF2;padding:0;}
   .nb-head{padding:22px 22px 10px;}
   .nb-tab{display:inline-block;background:var(--seal);color:#fff;font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;padding:4px 12px;border-radius:0 0 7px 7px;margin-bottom:12px;}
-  .nb-title{display:inline;font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:22px;color:var(--ink);margin:0;line-height:1.35;background:linear-gradient(transparent 62%,rgba(176,141,63,0.4) 62%);}
-  .nb-rules{padding:30px 22px 90px;background-image:repeating-linear-gradient(transparent 0px,transparent 29px,rgba(70,110,190,0.32) 29px,rgba(70,110,190,0.32) 30px);}
-  .nb-entry{margin-bottom:30px;}
+  .nb-title{display:inline;font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:24px;color:var(--ink);margin:0;line-height:1.35;background:linear-gradient(transparent 62%,rgba(176,141,63,0.4) 62%);}
+  .nb-rules{--nb-size:20px;--nb-line-h:32px;padding:30px 22px 90px;background-image:repeating-linear-gradient(transparent 0px,transparent calc(var(--nb-line-h) - 1px),rgba(70,110,190,0.32) calc(var(--nb-line-h) - 1px),rgba(70,110,190,0.32) var(--nb-line-h));}
+  .nb-entry{margin-bottom:var(--nb-line-h);}
   .nb-entry:last-child{margin-bottom:0;}
-  .nb-line{margin:0;font-size:17px;line-height:30px;}
+  .nb-line{margin:0;font-size:var(--nb-size);line-height:var(--nb-line-h);}
   .nb-term{font-family:'Frank Ruhl Libre',serif;font-weight:900;color:var(--seal);}
   .nb-def{font-family:'Heebo',sans-serif;font-weight:500;color:var(--ink);}
-  .nb-freetext .body-text{font-size:17px!important;line-height:30px!important;margin:0 0 30px 0!important;color:var(--ink);}
+  .nb-freetext .body-text{font-size:var(--nb-size)!important;line-height:var(--nb-line-h)!important;margin:0 0 var(--nb-line-h) 0!important;color:var(--ink);}
   .nb-freetext strong{color:var(--seal);font-weight:900;}
 `
 
@@ -266,7 +266,7 @@ function QuestionBlock({ question, sessionId, slideId, studentId, type, question
       <div style={{ marginBottom: 20 }}>
         <div style={{ display: "flex", alignItems: "center", marginBottom: 8 }}>
           <span className="q-num">{questionIndex + 1}</span>
-          <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 14 }}>{question.text}</div>
+          <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 16 }}>{question.text}</div>
         </div>
         <div className="star-row">
           {[1, 2, 3, 4, 5].map(s => (
@@ -286,7 +286,7 @@ function QuestionBlock({ question, sessionId, slideId, studentId, type, question
       {question.text && (
         <div style={{ display: "flex", alignItems: "flex-start", marginBottom: 10 }}>
           <span className="q-num">{questionIndex + 1}</span>
-          <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 14, lineHeight: 1.4 }}>{question.text}</div>
+          <div style={{ fontWeight: 700, color: "var(--ink)", fontSize: 16, lineHeight: 1.45 }}>{question.text}</div>
         </div>
       )}
       {question.options.map((opt, oi) => {
@@ -401,7 +401,7 @@ function renderBody(text: string) {
     }
 
     if (trimmed.startsWith("> ")) {
-      return <blockquote key={pi} style={{ borderRight: "3px solid var(--seal)", paddingRight: 12, margin: "8px 0", color: "var(--seal)", fontWeight: 600, fontSize: 13 }}>{renderInline(trimmed.slice(2))}</blockquote>
+      return <blockquote key={pi} style={{ borderRight: "3px solid var(--seal)", paddingRight: 12, margin: "8px 0", color: "var(--seal)", fontWeight: 600, fontSize: 14 }}>{renderInline(trimmed.slice(2))}</blockquote>
     }
 
     const lines = para.split("\n")
@@ -418,19 +418,48 @@ function renderBody(text: string) {
   })
 }
 
+// Largest-first: try to fit the notebook text as big as possible before shrinking —
+// scrolling mid-lesson is disruptive for the teacher, so a definitions slide with a
+// lot of terms should shrink to fit the visible card rather than require a scroll.
+const NB_SIZE_STEPS: [size: number, lineH: number][] = [
+  [20, 32], [19, 30], [18, 29], [17, 27], [16, 26], [15, 25],
+]
+
 function NotebookSlide({ slide, animOverlay }: { slide: Slide; animOverlay?: React.ReactNode }) {
   const { eyebrow, body, questions } = slide
+  const cardRef = useRef<HTMLDivElement>(null)
+  const headRef = useRef<HTMLDivElement>(null)
+  const rulesRef = useRef<HTMLDivElement>(null)
+
+  useLayoutEffect(() => {
+    const card = cardRef.current, head = headRef.current, rules = rulesRef.current
+    if (!card || !head || !rules) return
+
+    const fit = () => {
+      const available = card.clientHeight - head.offsetHeight
+      for (const [size, lineH] of NB_SIZE_STEPS) {
+        rules.style.setProperty("--nb-size", `${size}px`)
+        rules.style.setProperty("--nb-line-h", `${lineH}px`)
+        if (rules.scrollHeight <= available) break
+      }
+    }
+    fit()
+    const ro = new ResizeObserver(fit)
+    ro.observe(card)
+    return () => ro.disconnect()
+  }, [slide.id, body, questions])
+
   return (
-    <div className="slide-card nb-page">
+    <div className="slide-card nb-page" ref={cardRef}>
       {animOverlay}
-      <div className="nb-head">
+      <div className="nb-head" ref={headRef}>
         <div className="nb-tab">{eyebrow || "מושגים למבחן"}</div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <NotebookPen size={20} strokeWidth={2.2} color="var(--seal)" />
           <h1 className="nb-title">להעתיק למחברת!</h1>
         </div>
       </div>
-      <div className="nb-rules">
+      <div className="nb-rules" ref={rulesRef}>
         {questions
           ? questions.map(q => (
               <div key={q.id} className="nb-entry">
@@ -507,7 +536,7 @@ function StudentSlide({ slide, sessionId, studentId, animOverlay }: {
       {type === "homework" && questions?.map((q, i) => (
         <div key={q.id} className="task-item">
           <div className="task-num">{i + 1}</div>
-          <div style={{ fontSize: 14, lineHeight: 1.6, color: "var(--ink)" }}>{q.text}</div>
+          <div style={{ fontSize: 16, lineHeight: 1.6, color: "var(--ink)" }}>{q.text}</div>
         </div>
       ))}
 
@@ -515,8 +544,8 @@ function StudentSlide({ slide, sessionId, studentId, animOverlay }: {
       {type === "enrichment" && questions?.map(q => (
         <div key={q.id} className="enrich-card">
           <span className="rtag">{q.feedback ?? "העשרה"}</span>
-          <div style={{ fontFamily: "'Frank Ruhl Libre',serif", fontWeight: 700, color: "var(--ink)", fontSize: 15, marginBottom: 4 }}>{q.text}</div>
-          <div style={{ fontSize: 13, lineHeight: 1.55, color: "#4a4a45" }}>{q.options[0] ?? ""}</div>
+          <div style={{ fontFamily: "'Frank Ruhl Libre',serif", fontWeight: 700, color: "var(--ink)", fontSize: 16, marginBottom: 4 }}>{q.text}</div>
+          <div style={{ fontSize: 14, lineHeight: 1.55, color: "#4a4a45" }}>{q.options[0] ?? ""}</div>
         </div>
       ))}
 
@@ -530,7 +559,7 @@ function StudentSlide({ slide, sessionId, studentId, animOverlay }: {
               {q.options.filter(Boolean).length > 0 && (
                 <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 5 }}>
                   {q.options.filter(Boolean).map((opt, oi) => (
-                    <div key={oi} style={{ fontSize: 13, color: "var(--ink)" }}>
+                    <div key={oi} style={{ fontSize: 15, color: "var(--ink)" }}>
                       <strong>{["א", "ב", "ג", "ד", "ה"][oi] ?? oi + 1}.</strong> {opt}
                     </div>
                   ))}
