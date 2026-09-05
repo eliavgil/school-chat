@@ -94,16 +94,16 @@ const CSS = `
   .anim-top{position:absolute;top:70px;left:50%;transform:translateX(-50%);width:130px;height:130px;pointer-events:none;}
   .q-num{width:22px;height:22px;border-radius:50%;background:var(--seal);color:var(--paper);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;font-family:'Frank Ruhl Libre',serif;line-height:1;margin-left:8px;}
   .slide-card.nb-page{background:#FFFCF2;padding:0;}
-  .nb-head{padding:22px 22px 10px;}
-  .nb-tab{display:inline-block;background:var(--seal);color:#fff;font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;padding:4px 12px;border-radius:0 0 7px 7px;margin-bottom:12px;}
+  .nb-head{padding:18px 22px 6px;}
+  .nb-tab{display:inline-block;background:var(--seal);color:#fff;font-size:10px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;padding:4px 12px;border-radius:0 0 7px 7px;margin-bottom:8px;}
   .nb-title{display:inline;font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:24px;color:var(--ink);margin:0;line-height:1.35;background:linear-gradient(transparent 62%,rgba(176,141,63,0.4) 62%);}
-  .nb-rules{--nb-size:20px;--nb-line-h:32px;padding:30px 22px 90px;background-image:repeating-linear-gradient(transparent 0px,transparent calc(var(--nb-line-h) - 1px),rgba(70,110,190,0.32) calc(var(--nb-line-h) - 1px),rgba(70,110,190,0.32) var(--nb-line-h));}
-  .nb-entry{margin-bottom:var(--nb-line-h);}
+  .nb-rules{--nb-size:20px;--nb-line-h:32px;padding:20px 22px 55px;background-image:repeating-linear-gradient(transparent 0px,transparent calc(var(--nb-line-h) - 1px),rgba(70,110,190,0.32) calc(var(--nb-line-h) - 1px),rgba(70,110,190,0.32) var(--nb-line-h));}
+  .nb-entry{margin-bottom:calc(var(--nb-line-h) * 0.55);}
   .nb-entry:last-child{margin-bottom:0;}
   .nb-line{margin:0;font-size:var(--nb-size);line-height:var(--nb-line-h);}
   .nb-term{font-family:'Frank Ruhl Libre',serif;font-weight:900;color:var(--seal);}
   .nb-def{font-family:'Heebo',sans-serif;font-weight:500;color:var(--ink);}
-  .nb-freetext .body-text{font-size:var(--nb-size)!important;line-height:var(--nb-line-h)!important;margin:0 0 var(--nb-line-h) 0!important;color:var(--ink);}
+  .nb-freetext .body-text{font-size:var(--nb-size)!important;line-height:var(--nb-line-h)!important;margin:0 0 calc(var(--nb-line-h) * 0.55) 0!important;color:var(--ink);}
   .nb-freetext strong{color:var(--seal);font-weight:900;}
 `
 
