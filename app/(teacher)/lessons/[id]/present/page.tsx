@@ -44,14 +44,14 @@ const CSS = `
   .slide-inner.nb-page{background:#FFFCF2;padding:0;}
   .nb-head{padding:26px 34px 14px;}
   .nb-tab{display:inline-block;background:var(--seal);color:#fff;font-size:11px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase;padding:5px 14px;border-radius:0 0 8px 8px;margin-bottom:16px;}
-  .nb-title{display:inline;font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:34px;color:var(--ink);margin:0;line-height:1.3;background:linear-gradient(transparent 62%,rgba(176,141,63,0.4) 62%);}
-  .nb-rules{padding:42px 34px 26px;background-image:repeating-linear-gradient(transparent 0px,transparent 41px,rgba(70,110,190,0.32) 41px,rgba(70,110,190,0.32) 42px);}
-  .nb-entry{margin-bottom:42px;}
+  .nb-title{display:inline;font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:36px;color:var(--ink);margin:0;line-height:1.3;background:linear-gradient(transparent 62%,rgba(176,141,63,0.4) 62%);}
+  .nb-rules{padding:34px 34px 26px;background-image:repeating-linear-gradient(transparent 0px,transparent 47px,rgba(70,110,190,0.32) 47px,rgba(70,110,190,0.32) 48px);}
+  .nb-entry{margin-bottom:26px;}
   .nb-entry:last-child{margin-bottom:0;}
-  .nb-line{margin:0;font-size:22px;line-height:42px;}
+  .nb-line{margin:0;font-size:28px;line-height:48px;}
   .nb-term{font-family:'Frank Ruhl Libre',serif;font-weight:900;color:var(--seal);}
   .nb-def{font-family:'Heebo',sans-serif;font-weight:500;color:var(--ink);}
-  .nb-freetext .lead{font-size:22px!important;line-height:42px!important;margin:0 0 42px 0!important;color:var(--ink);}
+  .nb-freetext .lead{font-size:28px!important;line-height:48px!important;margin:0 0 26px 0!important;color:var(--ink);}
   .nb-freetext strong{color:var(--seal);font-weight:900;}
   .qz{margin-bottom:12px;padding:14px 16px;background:#fff;border:1px solid var(--line);border-radius:10px;}
   .qz .qtext{font-weight:700;color:var(--ink);margin-bottom:8px;font-size:14px;}
@@ -131,11 +131,11 @@ const CSS = `
     .timeline-event{font-size:10.5px;}
     .slide-inner.nb-page{padding:0;}
     .nb-head{padding:20px 20px 10px;}
-    .nb-title{font-size:24px;}
-    .nb-rules{padding:34px 20px 20px;background-image:repeating-linear-gradient(transparent 0px,transparent 33px,rgba(70,110,190,0.32) 33px,rgba(70,110,190,0.32) 34px);}
-    .nb-entry{margin-bottom:34px;}
-    .nb-line{font-size:17px;line-height:34px;}
-    .nb-freetext .lead{font-size:17px!important;line-height:34px!important;margin:0 0 34px 0!important;}
+    .nb-title{font-size:26px;}
+    .nb-rules{padding:26px 20px 20px;background-image:repeating-linear-gradient(transparent 0px,transparent 37px,rgba(70,110,190,0.32) 37px,rgba(70,110,190,0.32) 38px);}
+    .nb-entry{margin-bottom:21px;}
+    .nb-line{font-size:19px;line-height:38px;}
+    .nb-freetext .lead{font-size:19px!important;line-height:38px!important;margin:0 0 21px 0!important;}
     .topbar{padding:10px 12px;}
     @keyframes run-across{from{left:110%}to{left:-60%}}
     .anim-across{width:150px;height:150px;bottom:50px;}
