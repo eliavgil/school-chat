@@ -1,5 +1,16 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getToken } from "next-auth/jwt"
+import { prisma } from "@/lib/db/prisma"
+
+// Middleware runs on every request, but the JWT cookie it reads is only
+// re-signed by NextAuth's own callback pipeline (sign-in, or a client-side
+// session refresh) — a teacher approving a student in /manage updates the
+// database immediately, but that student's *existing* JWT keeps saying
+// PENDING until something happens to refresh it, so they kept landing back
+// on /pending ("approved but can't get in") with no logout/login to force
+// it. Re-checking the DB here, only for the PENDING/DENIED case, closes
+// that gap without adding a DB round-trip to every already-approved request.
+export const runtime = "nodejs"
 
 const PUBLIC_PATHS = ["/login", "/api/auth"]
 
@@ -15,8 +26,19 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/login", req.url))
   }
 
-  const role = token.role as string
-  const accessStatus = token.accessStatus as string
+  let role = token.role as string
+  let accessStatus = token.accessStatus as string
+
+  if ((accessStatus === "PENDING" || accessStatus === "DENIED") && token.sub) {
+    const fresh = await prisma.user.findUnique({
+      where: { id: token.sub },
+      select: { role: true, accessStatus: true },
+    }).catch(() => null)
+    if (fresh) {
+      role = fresh.role
+      accessStatus = fresh.accessStatus
+    }
+  }
 
   // --- Already logged in, trying to access login ---
   if (pathname.startsWith("/login")) {
