@@ -23,8 +23,8 @@ const CSS = `
   .stage{flex:1;position:relative;overflow:hidden;}
   .slide-inner{position:absolute;inset:0;padding:40px 64px 90px 64px;overflow-y:auto;}
   .eyebrow{font-size:12px;letter-spacing:2.5px;color:var(--seal);font-weight:700;margin-bottom:6px;text-transform:uppercase;}
-  h1.stitle{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:38px;color:var(--ink);margin:0 0 18px;line-height:1.2;border-bottom:2px solid var(--line);padding-bottom:14px;}
-  .lead{font-size:16px;line-height:1.85;color:var(--ink);}
+  h1.stitle{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:44px;color:var(--ink);margin:0 0 18px;line-height:1.2;border-bottom:2px solid var(--line);padding-bottom:14px;}
+  .lead{font-size:20px;line-height:1.75;color:var(--ink);}
   .seal-stamp{position:absolute;left:28px;bottom:28px;width:64px;height:64px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#7E2E24,var(--seal) 70%);color:var(--paper);display:flex;align-items:center;justify-content:center;font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:22px;box-shadow:0 4px 14px rgba(0,0,0,0.25),inset 0 0 0 2px rgba(245,241,230,0.35);z-index:5;}
   .navbtns{position:absolute;bottom:24px;right:28px;display:flex;gap:10px;z-index:6;}
   .navbtn{width:46px;height:46px;border-radius:50%;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;}
@@ -34,9 +34,9 @@ const CSS = `
   .doodle{width:48px;height:48px;border:2px dashed var(--seal);border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:10px;background:#fff;}
   .doodle svg{width:24px;height:24px;stroke:var(--seal);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;}
   .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:16px 18px;}
-  .card h3{font-family:'Frank Ruhl Libre',serif;color:var(--ink);margin:0 0 6px;font-size:16px;}
-  .card p{margin:0;font-size:14px;line-height:1.6;color:#4a4a45;}
-  .qbox{margin-top:20px;background:var(--ink);color:var(--paper);border-radius:12px;padding:18px 22px;font-family:'Frank Ruhl Libre',serif;font-size:17px;}
+  .card h3{font-family:'Frank Ruhl Libre',serif;color:var(--ink);margin:0 0 6px;font-size:19px;}
+  .card p{margin:0;font-size:16px;line-height:1.6;color:#4a4a45;}
+  .qbox{margin-top:20px;background:var(--ink);color:var(--paper);border-radius:12px;padding:18px 22px;font-family:'Frank Ruhl Libre',serif;font-size:20px;}
   .bar-row{margin-bottom:10px;}
   .bar-label{display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px;color:var(--ink);font-weight:600;}
   .bar-bg{height:12px;background:var(--paper2);border-radius:6px;overflow:hidden;}
@@ -66,12 +66,12 @@ const CSS = `
   .concept-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-top:18px;}
   .concept-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px 16px;text-align:center;}
   .concept-card .concept-icon-circle{margin:0 auto 12px;}
-  .concept-card h3{font-family:'Frank Ruhl Libre',serif;color:var(--ink);margin:0 0 5px;font-size:16px;}
-  .concept-card p{margin:0;font-size:13px;line-height:1.5;color:#4a4a45;}
+  .concept-card h3{font-family:'Frank Ruhl Libre',serif;color:var(--ink);margin:0 0 5px;font-size:19px;}
+  .concept-card p{margin:0;font-size:16px;line-height:1.5;color:#4a4a45;}
   .concept-list{display:flex;flex-direction:column;gap:16px;margin-top:20px;max-width:640px;}
   .concept-list-item{display:flex;align-items:flex-start;gap:14px;}
-  .concept-list-item h3{font-family:'Frank Ruhl Libre',serif;color:var(--ink);margin:0 0 3px;font-size:16px;}
-  .concept-list-item p{margin:0;font-size:14px;line-height:1.55;color:#4a4a45;}
+  .concept-list-item h3{font-family:'Frank Ruhl Libre',serif;color:var(--ink);margin:0 0 3px;font-size:19px;}
+  .concept-list-item p{margin:0;font-size:17px;line-height:1.55;color:#4a4a45;}
   .timeline-wrap{position:relative;margin-top:40px;overflow-x:auto;padding-bottom:4px;}
   .timeline-track{position:relative;display:flex;min-height:360px;min-width:min-content;}
   .timeline-line{position:absolute;top:50%;left:0;right:0;height:2px;background:var(--ink);opacity:.28;transform:translateY(-50%);}
@@ -83,14 +83,14 @@ const CSS = `
   .timeline-card{position:absolute;left:50%;transform:translateX(-50%);width:132px;text-align:center;background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 10px;}
   .timeline-card.above{bottom:calc(50% + 24px);}
   .timeline-card.below{top:calc(50% + 24px);}
-  .timeline-year{font-family:'Frank Ruhl Libre',serif;font-weight:800;color:var(--seal);font-size:14px;margin:0 0 3px;direction:ltr;unicode-bidi:isolate;}
-  .timeline-event{margin:0;font-size:11.5px;line-height:1.4;color:#4a4a45;}
+  .timeline-year{font-family:'Frank Ruhl Libre',serif;font-weight:800;color:var(--seal);font-size:16px;margin:0 0 3px;direction:ltr;unicode-bidi:isolate;}
+  .timeline-event{margin:0;font-size:13px;line-height:1.4;color:#4a4a45;}
   .brain-break-wrap{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;padding-top:64px;}
   .brain-break-title{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:72px;color:var(--ink);text-align:center;}
   .practice-item{margin-bottom:26px;padding-bottom:26px;border-bottom:1px solid var(--line);}
   .practice-item:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
   .practice-tag{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.5px;color:#fff;background:var(--seal);border-radius:6px;padding:3px 10px;margin-bottom:10px;}
-  .practice-text{font-size:15px;line-height:1.8;color:var(--ink);white-space:pre-line;}
+  .practice-text{font-size:19px;line-height:1.7;color:var(--ink);white-space:pre-line;}
   .sidebar-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:40;backdrop-filter:blur(2px);}
   .sidebar{position:fixed;top:0;right:0;bottom:0;width:280px;background:var(--ink);border-left:1px solid rgba(176,141,63,0.25);z-index:41;display:flex;flex-direction:column;box-shadow:-8px 0 32px rgba(0,0,0,0.4);}
   .sidebar-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid rgba(176,141,63,0.2);flex-shrink:0;}
@@ -242,7 +242,7 @@ function renderTable(lines: string[], key: number) {
   const [header, ...body] = rows
   return (
     <div key={key} style={{ overflowX: "auto", marginBottom: 12 }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14, direction: "rtl" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 18, direction: "rtl" }}>
         <thead>
           <tr>{header.map((h, i) => <th key={i} style={{ textAlign: "right", padding: "7px 10px", background: "var(--ink)", color: "var(--paper)", fontWeight: 700, borderBottom: "2px solid var(--gold)" }}>{renderInline(h)}</th>)}</tr>
         </thead>
@@ -267,7 +267,7 @@ function renderBody(text: string) {
     }
 
     if (trimmed.startsWith("> ")) {
-      return <blockquote key={pi} style={{ borderRight: "3px solid var(--seal)", paddingRight: 14, margin: "10px 0", color: "var(--seal)", fontWeight: 600, fontSize: 15 }}>{renderInline(trimmed.slice(2))}</blockquote>
+      return <blockquote key={pi} style={{ borderRight: "3px solid var(--seal)", paddingRight: 14, margin: "10px 0", color: "var(--seal)", fontWeight: 600, fontSize: 19 }}>{renderInline(trimmed.slice(2))}</blockquote>
     }
 
     const lines = para.split("\n")
@@ -453,8 +453,8 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
           <div key={q.id} style={{ marginBottom: 28, paddingTop: qi > 0 ? 16 : 0, borderTop: qi > 0 ? "1px solid rgba(27,42,74,0.14)" : "none" }}>
             {/* Question number + text */}
             <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 14 }}>
-              <span style={{ background: "#A23B2E", color: "#F5F1E6", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, flexShrink: 0, fontFamily: "'Frank Ruhl Libre',serif", lineHeight: 1 }}>{qi + 1}</span>
-              <div style={{ fontWeight: 700, color: "#1B2A4A", fontSize: 15, lineHeight: 1.4 }}>{q.text}</div>
+              <span style={{ background: "#A23B2E", color: "#F5F1E6", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 900, flexShrink: 0, fontFamily: "'Frank Ruhl Libre',serif", lineHeight: 1 }}>{qi + 1}</span>
+              <div style={{ fontWeight: 700, color: "#1B2A4A", fontSize: 19, lineHeight: 1.4 }}>{q.text}</div>
             </div>
             {/* Options with letter labels */}
             <div style={{ maxWidth: 580, paddingRight: 38 }}>
@@ -501,7 +501,7 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
               {q.options.filter(Boolean).length > 0 && (
                 <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
                   {q.options.filter(Boolean).map((opt, oi) => (
-                    <div key={oi} style={{ fontSize: 14, color: "var(--ink)" }}>
+                    <div key={oi} style={{ fontSize: 17, color: "var(--ink)" }}>
                       <strong>{["א", "ב", "ג", "ד", "ה"][oi] ?? oi + 1}.</strong> {opt}
                     </div>
                   ))}
@@ -518,7 +518,7 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
           {questions.map((q, i) => (
             <div key={q.id} className="task-item">
               <div className="task-num">{i + 1}</div>
-              <div style={{ fontSize: 14, lineHeight: 1.6, color: "var(--ink)" }}>{q.text}</div>
+              <div style={{ fontSize: 18, lineHeight: 1.6, color: "var(--ink)" }}>{q.text}</div>
             </div>
           ))}
         </div>
@@ -530,8 +530,8 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
           {questions.map(q => (
             <div key={q.id} className="card">
               <span className="rtag">{q.feedback ?? "העשרה"}</span>
-              <h3 style={{ fontFamily: "'Frank Ruhl Libre',serif", color: "var(--ink)", margin: "0 0 6px", fontSize: 15 }}>{q.text}</h3>
-              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.55, color: "#4a4a45" }}>{q.options[0] ?? ""}</p>
+              <h3 style={{ fontFamily: "'Frank Ruhl Libre',serif", color: "var(--ink)", margin: "0 0 6px", fontSize: 18 }}>{q.text}</h3>
+              <p style={{ margin: 0, fontSize: 16, lineHeight: 1.55, color: "#4a4a45" }}>{q.options[0] ?? ""}</p>
             </div>
           ))}
         </div>
@@ -587,7 +587,7 @@ function SlideView({ slide, agg, revealOpen, setRevealOpen }: {
       {type === "feedback" && questions && questions.map((q, qi) => (
         <div key={q.id} style={{ marginBottom: 20, paddingTop: qi > 0 ? 14 : 0, borderTop: qi > 0 ? "1px solid var(--line)" : "none" }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 10 }}>
-            <span style={{ background: "#A23B2E", color: "#F5F1E6", borderRadius: "50%", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, fontWeight: 900, flexShrink: 0, fontFamily: "'Frank Ruhl Libre',serif", lineHeight: 1 }}>{qi + 1}</span>
+            <span style={{ background: "#A23B2E", color: "#F5F1E6", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, fontWeight: 900, flexShrink: 0, fontFamily: "'Frank Ruhl Libre',serif", lineHeight: 1 }}>{qi + 1}</span>
             <div className="qbox" style={{ flex: 1 }}>{q.text}</div>
           </div>
           <div style={{ marginTop: 10, maxWidth: 480 }}>
