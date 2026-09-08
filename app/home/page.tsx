@@ -11,11 +11,10 @@ import {
   getRemainingSchoolDays, getDaysUntilSummer, getNextVacation, getDaysUntilNextVacation,
 } from "@/lib/school-calendar"
 import {
-  getPersonalEvents, getPersonalDisplayName, getPersonalBackground, getCustomBgUrl, getQuoteCategories,
-  setPersonalBackground as storeSaveBg, setPersonalDisplayName as storeSaveName, setQuoteCategories as storeSaveQCats,
+  getPersonalEvents, getPersonalDisplayName, getPersonalBackground, getCustomBgUrl,
+  setPersonalBackground as storeSaveBg, setPersonalDisplayName as storeSaveName,
 } from "@/app/components/personalStore"
 import PushManager from "@/app/components/PushManager"
-import { getDailyQuote, getCategoryEmoji, CATEGORIES, type Quote, type QuoteCategory } from "@/lib/quotes"
 import { ROLE_DEFAULTS } from "@/app/components/NatureBackground"
 
 // ── Types ─────────────────────────────────────────────────
@@ -458,9 +457,7 @@ function SettingsPanel({ isAdmin }: { isAdmin: boolean }) {
   const [selectedBg, setSelectedBg] = useState(() =>
     typeof window !== "undefined" ? getPersonalBackground() : ""
   )
-  const [qCats, setQCatsState] = useState<QuoteCategory[]>(() =>
-    typeof window !== "undefined" ? getQuoteCategories() : ["חינוך", "הומור", "הידעת"]
-  )
+  const [bgMenuOpen, setBgMenuOpen] = useState(false)
 
   function saveName(val: string) {
     storeSaveName(val.trim())
@@ -470,13 +467,6 @@ function SettingsPanel({ isAdmin }: { isAdmin: boolean }) {
     setSelectedBg(id)
     storeSaveBg(id)
     window.dispatchEvent(new CustomEvent("bg-changed", { detail: id }))
-  }
-
-  function toggleCat(cat: QuoteCategory) {
-    const next = qCats.includes(cat) ? qCats.filter(c => c !== cat) : [...qCats, cat]
-    if (!next.length) return
-    setQCatsState(next)
-    storeSaveQCats(next)
   }
 
   return (
@@ -497,47 +487,6 @@ function SettingsPanel({ isAdmin }: { isAdmin: boolean }) {
             dir="rtl"
             className="flex-1 bg-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/30 focus:outline-none focus:bg-white/15 transition-colors"
           />
-        </div>
-      </div>
-
-      {/* Background */}
-      <div className="glass rounded-2xl p-4 space-y-3">
-        <p className="text-white/50 text-[10px] font-semibold uppercase tracking-widest">רקע</p>
-        <div className="grid grid-cols-4 gap-2">
-          {BG_OPTIONS.map(bg => (
-            <button
-              key={bg.id}
-              onClick={() => pickBg(bg.id)}
-              className={`flex flex-col items-center gap-1 py-2.5 rounded-xl transition-all ${
-                selectedBg === bg.id
-                  ? "bg-white/25 ring-1 ring-white/40"
-                  : "bg-white/5 hover:bg-white/15"
-              }`}
-            >
-              <span className="text-xl">{bg.emoji}</span>
-              <span className="text-white/50 text-[9px] text-center leading-tight px-0.5">{bg.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Daily quote categories */}
-      <div className="glass rounded-2xl p-4 space-y-3">
-        <p className="text-white/50 text-[10px] font-semibold uppercase tracking-widest">ציטוטים יומיים</p>
-        <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map(cat => (
-            <button
-              key={cat}
-              onClick={() => toggleCat(cat)}
-              className={`px-3 py-1.5 rounded-full text-xs transition-all ${
-                qCats.includes(cat)
-                  ? "bg-white/25 text-white"
-                  : "bg-white/5 text-white/40 hover:bg-white/12"
-              }`}
-            >
-              {getCategoryEmoji(cat)} {cat}
-            </button>
-          ))}
         </div>
       </div>
 
@@ -571,6 +520,15 @@ function SettingsPanel({ isAdmin }: { isAdmin: boolean }) {
         </>
       )}
 
+      {/* Background — collapsed to one button; the very bottom of settings */}
+      <button
+        onClick={() => setBgMenuOpen(true)}
+        className="w-full glass rounded-2xl px-4 py-3.5 flex items-center gap-3 hover:bg-white/15 interactive btn-press transition-colors">
+        <span className="text-2xl">🎨</span>
+        <span className="flex-1 text-right text-white/80 text-sm font-medium">רקע</span>
+        <span className="text-white/30">←</span>
+      </button>
+
       {/* Sign out */}
       <button
         onClick={() => signOut({ callbackUrl: "/login" })}
@@ -578,6 +536,34 @@ function SettingsPanel({ isAdmin }: { isAdmin: boolean }) {
         <span className="text-xl">🚪</span>
         <span className="text-white/50 text-sm">יציאה</span>
       </button>
+
+      {/* Background menu */}
+      {bgMenuOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={() => setBgMenuOpen(false)}>
+          <div className="w-full max-w-md bg-stone-900 rounded-t-3xl p-5 pb-8 animate-fade-in" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-white/70 text-sm font-semibold">בחר/י רקע</p>
+              <button onClick={() => setBgMenuOpen(false)} className="text-white/40 hover:text-white interactive text-xl leading-none px-1">×</button>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {BG_OPTIONS.map(bg => (
+                <button
+                  key={bg.id}
+                  onClick={() => { pickBg(bg.id); setBgMenuOpen(false) }}
+                  className={`flex flex-col items-center gap-1 py-2.5 rounded-xl transition-all ${
+                    selectedBg === bg.id
+                      ? "bg-white/25 ring-1 ring-white/40"
+                      : "bg-white/5 hover:bg-white/15"
+                  }`}
+                >
+                  <span className="text-xl">{bg.emoji}</span>
+                  <span className="text-white/50 text-[9px] text-center leading-tight px-0.5">{bg.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   )
@@ -603,9 +589,6 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
     if (typeof window === "undefined") return ""
     return getPersonalDisplayName()
   })
-  const [quoteOffset, setQuoteOffset] = useState(0)
-  const quoteCategories = typeof window !== "undefined" ? getQuoteCategories() : []
-  const dailyQuote = getDailyQuote(quoteCategories, quoteOffset)
   const firstName = personalName || (session?.user?.name?.split(" ")[0] ?? "")
   const isAdmin   = (session?.user as any)?.role === "ADMIN"
 
@@ -877,27 +860,6 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                   <div className="px-4 py-3 text-white/25 text-xs">אין משימות פתוחות</div>
                 )}
               </Link>
-
-              {/* Daily quote */}
-              {dailyQuote && (
-                <button
-                  onClick={() => setQuoteOffset(o => o + 1)}
-                  className="glass rounded-2xl px-4 py-3 w-full text-right active:scale-[0.98] transition-transform"
-                >
-                  <div className="flex items-start gap-3">
-                    <span className="text-base flex-shrink-0 mt-0.5">{getCategoryEmoji(dailyQuote.category)}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white/75 text-sm leading-relaxed">{dailyQuote.text}</p>
-                      {dailyQuote.author && (
-                        <p className="text-white/30 text-[11px] mt-1">— {dailyQuote.author}</p>
-                      )}
-                    </div>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="text-white/20 flex-shrink-0 mt-1">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 18l6-6-6-6"/>
-                    </svg>
-                  </div>
-                </button>
-              )}
 
               {/* Voice assistant */}
               <VoiceButton />

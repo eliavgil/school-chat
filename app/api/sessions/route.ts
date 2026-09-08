@@ -32,12 +32,16 @@ export async function POST(req: Request) {
     if (!rosterClass) return NextResponse.json({ error: "כיתה לא נמצאה ברשימת הכיתות" }, { status: 400 })
     const className = rosterClass.displayName || rosterClass.name
 
-    const { data: existingClass, error: findErr } = await sb
-      .from("classes").select("id").eq("name", className).maybeSingle()
+    // .limit(1) + take the first row, not .maybeSingle() — a table that ended up with
+    // more than one row for the same name (possible leftover from earlier sync attempts)
+    // would make .maybeSingle() throw instead of just picking one, breaking every future
+    // session start for that class with an opaque error.
+    const { data: existingClasses, error: findErr } = await sb
+      .from("classes").select("id").eq("name", className).order("id").limit(1)
     if (findErr) return NextResponse.json({ error: `שגיאה באיתור כיתה: ${findErr.message}` }, { status: 500 })
 
-    if (existingClass) {
-      resolved_class_id = existingClass.id
+    if (existingClasses && existingClasses.length > 0) {
+      resolved_class_id = existingClasses[0].id
     } else {
       const { data: newClass, error: insertErr } = await sb
         .from("classes").insert({ name: className }).select("id").single()
@@ -48,19 +52,19 @@ export async function POST(req: Request) {
 
   if (!resolved_class_id) {
     // Derive class_id from the lesson itself
-    const { data: lessonRow } = await sb
+    const { data: lessonRows } = await sb
       .from("lessons")
       .select("class_id")
       .eq("id", lesson_id)
-      .single()
-    resolved_class_id = lessonRow?.class_id ?? null
+      .limit(1)
+    resolved_class_id = lessonRows?.[0]?.class_id ?? null
   }
 
   if (!resolved_class_id) {
     // Fall back to first existing Supabase class, or create one
-    const { data: firstClass } = await sb.from("classes").select("id").order("name").limit(1).single()
-    if (firstClass) {
-      resolved_class_id = firstClass.id
+    const { data: firstClasses } = await sb.from("classes").select("id").order("name").limit(1)
+    if (firstClasses && firstClasses.length > 0) {
+      resolved_class_id = firstClasses[0].id
     } else {
       const { data: newClass } = await sb
         .from("classes")
@@ -79,8 +83,8 @@ export async function POST(req: Request) {
   let tries = 0
   while (tries < 20) {
     code = genCode()
-    const { data: existing } = await sb.from("live_sessions").select("id").eq("room_code", code).eq("is_active", true).maybeSingle()
-    if (!existing) break
+    const { data: existing } = await sb.from("live_sessions").select("id").eq("room_code", code).eq("is_active", true).limit(1)
+    if (!existing || existing.length === 0) break
     tries++
   }
 

@@ -40,19 +40,38 @@ function NameEditor() {
 }
 
 function DesignEditor() {
+  const [open, setOpen] = useState(false)
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">תמונת רקע</p>
-        <BackgroundPicker />
-      </div>
-      <div>
-        <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">ערכת צבעים</p>
-        <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
-          <ThemePicker />
+    <>
+      <button onClick={() => setOpen(true)}
+        className="w-full bg-white/8 border border-white/10 rounded-2xl px-4 py-3.5 flex items-center gap-3 hover:bg-white/12 interactive btn-press transition-colors">
+        <span className="text-xl">🎨</span>
+        <span className="flex-1 text-right text-sm font-medium text-white/80">רקעים ועיצוב</span>
+        <span className="text-white/30">←</span>
+      </button>
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={() => setOpen(false)}>
+          <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-stone-900 rounded-t-3xl p-5 pb-8" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-5">
+              <p className="text-white text-sm font-semibold">רקעים ועיצוב</p>
+              <button onClick={() => setOpen(false)} className="text-white/40 hover:text-white interactive text-xl leading-none px-1">×</button>
+            </div>
+            <div className="space-y-6">
+              <div>
+                <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">תמונת רקע</p>
+                <BackgroundPicker />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">ערכת צבעים</p>
+                <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+                  <ThemePicker />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
+      )}
+    </>
   )
 }
 
@@ -939,60 +958,6 @@ function RosterTab() {
 }
 
 // ────────────────────────────────────────────────────────────
-// Quote category picker
-// ────────────────────────────────────────────────────────────
-import { CATEGORIES, getCategoryEmoji, type QuoteCategory } from "@/lib/quotes"
-import { getQuoteCategories, setQuoteCategories } from "@/app/components/personalStore"
-
-function QuoteCategoryEditor() {
-  const [selected, setSelected] = useState<QuoteCategory[]>([])
-  const [saved, setSaved] = useState(false)
-
-  useEffect(() => { setSelected(getQuoteCategories()) }, [])
-
-  function toggle(cat: QuoteCategory) {
-    setSelected(prev =>
-      prev.includes(cat) ? prev.filter(c => c !== cat) : [...prev, cat]
-    )
-    setSaved(false)
-  }
-
-  function save() {
-    const cats = selected.length > 0 ? selected : (CATEGORIES as QuoteCategory[])
-    setQuoteCategories(cats)
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2000)
-  }
-
-  return (
-    <div className="space-y-3">
-      <p className="text-xs text-white/40">בחר קטגוריות — הציטוט היומי יגיע מהקטגוריות שבחרת</p>
-      <div className="grid grid-cols-2 gap-2">
-        {(CATEGORIES as QuoteCategory[]).map(cat => {
-          const on = selected.includes(cat)
-          return (
-            <button key={cat} onClick={() => toggle(cat)}
-              className={`flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm transition-all btn-press interactive ${
-                on
-                  ? "bg-white/15 border-white/30 text-white"
-                  : "bg-white/5 border-white/10 text-white/45 hover:bg-white/10"
-              }`}>
-              <span>{getCategoryEmoji(cat)}</span>
-              <span>{cat}</span>
-              {on && <span className="mr-auto text-white/50 text-xs">✓</span>}
-            </button>
-          )
-        })}
-      </div>
-      <button onClick={save}
-        className="w-full bg-white/15 hover:bg-white/25 text-white text-sm py-2.5 rounded-xl transition-colors btn-press interactive">
-        {saved ? "✓ נשמר — יעודכן בפעם הבאה" : "שמור"}
-      </button>
-    </div>
-  )
-}
-
-// ────────────────────────────────────────────────────────────
 // Notify class (teacher only)
 // ────────────────────────────────────────────────────────────
 function NotifyClassButton() {
@@ -1127,15 +1092,11 @@ export default function ManagePage() {
           <>
             <p className="text-xs text-white/30">שינויים אלו גלויים רק לך</p>
             <NameEditor />
-            <div className="pt-2"><DesignEditor /></div>
-            <div className="pt-2">
-              <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">ציטוט יומי — קטגוריות</p>
-              <QuoteCategoryEditor />
-            </div>
             <div className="pt-2 border-t border-white/10 mt-2">
               <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">הודעות Push</p>
               <PushManager />
             </div>
+            <div className="pt-2"><DesignEditor /></div>
           </>
         )}
         {isTeacher && teacherTab === "import"    && <ImportTab />}
@@ -1147,10 +1108,6 @@ export default function ManagePage() {
           <>
             <p className="text-xs text-white/30">שינויים אלו גלויים רק לך</p>
             <NameEditor />
-            <div className="pt-2">
-              <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">ציטוט יומי — קטגוריות</p>
-              <QuoteCategoryEditor />
-            </div>
             <div className="pt-2 border-t border-white/10 mt-2">
               <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">הודעות Push</p>
               <PushManager />
