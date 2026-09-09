@@ -138,6 +138,23 @@ export async function PATCH(req: NextRequest) {
     await prisma.user.update({ where: { id: userId }, data: { studentId: studentId ?? null } })
   } else if (action === "unlink-student") {
     await prisma.user.update({ where: { id: userId }, data: { studentId: null } })
+  } else if (action === "convert-to-student") {
+    // A student who picked "הורה" on /pending by mistake, or was approved from
+    // the wrong list — flips them to STUDENT in place instead of requiring a
+    // full delete + re-register. Drops any parent-child links, since they no
+    // longer apply once this account is a student itself.
+    await prisma.$transaction(async (tx) => {
+      await tx.parentStudent.deleteMany({ where: { userId } })
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          role: "STUDENT",
+          parentType: null,
+          accessStatus: "APPROVED",
+          ...(studentId ? { studentId } : {}),
+        },
+      })
+    })
   } else if (action === "delete-user") {
     // Fully removes the User + cascaded Account/Session records so the Google
     // account can re-register from scratch.

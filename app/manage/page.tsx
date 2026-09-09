@@ -538,6 +538,30 @@ function ApproveWithLink({ label, students, onApprove, onDeny, onCancel, loading
   )
 }
 
+function ConvertToStudent({ students, loading, onConvert, onCancel }: {
+  students: Student[]; loading: boolean
+  onConvert: (sid?: string) => void; onCancel: () => void
+}) {
+  const [sel, setSel] = useState("")
+  return (
+    <div className="mt-3 space-y-2">
+      <p className="text-xs text-white/40">נרשם/ה בטעות כהורה? זה יהפוך את החשבון הזה לתלמיד/ה, ויסיר כל קישור הורה-ילד קיים שלו.</p>
+      <select value={sel} onChange={e => setSel(e.target.value)}
+        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white/30">
+        <option value="">קשר לתלמיד/ה ברשימת הכיתה (אופציונלי)</option>
+        {students.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+      </select>
+      <div className="flex gap-2">
+        <button onClick={() => onConvert(sel || undefined)} disabled={loading}
+          className="flex-1 bg-white/20 hover:bg-white/30 text-white rounded-lg py-2 text-xs font-medium disabled:opacity-50 btn-press interactive">
+          {loading ? "ממיר..." : "🎒 המר לתלמיד/ה"}
+        </button>
+        <button onClick={onCancel} className="text-white/40 text-xs hover:text-white px-2 interactive">ביטול</button>
+      </div>
+    </div>
+  )
+}
+
 function UsersTab() {
   const [pendingParents, setPendingParents]   = useState<PendingParent[]>([])
   const [pendingStudents, setPendingStudents] = useState<PendingStudent[]>([])
@@ -687,28 +711,39 @@ function UsersTab() {
           ? <p className="text-white/30 text-xs">אין</p>
           : <div className="bg-white/5 border border-white/10 rounded-2xl divide-y divide-white/5">
             {approvedParents.map(p => (
-              <div key={p.id} className="px-4 py-3 flex items-start justify-between gap-4">
-                <div className="text-sm space-y-0.5">
-                  <div className="font-medium text-white/85">{p.name ?? "—"}</div>
-                  <div className="text-white/40 text-xs">{p.email}</div>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {p.parentStudents.map(({ student }) => (
-                      <span key={student.id} className="bg-white/10 text-white/60 text-xs rounded-full px-2 py-0.5 flex items-center gap-1">
-                        {student.name}
-                        <button onClick={() => action(p.id, "unlink-parent", student.id)} className="text-white/30 hover:text-red-400 interactive">×</button>
-                      </span>
-                    ))}
+              <div key={p.id} className="px-4 py-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="text-sm space-y-0.5">
+                    <div className="font-medium text-white/85">{p.name ?? "—"}</div>
+                    <div className="text-white/40 text-xs">{p.email}</div>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {p.parentStudents.map(({ student }) => (
+                        <span key={student.id} className="bg-white/10 text-white/60 text-xs rounded-full px-2 py-0.5 flex items-center gap-1">
+                          {student.name}
+                          <button onClick={() => action(p.id, "unlink-parent", student.id)} className="text-white/30 hover:text-red-400 interactive">×</button>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 items-center flex-shrink-0">
+                    <button onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}
+                      className="text-xs text-white/50 hover:text-white interactive whitespace-nowrap" title="נרשם בטעות כהורה במקום תלמיד/ה">
+                      {expandedId === p.id ? "ביטול" : "🎒 המר לתלמיד/ה"}
+                    </button>
+                    <button onClick={() => action(p.id, "deny")} className="text-xs text-red-400/70 hover:text-red-400 interactive whitespace-nowrap">בטל גישה</button>
+                    <button
+                      onClick={() => { if (confirm(`למחוק לחלוטין את חשבון ${p.name ?? p.email}?\nהמשתמש יוכל להירשם מחדש.`)) action(p.id, "delete-user") }}
+                      title="מחק חשבון"
+                      className="text-xs text-red-500/60 hover:text-red-500 interactive">
+                      🗑
+                    </button>
                   </div>
                 </div>
-                <div className="flex gap-2 items-center flex-shrink-0">
-                  <button onClick={() => action(p.id, "deny")} className="text-xs text-red-400/70 hover:text-red-400 interactive whitespace-nowrap">בטל גישה</button>
-                  <button
-                    onClick={() => { if (confirm(`למחוק לחלוטין את חשבון ${p.name ?? p.email}?\nהמשתמש יוכל להירשם מחדש.`)) action(p.id, "delete-user") }}
-                    title="מחק חשבון"
-                    className="text-xs text-red-500/60 hover:text-red-500 interactive">
-                    🗑
-                  </button>
-                </div>
+                {expandedId === p.id && (
+                  <ConvertToStudent students={students} loading={actionLoading === p.id}
+                    onConvert={sid => action(p.id, "convert-to-student", sid)}
+                    onCancel={() => setExpandedId(null)} />
+                )}
               </div>
             ))}
           </div>}
