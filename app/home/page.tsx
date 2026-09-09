@@ -75,7 +75,7 @@ type LessonStatus =
 // clock time from the day-type-aware bell schedule, and synthesizes a
 // "הפסקה" entry for every gap between periods — so "what's next" can be a
 // break or a teacher event just as much as a lesson.
-interface TimelineEntry { start: string; end: string; label: string; isBreak: boolean }
+interface TimelineEntry { start: string; end: string; label: string; isBreak: boolean; period?: string }
 
 function periodNum(p: string): string {
   const m = p.match(/^\d+/)
@@ -92,7 +92,7 @@ function buildTimeline(slots: ScheduleSlot[], bellSlots: BellSlotT[]): TimelineE
       const start = bell?.start ?? embedded?.start
       const end = bell?.end ?? embedded?.end
       if (!start || !end) return null
-      return { start, end, label: parseSubject(s.content), isBreak: false }
+      return { start, end, label: parseSubject(s.content), isBreak: false, period: periodNum(s.period) }
     })
     .filter(Boolean) as TimelineEntry[]
 
@@ -457,7 +457,13 @@ function StudentHome({ session, data, isPreview }: { session: any; data: HomeDat
                   const isCurrent = nowMin >= s && nowMin < e
                   return (
                     <div key={i} className={`flex items-center gap-3 px-4 py-2 ${isCurrent ? "bg-white/10" : ""}`}>
-                      <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isCurrent ? "bg-white animate-pulse" : isPast ? "bg-white/10" : "bg-white/30"}`} />
+                      {t.isBreak ? (
+                        <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isCurrent ? "bg-white animate-pulse" : isPast ? "bg-white/10" : "bg-white/30"}`} />
+                      ) : (
+                        <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${isCurrent ? "bg-white/25 text-white" : isPast ? "bg-white/5 text-white/20" : "bg-white/10 text-white/55"}`}>
+                          {t.period}
+                        </span>
+                      )}
                       <span className={`text-xs font-semibold nums w-20 flex-shrink-0 ${isPast ? "text-white/25" : "text-white/55"}`} dir="ltr">{t.start}–{t.end}</span>
                       <span className={`text-sm flex-1 truncate ${isCurrent ? "text-white font-medium" : isPast ? "text-white/25" : t.isBreak ? "text-white/45 italic" : "text-white/70"}`}>{t.label}</span>
                       {isCurrent && <span className="text-[10px] text-white/80 glass rounded-full px-2 py-0.5">עכשיו</span>}
@@ -895,7 +901,12 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                       const isNext = nowNext.next === t
                       return (
                         <div key={i} className={`flex items-center gap-3 px-4 py-2 ${isCurrent ? "bg-white/10" : ""}`}>
-                          <span className={`text-[13px] font-semibold font-mono w-24 flex-shrink-0 ${isCurrent ? "text-white" : "text-white/45"}`} dir="ltr">{t.start}–{t.end}</span>
+                          {!t.isBreak && (
+                            <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${isCurrent ? "bg-white/25 text-white" : "bg-white/10 text-white/50"}`}>
+                              {t.period}
+                            </span>
+                          )}
+                          <span className={`text-[13px] font-semibold font-mono flex-shrink-0 ${t.isBreak ? "w-24" : "w-[76px]"} ${isCurrent ? "text-white" : "text-white/45"}`} dir="ltr">{t.start}–{t.end}</span>
                           <span className={`flex-1 text-[13px] truncate ${isCurrent ? "text-white font-medium" : t.isBreak ? "text-white/40 italic" : "text-white/70"}`}>{t.label}</span>
                           {isCurrent && <span className="text-[9px] bg-green-500/30 text-green-300 px-1.5 py-0.5 rounded-full flex-shrink-0">עכשיו</span>}
                           {isNext && <span className="text-[9px] bg-amber-500/30 text-amber-300 px-1.5 py-0.5 rounded-full flex-shrink-0">הבא</span>}
@@ -1443,6 +1454,18 @@ function HomePageInner() {
   }, [previewAsStudent])
 
   useEffect(() => { if (status !== "loading") fetchData() }, [fetchData, status])
+
+  // A tab left open across midnight would otherwise keep showing the
+  // schedule fetched the day before — re-fetch as soon as the calendar day
+  // actually changes, checked every minute, not just once on mount.
+  useEffect(() => {
+    let day = new Date().toDateString()
+    const id = setInterval(() => {
+      const today = new Date().toDateString()
+      if (today !== day) { day = today; fetchData() }
+    }, 60_000)
+    return () => clearInterval(id)
+  }, [fetchData])
 
   // Block render until role is known — avoids flash of wrong role
   if (status === "loading" || !role) return <LoadingSkeleton />
