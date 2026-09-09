@@ -698,6 +698,7 @@ export default function PresentPage({ params }: Props) {
   const rootRef = useRef<HTMLDivElement>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [availableClasses, setAvailableClasses] = useState<{ id: string; name: string }[]>([])
+  const [rosterClassId, setRosterClassId] = useState<string | null>(null)
 
   useEffect(() => {
     const update = () => setIsMobile(window.innerWidth < 768)
@@ -706,11 +707,15 @@ export default function PresentPage({ params }: Props) {
     return () => window.removeEventListener("resize", update)
   }, [])
 
+  // Name spinner list — refetches whenever the class actually being presented to
+  // changes, so it shows that class's students rather than always the teacher's
+  // own default class.
   useEffect(() => {
-    fetch("/api/class/students").then(r => r.ok ? r.json() : []).then(d => {
+    const url = rosterClassId ? `/api/class/students?classId=${rosterClassId}` : "/api/class/students"
+    fetch(url).then(r => r.ok ? r.json() : []).then(d => {
       if (Array.isArray(d)) setStudents(d)
     })
-  }, [])
+  }, [rosterClassId])
 
   useEffect(() => {
     fetch(`/api/lessons/${id}`).then(r => r.json()).then(d => {
@@ -775,7 +780,7 @@ export default function PresentPage({ params }: Props) {
         body: JSON.stringify({ lesson_id: lesson.id, class_id }),
       })
       const data = await res.json()
-      if (res.ok) setSession(data)
+      if (res.ok) { setSession(data); setRosterClassId(class_id) }
       else setError(data.error ?? `שגיאה ${res.status}`)
     } catch (e: any) {
       setError(e.message ?? "שגיאת רשת")
