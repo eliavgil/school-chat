@@ -8,6 +8,16 @@ function genCode() {
   return String(Math.floor(Math.random() * 100)).padStart(2, "0")
 }
 
+// Israeli school year runs Sept-Aug — "2026" means the 2026/27 year, matching
+// the convention already used for this elsewhere in the project (see
+// scripts/mashov/fetch.py's _current_school_year). The Supabase "classes"
+// table's school_year column is NOT NULL with no default, so any row this
+// route creates must supply one.
+function currentSchoolYear(): number {
+  const now = new Date()
+  return now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1
+}
+
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -44,7 +54,7 @@ export async function POST(req: Request) {
       resolved_class_id = existingClasses[0].id
     } else {
       const { data: newClass, error: insertErr } = await sb
-        .from("classes").insert({ name: className }).select("id").single()
+        .from("classes").insert({ name: className, school_year: currentSchoolYear() }).select("id").single()
       if (insertErr) return NextResponse.json({ error: `יצירת כיתה נכשלה: ${insertErr.message}` }, { status: 500 })
       resolved_class_id = newClass?.id ?? null
     }
@@ -68,7 +78,7 @@ export async function POST(req: Request) {
     } else {
       const { data: newClass } = await sb
         .from("classes")
-        .insert({ name: "י4" })
+        .insert({ name: "י4", school_year: currentSchoolYear() })
         .select("id")
         .single()
       resolved_class_id = newClass?.id ?? null
