@@ -6,7 +6,6 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import BottomNav from "@/app/components/BottomNav"
 import { NatureBackground, BG_OPTIONS } from "@/app/components/NatureBackground"
-import VoiceButton from "@/app/home/VoiceButton"
 import {
   getRemainingSchoolDays, getDaysUntilSummer, getNextVacation, getDaysUntilNextVacation,
 } from "@/lib/school-calendar"
@@ -22,6 +21,7 @@ interface ClassProfile { displayName: string; teacherDisplayName: string; school
 interface CalendarEvent { id: string; date: string; description: string; grade: string | null }
 interface RecentMessage { id: string; content: string; createdAt: string; sender: { name: string }; student: { name: string } }
 interface ScheduleSlot { period: string; content: string }
+interface BellSlotT { period: string; startTime: string; endTime: string }
 interface Attendance { totalLessons: number; absences: number; justifiedAbsences: number }
 interface GradeComponent { name: string; weight: number; score: number }
 interface Grade { subject: string; weightedAverage: number | null; gradeComponents: GradeComponent[]; teacherName: string | null }
@@ -41,6 +41,7 @@ interface HomeData {
   classStudents: ClassStudent[]
   todaySchedule: ScheduleSlot[]
   tomorrowSchedule: ScheduleSlot[]
+  bellSlots: BellSlotT[]
   todayHeb: string
   tomorrowHeb: string
   upcomingExams: CalendarEvent[]
@@ -67,6 +68,61 @@ type LessonStatus =
   | { type: "break";     next: ParsedSlot; minsUntil: number }
   | { type: "done" }
   | { type: "no-school" }
+
+// ── "Now / next" timeline: canonical bell times + break gaps ──────────────
+// Unlike getLessonStatus (which only knows about lessons, and reads times
+// embedded in the schedule text itself), this resolves each period's real
+// clock time from the day-type-aware bell schedule, and synthesizes a
+// "הפסקה" entry for every gap between periods — so "what's next" can be a
+// break or a teacher event just as much as a lesson.
+interface TimelineEntry { start: string; end: string; label: string; isBreak: boolean }
+
+function periodNum(p: string): string {
+  const m = p.match(/^\d+/)
+  return m ? m[0] : p.trim()
+}
+
+function buildTimeline(slots: ScheduleSlot[], bellSlots: BellSlotT[]): TimelineEntry[] {
+  const bellByPeriod = new Map(bellSlots.map(b => [b.period, { start: b.startTime, end: b.endTime }]))
+
+  const lessons = slots
+    .map(s => {
+      const bell = bellByPeriod.get(periodNum(s.period))
+      const embedded = parsePeriodStr(s.period)
+      const start = bell?.start ?? embedded?.start
+      const end = bell?.end ?? embedded?.end
+      if (!start || !end) return null
+      return { start, end, label: parseSubject(s.content), isBreak: false }
+    })
+    .filter(Boolean) as TimelineEntry[]
+
+  lessons.sort((a, b) => timeToMin(a.start) - timeToMin(b.start))
+
+  const timeline: TimelineEntry[] = []
+  for (let i = 0; i < lessons.length; i++) {
+    timeline.push(lessons[i])
+    const next = lessons[i + 1]
+    if (next && timeToMin(next.start) > timeToMin(lessons[i].end)) {
+      timeline.push({ start: lessons[i].end, end: next.start, label: "הפסקה", isBreak: true })
+    }
+  }
+  return timeline
+}
+
+type DayState = "no-school" | "before-school" | "now" | "done"
+
+function getNowNext(timeline: TimelineEntry[], now: Date, hasSchoolToday: boolean): {
+  state: DayState; current: TimelineEntry | null; next: TimelineEntry | null
+} {
+  if (!hasSchoolToday || timeline.length === 0) return { state: "no-school", current: null, next: null }
+  const nowMin = now.getHours() * 60 + now.getMinutes()
+  if (nowMin < timeToMin(timeline[0].start)) return { state: "before-school", current: null, next: timeline[0] }
+  for (let i = 0; i < timeline.length; i++) {
+    const start = timeToMin(timeline[i].start), end = timeToMin(timeline[i].end)
+    if (nowMin >= start && nowMin < end) return { state: "now", current: timeline[i], next: timeline[i + 1] ?? null }
+  }
+  return { state: "done", current: null, next: null }
+}
 
 function getLessonStatus(slots: ScheduleSlot[], now: Date): LessonStatus {
   const nowMin = now.getHours() * 60 + now.getMinutes()
@@ -595,9 +651,6 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
   const timeStr = now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })
   const dateStr = now.toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" })
 
-  const recentMsgs    = data?.recentMessages ?? []
-  const openTasks     = data?.openTasks ?? 0
-  const teacherTasks  = data?.teacherTasks ?? []
   const classStudents = data?.classStudents ?? []
   const todaySlots    = data?.todaySchedule ?? []
   const upcomingEvents = data?.upcomingEvents ?? []
@@ -606,17 +659,9 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
   const nextVac       = getNextVacation()
   const daysToVac     = getDaysUntilNextVacation()
   const lessonStatus  = getLessonStatus(todaySlots, now)
-
-  // Personal tasks sorted by urgency (closest deadline first, no-deadline last), max 7
-  const sortedTasks = [...teacherTasks]
-    .filter(t => !t.done)
-    .sort((a, b) => {
-      if (!a.deadline && !b.deadline) return 0
-      if (!a.deadline) return 1
-      if (!b.deadline) return -1
-      return new Date(a.deadline).getTime() - new Date(b.deadline).getTime()
-    })
-    .slice(0, 6)
+  const bellSlots     = data?.bellSlots ?? []
+  const timeline      = buildTimeline(todaySlots, bellSlots)
+  const nowNext       = getNowNext(timeline, now, bellSlots.length > 0)
 
   // Schedule: parsed slots with current/next detection
   const parsedSlots: ParsedSlot[] = todaySlots
@@ -634,18 +679,6 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
     const updated = { ...studentNotes, [studentId]: val }
     setStudentNotes(updated)
     try { localStorage.setItem("teacher-student-notes", JSON.stringify(updated)) } catch {}
-  }
-
-  function fmtDeadline(dl: string | null) {
-    if (!dl) return null
-    const d = new Date(dl)
-    const today = new Date(); today.setHours(0,0,0,0)
-    const diff = Math.ceil((d.getTime() - today.getTime()) / 86400000)
-    if (diff < 0)  return { text: "פג תוקף", urgent: true }
-    if (diff === 0) return { text: "היום", urgent: true }
-    if (diff === 1) return { text: "מחר", urgent: true }
-    if (diff <= 7)  return { text: `${diff} ימים`, urgent: false }
-    return { text: d.toLocaleDateString("he-IL", { day: "numeric", month: "numeric" }), urgent: false }
   }
 
   const NUM_PAGES = 5
@@ -793,76 +826,77 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
           }}
         >
 
-          {/* ══ PAGE 1: בית ══ */}
+          {/* ══ PAGE 1: מערכת היום — the default landing view ══ */}
           <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
-            <div className="flex flex-col px-4 pt-2 pb-10 gap-3">
+            <div className="flex flex-col px-5 pt-3 pb-10 gap-4 min-h-full justify-center">
 
-              {/* Parent chat */}
-              <Link href="/dashboard" className="glass rounded-2xl overflow-hidden hover:bg-white/10 interactive btn-press transition-colors">
-                <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">💬</span>
-                    <span className="text-white/70 text-sm font-medium">שיחות הורים</span>
-                  </div>
-                  <div className="flex gap-1.5">
-                    {openTasks > 0 && <span className="bg-amber-400/80 text-black text-[9px] font-bold rounded-full px-1.5 py-0.5">{openTasks} משימות</span>}
-                    {recentMsgs.length > 0 && <span className="bg-blue-400/80 text-black text-[9px] font-bold rounded-full px-1.5 py-0.5">{recentMsgs.length} חדש</span>}
-                  </div>
+              <p className="text-white/50 text-sm font-medium">{dateStr}</p>
+
+              {nowNext.state === "no-school" && (
+                <div className="glass rounded-3xl px-6 py-10 text-center">
+                  <div className="text-4xl mb-3">🌿</div>
+                  <p className="text-white text-2xl font-light">אין לימודים היום</p>
                 </div>
-                <div className="divide-y divide-white/5">
-                  {recentMsgs.length > 0 ? recentMsgs.slice(0, 3).map(m => (
-                    <div key={m.id} className="flex items-start gap-2.5 px-4 py-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 flex-shrink-0" />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-white/50 text-[10px]">{m.sender?.name ?? m.student?.name}</span>
-                        </div>
-                        <div className="text-white/75 text-[11px] leading-tight line-clamp-1">{m.content}</div>
-                      </div>
-                    </div>
-                  )) : (
-                    <div className="px-4 py-3 text-white/25 text-xs">אין הודעות שלא נקראו</div>
+              )}
+
+              {nowNext.state === "done" && (
+                <div className="glass rounded-3xl px-6 py-10 text-center">
+                  <div className="text-4xl mb-3">🎉</div>
+                  <p className="text-white text-2xl font-light">יום הלימודים הסתיים</p>
+                </div>
+              )}
+
+              {(nowNext.state === "now" || nowNext.state === "before-school") && (
+                <div className="glass rounded-3xl px-6 py-6">
+                  <p className="text-white/50 text-xs font-semibold uppercase tracking-widest mb-2">
+                    {nowNext.state === "now" ? (nowNext.current!.isBreak ? "עכשיו" : "מתקיים עכשיו") : "עוד לא התחיל"}
+                  </p>
+                  {nowNext.state === "now" ? (
+                    <>
+                      <h1 className="text-white font-light leading-tight" style={{ fontSize: "clamp(2rem, 10vw, 3.6rem)" }}>
+                        {nowNext.current!.label}
+                      </h1>
+                      <p className="text-white/70 text-lg font-light mt-2" dir="ltr">
+                        {nowNext.current!.start}–{nowNext.current!.end}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-white/60 text-lg font-light">הלימודים עוד לא התחילו</p>
                   )}
                 </div>
-              </Link>
+              )}
 
-              {/* Personal tasks */}
-              <Link href="/teacher/tasks" className="glass rounded-2xl overflow-hidden hover:bg-white/10 interactive btn-press transition-colors">
-                <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base">✅</span>
-                    <span className="text-white/70 text-sm font-medium">משימות אישיות</span>
-                  </div>
-                  {sortedTasks.length > 0 && (
-                    <span className="text-white/40 text-xs">{sortedTasks.length} פתוחות</span>
-                  )}
+              {(nowNext.state === "now" || nowNext.state === "before-school") && nowNext.next && (
+                <div className="glass rounded-3xl px-6 py-5">
+                  <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-1.5">הבא בתור</p>
+                  <h2 className="text-white/90 font-light leading-tight" style={{ fontSize: "clamp(1.4rem, 6vw, 2.2rem)" }}>
+                    {nowNext.next.label}
+                  </h2>
+                  <p className="text-white/55 text-base font-light mt-1" dir="ltr">
+                    {nowNext.next.start}–{nowNext.next.end}
+                  </p>
                 </div>
-                {sortedTasks.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-px p-2">
-                    {sortedTasks.map(t => {
-                      const dl = fmtDeadline(t.deadline)
+              )}
+
+              {/* Full remaining list of today, compact */}
+              {timeline.length > 0 && (
+                <div className="glass rounded-2xl overflow-hidden mt-1">
+                  <div className="divide-y divide-white/5">
+                    {timeline.map((t, i) => {
+                      const isCurrent = nowNext.state === "now" && nowNext.current === t
+                      const isNext = nowNext.next === t
                       return (
-                        <div key={t.id} className="flex items-start gap-2 bg-white/5 rounded-xl px-3 py-2.5">
-                          <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 mt-1 ${dl?.urgent ? "bg-red-400" : "bg-amber-400"}`} />
-                          <div className="flex-1 min-w-0">
-                            <div className="text-white/80 text-[11px] leading-snug line-clamp-2">{t.description}</div>
-                            {dl && (
-                              <div className={`text-[10px] mt-0.5 font-medium ${dl.urgent ? "text-red-400" : "text-white/35"}`}>
-                                {dl.text}
-                              </div>
-                            )}
-                          </div>
+                        <div key={i} className={`flex items-center gap-3 px-4 py-2 ${isCurrent ? "bg-white/10" : ""}`}>
+                          <span className={`text-[11px] font-mono w-24 flex-shrink-0 ${isCurrent ? "text-white" : "text-white/35"}`} dir="ltr">{t.start}–{t.end}</span>
+                          <span className={`flex-1 text-[13px] truncate ${isCurrent ? "text-white font-medium" : t.isBreak ? "text-white/40 italic" : "text-white/70"}`}>{t.label}</span>
+                          {isCurrent && <span className="text-[9px] bg-green-500/30 text-green-300 px-1.5 py-0.5 rounded-full flex-shrink-0">עכשיו</span>}
+                          {isNext && <span className="text-[9px] bg-amber-500/30 text-amber-300 px-1.5 py-0.5 rounded-full flex-shrink-0">הבא</span>}
                         </div>
                       )
                     })}
                   </div>
-                ) : (
-                  <div className="px-4 py-3 text-white/25 text-xs">אין משימות פתוחות</div>
-                )}
-              </Link>
-
-              {/* Voice assistant */}
-              <VoiceButton />
+                </div>
+              )}
 
             </div>
           </div>

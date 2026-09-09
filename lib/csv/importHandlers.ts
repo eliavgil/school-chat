@@ -178,13 +178,16 @@ export async function importSchedule(sheets: SheetData[], classId: string) {
 }
 
 // ── לוח צלצולים ──────────────────────────────────────────────
-// Expected columns: A=period ("1"), B=start time ("08:45"), C=end time ("09:30"),
-// D=day type (optional — e.g. "שישי" for a shortened Friday; blank/omitted = "רגיל").
-// School-wide (not per-class), so this always fully replaces the previous table.
-export async function importBellSchedule(sheets: SheetData[]) {
+// Expected columns: A=period ("1"), B=start time ("08:45"), C=end time ("09:30").
+// School-wide (not per-class). This school runs two distinct bell patterns —
+// אד"ג (Sun/Tue/Wed) and ב"ה (Mon/Thu) — so dayType is passed in by the caller
+// (which upload slot was used) rather than read from a column; only that one
+// dayType's existing rows get replaced, so uploading one pattern never wipes
+// the other.
+export async function importBellSchedule(sheets: SheetData[], dayType: string) {
   const rows = sheets[0]?.rows ?? []
 
-  await prisma.bellSlot.deleteMany({})
+  await prisma.bellSlot.deleteMany({ where: { dayType } })
 
   let imported = 0
   let order = 0
@@ -196,8 +199,6 @@ export async function importBellSchedule(sheets: SheetData[]) {
     const startTime = cellStr(row[1])
     const endTime = cellStr(row[2])
     if (!startTime || !endTime) continue
-
-    const dayType = cellStr(row[3]) || "רגיל"
 
     await prisma.bellSlot.create({
       data: { period, startTime, endTime, dayType, order: order++ },

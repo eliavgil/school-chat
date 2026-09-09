@@ -236,8 +236,9 @@ const FILE_JOBS: FileJob[] = [
   { type: "grades",    label: "ציונים שוטפים",       emoji: "📊", scope: "class" },
   { type: "attendance",label: "מונה התנהגות",         emoji: "📋", scope: "class" },
   { type: "schedule",  label: "מערכת שעות כיתה",     emoji: "🏫", scope: "class" },
-  { type: "homeroom-schedule", label: "מערכת שעות מחנך", emoji: "👩‍🏫", scope: "class" },
-  { type: "bell-schedule", label: "לוח צלצולים",     emoji: "🔔", scope: "school" },
+  { type: "homeroom-schedule", label: "מערכת השעות שלי (מחנך)", emoji: "👩‍🏫", scope: "school" },
+  { type: "bell-schedule-agd", label: "לוח צלצולים — א׳, ג׳, ד׳", emoji: "🔔", scope: "school" },
+  { type: "bell-schedule-bh",  label: "לוח צלצולים — ב׳, ה׳",     emoji: "🔔", scope: "school" },
 ]
 
 function ImportTab() {
@@ -282,7 +283,7 @@ function ImportTab() {
     setFileResults(r => ({ ...r, [job.type]: "" }))
     try {
       const fd = new FormData()
-      fd.append("type", job.type === "homeroom-schedule" ? "schedule" : job.type)
+      fd.append("type", job.type)
       if (job.scope === "class") fd.append("classId", classId)
       fd.append("file", file)
       const d = await fetch("/api/admin/import", { method: "POST", body: fd }).then(r => r.json())

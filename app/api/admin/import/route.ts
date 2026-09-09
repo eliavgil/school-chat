@@ -8,6 +8,7 @@ import {
   importBellSchedule,
   importCalendarRows,
 } from "@/lib/csv/importHandlers"
+import { DAY_TYPE_AGD, DAY_TYPE_BH, TEACHER_OWN_SCHEDULE_ID } from "@/lib/bellSchedule"
 
 // POST /api/admin/import
 // Body: FormData with fields: type, classId?, file? OR sheetUrl?
@@ -53,8 +54,14 @@ export async function POST(req: NextRequest) {
       case "schedule":
         count = await importSchedule(sheets, classId)
         break
-      case "bell-schedule":
-        count = await importBellSchedule(sheets)
+      case "homeroom-schedule":
+        count = await importSchedule(sheets, TEACHER_OWN_SCHEDULE_ID)
+        break
+      case "bell-schedule-agd":
+        count = await importBellSchedule(sheets, DAY_TYPE_AGD)
+        break
+      case "bell-schedule-bh":
+        count = await importBellSchedule(sheets, DAY_TYPE_BH)
         break
       default:
         return NextResponse.json({ error: `Unknown type: ${type}` }, { status: 400 })

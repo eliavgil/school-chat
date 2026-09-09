@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db/prisma"
+import { dayTypeForWeekday, TEACHER_OWN_SCHEDULE_ID } from "@/lib/bellSchedule"
 
 const DAY_TO_HEB = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"]
 
@@ -46,6 +47,12 @@ export async function GET(req: NextRequest) {
   const todayHeb = DAY_TO_HEB[todayJS]
   const tomorrowHeb = DAY_TO_HEB[nextSchoolDay(todayJS)]
 
+  // Teachers see their own personal weekly schedule (spans whichever classes
+  // they actually teach each period), not just the one class their account
+  // happens to be tied to.
+  const scheduleClassId = isTeacher ? TEACHER_OWN_SCHEDULE_ID : classId
+  const todayDayType = dayTypeForWeekday(todayJS)
+
   const EXAM_KEYWORDS = ["מבחן", "בוחן", "בגרות"]
   const now30 = new Date(Date.now() + 30 * 24 * 3600 * 1000)
   const now90 = new Date(Date.now() + 90 * 24 * 3600 * 1000)
@@ -54,6 +61,7 @@ export async function GET(req: NextRequest) {
     classProfile, upcomingEvents, openTasks, recentMessages,
     todaySchedule, tomorrowSchedule, upcomingExams, attendance,
     parentAttendance, grades, recentTasks, teacherTasks, classStudents,
+    bellSlots,
   ] = await Promise.all([
     prisma.class.findUnique({
       where: { id: classId },
@@ -90,14 +98,14 @@ export async function GET(req: NextRequest) {
       : Promise.resolve([]),
     (isStudent || isTeacher)
       ? prisma.scheduleSlot.findMany({
-          where: { classId, dayHeb: todayHeb },
+          where: { classId: scheduleClassId, dayHeb: todayHeb },
           orderBy: { period: "asc" },
           select: { period: true, content: true },
         })
       : Promise.resolve([]),
     (isStudent || isTeacher)
       ? prisma.scheduleSlot.findMany({
-          where: { classId, dayHeb: tomorrowHeb },
+          where: { classId: scheduleClassId, dayHeb: tomorrowHeb },
           orderBy: { period: "asc" },
           select: { period: true, content: true },
         })
@@ -167,6 +175,16 @@ export async function GET(req: NextRequest) {
           select: { id: true, name: true },
         })
       : Promise.resolve([]),
+    // Today's canonical bell times (day-type aware — this school runs two
+    // distinct patterns across the week). null dayType (Fri/Sat) means no
+    // bell schedule applies today.
+    (isStudent || isTeacher) && todayDayType
+      ? prisma.bellSlot.findMany({
+          where: { dayType: todayDayType },
+          orderBy: { order: "asc" },
+          select: { period: true, startTime: true, endTime: true },
+        })
+      : Promise.resolve([]),
   ])
 
   return NextResponse.json({
@@ -182,6 +200,7 @@ export async function GET(req: NextRequest) {
     tomorrowSchedule,
     todayHeb,
     tomorrowHeb,
+    bellSlots,
     upcomingExams,
     attendance,
     parentAttendance,
