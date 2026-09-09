@@ -24,8 +24,16 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async jwt({ token, user }) {
-      // On first sign-in, copy DB fields into the token
+      // On first sign-in, copy DB fields into the token. Also explicitly pin
+      // `sub` to the resolved user's real id right here rather than trusting
+      // it's already correctly set on `token` at this point — on a first
+      // sign-in that links a *pre-existing* pre-registered row (the
+      // allowDangerousEmailAccountLinking path) `token` starts out built from
+      // the OAuth id_token's own claims, and this makes sure the DB lookup
+      // below is never keyed on the wrong id during that exact transition.
+      const uid = user?.id ?? token.sub
       if (user) {
+        token.sub = user.id
         token.id = user.id
         token.role = (user as any).role
         token.accessStatus = (user as any).accessStatus
@@ -42,15 +50,22 @@ export const authOptions: NextAuthOptions = {
       // conditions ever matched an already-APPROVED, already-linked account.
       // A small school app's session-check volume makes the extra read here
       // free; the alternative is silently-stale identity data, which is worse.
-      const dbUser = await prisma.user.findUnique({
-        where: { id: token.sub! },
-        select: { role: true, accessStatus: true, parentType: true, studentId: true },
-      })
+      const dbUser = uid
+        ? await prisma.user.findUnique({
+            where: { id: uid },
+            select: { role: true, accessStatus: true, parentType: true, studentId: true },
+          })
+        : null
       if (dbUser) {
         token.role = dbUser.role
         token.accessStatus = dbUser.accessStatus
         token.parentType = dbUser.parentType ?? null
         token.studentId = dbUser.studentId ?? null
+      } else {
+        // Should never happen for a real, authenticated session — if this
+        // shows up in logs, `uid` is not landing on a real User row and
+        // that's the actual bug to chase (not staleness).
+        console.error("[auth.jwt] no User row found for uid=", uid, "hadUserParam=", !!user, "tokenSubBefore=", token.sub)
       }
       return token
     },
