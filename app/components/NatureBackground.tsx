@@ -42,7 +42,7 @@ const PHOTO_OPTIONS: BgOption[] = [
     id: "tropical-forest", label: "יער טרופי", emoji: "🌿", type: "photo",
     url: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=1600&q=85",
     thumbUrl: "https://images.unsplash.com/photo-1448375240586-882707db888b?w=400&q=70",
-    overlay: "from-black/55 via-black/15 to-black/65", anim: "mist",
+    overlay: "from-black/55 via-black/24 to-black/65", anim: "mist",
     kbFrom: "scale(1.08) translate(-1%, 0%)", kbTo: "scale(1.02) translate(1%, 1%)",
   },
   {
@@ -56,14 +56,14 @@ const PHOTO_OPTIONS: BgOption[] = [
     id: "desert-dunes", label: "מדבר חולות", emoji: "🏜️", type: "photo",
     url: "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=1600&q=85",
     thumbUrl: "https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=400&q=70",
-    overlay: "from-black/45 via-black/15 to-black/55", anim: "heat",
+    overlay: "from-black/45 via-black/24 to-black/55", anim: "heat",
     kbFrom: "scale(1.08) translate(-1%, 1%)", kbTo: "scale(1.13) translate(1%, -1%)",
   },
   {
     id: "snowy-peaks", label: "הרי שלג", emoji: "❄️", type: "photo",
     url: "https://images.unsplash.com/photo-1491555103944-7c647fd857e6?w=1600&q=85",
     thumbUrl: "https://images.unsplash.com/photo-1491555103944-7c647fd857e6?w=400&q=70",
-    overlay: "from-black/45 via-black/15 to-black/55", anim: "snow",
+    overlay: "from-black/45 via-black/24 to-black/55", anim: "snow",
     kbFrom: "scale(1.1) translate(0%, 1%)", kbTo: "scale(1.03) translate(-1%, -1%)",
   },
   {
@@ -77,7 +77,7 @@ const PHOTO_OPTIONS: BgOption[] = [
     id: "cherry-blossom", label: "פריחת דובדבן", emoji: "🌸", type: "photo",
     url: "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=1600&q=85",
     thumbUrl: "https://images.unsplash.com/photo-1522383225653-ed111181a951?w=400&q=70",
-    overlay: "from-black/45 via-black/10 to-black/55", anim: "bubbles",
+    overlay: "from-black/45 via-black/20 to-black/55", anim: "bubbles",
     kbFrom: "scale(1.08) translate(0%, 1%)", kbTo: "scale(1.02) translate(1%, -1%)",
   },
   {

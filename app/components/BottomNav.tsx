@@ -36,7 +36,7 @@ export default function BottomNav({
           ? activeTab === tab.label
           : tab.href ? pathname.startsWith(tab.href) : false
 
-        const inactiveText  = glassMode ? "text-white/40" : "text-gray-400"
+        const inactiveText  = glassMode ? "text-white/55" : "text-gray-400"
         const inactiveHover = glassMode ? "hover:bg-white/10 active:bg-white/20" : "hover:bg-gray-50 active:bg-gray-100"
 
         const inner = (
