@@ -96,17 +96,14 @@ function buildTimeline(slots: ScheduleSlot[], bellSlots: BellSlotT[]): TimelineE
     })
     .filter(Boolean) as TimelineEntry[]
 
-  lessons.sort((a, b) => timeToMin(a.start) - timeToMin(b.start))
+  // Breaks are real published rows in the bell schedule (period isn't a bare
+  // lesson number, e.g. "הפסקה" / "הפסקת צהריים") — shown with their actual
+  // configured times, not inferred from gaps between lessons.
+  const breaks: TimelineEntry[] = bellSlots
+    .filter(b => !/^\d+$/.test(b.period.trim()))
+    .map(b => ({ start: b.startTime, end: b.endTime, label: b.period, isBreak: true }))
 
-  const timeline: TimelineEntry[] = []
-  for (let i = 0; i < lessons.length; i++) {
-    timeline.push(lessons[i])
-    const next = lessons[i + 1]
-    if (next && timeToMin(next.start) > timeToMin(lessons[i].end)) {
-      timeline.push({ start: lessons[i].end, end: next.start, label: "הפסקה", isBreak: true })
-    }
-  }
-  return timeline
+  return [...lessons, ...breaks].sort((a, b) => timeToMin(a.start) - timeToMin(b.start))
 }
 
 type DayState = "no-school" | "before-school" | "now" | "done"

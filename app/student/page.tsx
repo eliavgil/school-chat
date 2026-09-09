@@ -7,6 +7,7 @@ import Link from "next/link"
 import BottomNav from "@/app/components/BottomNav"
 import ComingSoon from "@/app/components/ComingSoon"
 import { getPersonalDisplayName } from "@/app/components/personalStore"
+import { dayTypeForWeekday } from "@/lib/bellSchedule"
 
 interface Message {
   role: "user" | "bot"
@@ -121,22 +122,36 @@ function BoardTab() {
 
   const todayIdx = new Date().getDay() // 0=Sunday .. 6=Saturday
   const todayHeb = HEB_DAYS[todayIdx] // undefined on Saturday — no school
+  const todayDayType = dayTypeForWeekday(todayIdx) // school runs two distinct bell patterns across the week
 
   // Canonical period → clock-time lookup, for schedule rows that only give a bare
   // period number and rely on the school-wide bell schedule for actual times.
+  const todayBellSlots = bellSlots.filter(b => b.dayType === todayDayType)
   const bellByPeriod = new Map(
-    bellSlots.filter(b => b.dayType === "רגיל").map(b => [b.period, { start: b.startTime, end: b.endTime }])
+    todayBellSlots.map(b => [b.period, { start: b.startTime, end: b.endTime }])
   )
   const nowMin = new Date().getHours() * 60 + new Date().getMinutes()
 
-  const todaySlots = slots
+  const lessonSlots = slots
     .filter(s => s.dayHeb === todayHeb)
     .map(s => {
       const parsed = parsePeriod(s.period)
       const bell = bellByPeriod.get(String(parsed.num))
-      return { ...s, ...parsed, start: parsed.start ?? bell?.start, end: parsed.end ?? bell?.end }
+      return { ...s, ...parsed, start: parsed.start ?? bell?.start, end: parsed.end ?? bell?.end, isBreak: false }
     })
-    .sort((a, b) => a.num - b.num)
+
+  // Breaks are real published rows in the bell schedule (period isn't a bare
+  // lesson number, e.g. "הפסקה" / "הפסקת צהריים") — shown with their actual
+  // configured times, alongside the lessons, not inferred from gaps.
+  const breakSlots = todayBellSlots
+    .filter(b => !/^\d+$/.test(b.period.trim()))
+    .map((b, i) => ({
+      id: `break-${i}`, dayHeb: todayHeb ?? "", period: b.period, content: b.period,
+      num: 0, start: b.startTime, end: b.endTime, isBreak: true,
+    }))
+
+  const todaySlots = [...lessonSlots, ...breakSlots]
+    .sort((a, b) => (timeToMinutes(a.start) ?? a.num * 100) - (timeToMinutes(b.start) ?? b.num * 100))
 
   // First slot that hasn't ended yet — the one to highlight as "next up".
   const nextIdx = todayHeb ? todaySlots.findIndex(s => {
@@ -171,12 +186,12 @@ function BoardTab() {
             {todaySlots.map((s, i) => {
               const isNext = i === nextIdx
               return (
-                <div key={s.id} className={`px-4 py-3 flex items-center gap-3 ${isNext ? "bg-orange-50" : ""}`}>
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${isNext ? "bg-orange-500 text-white" : "bg-stone-100 text-stone-500"}`}>
-                    {s.num || "•"}
+                <div key={s.id} className={`px-4 py-3 flex items-center gap-3 ${s.isBreak ? "bg-stone-50/60" : isNext ? "bg-orange-50" : ""}`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${s.isBreak ? "bg-stone-100 text-stone-400" : isNext ? "bg-orange-500 text-white" : "bg-stone-100 text-stone-500"}`}>
+                    {s.isBreak ? "☕" : (s.num || "•")}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className={`text-sm truncate ${isNext ? "font-bold text-orange-900" : "text-stone-700"}`}>{s.content.split("  ")[0]}</div>
+                    <div className={`text-sm truncate ${s.isBreak ? "text-stone-400" : isNext ? "font-bold text-orange-900" : "text-stone-700"}`}>{s.content.split("  ")[0]}</div>
                     {s.start && <div className="text-[11px] text-stone-400" dir="ltr">{s.start}{s.end ? ` – ${s.end}` : ""}</div>}
                   </div>
                   {isNext && <span className="text-[10px] font-bold text-orange-600 bg-orange-100 rounded-full px-2 py-0.5 flex-shrink-0">הבא</span>}
