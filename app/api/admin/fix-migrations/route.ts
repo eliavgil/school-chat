@@ -87,15 +87,19 @@ export async function GET() {
     WHERE migration_name = '20260627000000_add_push_subscriptions' AND finished_at IS NULL;
   `))
 
-  const toBackfill = [
-    "20260715000000_add_disruptions_to_attendance",
-    "20260829213352_add_surveys",
-    "20260901204334_add_bell_slot",
+  // checksum = sha256 hex digest of each migration.sql file, matching exactly
+  // what `prisma migrate deploy` computes and checks against on every future
+  // run — a placeholder value here would make it flag these as "changed
+  // since applied" and refuse to proceed.
+  const toBackfill: { name: string; checksum: string }[] = [
+    { name: "20260715000000_add_disruptions_to_attendance", checksum: "ec6936e60c2446a4b894da656d6490638ee272bbb790705305b57d825078329b" },
+    { name: "20260829213352_add_surveys", checksum: "d4f84b626bd826a3ac1c0d97ebff3bb3b2cc40b2abc5f206787801a8e7c65f13" },
+    { name: "20260901204334_add_bell_slot", checksum: "8c51f2e4788efaff3830d46f1ba61a38d59bfe7dddbf140a7b0782c0470c9596" },
   ]
-  for (const name of toBackfill) {
+  for (const { name, checksum } of toBackfill) {
     await step(`backfill history: ${name}`, () => prisma.$executeRaw`
-      INSERT INTO "_prisma_migrations" (id, migration_name, started_at, finished_at, applied_steps_count, logs)
-      SELECT md5(random()::text || clock_timestamp()::text), ${name}, now(), now(), 1, NULL
+      INSERT INTO "_prisma_migrations" (id, checksum, migration_name, started_at, finished_at, applied_steps_count, logs)
+      SELECT md5(random()::text || clock_timestamp()::text), ${checksum}, ${name}, now(), now(), 1, NULL
       WHERE NOT EXISTS (SELECT 1 FROM "_prisma_migrations" WHERE migration_name = ${name});
     `)
   }
