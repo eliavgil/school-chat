@@ -243,51 +243,21 @@ function StudentHome({ session, data, isPreview }: { session: any; data: HomeDat
   const firstName = personalName || (session?.user?.name?.split(" ")[0] ?? "")
 
   const todaySlots: ScheduleSlot[] = data?.todaySchedule ?? []
-  const status = getLessonStatus(todaySlots, now)
+  const bellSlots = data?.bellSlots ?? []
+  const timeline = buildTimeline(todaySlots, bellSlots)
+  const nowNext = getNowNext(timeline, now, bellSlots.length > 0)
 
   const remainingDays = getRemainingSchoolDays()
   const daysToSummer  = getDaysUntilSummer()
   const nextVac       = getNextVacation()
   const daysToVac     = getDaysUntilNextVacation()
 
-  const parsedSlots: ParsedSlot[] = todaySlots
-    .map(s => { const p = parsePeriodStr(s.period); if (!p) return null; return { ...p, subject: parseSubject(s.content), content: s.content } })
-    .filter(Boolean) as ParsedSlot[]
-
   const nowMin = now.getHours() * 60 + now.getMinutes()
   const timeStr = now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })
 
-  // hero content
-  let heroLabel = "", heroTitle = "", heroSub = "", nextLesson = ""
-  let progressPct = 0
-
-  if (status.type === "in-class") {
-    heroLabel = "עכשיו בכיתה"
-    heroTitle = status.slot.subject
-    heroSub   = `${status.slot.start}–${status.slot.end}  ·  עוד ${fmtMins(status.minsLeft)}`
-    progressPct = status.progress
-    const idx = parsedSlots.findIndex(s => s.start === status.slot.start)
-    if (idx >= 0 && parsedSlots[idx + 1]) nextLesson = `שיעור הבא: ${parsedSlots[idx + 1].subject} ${parsedSlots[idx + 1].start}`
-  } else if (status.type === "break") {
-    heroLabel = "הפסקה"
-    heroTitle = status.next.subject
-    heroSub   = `${status.next.start}–${status.next.end}  ·  בעוד ${fmtMins(status.minsUntil)}`
-    const idx = parsedSlots.findIndex(s => s.start === status.next.start)
-    if (idx >= 0 && parsedSlots[idx + 1]) nextLesson = `אחריו: ${parsedSlots[idx + 1].subject} ${parsedSlots[idx + 1].start}`
-  } else if (status.type === "before-school") {
-    heroLabel = "שיעור ראשון היום"
-    heroTitle = status.first.subject
-    heroSub   = `מתחיל ב-${status.first.start}`
-    if (parsedSlots[1]) nextLesson = `אחריו: ${parsedSlots[1].subject} ${parsedSlots[1].start}`
-  } else if (status.type === "done") {
-    heroLabel = "יום הלימודים הסתיים"
-    heroTitle = "כל הכבוד 🎉"
-    heroSub   = data?.tomorrowSchedule?.length ? `מחר — יום ${data.tomorrowHeb}` : "מחר אין לימודים"
-  } else {
-    heroLabel = "שבת שלום"
-    heroTitle = firstName
-    heroSub   = "נתראה ביום ראשון"
-  }
+  const currentProgressPct = nowNext.state === "now" && !nowNext.current!.isBreak
+    ? Math.round(((nowMin - timeToMin(nowNext.current!.start)) / (timeToMin(nowNext.current!.end) - timeToMin(nowNext.current!.start))) * 100)
+    : 0
 
   const today = new Date().toISOString().slice(0, 10)
   const mergedEvents = [
@@ -359,24 +329,65 @@ function StudentHome({ session, data, isPreview }: { session: any; data: HomeDat
       {/* ── Scrollable content ── */}
       <main className="relative z-10 flex-1 overflow-y-auto">
 
-        {/* ── Above fold: hero ── */}
+        {/* ── Above fold: hero — same now/next bell-schedule mechanic as the teacher home ── */}
         <div className="flex flex-col justify-center px-6 pt-2" style={{ minHeight: "calc(100svh - 70px)" }}>
-          <p className="text-white/60 text-sm font-medium tracking-wide mb-2 animate-fade-in">{heroLabel}</p>
-          <h1 className="text-white font-light leading-none animate-fade-in stagger-1"
-            style={{ fontSize: "clamp(2.8rem, 13vw, 5.5rem)" }}>
-            {heroTitle}
-          </h1>
-          {heroSub && <p className="text-white/75 text-lg font-light mt-3 animate-fade-in stagger-2">{heroSub}</p>}
 
-          {status.type === "in-class" && (
-            <div className="mt-4 w-full max-w-xs">
-              <div className="h-0.5 bg-white/20 rounded-full overflow-hidden">
-                <div className="h-full bg-white/80 rounded-full" style={{ width: `${progressPct}%`, transition: "width 60s linear" }} />
-              </div>
+          {nowNext.state === "no-school" && (
+            <div className="animate-fade-in">
+              <p className="text-white/60 text-sm font-medium tracking-wide mb-2">שבת שלום</p>
+              <h1 className="text-white font-light leading-none" style={{ fontSize: "clamp(2.8rem, 13vw, 5.5rem)" }}>{firstName}</h1>
+              <p className="text-white/75 text-lg font-light mt-3">אין לימודים היום</p>
             </div>
           )}
 
-          {nextLesson && <p className="text-white/45 text-sm mt-3 animate-fade-in stagger-2">{nextLesson}</p>}
+          {nowNext.state === "done" && (
+            <div className="animate-fade-in">
+              <p className="text-white/60 text-sm font-medium tracking-wide mb-2">יום הלימודים הסתיים</p>
+              <h1 className="text-white font-light leading-none" style={{ fontSize: "clamp(2.8rem, 13vw, 5.5rem)" }}>כל הכבוד 🎉</h1>
+              <p className="text-white/75 text-lg font-light mt-3">{data?.tomorrowSchedule?.length ? `מחר — יום ${data?.tomorrowHeb}` : "מחר אין לימודים"}</p>
+            </div>
+          )}
+
+          {(nowNext.state === "now" || nowNext.state === "before-school") && (
+            <>
+              <p className="text-white/60 text-sm font-medium tracking-wide mb-2 animate-fade-in">
+                {nowNext.state === "now" ? (nowNext.current!.isBreak ? "הפסקה" : "עכשיו בכיתה") : "עוד לא התחיל"}
+              </p>
+              {nowNext.state === "now" ? (
+                <>
+                  <p className="text-white font-semibold tabular-nums leading-none animate-fade-in stagger-1"
+                    style={{ fontSize: "clamp(2.6rem, 13vw, 4.8rem)" }} dir="ltr">
+                    {nowNext.current!.start}–{nowNext.current!.end}
+                  </p>
+                  <h1 className="text-white/85 font-light leading-tight mt-2 animate-fade-in stagger-2"
+                    style={{ fontSize: "clamp(1.6rem, 7vw, 2.6rem)" }}>
+                    {nowNext.current!.label}
+                  </h1>
+                  {!nowNext.current!.isBreak && (
+                    <div className="mt-4 w-full max-w-xs">
+                      <div className="h-0.5 bg-white/20 rounded-full overflow-hidden">
+                        <div className="h-full bg-white/80 rounded-full" style={{ width: `${currentProgressPct}%`, transition: "width 60s linear" }} />
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="text-white/70 text-2xl font-light mt-1 animate-fade-in stagger-1">הלימודים עוד לא התחילו</p>
+              )}
+            </>
+          )}
+
+          {(nowNext.state === "now" || nowNext.state === "before-school") && nowNext.next && (
+            <div className="mt-5 glass rounded-2xl px-4 py-3 animate-fade-in stagger-2">
+              <p className="text-white/40 text-[10px] font-semibold uppercase tracking-widest mb-1">הבא בתור</p>
+              <div className="flex items-baseline gap-3">
+                <span className="text-white/90 font-semibold tabular-nums" style={{ fontSize: "clamp(1.3rem, 6vw, 1.9rem)" }} dir="ltr">
+                  {nowNext.next.start}–{nowNext.next.end}
+                </span>
+                <span className="text-white/60 text-sm font-light truncate">{nowNext.next.label}</span>
+              </div>
+            </div>
+          )}
 
           {/* 3 bot buttons */}
           <div className="flex gap-3 mt-8 animate-fade-in stagger-3">
@@ -427,8 +438,8 @@ function StudentHome({ session, data, isPreview }: { session: any; data: HomeDat
         {/* ── Below fold ── */}
         <div className="px-4 pb-10 space-y-3 max-w-sm mx-auto">
 
-          {/* Full daily schedule */}
-          {parsedSlots.length > 0 && (
+          {/* Full daily schedule — same bell-schedule timeline as the hero, breaks included */}
+          {timeline.length > 0 && (
             <div className="glass rounded-2xl overflow-hidden group/sched">
               <div className="flex items-center justify-between px-4 py-2.5">
                 <span className="text-white/80 text-sm font-medium">מערכת — יום {data?.todayHeb}</span>
@@ -440,15 +451,15 @@ function StudentHome({ session, data, isPreview }: { session: any; data: HomeDat
                 </Link>
               </div>
               <div className="border-t border-white/10 divide-y divide-white/5">
-                {parsedSlots.map((slot, i) => {
-                  const s = timeToMin(slot.start), e = timeToMin(slot.end)
+                {timeline.map((t, i) => {
+                  const s = timeToMin(t.start), e = timeToMin(t.end)
                   const isPast = nowMin >= e
                   const isCurrent = nowMin >= s && nowMin < e
                   return (
                     <div key={i} className={`flex items-center gap-3 px-4 py-2 ${isCurrent ? "bg-white/10" : ""}`}>
                       <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isCurrent ? "bg-white animate-pulse" : isPast ? "bg-white/10" : "bg-white/30"}`} />
-                      <span className={`text-xs nums w-20 flex-shrink-0 ${isPast ? "text-white/25" : "text-white/50"}`} dir="ltr">{slot.start}–{slot.end}</span>
-                      <span className={`text-sm flex-1 ${isCurrent ? "text-white font-medium" : isPast ? "text-white/25" : "text-white/70"}`}>{slot.subject}</span>
+                      <span className={`text-xs font-semibold nums w-20 flex-shrink-0 ${isPast ? "text-white/25" : "text-white/55"}`} dir="ltr">{t.start}–{t.end}</span>
+                      <span className={`text-sm flex-1 truncate ${isCurrent ? "text-white font-medium" : isPast ? "text-white/25" : t.isBreak ? "text-white/45 italic" : "text-white/70"}`}>{t.label}</span>
                       {isCurrent && <span className="text-[10px] text-white/80 glass rounded-full px-2 py-0.5">עכשיו</span>}
                     </div>
                   )
@@ -850,12 +861,12 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                   </p>
                   {nowNext.state === "now" ? (
                     <>
-                      <h1 className="text-white font-light leading-tight" style={{ fontSize: "clamp(2rem, 10vw, 3.6rem)" }}>
-                        {nowNext.current!.label}
-                      </h1>
-                      <p className="text-white/70 text-lg font-light mt-2" dir="ltr">
+                      <p className="text-white font-semibold tabular-nums leading-none" style={{ fontSize: "clamp(2.6rem, 13vw, 4.5rem)" }} dir="ltr">
                         {nowNext.current!.start}–{nowNext.current!.end}
                       </p>
+                      <h1 className="text-white/85 font-light leading-tight mt-3" style={{ fontSize: "clamp(1.3rem, 6vw, 2rem)" }}>
+                        {nowNext.current!.label}
+                      </h1>
                     </>
                   ) : (
                     <p className="text-white/60 text-lg font-light">הלימודים עוד לא התחילו</p>
@@ -866,12 +877,12 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
               {(nowNext.state === "now" || nowNext.state === "before-school") && nowNext.next && (
                 <div className="glass rounded-3xl px-6 py-5">
                   <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-1.5">הבא בתור</p>
-                  <h2 className="text-white/90 font-light leading-tight" style={{ fontSize: "clamp(1.4rem, 6vw, 2.2rem)" }}>
-                    {nowNext.next.label}
-                  </h2>
-                  <p className="text-white/55 text-base font-light mt-1" dir="ltr">
+                  <p className="text-white/90 font-semibold tabular-nums leading-none" style={{ fontSize: "clamp(1.8rem, 9vw, 3rem)" }} dir="ltr">
                     {nowNext.next.start}–{nowNext.next.end}
                   </p>
+                  <h2 className="text-white/70 font-light leading-tight mt-2" style={{ fontSize: "clamp(1.1rem, 5vw, 1.6rem)" }}>
+                    {nowNext.next.label}
+                  </h2>
                 </div>
               )}
 
@@ -884,7 +895,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                       const isNext = nowNext.next === t
                       return (
                         <div key={i} className={`flex items-center gap-3 px-4 py-2 ${isCurrent ? "bg-white/10" : ""}`}>
-                          <span className={`text-[11px] font-mono w-24 flex-shrink-0 ${isCurrent ? "text-white" : "text-white/35"}`} dir="ltr">{t.start}–{t.end}</span>
+                          <span className={`text-[13px] font-semibold font-mono w-24 flex-shrink-0 ${isCurrent ? "text-white" : "text-white/45"}`} dir="ltr">{t.start}–{t.end}</span>
                           <span className={`flex-1 text-[13px] truncate ${isCurrent ? "text-white font-medium" : t.isBreak ? "text-white/40 italic" : "text-white/70"}`}>{t.label}</span>
                           {isCurrent && <span className="text-[9px] bg-green-500/30 text-green-300 px-1.5 py-0.5 rounded-full flex-shrink-0">עכשיו</span>}
                           {isNext && <span className="text-[9px] bg-amber-500/30 text-amber-300 px-1.5 py-0.5 rounded-full flex-shrink-0">הבא</span>}

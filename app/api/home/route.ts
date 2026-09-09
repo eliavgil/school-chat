@@ -187,6 +187,24 @@ export async function GET(req: NextRequest) {
       : Promise.resolve([]),
   ])
 
+  // Bootstrap: a handful of classes don't have their own uploaded class
+  // schedule yet, but the periods this teacher personally teaches them are
+  // already known from their own weekly schedule — derive a partial board
+  // from those mentions instead of showing an empty one. Deliberately scoped
+  // to a small allowlist for now rather than every class.
+  const DERIVED_SCHEDULE_CLASSES = ["י4"]
+  let derivedToday: { period: string; content: string }[] = []
+  let derivedTomorrow: { period: string; content: string }[] = []
+  if (isStudent && todaySchedule.length === 0 && classProfile?.displayName && DERIVED_SCHEDULE_CLASSES.includes(classProfile.displayName)) {
+    const classTag = classProfile.displayName.replace("י", "י'") // "י4" -> "י'4", matching the source spreadsheet's notation
+    const [ownToday, ownTomorrow] = await Promise.all([
+      prisma.scheduleSlot.findMany({ where: { classId: TEACHER_OWN_SCHEDULE_ID, dayHeb: todayHeb }, select: { period: true, content: true } }),
+      prisma.scheduleSlot.findMany({ where: { classId: TEACHER_OWN_SCHEDULE_ID, dayHeb: tomorrowHeb }, select: { period: true, content: true } }),
+    ])
+    derivedToday = ownToday.filter(s => s.content.includes(classTag))
+    derivedTomorrow = ownTomorrow.filter(s => s.content.includes(classTag))
+  }
+
   return NextResponse.json({
     classId,
     classProfile,
@@ -196,8 +214,8 @@ export async function GET(req: NextRequest) {
     recentTasks,
     teacherTasks,
     classStudents,
-    todaySchedule,
-    tomorrowSchedule,
+    todaySchedule: derivedToday.length ? derivedToday : todaySchedule,
+    tomorrowSchedule: derivedTomorrow.length ? derivedTomorrow : tomorrowSchedule,
     todayHeb,
     tomorrowHeb,
     bellSlots,
