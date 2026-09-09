@@ -32,7 +32,7 @@ export default function ThemePicker({ onClose }: { onClose?: () => void }) {
 
   return (
     <div className="p-4" dir="rtl">
-      <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide mb-3">סגנון עיצוב</p>
+      <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-3">סגנון עיצוב</p>
       <div className="grid grid-cols-2 gap-2">
         {THEMES.map(t => (
           <button

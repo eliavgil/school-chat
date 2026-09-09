@@ -57,7 +57,7 @@ export default function LoginPage() {
           ].map(s => (
             <div key={s.label}>
               <div className="text-2xl font-bold text-stone-900 nums">{s.val}</div>
-              <div className="text-xs text-stone-400 mt-0.5">{s.label}</div>
+              <div className="text-xs text-stone-500 mt-0.5">{s.label}</div>
             </div>
           ))}
         </div>
@@ -72,7 +72,7 @@ export default function LoginPage() {
           <GoogleIcon />
           כניסה עם Google
         </button>
-        <p className="text-center text-stone-400 text-xs">
+        <p className="text-center text-stone-500 text-xs">
           הכניסה מאובטחת · לתלמידים, הורים ומחנכים
         </p>
       </div>

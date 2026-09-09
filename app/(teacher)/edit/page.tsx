@@ -85,7 +85,7 @@ function ScheduleNotesEditor() {
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-stone-400">הערות אישיות למערכת — גלויות רק לך</p>
+      <p className="text-xs text-stone-500">הערות אישיות למערכת — גלויות רק לך</p>
 
       {byDay.map(({ day, notes: dayNotes }) => (
         <div key={day} className="bg-white border border-stone-200 rounded-2xl overflow-hidden">
@@ -96,7 +96,7 @@ function ScheduleNotesEditor() {
             {dayNotes.map(item => (
               <div key={item.id} className="px-4 py-3">
                 <div className="flex items-start gap-2">
-                  <div className="text-xs text-stone-400 font-mono mt-0.5 flex-shrink-0">שיעור {item.period}</div>
+                  <div className="text-xs text-stone-500 font-mono mt-0.5 flex-shrink-0">שיעור {item.period}</div>
                   {editing === item.id ? (
                     <div className="flex-1 flex gap-2">
                       <input autoFocus value={editNote} onChange={e => setEditNote(e.target.value)}
@@ -104,14 +104,14 @@ function ScheduleNotesEditor() {
                         className="flex-1 bg-stone-100 border-0 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-stone-300"
                       />
                       <button onClick={() => save(item.id)} className="bg-stone-900 text-white text-xs px-3 py-1.5 rounded-lg hover:bg-stone-800 btn-press interactive">שמור</button>
-                      <button onClick={() => setEditing(null)} className="text-stone-400 text-xs px-2 hover:text-stone-700 interactive">ביטול</button>
+                      <button onClick={() => setEditing(null)} className="text-stone-500 text-xs px-2 hover:text-stone-700 interactive">ביטול</button>
                     </div>
                   ) : (
                     <div className="flex-1 flex items-center justify-between gap-2 group">
                       <span className="text-sm text-stone-700">{item.note}</span>
                       <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => { setEditing(item.id); setEditNote(item.note) }}
-                          className="text-stone-400 hover:text-stone-700 interactive p-1 rounded">
+                          className="text-stone-500 hover:text-stone-700 interactive p-1 rounded">
                           <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                           </svg>
@@ -147,12 +147,12 @@ function ScheduleNotesEditor() {
           <div className="flex gap-2">
             <button onClick={add} disabled={!newPeriod || !newNote}
               className="bg-stone-900 text-white text-sm px-4 py-2 rounded-lg hover:bg-stone-800 disabled:opacity-40 btn-press interactive">הוסף</button>
-            <button onClick={() => setShowAdd(false)} className="text-stone-400 text-sm px-3 py-2 hover:text-stone-700 interactive">ביטול</button>
+            <button onClick={() => setShowAdd(false)} className="text-stone-500 text-sm px-3 py-2 hover:text-stone-700 interactive">ביטול</button>
           </div>
         </div>
       ) : (
         <button onClick={() => setShowAdd(true)}
-          className="w-full border-2 border-dashed border-stone-200 rounded-xl py-3 text-sm text-stone-400 hover:border-stone-400 hover:text-stone-600 interactive transition-colors">
+          className="w-full border-2 border-dashed border-stone-200 rounded-xl py-3 text-sm text-stone-500 hover:border-stone-400 hover:text-stone-600 interactive transition-colors">
           + הוסף הערה אישית
         </button>
       )}
@@ -191,11 +191,11 @@ function PersonalEventsEditor() {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-stone-400">אירועים אישיים — גלויים רק לך</p>
+      <p className="text-xs text-stone-500">אירועים אישיים — גלויים רק לך</p>
 
       {events.map(ev => (
         <div key={ev.id} className="bg-white border border-stone-200 rounded-xl px-4 py-3 flex items-start gap-3 group">
-          <div className="text-xs text-stone-400 font-mono mt-0.5 flex-shrink-0 w-16">
+          <div className="text-xs text-stone-500 font-mono mt-0.5 flex-shrink-0 w-16">
             {new Date(ev.date).toLocaleDateString("he-IL", { day: "numeric", month: "numeric" })}
           </div>
           {editing === ev.id ? (
@@ -205,14 +205,14 @@ function PersonalEventsEditor() {
                 className="flex-1 bg-stone-100 border-0 rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-stone-300"
               />
               <button onClick={() => save(ev.id)} className="bg-stone-900 text-white text-xs px-3 py-1 rounded-lg hover:bg-stone-800 btn-press interactive">שמור</button>
-              <button onClick={() => setEditing(null)} className="text-stone-400 text-xs px-2 hover:text-stone-700 interactive">ביטול</button>
+              <button onClick={() => setEditing(null)} className="text-stone-500 text-xs px-2 hover:text-stone-700 interactive">ביטול</button>
             </div>
           ) : (
             <div className="flex-1 flex items-center justify-between gap-2">
               <span className="text-sm text-stone-700">{ev.description}</span>
               <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button onClick={() => { setEditing(ev.id); setEditDesc(ev.description) }}
-                  className="text-stone-400 hover:text-stone-700 interactive p-1 rounded">
+                  className="text-stone-500 hover:text-stone-700 interactive p-1 rounded">
                   <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
@@ -240,12 +240,12 @@ function PersonalEventsEditor() {
           <div className="flex gap-2">
             <button onClick={add} disabled={!newDate || !newDesc}
               className="bg-stone-900 text-white text-sm px-4 py-2 rounded-lg hover:bg-stone-800 disabled:opacity-40 btn-press interactive">הוסף</button>
-            <button onClick={() => setShowAdd(false)} className="text-stone-400 text-sm px-3 py-2 hover:text-stone-700 interactive">ביטול</button>
+            <button onClick={() => setShowAdd(false)} className="text-stone-500 text-sm px-3 py-2 hover:text-stone-700 interactive">ביטול</button>
           </div>
         </div>
       ) : (
         <button onClick={() => setShowAdd(true)}
-          className="w-full border-2 border-dashed border-stone-200 rounded-xl py-3 text-sm text-stone-400 hover:border-stone-400 hover:text-stone-600 interactive transition-colors">
+          className="w-full border-2 border-dashed border-stone-200 rounded-xl py-3 text-sm text-stone-500 hover:border-stone-400 hover:text-stone-600 interactive transition-colors">
           + הוסף אירוע אישי
         </button>
       )}

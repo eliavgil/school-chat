@@ -8,7 +8,7 @@ type UserType = "parent" | "student" | null
 function StepDot({ n, active }: { n: number; active: boolean }) {
   return (
     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
-      active ? "bg-stone-900 text-white" : "bg-stone-200 text-stone-400"
+      active ? "bg-stone-900 text-white" : "bg-stone-200 text-stone-500"
     }`}>{n}</div>
   )
 }
@@ -74,7 +74,7 @@ export default function PendingPage() {
           המחנך/ת יאשר את גישתך בקרוב. ניתן לסגור את הדף.
         </p>
         <button onClick={() => signOut({ callbackUrl: "/login" })}
-          className="mt-8 text-stone-400 text-xs hover:text-stone-600 interactive animate-fade-in stagger-2">
+          className="mt-8 text-stone-500 text-xs hover:text-stone-600 interactive animate-fade-in stagger-2">
           יציאה מהחשבון
         </button>
       </div>
@@ -92,7 +92,7 @@ export default function PendingPage() {
             <div className="w-6 h-0.5 bg-stone-200" />
             <StepDot n={2} active={!!userType} />
           </div>
-          <button onClick={() => signOut({ callbackUrl: "/login" })} className="text-xs text-stone-400 hover:text-stone-600 interactive">
+          <button onClick={() => signOut({ callbackUrl: "/login" })} className="text-xs text-stone-500 hover:text-stone-600 interactive">
             יציאה
           </button>
         </div>
@@ -130,7 +130,7 @@ export default function PendingPage() {
       {/* Step 2: parent form */}
       {userType === "parent" && (
         <div className="px-6 space-y-5 animate-fade-in">
-          <button onClick={() => setUserType(null)} className="flex items-center gap-1.5 text-xs text-stone-400 hover:text-stone-700 interactive mb-1">
+          <button onClick={() => setUserType(null)} className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-700 interactive mb-1">
             <span>→</span> חזרה
           </button>
 
@@ -164,13 +164,13 @@ export default function PendingPage() {
       {/* Step 2: student form */}
       {userType === "student" && (
         <div className="px-6 space-y-5 animate-fade-in">
-          <button onClick={() => setUserType(null)} className="flex items-center gap-1.5 text-xs text-stone-400 hover:text-stone-700 interactive mb-1">
+          <button onClick={() => setUserType(null)} className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-700 interactive mb-1">
             <span>→</span> חזרה
           </button>
 
           <Input label="שם מלא" value={studentName} onChange={setStudentName} placeholder="כפי שמופיע ברשימת הכיתה" />
 
-          <p className="text-xs text-stone-400 leading-relaxed">
+          <p className="text-xs text-stone-500 leading-relaxed">
             המחנך/ת יזהה אותך לפי השם ויאשר את גישתך לאפליקציה.
           </p>
 

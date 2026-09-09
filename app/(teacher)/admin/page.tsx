@@ -43,7 +43,7 @@ function ApproveWithLink({
           className="border border-red-300 text-red-500 rounded-lg px-3 py-1.5 text-xs hover:bg-red-50 disabled:opacity-50">
           דחה
         </button>
-        <button onClick={onCancel} className="text-stone-400 text-xs hover:text-stone-600 px-2">ביטול</button>
+        <button onClick={onCancel} className="text-stone-500 text-xs hover:text-stone-600 px-2">ביטול</button>
       </div>
     </div>
   )
@@ -159,7 +159,7 @@ export default function AdminPage() {
           <div className="flex gap-6 text-sm font-medium">
             {(["import", "users", "roster"] as const).map(t => (
               <button key={t} onClick={() => setTab(t)}
-                className={`pb-3 border-b-2 transition-colors interactive ${tab === t ? "border-stone-900 text-stone-900" : "border-transparent text-stone-400 hover:text-stone-700"}`}>
+                className={`pb-3 border-b-2 transition-colors interactive ${tab === t ? "border-stone-900 text-stone-900" : "border-transparent text-stone-500 hover:text-stone-700"}`}>
                 {t === "import" ? "ייבוא נתונים" : t === "roster" ? "רשימת כיתה" : <>
                   ניהול משתמשים{totalPending > 0 && <span className="bg-red-500 text-white rounded-full px-1.5 py-0.5 text-xs mr-1">{totalPending}</span>}
                 </>}
@@ -203,7 +203,7 @@ export default function AdminPage() {
                         {loading[job.type] ? <span className="text-stone-500 text-sm">מייבא...</span> : <>
                           <span className="text-stone-500 text-sm">גרור קובץ לכאן או </span>
                           <span className="text-stone-700 text-sm font-medium">בחר קובץ</span>
-                          <p className="text-stone-400 text-xs mt-1">{job.accept}</p>
+                          <p className="text-stone-500 text-xs mt-1">{job.accept}</p>
                         </>}
                       </div>
                       <input type="file" accept={job.accept} className="hidden"
@@ -217,16 +217,16 @@ export default function AdminPage() {
           </>}
 
           {/* ── Roster tab ── */}
-          {tab === "roster" && (usersLoading ? <p className="text-stone-400 text-sm">טוען...</p> : (
+          {tab === "roster" && (usersLoading ? <p className="text-stone-500 text-sm">טוען...</p> : (
             roster.length === 0
-              ? <p className="text-stone-400 text-sm text-center py-8">אין כיתות ברשימה</p>
+              ? <p className="text-stone-500 text-sm text-center py-8">אין כיתות ברשימה</p>
               : <div className="space-y-4">
                   {roster.map(cls => (
                     <div key={cls.id} className="bg-white border border-stone-200 rounded-xl overflow-hidden">
                       <div className="flex items-center justify-between px-4 py-3 bg-stone-50 border-b border-stone-200">
                         <div>
                           <span className="font-semibold text-stone-800 text-sm">{cls.displayName || cls.name}</span>
-                          <span className="text-stone-400 text-xs mr-2">({cls.students.length} תלמידים)</span>
+                          <span className="text-stone-500 text-xs mr-2">({cls.students.length} תלמידים)</span>
                         </div>
                         <button
                           disabled={actionLoading === cls.id}
@@ -239,7 +239,7 @@ export default function AdminPage() {
                         </button>
                       </div>
                       {cls.students.length === 0
-                        ? <p className="text-stone-400 text-xs px-4 py-3">אין תלמידים בכיתה זו</p>
+                        ? <p className="text-stone-500 text-xs px-4 py-3">אין תלמידים בכיתה זו</p>
                         : <div className="divide-y divide-stone-100">
                             {cls.students.map(s => (
                               <div key={s.id} className="flex items-center justify-between px-4 py-2.5">
@@ -263,7 +263,7 @@ export default function AdminPage() {
           ))}
 
           {/* ── Users tab ── */}
-          {tab === "users" && (usersLoading ? <p className="text-stone-400 text-sm">טוען...</p> : <>
+          {tab === "users" && (usersLoading ? <p className="text-stone-500 text-sm">טוען...</p> : <>
 
             {/* Pre-register student */}
             <section className="bg-stone-50 border border-stone-200 rounded-xl p-4">
@@ -296,7 +296,7 @@ export default function AdminPage() {
                         <div className="text-sm space-y-0.5">
                           <div className="font-medium text-stone-800">{u.name ?? "—"}</div>
                           <div className="text-stone-500 text-xs">{u.email}</div>
-                          {u.phone && <div className="text-stone-400 text-xs" dir="ltr">{u.phone}</div>}
+                          {u.phone && <div className="text-stone-500 text-xs" dir="ltr">{u.phone}</div>}
                           {u.requestedChildName && <div className="text-stone-700 text-xs font-medium mt-1">{u.parentType ?? "הורה"} של: {u.requestedChildName}</div>}
                         </div>
                         <button onClick={() => setExpandedId(expandedId === u.id ? null : u.id)}
@@ -349,25 +349,25 @@ export default function AdminPage() {
             )}
 
             {totalPending === 0 && (
-              <p className="text-stone-400 text-sm text-center py-2">אין בקשות ממתינות</p>
+              <p className="text-stone-500 text-sm text-center py-2">אין בקשות ממתינות</p>
             )}
 
             {/* Approved parents */}
             <section>
               <h2 className="text-sm font-semibold text-stone-700 mb-3">👨‍👩‍👧 הורים מאושרים ({approvedParents.length})</h2>
-              {approvedParents.length === 0 ? <p className="text-stone-400 text-xs">אין</p> : (
+              {approvedParents.length === 0 ? <p className="text-stone-500 text-xs">אין</p> : (
                 <div className="bg-white border border-stone-200 rounded-xl divide-y divide-gray-100">
                   {approvedParents.map(p => (
                     <div key={p.id} className="px-4 py-3 flex items-center justify-between gap-4">
                       <div className="text-sm">
                         <div className="font-medium text-stone-800">{p.name ?? "—"}</div>
-                        <div className="text-stone-400 text-xs">{p.email}</div>
-                        {p.phone && <div className="text-stone-400 text-xs" dir="ltr">{p.phone}</div>}
+                        <div className="text-stone-500 text-xs">{p.email}</div>
+                        {p.phone && <div className="text-stone-500 text-xs" dir="ltr">{p.phone}</div>}
                         <div className="flex flex-wrap gap-1 mt-1">
                           {p.parentStudents.map(({ student }) => (
                             <span key={student.id} className="bg-stone-100 text-stone-600 text-xs rounded-full px-2 py-0.5 flex items-center gap-1">
                               {student.name}
-                              <button onClick={() => action(p.id, "unlink-parent", student.id)} className="text-stone-400 hover:text-red-500" title="הסר">×</button>
+                              <button onClick={() => action(p.id, "unlink-parent", student.id)} className="text-stone-500 hover:text-red-500" title="הסר">×</button>
                             </span>
                           ))}
                         </div>
@@ -382,18 +382,18 @@ export default function AdminPage() {
             {/* Approved students */}
             <section>
               <h2 className="text-sm font-semibold text-stone-700 mb-3">🎒 תלמידים מאושרים ({approvedStudents.length})</h2>
-              {approvedStudents.length === 0 ? <p className="text-stone-400 text-xs">אין</p> : (
+              {approvedStudents.length === 0 ? <p className="text-stone-500 text-xs">אין</p> : (
                 <div className="bg-white border border-stone-200 rounded-xl divide-y divide-gray-100">
                   {approvedStudents.map(s => (
                     <div key={s.id} className="px-4 py-3">
                       <div className="flex items-center justify-between gap-4">
                         <div className="text-sm">
                           <div className="font-medium text-stone-800">{s.name ?? "—"}</div>
-                          <div className="text-stone-400 text-xs">{s.email}</div>
+                          <div className="text-stone-500 text-xs">{s.email}</div>
                           {s.studentRecord ? (
                             <span className="bg-stone-100 text-stone-600 text-xs rounded-full px-2 py-0.5 mt-1 inline-flex items-center gap-1">
                               {s.studentRecord.name}
-                              <button onClick={() => action(s.id, "unlink-student")} className="text-stone-400 hover:text-red-500">×</button>
+                              <button onClick={() => action(s.id, "unlink-student")} className="text-stone-500 hover:text-red-500">×</button>
                             </span>
                           ) : (
                             <span className="text-red-400 text-xs mt-1 inline-block">⚠️ לא מקושר לרשימת כיתה</span>

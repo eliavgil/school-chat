@@ -47,16 +47,16 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-[#faf9f6] p-6" dir="rtl">
       <div className="max-w-md mx-auto">
-        <button onClick={() => router.back()} className="text-sm text-stone-400 hover:text-stone-700 mb-6 flex items-center gap-1 interactive">
+        <button onClick={() => router.back()} className="text-sm text-stone-500 hover:text-stone-700 mb-6 flex items-center gap-1 interactive">
           ← חזרה
         </button>
 
         <h1 className="text-xl font-bold text-stone-900 mb-1">הגדרות</h1>
-        <p className="text-sm text-stone-400 mb-6">השינויים יופיעו בכל גרסאות האפליקציה.</p>
+        <p className="text-sm text-stone-500 mb-6">השינויים יופיעו בכל גרסאות האפליקציה.</p>
 
         {/* Class settings */}
         <div className="bg-white rounded-2xl border border-stone-200 p-5 space-y-5 mb-4">
-          <p className="text-xs font-semibold text-stone-400 uppercase tracking-wide">פרטי הכיתה</p>
+          <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide">פרטי הכיתה</p>
           {fields.map(({ key, label, placeholder }) => (
             <div key={key}>
               <label className="block text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1.5">{label}</label>

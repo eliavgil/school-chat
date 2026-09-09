@@ -88,7 +88,7 @@ function CountdownCard({ emoji, label, event }: { emoji: string; label: string; 
   return (
     <div className="bg-white rounded-2xl border border-stone-200 px-4 py-3 flex-1 min-w-[112px]">
       <div className="text-2xl mb-1">{emoji}</div>
-      <div className="text-[11px] text-stone-400 mb-1">{label}</div>
+      <div className="text-[11px] text-stone-500 mb-1">{label}</div>
       {event ? (
         <>
           <div className="text-2xl font-bold text-stone-900">{daysUntil(event.date)}</div>
@@ -163,7 +163,7 @@ function BoardTab() {
   const summerBreak = events.find(isSummerEvent) ?? null
   const nextExam = events.find(isExamEvent) ?? null
 
-  if (loading) return <div className="flex-1 flex items-center justify-center text-stone-400 text-sm">טוען...</div>
+  if (loading) return <div className="flex-1 flex items-center justify-center text-stone-500 text-sm">טוען...</div>
 
   return (
     <div className="flex-1 overflow-y-auto px-4 py-4 space-y-6 bg-[#faf9f6]">
@@ -178,21 +178,21 @@ function BoardTab() {
       <div>
         <h3 className="text-sm font-bold text-stone-800 mb-2">היום{todayHeb ? ` · יום ${todayHeb}` : ""}</h3>
         {!todayHeb ? (
-          <div className="bg-white rounded-2xl border border-stone-200 px-4 py-6 text-center text-stone-400 text-sm">שבת שלום, אין לימודים היום 🌿</div>
+          <div className="bg-white rounded-2xl border border-stone-200 px-4 py-6 text-center text-stone-500 text-sm">שבת שלום, אין לימודים היום 🌿</div>
         ) : todaySlots.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-stone-200 px-4 py-6 text-center text-stone-400 text-sm">אין עדיין מערכת שעות טעונה</div>
+          <div className="bg-white rounded-2xl border border-stone-200 px-4 py-6 text-center text-stone-500 text-sm">אין עדיין מערכת שעות טעונה</div>
         ) : (
           <div className="bg-white rounded-2xl border border-stone-200 divide-y divide-stone-100 overflow-hidden">
             {todaySlots.map((s, i) => {
               const isNext = i === nextIdx
               return (
                 <div key={s.id} className={`px-4 py-3 flex items-center gap-3 ${s.isBreak ? "bg-stone-50/60" : isNext ? "bg-orange-50" : ""}`}>
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${s.isBreak ? "bg-stone-100 text-stone-400" : isNext ? "bg-orange-500 text-white" : "bg-stone-100 text-stone-500"}`}>
+                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0 ${s.isBreak ? "bg-stone-100 text-stone-500" : isNext ? "bg-orange-500 text-white" : "bg-stone-100 text-stone-500"}`}>
                     {s.isBreak ? "☕" : (s.num || "•")}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className={`text-sm truncate ${s.isBreak ? "text-stone-400" : isNext ? "font-bold text-orange-900" : "text-stone-700"}`}>{s.content.split("  ")[0]}</div>
-                    {s.start && <div className="text-[11px] text-stone-400" dir="ltr">{s.start}{s.end ? ` – ${s.end}` : ""}</div>}
+                    <div className={`text-sm truncate ${s.isBreak ? "text-stone-500" : isNext ? "font-bold text-orange-900" : "text-stone-700"}`}>{s.content.split("  ")[0]}</div>
+                    {s.start && <div className="text-[11px] text-stone-500" dir="ltr">{s.start}{s.end ? ` – ${s.end}` : ""}</div>}
                   </div>
                   {isNext && <span className="text-[10px] font-bold text-orange-600 bg-orange-100 rounded-full px-2 py-0.5 flex-shrink-0">הבא</span>}
                 </div>
@@ -206,12 +206,12 @@ function BoardTab() {
       <div>
         <h3 className="text-sm font-bold text-stone-800 mb-2">אירועים קרובים</h3>
         {events.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-stone-200 px-4 py-6 text-center text-stone-400 text-sm">אין אירועים קרובים</div>
+          <div className="bg-white rounded-2xl border border-stone-200 px-4 py-6 text-center text-stone-500 text-sm">אין אירועים קרובים</div>
         ) : (
           <div className="bg-white rounded-2xl border border-stone-200 divide-y divide-stone-100 overflow-hidden">
             {events.slice(0, 10).map(ev => (
               <div key={ev.id} className="px-4 py-3 flex items-center gap-3">
-                <div className="text-xs font-mono text-stone-400 w-11 flex-shrink-0" dir="ltr">{fmtEventDate(ev.date)}</div>
+                <div className="text-xs font-mono text-stone-500 w-11 flex-shrink-0" dir="ltr">{fmtEventDate(ev.date)}</div>
                 <div className="flex-1 min-w-0 text-sm text-stone-700 truncate">{ev.description}</div>
               </div>
             ))}
@@ -248,7 +248,7 @@ function SurveysTab({ isPreview }: { isPreview: boolean }) {
     setBusyId(null)
   }
 
-  if (loading) return <div className="flex-1 flex items-center justify-center text-stone-400 text-sm">טוען...</div>
+  if (loading) return <div className="flex-1 flex items-center justify-center text-stone-500 text-sm">טוען...</div>
 
   const total = surveys.length
   const done = surveys.filter(s => s.completed).length
@@ -259,14 +259,14 @@ function SurveysTab({ isPreview }: { isPreview: boolean }) {
       {/* Summary */}
       <div className={`rounded-2xl px-5 py-4 flex items-center justify-between ${allDone ? "bg-gradient-to-br from-amber-400 to-orange-500" : "bg-white border border-stone-200"}`}>
         <div>
-          <div className={`text-xs ${allDone ? "text-white/80" : "text-stone-400"}`}>שאלונים שמולאו</div>
+          <div className={`text-xs ${allDone ? "text-white/80" : "text-stone-500"}`}>שאלונים שמולאו</div>
           <div className={`text-2xl font-bold ${allDone ? "text-white" : "text-stone-900"}`}>{done} מתוך {total}</div>
         </div>
         {allDone && <div className="text-4xl">👑</div>}
       </div>
 
       {total === 0 ? (
-        <div className="bg-white rounded-2xl border border-stone-200 px-4 py-8 text-center text-stone-400 text-sm">אין שאלונים פעילים כרגע</div>
+        <div className="bg-white rounded-2xl border border-stone-200 px-4 py-8 text-center text-stone-500 text-sm">אין שאלונים פעילים כרגע</div>
       ) : (
         <div className="space-y-2.5">
           {surveys.map(s => (
@@ -274,7 +274,7 @@ function SurveysTab({ isPreview }: { isPreview: boolean }) {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold text-stone-900 text-sm">{s.title}</div>
-                  {s.dueDate && <div className="text-xs text-stone-400 mt-0.5">עד {new Date(s.dueDate).toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit" })}</div>}
+                  {s.dueDate && <div className="text-xs text-stone-500 mt-0.5">עד {new Date(s.dueDate).toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit" })}</div>}
                 </div>
                 {s.completed && <span className="text-lg flex-shrink-0">✅</span>}
               </div>
@@ -284,7 +284,7 @@ function SurveysTab({ isPreview }: { isPreview: boolean }) {
                   פתח שאלון
                 </a>
                 {isPreview ? (
-                  <div className="flex-1 text-center text-[11px] text-stone-400 py-2 rounded-xl bg-stone-50 border border-dashed border-stone-200 flex items-center justify-center">
+                  <div className="flex-1 text-center text-[11px] text-stone-500 py-2 rounded-xl bg-stone-50 border border-dashed border-stone-200 flex items-center justify-center">
                     סימון זמין לתלמיד/ה בלבד
                   </div>
                 ) : (
@@ -436,23 +436,23 @@ export default function StudentPage() {
             </div>
             <div>
               <div className="font-semibold text-stone-900 text-sm">שלום {firstName}</div>
-              <div className="text-xs text-stone-400">בוט הכיתה שלך</div>
+              <div className="text-xs text-stone-500">בוט הכיתה שלך</div>
             </div>
           </div>
           <div className="flex items-center gap-1">
             {messages.length > 0 && (
-              <button onClick={clearChat} className="text-xs text-stone-400 hover:text-stone-600 interactive px-2 py-1 rounded-lg hover:bg-stone-100" title="נקה שיחה">
+              <button onClick={clearChat} className="text-xs text-stone-500 hover:text-stone-600 interactive px-2 py-1 rounded-lg hover:bg-stone-100" title="נקה שיחה">
                 נקה
               </button>
             )}
             <a href="/student/edit" title="הגדרות אישיות"
-              className="w-8 h-8 flex items-center justify-center rounded-xl text-stone-400 hover:text-stone-700 hover:bg-stone-100 interactive transition-colors">
+              className="w-8 h-8 flex items-center justify-center rounded-xl text-stone-500 hover:text-stone-700 hover:bg-stone-100 interactive transition-colors">
               <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </a>
-            <button onClick={() => signOut({ callbackUrl: "/login" })} className="text-xs text-stone-400 hover:text-stone-700 interactive px-2 py-1">
+            <button onClick={() => signOut({ callbackUrl: "/login" })} className="text-xs text-stone-500 hover:text-stone-700 interactive px-2 py-1">
               יציאה
             </button>
           </div>
@@ -494,7 +494,7 @@ export default function StudentPage() {
                   <p className="text-stone-500 text-sm mt-2 max-w-xs mx-auto leading-relaxed">
                     כאן התלמיד/ה שואל/ת על ציונים, מבחנים ומערכת שעות אישית — מבוסס על הנתונים שלו/ה בפועל.
                   </p>
-                  <p className="text-stone-400 text-xs mt-2">בתצוגה מקדימה זו לא מוצגות תשובות חיות, כדי לא להציג נתונים של תלמיד/ה אמיתי/ת.</p>
+                  <p className="text-stone-500 text-xs mt-2">בתצוגה מקדימה זו לא מוצגות תשובות חיות, כדי לא להציג נתונים של תלמיד/ה אמיתי/ת.</p>
                 </div>
               </div>
             ) : noStudent ? (

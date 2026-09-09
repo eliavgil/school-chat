@@ -79,7 +79,7 @@ function SilverBotThinking() {
         </div>
         <div>
           <div className="text-stone-700 font-bold text-sm">בוט הכיתה</div>
-          <div className="text-stone-400 text-xs flex items-center gap-1">
+          <div className="text-stone-500 text-xs flex items-center gap-1">
             בוט הכיתה בודק
             <span className="flex gap-0.5">
               <span className="w-1 h-1 bg-stone-400 rounded-full animate-bounce" style={{ animationDelay: "0ms" }} />
@@ -129,7 +129,7 @@ function WelcomeMessages({
           במידה ובוט הכיתה משוכנע שהוא יודע לענות תשובה נכונה, הוא יענה. במידה ולא — הוא יעדכן שהמחנך יענה.
         </p>
         <p className="mt-2">בכל מקרה, גם כאשר הבוט עונה, המחנך עובר על כל ההודעות.</p>
-        <button onClick={onDismiss} className="mt-3 text-xs text-stone-400 underline hover:text-stone-700">
+        <button onClick={onDismiss} className="mt-3 text-xs text-stone-500 underline hover:text-stone-700">
           אל תראה הודעה זו יותר
         </button>
       </div>
@@ -430,7 +430,7 @@ export default function ParentChat() {
                       <div className="text-xs font-bold text-stone-500 mb-1">בוט הכיתה</div>
                       <div className="text-sm whitespace-pre-wrap text-stone-800">{msg.botResponse}</div>
                       {msg.dataAsOf && (
-                        <div className="text-xs text-stone-400 mt-1">
+                        <div className="text-xs text-stone-500 mt-1">
                           נכון לתאריך {new Date(msg.dataAsOf).toLocaleDateString("he-IL")}
                         </div>
                       )}
