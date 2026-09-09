@@ -695,6 +695,8 @@ export default function PresentPage({ params }: Props) {
   const [qrOpen, setQrOpen] = useState(false)
   const [students, setStudents] = useState<{ id: string; name: string }[]>([])
   const [classPickerOpen, setClassPickerOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
   const [availableClasses, setAvailableClasses] = useState<{ id: string; name: string }[]>([])
 
   useEffect(() => {
@@ -803,14 +805,29 @@ export default function PresentPage({ params }: Props) {
     }
   }, [lesson, session])
 
+  const toggleFullscreen = useCallback(() => {
+    if (!document.fullscreenElement) {
+      rootRef.current?.requestFullscreen?.().catch(() => {})
+    } else {
+      document.exitFullscreen?.().catch(() => {})
+    }
+  }, [])
+
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement)
+    document.addEventListener("fullscreenchange", onChange)
+    return () => document.removeEventListener("fullscreenchange", onChange)
+  }, [])
+
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (e.key === "ArrowLeft" || e.key === "PageDown" || e.key === " ") go(idx + 1)
       if (e.key === "ArrowRight" || e.key === "PageUp") go(idx - 1)
+      if (e.key === "f" || e.key === "F") toggleFullscreen()
     }
     window.addEventListener("keydown", onKey)
     return () => window.removeEventListener("keydown", onKey)
-  }, [go, idx])
+  }, [go, idx, toggleFullscreen])
 
   useEffect(() => {
     const el = stageRef.current
@@ -891,7 +908,7 @@ export default function PresentPage({ params }: Props) {
   }
 
   return (
-    <div style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", background: "var(--ink)", direction: "rtl", overflow: "hidden" }}>
+    <div ref={rootRef} style={{ position: "fixed", inset: 0, display: "flex", flexDirection: "column", background: "var(--ink)", direction: "rtl", overflow: "hidden" }}>
       <style>{SLIDE_FONT + CSS}</style>
 
       {/* Topbar */}
@@ -947,6 +964,19 @@ export default function PresentPage({ params }: Props) {
               </svg>
             </button>
           )}
+
+          {/* Fullscreen toggle — always visible */}
+          <button className="icon-btn" onClick={toggleFullscreen} title={isFullscreen ? "יציאה ממסך מלא (F)" : "מסך מלא (F)"}>
+            {isFullscreen ? (
+              <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 3v4a2 2 0 01-2 2H3m18-6v4a2 2 0 01-2 2h-4M3 15h4a2 2 0 012 2v4m6-6h4a2 2 0 012 2v4" />
+              </svg>
+            ) : (
+              <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 9V5a2 2 0 012-2h4M21 9V5a2 2 0 00-2-2h-4M3 15v4a2 2 0 002 2h4m12-6v4a2 2 0 01-2 2h-4" />
+              </svg>
+            )}
+          </button>
 
           {/* Name spinner — always visible */}
           <button className="icon-btn" onClick={() => setSpinnerOpen(true)} title="גלגל שמות" style={{ fontSize: 16 }}>🎲</button>
