@@ -23,7 +23,7 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger }) {
+    async jwt({ token, user }) {
       // On first sign-in, copy DB fields into the token
       if (user) {
         token.id = user.id
@@ -32,42 +32,25 @@ export const authOptions: NextAuthOptions = {
         token.parentType = (user as any).parentType ?? null
         token.studentId = (user as any).studentId ?? null
       }
-      // Re-fetch from DB when admin changes role/accessStatus,
-      // or when the token doesn't yet carry our custom fields.
-      // This only hits DB on PENDING users (cheap for rare case) and
-      // on the very first request after a deploy.
-      if (trigger === "update" || !token.role) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.sub! },
-          select: { role: true, accessStatus: true, parentType: true, studentId: true },
-        })
-        if (dbUser) {
-          token.role = dbUser.role
-          token.accessStatus = dbUser.accessStatus
-          token.parentType = dbUser.parentType ?? null
-          token.studentId = dbUser.studentId ?? null
-        }
-      }
-      // For PENDING users: always re-check DB so approval takes effect
-      // without requiring a logout/login cycle.
-      if (token.role === "PARENT" && token.accessStatus === "PENDING") {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.sub! },
-          select: { accessStatus: true },
-        })
-        if (dbUser) token.accessStatus = dbUser.accessStatus
-      }
-      // Same for STUDENT: re-read when still pending OR when not yet linked to a Student record.
-      // Covers: teacher approves student after first sign-in; teacher links account to roster entry.
-      if (token.role === "STUDENT" && (token.accessStatus === "PENDING" || !token.studentId)) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.sub! },
-          select: { accessStatus: true, studentId: true },
-        })
-        if (dbUser) {
-          token.accessStatus = dbUser.accessStatus
-          token.studentId = dbUser.studentId ?? null
-        }
+      // Always re-verify against the DB on every session check (not just first
+      // sign-in). This used to be conditional on "still pending" only, which
+      // meant an admin correction made *after* approval — e.g. converting a
+      // student who'd mistakenly registered as a parent — never reached an
+      // already-signed-in browser's token: role stayed stuck at the old value
+      // (still "PARENT", still routing to the parent home screen) until the
+      // JWT's ~30-day expiry, since neither of the old narrower re-check
+      // conditions ever matched an already-APPROVED, already-linked account.
+      // A small school app's session-check volume makes the extra read here
+      // free; the alternative is silently-stale identity data, which is worse.
+      const dbUser = await prisma.user.findUnique({
+        where: { id: token.sub! },
+        select: { role: true, accessStatus: true, parentType: true, studentId: true },
+      })
+      if (dbUser) {
+        token.role = dbUser.role
+        token.accessStatus = dbUser.accessStatus
+        token.parentType = dbUser.parentType ?? null
+        token.studentId = dbUser.studentId ?? null
       }
       return token
     },
