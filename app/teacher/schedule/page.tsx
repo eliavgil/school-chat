@@ -1,8 +1,32 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Component, type ReactNode } from "react"
 import Link from "next/link"
 import { dayTypeForWeekday, TEACHER_OWN_SCHEDULE_ID } from "@/lib/bellSchedule"
+
+// Catches a render-time crash in any section below and shows it directly on
+// the page — a blank screen with no visible error is much harder to debug
+// than a message you can screenshot straight from a phone.
+class SectionErrorBoundary extends Component<{ children: ReactNode }, { error: string | null }> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { error: null }
+  }
+  static getDerivedStateFromError(err: any) {
+    return { error: err?.message ?? String(err) }
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="bg-red-950/40 border border-red-500/30 rounded-2xl px-4 py-4">
+          <p className="text-red-300 text-sm font-semibold mb-1">שגיאה בטעינת הקטע הזה</p>
+          <p className="text-red-300/70 text-xs" dir="ltr">{this.state.error}</p>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 interface Slot {
   id: string
@@ -307,28 +331,34 @@ export default function SchedulePage() {
   const [bellSlots, setBellSlots]       = useState<BellSlotT[]>([])
   const [events, setEvents]             = useState<EventT[]>([])
   const [loading, setLoading]           = useState(true)
+  const [loadError, setLoadError]       = useState<string | null>(null)
 
   useEffect(() => {
     (async () => {
-      const [ownRes, bellRes, eventsRes, classesRes] = await Promise.all([
-        fetch("/api/schedule").then(r => r.json()).catch(() => ({ slots: [] })),
-        fetch("/api/student/bell-schedule").then(r => r.json()).catch(() => ({ slots: [] })),
-        fetch("/api/events").then(r => r.json()).catch(() => ({ events: [] })),
-        fetch("/api/admin/schedule-classes").then(r => r.json()).catch(() => ({ classes: [] })),
-      ])
-      setOwnSlots(ownRes.slots ?? [])
-      setBellSlots(bellRes.slots ?? [])
-      setEvents(eventsRes.events ?? [])
+      try {
+        const [ownRes, bellRes, eventsRes, classesRes] = await Promise.all([
+          fetch("/api/schedule").then(r => r.json()).catch(() => ({ slots: [] })),
+          fetch("/api/student/bell-schedule").then(r => r.json()).catch(() => ({ slots: [] })),
+          fetch("/api/events").then(r => r.json()).catch(() => ({ events: [] })),
+          fetch("/api/admin/schedule-classes").then(r => r.json()).catch(() => ({ classes: [] })),
+        ])
+        setOwnSlots(ownRes.slots ?? [])
+        setBellSlots(bellRes.slots ?? [])
+        setEvents(eventsRes.events ?? [])
 
-      // Every real class that has an uploaded schedule gets its own section —
-      // picking just "the first" one risks showing stale data instead of
-      // whatever was actually just uploaded.
-      const classes = (classesRes.classes ?? []) as { id: string; name: string }[]
-      const withSlots = await Promise.all(classes.map(async c => {
-        const cs = await fetch(`/api/schedule?classId=${encodeURIComponent(c.id)}`).then(r => r.json()).catch(() => ({ slots: [] }))
-        return { ...c, slots: (cs.slots ?? []) as Slot[] }
-      }))
-      setClassSchedules(withSlots)
+        // Every real class that has an uploaded schedule gets its own section —
+        // picking just "the first" one risks showing stale data instead of
+        // whatever was actually just uploaded.
+        const classes = (classesRes.classes ?? []) as { id: string; name: string }[]
+        const withSlots = await Promise.all(classes.map(async c => {
+          const cs = await fetch(`/api/schedule?classId=${encodeURIComponent(c.id)}`).then(r => r.json()).catch(() => ({ slots: [] }))
+          return { ...c, slots: (cs.slots ?? []) as Slot[] }
+        }))
+        setClassSchedules(withSlots)
+      } catch (err: any) {
+        // Surfaced directly on the page — no dev tools needed to see what broke.
+        setLoadError(err?.message ?? String(err))
+      }
       setLoading(false)
     })()
   }, [])
@@ -349,20 +379,33 @@ export default function SchedulePage() {
       </header>
 
       <div className="max-w-2xl mx-auto px-4 py-5 space-y-8">
-        {!loading && classSchedules.length === 0 ? (
-          <ScheduleSection title="מערכת כיתתית" slots={[]} bellByDayType={bellByDayType} loading={loading}
-            emptyText="אין עדיין מערכת כיתתית טעונה" />
-        ) : (
-          classSchedules.map(c => (
-            <ScheduleSection key={c.id} title={`מערכת כיתתית — ${c.name}`} slots={c.slots} bellByDayType={bellByDayType} loading={loading}
-              emptyText="אין עדיין מערכת כיתתית טעונה" />
-          ))
+        {loadError && (
+          <div className="bg-red-950/40 border border-red-500/30 rounded-2xl px-4 py-4">
+            <p className="text-red-300 text-sm font-semibold mb-1">שגיאה בטעינת הנתונים</p>
+            <p className="text-red-300/70 text-xs" dir="ltr">{loadError}</p>
+          </div>
         )}
 
-        <EventsSection events={events} loading={loading} />
+        <SectionErrorBoundary>
+          {!loading && classSchedules.length === 0 ? (
+            <ScheduleSection title="מערכת כיתתית" slots={[]} bellByDayType={bellByDayType} loading={loading}
+              emptyText="אין עדיין מערכת כיתתית טעונה" />
+          ) : (
+            classSchedules.map(c => (
+              <ScheduleSection key={c.id} title={`מערכת כיתתית — ${c.name}`} slots={c.slots} bellByDayType={bellByDayType} loading={loading}
+                emptyText="אין עדיין מערכת כיתתית טעונה" />
+            ))
+          )}
+        </SectionErrorBoundary>
 
-        <ScheduleSection title="המערכת שלי" slots={ownSlots} bellByDayType={bellByDayType} loading={loading}
-          emptyText="אין עדיין מערכת אישית טעונה" />
+        <SectionErrorBoundary>
+          <EventsSection events={events} loading={loading} />
+        </SectionErrorBoundary>
+
+        <SectionErrorBoundary>
+          <ScheduleSection title="המערכת שלי" slots={ownSlots} bellByDayType={bellByDayType} loading={loading}
+            emptyText="אין עדיין מערכת אישית טעונה" />
+        </SectionErrorBoundary>
 
         <p className="text-white/15 text-[10px] text-center">
           לעריכת המערכות — עבור להגדרות ← ייבוא נתונים
