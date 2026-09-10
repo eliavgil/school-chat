@@ -12,7 +12,12 @@ import { prisma } from "@/lib/db/prisma"
 // that gap without adding a DB round-trip to every already-approved request.
 export const runtime = "nodejs"
 
-const PUBLIC_PATHS = ["/login", "/api/auth"]
+// /api/cron/* isn't a public path in the "anyone can see it" sense — it's
+// authenticated on its own terms (a Bearer CRON_SECRET header, checked inside
+// the route), not by a signed-in session cookie. Vercel's cron caller sends
+// no session cookie at all, so without this exemption it would get bounced
+// to /login by the check below before ever reaching that route's own check.
+const PUBLIC_PATHS = ["/login", "/api/auth", "/api/cron"]
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
