@@ -19,6 +19,11 @@ import { ROLE_DEFAULTS } from "@/app/components/NatureBackground"
 // ── Types ─────────────────────────────────────────────────
 interface ClassProfile { displayName: string; teacherDisplayName: string; schoolName: string }
 interface CalendarEvent { id: string; date: string; description: string; grade: string | null; type: string | null }
+
+// Events synced from the main spreadsheet never carry a `type` value (always
+// null in practice) — holidays can only be told apart by name, not a field.
+const HOLIDAY_PATTERN = /ראש השנה|יום כיפור|סוכות|שמחת תורה|איסרו חג|חנוכה|טו בשבט|פורים|פסח|שבועות|ל"ג בעומר|צום|תענית|חג הסיגד|יום העצמאות|יום הזיכרון|יום ירושלים|יום השואה/
+function isHolidayEvent(ev: { description: string }) { return HOLIDAY_PATTERN.test(ev.description) }
 interface RecentMessage { id: string; content: string; createdAt: string; sender: { name: string }; student: { name: string } }
 interface ScheduleSlot { period: string; content: string }
 interface BellSlotT { period: string; startTime: string; endTime: string }
@@ -227,7 +232,7 @@ function StudentHome({ session, data, isPreview }: { session: any; data: HomeDat
 
   const today = new Date().toISOString().slice(0, 10)
   const mergedEvents = [
-    ...(data?.upcomingEvents ?? []).filter(e => e.type !== "holiday"),
+    ...(data?.upcomingEvents ?? []).filter(e => !isHolidayEvent(e)),
     ...personalEvents.filter(e => e.date >= today).map(e => ({ ...e, _personal: true as const })),
   ].sort((a, b) => a.date.localeCompare(b.date))
 
@@ -633,7 +638,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
   const classStudents = data?.classStudents ?? []
   const todaySlots    = data?.todaySchedule ?? []
-  const upcomingEvents = (data?.upcomingEvents ?? []).filter(e => e.type !== "holiday")
+  const upcomingEvents = (data?.upcomingEvents ?? []).filter(e => !isHolidayEvent(e))
   const remainingDays = getRemainingSchoolDays()
   const daysToSummer  = getDaysUntilSummer()
   const nextVac       = getNextVacation()
@@ -1173,7 +1178,7 @@ function ParentHome({ session, data }: { session: any; data: HomeData | null }) 
   const timeStr = now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })
 
   const exams  = data?.upcomingExams  ?? []
-  const events = (data?.upcomingEvents ?? []).filter(e => e.type !== "holiday")
+  const events = (data?.upcomingEvents ?? []).filter(e => !isHolidayEvent(e))
   const att    = data?.parentAttendance
   const grades = data?.grades ?? []
 
