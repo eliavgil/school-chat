@@ -58,16 +58,6 @@ function parsePeriodStr(p: string) {
 }
 function parseSubject(content: string) { return content.split(/\s{2,}/)[0].trim() }
 function timeToMin(t: string) { const [h, m] = t.split(":").map(Number); return h * 60 + m }
-function fmtMins(m: number) { return m < 60 ? `${m} דק'` : `${Math.floor(m/60)}:${String(m%60).padStart(2,"0")} שע'` }
-
-interface ParsedSlot { num: string; start: string; end: string; subject: string; content: string }
-
-type LessonStatus =
-  | { type: "before-school"; first: ParsedSlot }
-  | { type: "in-class";  slot: ParsedSlot; minsLeft: number; progress: number }
-  | { type: "break";     next: ParsedSlot; minsUntil: number }
-  | { type: "done" }
-  | { type: "no-school" }
 
 // ── "Now / next" timeline: canonical bell times + break gaps ──────────────
 // Unlike getLessonStatus (which only knows about lessons, and reads times
@@ -119,30 +109,6 @@ function getNowNext(timeline: TimelineEntry[], now: Date, hasSchoolToday: boolea
     if (nowMin >= start && nowMin < end) return { state: "now", current: timeline[i], next: timeline[i + 1] ?? null }
   }
   return { state: "done", current: null, next: null }
-}
-
-function getLessonStatus(slots: ScheduleSlot[], now: Date): LessonStatus {
-  const nowMin = now.getHours() * 60 + now.getMinutes()
-  const day = now.getDay()
-  if (day === 6) return { type: "no-school" }
-
-  const parsed: ParsedSlot[] = slots
-    .map(s => { const p = parsePeriodStr(s.period); if (!p) return null; return { ...p, subject: parseSubject(s.content), content: s.content } })
-    .filter(Boolean) as ParsedSlot[]
-
-  if (!parsed.length) return { type: "no-school" }
-  if (nowMin < timeToMin(parsed[0].start)) return { type: "before-school", first: parsed[0] }
-
-  for (let i = 0; i < parsed.length; i++) {
-    const s = parsed[i]
-    const start = timeToMin(s.start), end = timeToMin(s.end)
-    if (nowMin >= start && nowMin < end) {
-      const total = end - start
-      return { type: "in-class", slot: s, minsLeft: end - nowMin, progress: Math.round(((nowMin - start) / total) * 100) }
-    }
-    if (nowMin < start) return { type: "break", next: s, minsUntil: start - nowMin }
-  }
-  return { type: "done" }
 }
 
 // ── Icons ──────────────────────────────────────────────────
@@ -672,22 +638,9 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
   const daysToSummer  = getDaysUntilSummer()
   const nextVac       = getNextVacation()
   const daysToVac     = getDaysUntilNextVacation()
-  const lessonStatus  = getLessonStatus(todaySlots, now)
   const bellSlots     = data?.bellSlots ?? []
   const timeline      = buildTimeline(todaySlots, bellSlots)
   const nowNext       = getNowNext(timeline, now, bellSlots.length > 0)
-
-  // Schedule: parsed slots with current/next detection
-  const parsedSlots: ParsedSlot[] = todaySlots
-    .map(s => { const p = parsePeriodStr(s.period); if (!p) return null; return { ...p, subject: parseSubject(s.content), content: s.content } })
-    .filter(Boolean) as ParsedSlot[]
-
-  function isCurrentSlot(slot: ParsedSlot) {
-    return lessonStatus.type === "in-class" && (lessonStatus as any).slot?.start === slot.start
-  }
-  function isNextSlot(slot: ParsedSlot) {
-    return lessonStatus.type === "break" && (lessonStatus as any).next?.start === slot.start
-  }
 
   function saveNote(studentId: string, val: string) {
     const updated = { ...studentNotes, [studentId]: val }
@@ -931,14 +884,14 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                   <Link href="/teacher/schedule" className="text-white/30 text-[11px] interactive">כל המערכת ←</Link>
                 </div>
                 <div className="divide-y divide-white/5">
-                  {parsedSlots.length > 0 ? parsedSlots.map((s, i) => {
-                    const isCurrent = isCurrentSlot(s)
-                    const isNext    = isNextSlot(s)
+                  {timeline.length > 0 ? timeline.map((t, i) => {
+                    const isCurrent = nowNext.state === "now" && nowNext.current === t
+                    const isNext    = nowNext.next === t
                     return (
                       <div key={i} className={`flex items-center gap-3 px-4 py-2 ${isCurrent ? "bg-white/10" : ""}`}>
-                        <span className={`text-[10px] font-mono w-4 flex-shrink-0 ${isCurrent ? "text-white" : "text-white/30"}`}>{s.num}</span>
-                        <span className={`flex-1 text-[12px] truncate ${isCurrent ? "text-white font-medium" : "text-white/65"}`}>{s.subject}</span>
-                        <span className="text-white/25 text-[10px]">{s.start}–{s.end}</span>
+                        <span className={`text-[10px] font-mono w-4 flex-shrink-0 ${isCurrent ? "text-white" : "text-white/30"}`}>{t.period ?? ""}</span>
+                        <span className={`flex-1 text-[12px] truncate ${isCurrent ? "text-white font-medium" : t.isBreak ? "text-white/35 italic" : "text-white/65"}`}>{t.label}</span>
+                        <span className="text-white/25 text-[10px]" dir="ltr">{t.start}–{t.end}</span>
                         {isCurrent && <span className="text-[9px] bg-green-500/30 text-green-300 px-1.5 py-0.5 rounded-full">עכשיו</span>}
                         {isNext    && <span className="text-[9px] bg-amber-500/30 text-amber-300 px-1.5 py-0.5 rounded-full">הבא</span>}
                       </div>
