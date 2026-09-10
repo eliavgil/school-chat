@@ -26,5 +26,13 @@ export async function GET() {
     },
   })
 
-  return NextResponse.json({ ok: true, classes, students })
+  // Also: a teacher reported neither the class schedule nor their own
+  // personal schedule showing on /teacher/schedule after uploading — check
+  // what's actually in ScheduleSlot per classId, without guessing.
+  const scheduleRows = await prisma.scheduleSlot.groupBy({
+    by: ["classId"],
+    _count: { _all: true },
+  })
+
+  return NextResponse.json({ ok: true, classes, students, scheduleRows })
 }
