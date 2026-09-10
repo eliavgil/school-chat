@@ -2,12 +2,20 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { dayTypeForWeekday } from "@/lib/bellSchedule"
 
 interface Slot {
   id: string
   dayHeb: string
   period: string
   content: string
+}
+
+interface BellSlotT {
+  period: string
+  startTime: string
+  endTime: string
+  dayType: string
 }
 
 interface ParsedSlot {
@@ -23,19 +31,39 @@ interface ParsedSlot {
 
 const DAY_ORDER = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי"]
 
-function parseSlot(s: Slot): ParsedSlot {
-  const periodMatch = s.period.match(/^(\d+),\s*(.+)/)
-  const num = periodMatch ? periodMatch[1] : s.period
-  const timeStr = periodMatch ? periodMatch[2].trim() : ""
+function periodNum(p: string): string {
+  const m = p.match(/^\d+/)
+  return m ? m[0] : p.trim()
+}
+
+function timeToMin(t: string): number {
+  const m = t.match(/(\d{1,2}):(\d{2})/)
+  return m ? Number(m[1]) * 60 + Number(m[2]) : 0
+}
+
+// Each weekday runs one of two bell patterns (א/ג/ד vs ב/ה) — a bare period
+// number like "1" only resolves to a real clock time once we know which
+// pattern applies to that specific day, via the bell-schedule table.
+function parseSlot(s: Slot, bellByDayType: Map<string, Map<string, { start: string; end: string }>>): ParsedSlot {
+  const num = periodNum(s.period)
 
   const parts = s.content.split(/\s{2,}/).map(p => p.trim()).filter(Boolean)
   const subject = parts[0] ?? ""
   const teacher = parts[1] ?? ""
   const room    = parts[2] ?? ""
 
-  const m = timeStr.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/)
-  const startMin = m ? Number(m[1]) * 60 + Number(m[2]) : 0
-  const endMin   = m ? Number(m[3]) * 60 + Number(m[4]) : 0
+  const jsDay = DAY_ORDER.indexOf(s.dayHeb)
+  const dayType = jsDay >= 0 ? dayTypeForWeekday(jsDay) : null
+  const bell = dayType ? bellByDayType.get(dayType)?.get(num) : undefined
+
+  // Fall back to the older "1, 08:45-09:30" embedded-time format, in case
+  // any schedule still carries it.
+  const embeddedMatch = s.period.match(/^\d+,\s*(.+)/)
+  const embedded = embeddedMatch?.[1]?.trim()
+
+  const timeStr = bell ? `${bell.start}-${bell.end}` : (embedded ?? "")
+  const startMin = bell ? timeToMin(bell.start) : (embedded ? timeToMin(embedded) : 0)
+  const endMin   = bell ? timeToMin(bell.end)   : (embedded ? timeToMin(embedded.split("-")[1] ?? "") : 0)
 
   return { id: s.id, num, timeStr, startMin, endMin, subject, teacher, room }
 }
@@ -55,16 +83,20 @@ function fmtMins(m: number) {
 
 export default function SchedulePage() {
   const [slots, setSlots]         = useState<Slot[]>([])
+  const [bellSlots, setBellSlots] = useState<BellSlotT[]>([])
   const [loading, setLoading]     = useState(true)
   const [selectedDay, setSelectedDay] = useState<string>(() => getTodayHeb() ?? "ראשון")
   const [nowMin, setNowMin]       = useState(getNowMin)
 
   useEffect(() => {
-    fetch("/api/schedule")
-      .then(r => r.json())
-      .then(d => setSlots(d.slots ?? []))
-      .catch(() => {})
-      .finally(() => setLoading(false))
+    Promise.all([
+      fetch("/api/schedule").then(r => r.json()).catch(() => ({ slots: [] })),
+      fetch("/api/student/bell-schedule").then(r => r.json()).catch(() => ({ slots: [] })),
+    ]).then(([sc, bell]) => {
+      setSlots(sc.slots ?? [])
+      setBellSlots(bell.slots ?? [])
+      setLoading(false)
+    })
   }, [])
 
   useEffect(() => {
@@ -72,10 +104,16 @@ export default function SchedulePage() {
     return () => clearInterval(id)
   }, [])
 
+  const bellByDayType = new Map<string, Map<string, { start: string; end: string }>>()
+  for (const b of bellSlots) {
+    if (!bellByDayType.has(b.dayType)) bellByDayType.set(b.dayType, new Map())
+    bellByDayType.get(b.dayType)!.set(b.period, { start: b.startTime, end: b.endTime })
+  }
+
   const byDay: Record<string, ParsedSlot[]> = {}
   for (const s of slots) {
     if (!byDay[s.dayHeb]) byDay[s.dayHeb] = []
-    byDay[s.dayHeb].push(parseSlot(s))
+    byDay[s.dayHeb].push(parseSlot(s, bellByDayType))
   }
   for (const day of Object.keys(byDay)) {
     byDay[day].sort((a, b) => Number(a.num) - Number(b.num))
