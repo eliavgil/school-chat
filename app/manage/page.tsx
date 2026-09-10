@@ -257,6 +257,10 @@ function ImportTab() {
   const [mainLoading, setMainLoading] = useState(false)
   const [mainResult,  setMainResult]  = useState<{ ok: boolean; text: string } | null>(null)
 
+  const [gcalUrl, setGcalUrl]         = useState("")
+  const [gcalLoading, setGcalLoading] = useState(false)
+  const [gcalResult, setGcalResult]   = useState<{ ok: boolean; text: string } | null>(null)
+
   const [fileLoading, setFileLoading] = useState<Record<string, boolean>>({})
   const [fileResults, setFileResults] = useState<Record<string, string>>({})
 
@@ -276,6 +280,22 @@ function ImportTab() {
       setMainResult({ ok: false, text: e.message })
     }
     setMainLoading(false)
+  }
+
+  async function syncGcal() {
+    setGcalLoading(true)
+    setGcalResult(null)
+    try {
+      const res = await fetch("/api/admin/sync-gcal", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url: gcalUrl.trim() }),
+      })
+      const d = await res.json()
+      if (!res.ok) throw new Error(d.error ?? `HTTP ${res.status}`)
+      setGcalResult({ ok: true, text: `${d.created} ארועים חדשים, ${d.updated} עודכנו` })
+    } catch (e: any) {
+      setGcalResult({ ok: false, text: e.message })
+    }
+    setGcalLoading(false)
   }
 
   async function runFileImport(job: FileJob, file: File) {
@@ -328,6 +348,30 @@ function ImportTab() {
         {mainResult && (
           <p className={`text-sm text-center font-medium ${mainResult.ok ? "text-green-400" : "text-red-400"}`}>
             {mainResult.ok ? "✓" : "✗"} {mainResult.text}
+          </p>
+        )}
+      </div>
+
+      {/* ── Google Calendar link sync ── */}
+      <div className="bg-white/8 border border-white/15 rounded-2xl p-5 space-y-3">
+        <div>
+          <p className="text-white font-semibold text-base">סנכרון מיומן Google Calendar</p>
+          <p className="text-white/40 text-xs mt-1">
+            הדביקו כאן את "הכתובת בפורמט iCal" (מסתיימת ב-.ics) מהגדרות היומן ב-Google Calendar → שילוב היומן
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <input value={gcalUrl} onChange={e => setGcalUrl(e.target.value)} placeholder="https://calendar.google.com/calendar/ical/.../basic.ics"
+            dir="ltr"
+            className="flex-1 min-w-0 bg-white/10 border border-white/20 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-white/30" />
+          <button onClick={syncGcal} disabled={gcalLoading || !gcalUrl.trim()}
+            className="bg-white/20 hover:bg-white/30 active:scale-95 disabled:opacity-40 text-white font-semibold text-sm px-4 rounded-xl interactive btn-press transition-all whitespace-nowrap">
+            {gcalLoading ? "מסנכרן..." : "סנכרן"}
+          </button>
+        </div>
+        {gcalResult && (
+          <p className={`text-sm text-center font-medium ${gcalResult.ok ? "text-green-400" : "text-red-400"}`}>
+            {gcalResult.ok ? "✓" : "✗"} {gcalResult.text}
           </p>
         )}
       </div>
