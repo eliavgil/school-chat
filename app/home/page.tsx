@@ -18,7 +18,7 @@ import { ROLE_DEFAULTS } from "@/app/components/NatureBackground"
 
 // ── Types ─────────────────────────────────────────────────
 interface ClassProfile { displayName: string; teacherDisplayName: string; schoolName: string }
-interface CalendarEvent { id: string; date: string; description: string; grade: string | null }
+interface CalendarEvent { id: string; date: string; description: string; grade: string | null; type: string | null }
 interface RecentMessage { id: string; content: string; createdAt: string; sender: { name: string }; student: { name: string } }
 interface ScheduleSlot { period: string; content: string }
 interface BellSlotT { period: string; startTime: string; endTime: string }
@@ -227,7 +227,7 @@ function StudentHome({ session, data, isPreview }: { session: any; data: HomeDat
 
   const today = new Date().toISOString().slice(0, 10)
   const mergedEvents = [
-    ...(data?.upcomingEvents ?? []),
+    ...(data?.upcomingEvents ?? []).filter(e => e.type !== "holiday"),
     ...personalEvents.filter(e => e.date >= today).map(e => ({ ...e, _personal: true as const })),
   ].sort((a, b) => a.date.localeCompare(b.date))
 
@@ -633,7 +633,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
   const classStudents = data?.classStudents ?? []
   const todaySlots    = data?.todaySchedule ?? []
-  const upcomingEvents = data?.upcomingEvents ?? []
+  const upcomingEvents = (data?.upcomingEvents ?? []).filter(e => e.type !== "holiday")
   const remainingDays = getRemainingSchoolDays()
   const daysToSummer  = getDaysUntilSummer()
   const nextVac       = getNextVacation()
@@ -641,6 +641,22 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
   const bellSlots     = data?.bellSlots ?? []
   const timeline      = buildTimeline(todaySlots, bellSlots)
   const nowNext       = getNowNext(timeline, now, bellSlots.length > 0)
+
+  // A real per-class schedule (not the teacher's own) — same source /teacher/schedule
+  // uses, shown here compactly so this quick-glance tab doesn't stay a static placeholder.
+  const [classScheduleSlots, setClassScheduleSlots] = useState<ScheduleSlot[]>([])
+  const [classScheduleName, setClassScheduleName] = useState<string>("")
+  useEffect(() => {
+    (async () => {
+      const classesRes = await fetch("/api/admin/schedule-classes").then(r => r.json()).catch(() => ({ classes: [] }))
+      const first = (classesRes.classes ?? [])[0]
+      if (!first) return
+      setClassScheduleName(first.name)
+      const cs = await fetch(`/api/schedule?classId=${encodeURIComponent(first.id)}`).then(r => r.json()).catch(() => ({ slots: [] }))
+      setClassScheduleSlots(cs.slots ?? [])
+    })()
+  }, [])
+  const classTimeline = buildTimeline(classScheduleSlots, bellSlots)
 
   function saveNote(studentId: string, val: string) {
     const updated = { ...studentNotes, [studentId]: val }
@@ -922,13 +938,25 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                 </div>
               </div>
 
-              {/* Class schedule placeholder */}
-              <div className="glass rounded-2xl overflow-hidden border border-dashed border-white/10">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/10">
-                  <span className="text-white/40 text-sm font-medium">מערכת הכיתה</span>
-                  <span className="text-[9px] bg-white/10 text-white/35 px-1.5 py-0.5 rounded-full">בקרוב</span>
+              {/* Class schedule */}
+              <div className="glass rounded-2xl overflow-hidden">
+                <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
+                  <span className="text-white/65 text-sm font-medium">
+                    מערכת הכיתה{classScheduleName ? ` — ${classScheduleName}` : ""}
+                  </span>
+                  <Link href="/teacher/schedule" className="text-white/30 text-[11px] interactive">כל המערכות ←</Link>
                 </div>
-                <div className="px-4 py-4 text-white/20 text-xs text-center">מערכת שעות של הכיתה תופיע כאן</div>
+                <div className="divide-y divide-white/5">
+                  {classTimeline.length > 0 ? classTimeline.map((t, i) => (
+                    <div key={i} className="flex items-center gap-3 px-4 py-2">
+                      <span className="text-[10px] font-mono w-4 flex-shrink-0 text-white/30">{t.period ?? ""}</span>
+                      <span className={`flex-1 text-[12px] truncate ${t.isBreak ? "text-white/35 italic" : "text-white/65"}`}>{t.label}</span>
+                      <span className="text-white/25 text-[10px]" dir="ltr">{t.start}–{t.end}</span>
+                    </div>
+                  )) : (
+                    <div className="px-4 py-4 text-white/25 text-sm text-center">אין עדיין מערכת כיתתית טעונה</div>
+                  )}
+                </div>
               </div>
 
               {/* Countdowns */}
@@ -1145,7 +1173,7 @@ function ParentHome({ session, data }: { session: any; data: HomeData | null }) 
   const timeStr = now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })
 
   const exams  = data?.upcomingExams  ?? []
-  const events = data?.upcomingEvents ?? []
+  const events = (data?.upcomingEvents ?? []).filter(e => e.type !== "holiday")
   const att    = data?.parentAttendance
   const grades = data?.grades ?? []
 

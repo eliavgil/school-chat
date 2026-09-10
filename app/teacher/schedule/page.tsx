@@ -283,7 +283,7 @@ function ScheduleSection({ title, slots, bellByDayType, loading, emptyText }: {
 /* ── Condensed upcoming-events list, with a link to the full calendar ── */
 function EventsSection({ events, loading }: { events: EventT[]; loading: boolean }) {
   const today = new Date().toISOString().slice(0, 10)
-  const upcoming = events.filter(e => e.date >= today).sort((a, b) => a.date.localeCompare(b.date)).slice(0, 6)
+  const upcoming = events.filter(e => e.date >= today && e.type !== "holiday").sort((a, b) => a.date.localeCompare(b.date)).slice(0, 6)
 
   return (
     <section>
