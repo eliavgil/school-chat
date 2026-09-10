@@ -302,8 +302,7 @@ function EventsSection({ events, loading }: { events: EventT[]; loading: boolean
 }
 
 export default function SchedulePage() {
-  const [classSlots, setClassSlots]     = useState<Slot[]>([])
-  const [classTitle, setClassTitle]     = useState<string>("מערכת כיתתית")
+  const [classSchedules, setClassSchedules] = useState<{ id: string; name: string; slots: Slot[] }[]>([])
   const [ownSlots, setOwnSlots]         = useState<Slot[]>([])
   const [bellSlots, setBellSlots]       = useState<BellSlotT[]>([])
   const [events, setEvents]             = useState<EventT[]>([])
@@ -321,12 +320,15 @@ export default function SchedulePage() {
       setBellSlots(bellRes.slots ?? [])
       setEvents(eventsRes.events ?? [])
 
-      const firstClass = (classesRes.classes ?? [])[0]
-      if (firstClass) {
-        setClassTitle(`מערכת כיתתית — ${firstClass.name}`)
-        const cs = await fetch(`/api/schedule?classId=${encodeURIComponent(firstClass.id)}`).then(r => r.json()).catch(() => ({ slots: [] }))
-        setClassSlots(cs.slots ?? [])
-      }
+      // Every real class that has an uploaded schedule gets its own section —
+      // picking just "the first" one risks showing stale data instead of
+      // whatever was actually just uploaded.
+      const classes = (classesRes.classes ?? []) as { id: string; name: string }[]
+      const withSlots = await Promise.all(classes.map(async c => {
+        const cs = await fetch(`/api/schedule?classId=${encodeURIComponent(c.id)}`).then(r => r.json()).catch(() => ({ slots: [] }))
+        return { ...c, slots: (cs.slots ?? []) as Slot[] }
+      }))
+      setClassSchedules(withSlots)
       setLoading(false)
     })()
   }, [])
@@ -347,8 +349,15 @@ export default function SchedulePage() {
       </header>
 
       <div className="max-w-2xl mx-auto px-4 py-5 space-y-8">
-        <ScheduleSection title={classTitle} slots={classSlots} bellByDayType={bellByDayType} loading={loading}
-          emptyText="אין עדיין מערכת כיתתית טעונה" />
+        {!loading && classSchedules.length === 0 ? (
+          <ScheduleSection title="מערכת כיתתית" slots={[]} bellByDayType={bellByDayType} loading={loading}
+            emptyText="אין עדיין מערכת כיתתית טעונה" />
+        ) : (
+          classSchedules.map(c => (
+            <ScheduleSection key={c.id} title={`מערכת כיתתית — ${c.name}`} slots={c.slots} bellByDayType={bellByDayType} loading={loading}
+              emptyText="אין עדיין מערכת כיתתית טעונה" />
+          ))
+        )}
 
         <EventsSection events={events} loading={loading} />
 
