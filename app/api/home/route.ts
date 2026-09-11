@@ -79,7 +79,13 @@ export async function GET(req: NextRequest) {
         }),
       },
       orderBy: { date: "asc" },
-      take: 5,
+      // The client filters holidays out of this list client-side (no
+      // holiday flag in the DB, only a name pattern match) — a plain
+      // take: 5 could easily return a run of 5 holidays in a row (exactly
+      // what happens every Rosh Hashana/Sukkot season) and leave nothing
+      // to show. Fetch a wider window so there's still real events left
+      // after that filter runs.
+      take: 20,
     }),
     isTeacher
       ? prisma.message.count({ where: { isTask: true } })

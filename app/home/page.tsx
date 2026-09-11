@@ -638,7 +638,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
   const classStudents = data?.classStudents ?? []
   const todaySlots    = data?.todaySchedule ?? []
-  const upcomingEvents = (data?.upcomingEvents ?? []).filter(e => !isHolidayEvent(e))
+  const upcomingEvents = (data?.upcomingEvents ?? []).filter(e => !isHolidayEvent(e)).slice(0, 5)
   const remainingDays = getRemainingSchoolDays()
   const daysToSummer  = getDaysUntilSummer()
   const nextVac       = getNextVacation()
