@@ -78,7 +78,9 @@ export default function AdminPage() {
   const [preLoading, setPreLoading]   = useState(false)
   const [preMsg, setPreMsg]           = useState("")
 
-  useEffect(() => { if (tab === "users" || tab === "roster") fetchUsers() }, [tab])
+  // Fetched unconditionally (not just for the users/roster tabs) so the
+  // import tab's class picker always has the real class list too.
+  useEffect(() => { fetchUsers() }, [])
 
   async function fetchUsers() {
     setUsersLoading(true)
@@ -175,9 +177,18 @@ export default function AdminPage() {
           {/* ── Import tab ── */}
           {tab === "import" && <>
             <div className="flex items-center gap-3">
-              <label className="text-sm font-medium text-stone-700">מזהה כיתה:</label>
-              <input value={classId} onChange={e => setClassId(e.target.value)}
-                className="border border-gray-300 rounded px-3 py-1.5 text-sm w-36" />
+              <label className="text-sm font-medium text-stone-700">כיתה:</label>
+              {/* A dropdown of real classes, not a free-text field that
+                  silently keeps whatever ID was last typed in — that's how a
+                  י4 schedule file once ended up saved under י1's class ID:
+                  the field still held that ID from an earlier import. */}
+              <select value={classId} onChange={e => setClassId(e.target.value)}
+                className="border border-gray-300 rounded px-3 py-1.5 text-sm min-w-36">
+                {roster.length === 0 && <option value={classId}>{classId}</option>}
+                {roster.map(cls => (
+                  <option key={cls.id} value={cls.id}>{cls.displayName || cls.name}</option>
+                ))}
+              </select>
             </div>
             <div className="space-y-3">
               {IMPORT_JOBS.map(job => (
