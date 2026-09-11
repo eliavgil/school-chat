@@ -276,6 +276,9 @@ function ScheduleSection({ title, slots, bellByDayType, loading, emptyText }: {
                     </div>
                   )}
                 </div>
+                {s.timeStr && (
+                  <div className="flex-shrink-0 px-3 text-white/25 text-[11px]" dir="ltr">{s.timeStr}</div>
+                )}
               </div>
             )
           })}
