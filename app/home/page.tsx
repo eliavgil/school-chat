@@ -649,7 +649,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
   // A real per-class schedule (not the teacher's own) — same source /teacher/schedule
   // uses, shown here compactly so this quick-glance tab doesn't stay a static placeholder.
-  const [classScheduleSlots, setClassScheduleSlots] = useState<ScheduleSlot[]>([])
+  const [classScheduleSlots, setClassScheduleSlots] = useState<(ScheduleSlot & { dayHeb: string })[]>([])
   const [classScheduleName, setClassScheduleName] = useState<string>("")
   useEffect(() => {
     (async () => {
@@ -661,7 +661,14 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
       setClassScheduleSlots(cs.slots ?? [])
     })()
   }, [])
-  const classTimeline = buildTimeline(classScheduleSlots, bellSlots)
+  // /api/schedule returns the whole week for that class, not just today —
+  // and bellSlots above is only today's bell pattern (empty on Fri/Sat, when
+  // there's no bell schedule at all), so building the timeline from the
+  // unfiltered week mixed every day's "period 1" together and, on a day
+  // with no bell pattern, silently dropped every single lesson (no time to
+  // match against) and showed "no schedule" even though the class has one.
+  const todayClassSlots = classScheduleSlots.filter(s => s.dayHeb === data?.todayHeb)
+  const classTimeline = buildTimeline(todayClassSlots, bellSlots)
 
   function saveNote(studentId: string, val: string) {
     const updated = { ...studentNotes, [studentId]: val }
@@ -959,7 +966,9 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                       <span className="text-white/25 text-[10px]" dir="ltr">{t.start}–{t.end}</span>
                     </div>
                   )) : (
-                    <div className="px-4 py-4 text-white/25 text-sm text-center">אין עדיין מערכת כיתתית טעונה</div>
+                    <div className="px-4 py-4 text-white/25 text-sm text-center">
+                      {classScheduleSlots.length > 0 ? "אין שיעורים היום" : "אין עדיין מערכת כיתתית טעונה"}
+                    </div>
                   )}
                 </div>
               </div>
