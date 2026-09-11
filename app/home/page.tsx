@@ -905,27 +905,25 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
           <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
             <div className="px-4 pt-2 pb-10 space-y-3">
 
-              {/* Teacher schedule */}
+              {/* Class schedule */}
               <div className="glass rounded-2xl overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
-                  <span className="text-white/65 text-sm font-medium">מערכת המורה — היום</span>
-                  <Link href="/teacher/schedule" className="text-white/30 text-[11px] interactive">כל המערכת ←</Link>
+                  <span className="text-white/65 text-sm font-medium">
+                    מערכת הכיתה{classScheduleName ? ` — ${classScheduleName}` : ""}
+                  </span>
+                  <Link href="/teacher/schedule" className="text-white/30 text-[11px] interactive">כל המערכות ←</Link>
                 </div>
                 <div className="divide-y divide-white/5">
-                  {timeline.length > 0 ? timeline.map((t, i) => {
-                    const isCurrent = nowNext.state === "now" && nowNext.current === t
-                    const isNext    = nowNext.next === t
-                    return (
-                      <div key={i} className={`flex items-center gap-3 px-4 py-2 ${isCurrent ? "bg-white/10" : ""}`}>
-                        <span className={`text-[10px] font-mono w-4 flex-shrink-0 ${isCurrent ? "text-white" : "text-white/30"}`}>{t.period ?? ""}</span>
-                        <span className={`flex-1 text-[12px] truncate ${isCurrent ? "text-white font-medium" : t.isBreak ? "text-white/35 italic" : "text-white/65"}`}>{t.label}</span>
-                        <span className="text-white/25 text-[10px]" dir="ltr">{t.start}–{t.end}</span>
-                        {isCurrent && <span className="text-[9px] bg-green-500/30 text-green-300 px-1.5 py-0.5 rounded-full">עכשיו</span>}
-                        {isNext    && <span className="text-[9px] bg-amber-500/30 text-amber-300 px-1.5 py-0.5 rounded-full">הבא</span>}
-                      </div>
-                    )
-                  }) : (
-                    <div className="px-4 py-4 text-white/25 text-sm text-center">אין שיעורים היום</div>
+                  {classTimeline.length > 0 ? classTimeline.map((t, i) => (
+                    <div key={i} className="flex items-center gap-3 px-4 py-2">
+                      <span className="text-[10px] font-mono w-4 flex-shrink-0 text-white/30">{t.period ?? ""}</span>
+                      <span className={`flex-1 text-[12px] truncate ${t.isBreak ? "text-white/35 italic" : "text-white/65"}`}>{t.label}</span>
+                      <span className="text-white/25 text-[10px]" dir="ltr">{t.start}–{t.end}</span>
+                    </div>
+                  )) : (
+                    <div className="px-4 py-4 text-white/25 text-sm text-center">
+                      {classScheduleSlots.length > 0 ? "אין שיעורים היום" : "אין עדיין מערכת כיתתית טעונה"}
+                    </div>
                   )}
                 </div>
               </div>
@@ -950,25 +948,27 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                 </div>
               </div>
 
-              {/* Class schedule */}
+              {/* Teacher schedule */}
               <div className="glass rounded-2xl overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
-                  <span className="text-white/65 text-sm font-medium">
-                    מערכת הכיתה{classScheduleName ? ` — ${classScheduleName}` : ""}
-                  </span>
-                  <Link href="/teacher/schedule" className="text-white/30 text-[11px] interactive">כל המערכות ←</Link>
+                  <span className="text-white/65 text-sm font-medium">מערכת המורה — היום</span>
+                  <Link href="/teacher/schedule" className="text-white/30 text-[11px] interactive">כל המערכת ←</Link>
                 </div>
                 <div className="divide-y divide-white/5">
-                  {classTimeline.length > 0 ? classTimeline.map((t, i) => (
-                    <div key={i} className="flex items-center gap-3 px-4 py-2">
-                      <span className="text-[10px] font-mono w-4 flex-shrink-0 text-white/30">{t.period ?? ""}</span>
-                      <span className={`flex-1 text-[12px] truncate ${t.isBreak ? "text-white/35 italic" : "text-white/65"}`}>{t.label}</span>
-                      <span className="text-white/25 text-[10px]" dir="ltr">{t.start}–{t.end}</span>
-                    </div>
-                  )) : (
-                    <div className="px-4 py-4 text-white/25 text-sm text-center">
-                      {classScheduleSlots.length > 0 ? "אין שיעורים היום" : "אין עדיין מערכת כיתתית טעונה"}
-                    </div>
+                  {timeline.length > 0 ? timeline.map((t, i) => {
+                    const isCurrent = nowNext.state === "now" && nowNext.current === t
+                    const isNext    = nowNext.next === t
+                    return (
+                      <div key={i} className={`flex items-center gap-3 px-4 py-2 ${isCurrent ? "bg-white/10" : ""}`}>
+                        <span className={`text-[10px] font-mono w-4 flex-shrink-0 ${isCurrent ? "text-white" : "text-white/30"}`}>{t.period ?? ""}</span>
+                        <span className={`flex-1 text-[12px] truncate ${isCurrent ? "text-white font-medium" : t.isBreak ? "text-white/35 italic" : "text-white/65"}`}>{t.label}</span>
+                        <span className="text-white/25 text-[10px]" dir="ltr">{t.start}–{t.end}</span>
+                        {isCurrent && <span className="text-[9px] bg-green-500/30 text-green-300 px-1.5 py-0.5 rounded-full">עכשיו</span>}
+                        {isNext    && <span className="text-[9px] bg-amber-500/30 text-amber-300 px-1.5 py-0.5 rounded-full">הבא</span>}
+                      </div>
+                    )
+                  }) : (
+                    <div className="px-4 py-4 text-white/25 text-sm text-center">אין שיעורים היום</div>
                   )}
                 </div>
               </div>
