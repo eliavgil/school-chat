@@ -1,0 +1,24 @@
+name: Task Reminders Cron
+
+# Vercel Hobby only allows a cron job to run once a day, so the actual
+# every-15-minutes trigger for /api/cron/task-reminders lives here instead
+# (see vercel.json — its crons entry was removed for exactly this reason,
+# since a more-frequent schedule there fails the whole deployment before
+# the build even starts).
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:   # הפעלה ידנית מה-Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call task-reminders endpoint
+        env:
+          SCHOOL_CHAT_URL: ${{ secrets.SCHOOL_CHAT_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -sf -X GET "$SCHOOL_CHAT_URL/api/cron/task-reminders" \
+            -H "Authorization: Bearer $CRON_SECRET"
