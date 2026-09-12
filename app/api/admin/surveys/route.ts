@@ -36,6 +36,8 @@ export async function GET() {
       className: cls ? (cls.displayName || cls.name) : null,
       dueDate: s.dueDate,
       createdAt: s.createdAt,
+      responseSheetUrl: s.responseSheetUrl,
+      lastSyncedAt: s.lastSyncedAt,
       completedCount: s._count.completions,
       totalStudents,
     }
@@ -49,7 +51,7 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id || !isTeacher(session)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { title, url, classId, dueDate } = await req.json()
+  const { title, url, classId, dueDate, responseSheetUrl } = await req.json()
   if (!title?.trim() || !url?.trim()) return NextResponse.json({ error: "Missing fields" }, { status: 400 })
 
   const survey = await prisma.survey.create({
@@ -58,7 +60,24 @@ export async function POST(req: NextRequest) {
       url: url.trim(),
       classId: classId || null,
       dueDate: dueDate ? new Date(dueDate) : null,
+      responseSheetUrl: responseSheetUrl?.trim() || null,
     },
+  })
+  return NextResponse.json({ survey })
+}
+
+// PATCH — update a survey's response-sheet link (set after the Form exists,
+// often later than the survey itself was created).
+export async function PATCH(req: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user?.id || !isTeacher(session)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  const { id, responseSheetUrl } = await req.json()
+  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 })
+
+  const survey = await prisma.survey.update({
+    where: { id },
+    data: { responseSheetUrl: responseSheetUrl?.trim() || null },
   })
   return NextResponse.json({ survey })
 }

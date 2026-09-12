@@ -411,13 +411,20 @@ model StudentAccommodation {
 
 // ── Questionnaires / surveys (Google Forms links for now) ─
 model Survey {
-  id          String             @id @default(cuid())
-  title       String
-  url         String             @db.Text
-  classId     String?            // null = visible to every class
-  dueDate     DateTime?
-  createdAt   DateTime           @default(now())
-  completions SurveyCompletion[]
+  id                String             @id @default(cuid())
+  title             String
+  url               String             @db.Text
+  classId           String?            // null = visible to every class
+  dueDate           DateTime?
+  // Optional link to the Google Sheet the linked Form writes responses to —
+  // lets completion be verified against real submissions instead of relying
+  // only on student self-report. The same sheet is often shared by several
+  // classes' surveys at once, so a "class" answer column in the form is what
+  // tells one Survey's sync which rows are actually its own.
+  responseSheetUrl  String?            @db.Text
+  lastSyncedAt      DateTime?
+  createdAt         DateTime           @default(now())
+  completions       SurveyCompletion[]
 
   @@index([classId])
 }
@@ -427,6 +434,9 @@ model SurveyCompletion {
   surveyId    String
   studentId   String
   completedAt DateTime @default(now())
+  // true once matched against a real response row in the linked sheet;
+  // false means it's still only the student's own say-so.
+  verified    Boolean  @default(false)
   survey      Survey   @relation(fields: [surveyId], references: [id], onDelete: Cascade)
   student     Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 

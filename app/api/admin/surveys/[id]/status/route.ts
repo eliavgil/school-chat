@@ -28,13 +28,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     }),
     prisma.surveyCompletion.findMany({
       where: { surveyId: id },
-      select: { studentId: true },
+      select: { studentId: true, verified: true },
     }),
   ])
 
-  const completedIds = new Set(completions.map(c => c.studentId))
-  const completed = students.filter(s => completedIds.has(s.id))
-  const pending = students.filter(s => !completedIds.has(s.id))
+  const verifiedById = new Map(completions.map(c => [c.studentId, c.verified]))
+  const completed = students
+    .filter(s => verifiedById.has(s.id))
+    .map(s => ({ ...s, verified: verifiedById.get(s.id) ?? false }))
+  const pending = students.filter(s => !verifiedById.has(s.id))
 
   return NextResponse.json({ completed, pending })
 }
