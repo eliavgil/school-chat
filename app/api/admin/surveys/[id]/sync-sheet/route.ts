@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db/prisma"
-import Papa from "papaparse"
+import { fetchSheetValues, listSheetTabs, getServiceAccountEmail } from "@/lib/sheets/client"
 
 function isTeacher(session: any) {
   return session?.user?.role === "TEACHER" || session?.user?.role === "ADMIN"
@@ -60,13 +60,33 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
   const byIdNumber = new Map(students.filter(s => s.idNumber).map(s => [s.idNumber as string, s]))
   const byNameKey = new Map(students.map(s => [nameKey(s.name), s]))
 
-  const csvUrl = survey.responseSheetUrl.replace(/\/edit.*$/, "/export?format=csv")
-  const res = await fetch(csvUrl, { redirect: "follow" })
-  if (!res.ok) return NextResponse.json({ error: "לא הצלחתי לקרוא את הגיליון — ודאו שהקישור נכון ושהוא משותף (\"כל מי שיש לו את הקישור\")" }, { status: 502 })
+  // Reads via the app's own Google service account (same one other sheet
+  // syncs use), not a public CSV-export fetch — so a teacher can restrict
+  // the sheet to just that one account instead of "anyone with the link".
+  const idMatch = survey.responseSheetUrl.match(/\/d\/([a-zA-Z0-9-_]+)/)
+  const spreadsheetId = idMatch?.[1]
+  if (!spreadsheetId) return NextResponse.json({ error: "קישור לא תקין לגיליון" }, { status: 400 })
 
-  const text = await res.text()
-  const { data, meta } = Papa.parse<Record<string, string>>(text, { header: true, skipEmptyLines: true })
-  const headers = meta.fields ?? []
+  let rows2D: string[][]
+  try {
+    const tabs = await listSheetTabs(spreadsheetId)
+    const firstTab = tabs[0]?.title
+    if (!firstTab) return NextResponse.json({ error: "לא נמצא טאב בגיליון" }, { status: 400 })
+    rows2D = await fetchSheetValues(spreadsheetId, firstTab)
+  } catch (e: any) {
+    const email = getServiceAccountEmail()
+    const hint = email ? ` — שתפו את הגיליון עם ${email} (או הפכו אותו לנגיש לכל מי שיש לו את הקישור)` : ""
+    return NextResponse.json({ error: `לא הצלחתי לקרוא את הגיליון${hint}` }, { status: 502 })
+  }
+
+  const [headerRow, ...dataRows] = rows2D
+  if (!headerRow) return NextResponse.json({ error: "הגיליון ריק" }, { status: 400 })
+  const headers = headerRow.map(h => (h ?? "").trim())
+  const data: Record<string, string>[] = dataRows.map(r => {
+    const obj: Record<string, string> = {}
+    headers.forEach((h, i) => { obj[h] = (r[i] ?? "").trim() })
+    return obj
+  })
 
   const classHeader = findHeader(headers, [/כיתה/])
   const idHeader = findHeader(headers, [/ת\.?\s?ז|תעודת זהות|מספר זהות/])

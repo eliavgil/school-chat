@@ -42,6 +42,7 @@ export default function SurveysPage() {
   const [savingSheet, setSavingSheet] = useState(false)
   const [syncingId, setSyncingId] = useState<string | null>(null)
   const [syncResult, setSyncResult] = useState<Record<string, SyncResult | string>>({})
+  const [serviceEmail, setServiceEmail] = useState<string | null>(null)
 
   async function load() {
     setLoading(true)
@@ -50,7 +51,10 @@ export default function SurveysPage() {
     setClasses(d.classes ?? [])
     setLoading(false)
   }
-  useEffect(() => { load() }, [])
+  useEffect(() => {
+    load()
+    fetch("/api/admin/google-service-account").then(r => r.json()).then(d => setServiceEmail(d.email ?? null)).catch(() => {})
+  }, [])
 
   async function add() {
     if (!title.trim() || !url.trim()) return
@@ -144,6 +148,7 @@ export default function SurveysPage() {
                 className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/30" />
               <p className="text-white/25 text-[10px] mt-1">
                 מאפשר לאמת בפועל מי ענה, במקום להסתמך רק על דיווח של התלמיד. אם כמה כיתות חולקות אותו גיליון — צריך עמודת "כיתה" ועמודת שם/ת.ז. בטופס.
+                {serviceEmail && <> לפרטיות מרבית, במקום לשתף "לכל מי שיש לו את הקישור" — שתפו את הגיליון רק עם <span dir="ltr" className="text-white/40">{serviceEmail}</span> (הרשאת צפייה).</>}
               </p>
             </div>
             <button onClick={add} disabled={saving || !title.trim() || !url.trim()}
@@ -196,14 +201,21 @@ export default function SurveysPage() {
                       {/* Response sheet: link + sync */}
                       <div className="bg-white/5 rounded-xl p-3 space-y-2">
                         {sheetEditId === s.id ? (
-                          <div className="flex gap-2">
-                            <input value={sheetEditVal} onChange={e => setSheetEditVal(e.target.value)} dir="ltr"
-                              placeholder="קישור לגיליון תשובות"
-                              className="flex-1 min-w-0 bg-white/10 border border-white/20 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/30" />
-                            <button onClick={() => saveSheetUrl(s.id)} disabled={savingSheet}
-                              className="text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg interactive disabled:opacity-50">
-                              {savingSheet ? "..." : "שמור"}
-                            </button>
+                          <div className="space-y-1.5">
+                            <div className="flex gap-2">
+                              <input value={sheetEditVal} onChange={e => setSheetEditVal(e.target.value)} dir="ltr"
+                                placeholder="קישור לגיליון תשובות"
+                                className="flex-1 min-w-0 bg-white/10 border border-white/20 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/30" />
+                              <button onClick={() => saveSheetUrl(s.id)} disabled={savingSheet}
+                                className="text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg interactive disabled:opacity-50">
+                                {savingSheet ? "..." : "שמור"}
+                              </button>
+                            </div>
+                            {serviceEmail && (
+                              <p className="text-white/25 text-[10px]">
+                                לפרטיות מרבית, שתפו את הגיליון (הרשאת צפייה) רק עם <span dir="ltr" className="text-white/40">{serviceEmail}</span> במקום "לכל מי שיש לו את הקישור".
+                              </p>
+                            )}
                           </div>
                         ) : s.responseSheetUrl ? (
                           <div className="flex items-center justify-between gap-2">

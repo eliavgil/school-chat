@@ -14,27 +14,49 @@ export function getSheetsClient() {
   return google.sheets({ version: "v4", auth })
 }
 
-// Returns all values from a named sheet range
-export async function fetchSheet(sheetName: string): Promise<string[][]> {
+// Returns all values from a named range in an arbitrary spreadsheet (not
+// just this app's own SHEET_ID) — used for reading one-off sheets a teacher
+// links in, like a survey's response sheet.
+export async function fetchSheetValues(spreadsheetId: string, range: string): Promise<string[][]> {
   const sheets = getSheetsClient()
-  const res = await sheets.spreadsheets.values.get({
-    spreadsheetId: SHEET_ID,
-    range: sheetName,
-  })
+  const res = await sheets.spreadsheets.values.get({ spreadsheetId, range })
   return (res.data.values ?? []) as string[][]
 }
 
-// Returns list of all sheet tabs: { title, sheetId }
-export async function listSheets() {
+// Returns list of all tabs in an arbitrary spreadsheet: { title, sheetId }
+export async function listSheetTabs(spreadsheetId: string) {
   const sheets = getSheetsClient()
   const res = await sheets.spreadsheets.get({
-    spreadsheetId: SHEET_ID,
+    spreadsheetId,
     fields: "sheets.properties",
   })
   return (res.data.sheets ?? []).map((s: any) => ({
     title: s.properties.title as string,
     sheetId: s.properties.sheetId as number,
   }))
+}
+
+// Returns all values from a named sheet range in this app's own spreadsheet.
+export async function fetchSheet(sheetName: string): Promise<string[][]> {
+  return fetchSheetValues(SHEET_ID, sheetName)
+}
+
+// Returns list of all sheet tabs in this app's own spreadsheet.
+export async function listSheets() {
+  return listSheetTabs(SHEET_ID)
+}
+
+// The service account's own address — share a restricted (non-public)
+// sheet with exactly this email to let the app read it, instead of
+// exposing it to "anyone with the link".
+export function getServiceAccountEmail(): string | null {
+  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON
+  if (!raw) return null
+  try {
+    return JSON.parse(raw).client_email ?? null
+  } catch {
+    return null
+  }
 }
 
 export function cell(row: string[], col: number): string {
