@@ -23,8 +23,11 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   const [students, completions] = await Promise.all([
     prisma.student.findMany({
       where: survey.classId ? { classId: survey.classId } : {},
-      select: { id: true, name: true },
-      orderBy: { name: "asc" },
+      select: { id: true, name: true, classId: true, class: { select: { name: true, displayName: true } } },
+      // A single-class survey doesn't need this, but "all classes" ones
+      // otherwise come back as one alphabetical mass with no way to tell
+      // which class a name belongs to.
+      orderBy: [{ class: { displayName: "asc" } }, { name: "asc" }],
     }),
     prisma.surveyCompletion.findMany({
       where: { surveyId: id },
@@ -32,11 +35,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
     }),
   ])
 
+  const withClassName = students.map(s => ({
+    id: s.id, name: s.name, className: s.class.displayName || s.class.name,
+  }))
+
   const verifiedById = new Map(completions.map(c => [c.studentId, c.verified]))
-  const completed = students
+  const completed = withClassName
     .filter(s => verifiedById.has(s.id))
     .map(s => ({ ...s, verified: verifiedById.get(s.id) ?? false }))
-  const pending = students.filter(s => !verifiedById.has(s.id))
+  const pending = withClassName.filter(s => !verifiedById.has(s.id))
 
   return NextResponse.json({ completed, pending })
 }

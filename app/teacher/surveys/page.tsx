@@ -8,8 +8,20 @@ interface SurveyRow {
   dueDate: string | null; createdAt: string; completedCount: number; totalStudents: number
   responseSheetUrl: string | null; lastSyncedAt: string | null
 }
-interface StudentRow { id: string; name: string; verified?: boolean }
+interface StudentRow { id: string; name: string; className: string; verified?: boolean }
 interface SyncResult { matched: number; totalRows: number; unmatched: string[] }
+
+// Students already come back ordered by class then name — this just
+// carries that order into groups instead of re-sorting.
+function groupByClass<T extends { className: string }>(rows: T[]): [string, T[]][] {
+  const groups: [string, T[]][] = []
+  for (const r of rows) {
+    const last = groups[groups.length - 1]
+    if (last && last[0] === r.className) last[1].push(r)
+    else groups.push([r.className, [r]])
+  }
+  return groups
+}
 
 function fmtDate(iso: string | null) {
   if (!iso) return ""
@@ -264,9 +276,18 @@ export default function SurveysPage() {
                             {st.pending.length === 0 ? (
                               <p className="text-white/25 text-xs">כולם ענו 🎉</p>
                             ) : (
-                              <div className="flex flex-wrap gap-1.5">
-                                {st.pending.map(p => (
-                                  <span key={p.id} className="bg-red-500/10 text-red-300/80 text-[11px] px-2 py-1 rounded-lg">{p.name}</span>
+                              <div className="space-y-2">
+                                {groupByClass(st.pending).map(([className, rows]) => (
+                                  <div key={className}>
+                                    {groupByClass(st.pending).length > 1 && (
+                                      <p className="text-white/30 text-[10px] mb-1">{className}</p>
+                                    )}
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {rows.map(p => (
+                                        <span key={p.id} className="bg-red-500/10 text-red-300/80 text-[11px] px-2 py-1 rounded-lg">{p.name}</span>
+                                      ))}
+                                    </div>
+                                  </div>
                                 ))}
                               </div>
                             )}
@@ -274,11 +295,20 @@ export default function SurveysPage() {
                           {st.completed.length > 0 && (
                             <div>
                               <p className="text-white/40 text-[11px] font-semibold mb-1.5">ענו ({st.completed.length})</p>
-                              <div className="flex flex-wrap gap-1.5">
-                                {st.completed.map(c => (
-                                  <span key={c.id} className="bg-green-500/10 text-green-300/70 text-[11px] px-2 py-1 rounded-lg">
-                                    {c.verified ? "✓ " : ""}{c.name}
-                                  </span>
+                              <div className="space-y-2">
+                                {groupByClass(st.completed).map(([className, rows]) => (
+                                  <div key={className}>
+                                    {groupByClass(st.completed).length > 1 && (
+                                      <p className="text-white/30 text-[10px] mb-1">{className}</p>
+                                    )}
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {rows.map(c => (
+                                        <span key={c.id} className="bg-green-500/10 text-green-300/70 text-[11px] px-2 py-1 rounded-lg">
+                                          {c.verified ? "✓ " : ""}{c.name}
+                                        </span>
+                                      ))}
+                                    </div>
+                                  </div>
                                 ))}
                               </div>
                               {st.completed.some(c => !c.verified) && (
