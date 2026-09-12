@@ -70,10 +70,17 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
 
   const classHeader = findHeader(headers, [/כיתה/])
   const idHeader = findHeader(headers, [/ת\.?\s?ז|תעודת זהות|מספר זהות/])
-  const nameHeader = findHeader(headers, [/שם מלא/, /^שם$/, /שם התלמיד/, /שם פרטי ומשפחה/])
+  // A separate first/last-name pair (e.g. "1. שם משפחה" + "שם פרטי") is at
+  // least as common as one combined "שם מלא" column — check for the split
+  // form first and only fall back to a single-column name.
+  const lastNameHeader = findHeader(headers, [/שם משפחה/])
+  const firstNameHeader = findHeader(headers, [/שם פרטי/])
+  const fullNameHeader = (!lastNameHeader || !firstNameHeader)
+    ? findHeader(headers, [/שם מלא/, /^שם$/, /שם התלמיד/])
+    : null
   const timeHeader = findHeader(headers, [/חותמת זמן/, /timestamp/i])
 
-  if (!idHeader && !nameHeader) {
+  if (!idHeader && !fullNameHeader && !(lastNameHeader && firstNameHeader)) {
     return NextResponse.json({ error: "לא מצאתי בגיליון עמודת שם או ת.ז. של התלמיד — אי אפשר להצליב תשובות מול רשימת התלמידים" }, { status: 400 })
   }
 
@@ -87,7 +94,9 @@ export async function POST(_req: Request, { params }: { params: Promise<{ id: st
     }
 
     const idVal = idHeader ? row[idHeader]?.trim() : ""
-    const nameVal = nameHeader ? row[nameHeader]?.trim() : ""
+    const nameVal = (lastNameHeader && firstNameHeader)
+      ? `${row[lastNameHeader]?.trim() ?? ""} ${row[firstNameHeader]?.trim() ?? ""}`.trim()
+      : fullNameHeader ? (row[fullNameHeader]?.trim() ?? "") : ""
 
     const student = (idVal && byIdNumber.get(idVal))
       ?? (nameVal && byNameKey.get(nameKey(nameVal)))
