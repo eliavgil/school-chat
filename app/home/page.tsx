@@ -681,6 +681,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
   const MENU_LINKS = [
     { label: "שיעורים חיים",      href: "/lessons",                emoji: "🎓", soon: false },
     { label: "שאלונים",           href: "/teacher/surveys",        emoji: "📋", soon: false },
+    { label: "צוות מחנכים",       href: "/teacher/team",           emoji: "🧑‍🏫", soon: false },
     { label: "מענים אישיים",     href: "/teacher/accommodations", emoji: "🧩", soon: false },
     { label: "מעקב רגשי-חברתי",  href: "/teacher/emotional",      emoji: "💙", soon: false },
     { label: "לוח KPI",           href: "/kpi",                    emoji: "📊", soon: false },
@@ -761,6 +762,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                 { label: "עמוד הבית",       href: "/home",                   emoji: "🏠" },
                 { label: "שיעורים חיים",     href: "/lessons",                emoji: "🎓" },
                 { label: "שאלונים",          href: "/teacher/surveys",        emoji: "📋" },
+                { label: "צוות מחנכים",      href: "/teacher/team",           emoji: "🧑‍🏫" },
                 { label: "שיחות הורים",      href: "/dashboard",              emoji: "💬" },
                 { label: "משימות",           href: "/teacher/tasks",          emoji: "✅" },
                 { label: "מענים אישיים",     href: "/teacher/accommodations", emoji: "🧩" },
