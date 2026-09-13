@@ -676,10 +676,10 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
     try { localStorage.setItem("teacher-student-notes", JSON.stringify(updated)) } catch {}
   }
 
-  const NUM_PAGES = 5
+  const NUM_PAGES = 6
   const NUM_LABELS = ["בית", "יומן", "תפריט", "כיתה"] // kept for accessibility/future use
   const MENU_LINKS = [
-    { label: "שיעורים חיים",      href: "/lessons",                emoji: "🎓", soon: false },
+    { label: "אזרחות מלאכותית",      href: "/lessons",                emoji: "🎓", soon: false },
     { label: "שאלונים",           href: "/teacher/surveys",        emoji: "📋", soon: false },
     { label: "צוות מחנכים",       href: "/teacher/team",           emoji: "🧑‍🏫", soon: false },
     { label: "מענים אישיים",     href: "/teacher/accommodations", emoji: "🧩", soon: false },
@@ -760,7 +760,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
             <nav className="flex-1 px-4 py-4 space-y-1">
               {[
                 { label: "עמוד הבית",       href: "/home",                   emoji: "🏠" },
-                { label: "שיעורים חיים",     href: "/lessons",                emoji: "🎓" },
+                { label: "אזרחות מלאכותית",     href: "/lessons",                emoji: "🎓" },
                 { label: "שאלונים",          href: "/teacher/surveys",        emoji: "📋" },
                 { label: "צוות מחנכים",      href: "/teacher/team",           emoji: "🧑‍🏫" },
                 { label: "שיחות הורים",      href: "/dashboard",              emoji: "💬" },
@@ -797,6 +797,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
           { i: 2, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg> },
           { i: 3, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path strokeLinecap="round" strokeLinejoin="round" d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg> },
           { i: 4, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="3"/><path strokeLinecap="round" strokeLinejoin="round" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg> },
+          { i: 5, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path strokeLinecap="round" strokeLinejoin="round" d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18"/><path strokeLinecap="round" strokeLinejoin="round" d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg> },
         ] as const).map(({ i, icon }) => (
           <button key={i} onClick={() => setPage(i)}
             className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all btn-press ${
@@ -1125,6 +1126,43 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
           <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
             <div className="px-4 pt-3 pb-10">
               <SettingsPanel isAdmin={isAdmin} />
+            </div>
+          </div>
+
+          {/* ══ PAGE 6: אזרחות ══ */}
+          <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
+            <div className="px-4 pt-3 pb-10 space-y-3">
+              <h2 className="text-white/70 text-sm font-semibold px-1">אזרחות</h2>
+
+              <Link href="/lessons"
+                className="glass rounded-2xl p-4 flex items-center gap-3 interactive btn-press hover:bg-white/15 transition-colors">
+                <span className="text-2xl flex-shrink-0">🎓</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-medium text-sm">אזרחות מלאכותית</p>
+                  <p className="text-white/40 text-xs">גישה לשיעורים החיים</p>
+                </div>
+                <span className="text-white/30 flex-shrink-0">←</span>
+              </Link>
+
+              <Link href="/lessons/results"
+                className="glass rounded-2xl p-4 flex items-center gap-3 interactive btn-press hover:bg-white/15 transition-colors">
+                <span className="text-2xl flex-shrink-0">📊</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-medium text-sm">תוצאות</p>
+                  <p className="text-white/40 text-xs">ציוני התלמידים בשיעורים</p>
+                </div>
+                <span className="text-white/30 flex-shrink-0">←</span>
+              </Link>
+
+              <Link href="/teacher/civics-materials"
+                className="glass rounded-2xl p-4 flex items-center gap-3 interactive btn-press hover:bg-white/15 transition-colors">
+                <span className="text-2xl flex-shrink-0">📚</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-medium text-sm">חומר לימודי</p>
+                  <p className="text-white/40 text-xs">קישורים לחומרי עזר</p>
+                </div>
+                <span className="text-white/30 flex-shrink-0">←</span>
+              </Link>
             </div>
           </div>
 

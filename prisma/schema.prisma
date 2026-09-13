@@ -67,6 +67,7 @@ model User {
   teamFilesAdded      TeamFile[]
   teamEventsAdded     TeamEvent[]
   teamPosts           TeamPost[]
+  studyMaterialsAdded StudyMaterial[]
   class               Class?             @relation(fields: [classId], references: [id])
   studentRecord       Student?           @relation(fields: [studentId], references: [id])
 }
@@ -430,6 +431,20 @@ model TeamPost {
   author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
   @@index([authorId])
+}
+
+// A manually-curated list of study-material links for the civics subject
+// page (/teacher/civics) — first pass is just a titled link list, same
+// shape as TeamFile; expected to grow beyond that later.
+model StudyMaterial {
+  id          String   @id @default(cuid())
+  title       String
+  url         String   @db.Text
+  createdById String
+  createdAt   DateTime @default(now())
+  createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([createdById])
 }
 
 // ── Student personal accommodations ──────────────────────

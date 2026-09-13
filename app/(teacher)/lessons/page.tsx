@@ -42,7 +42,7 @@ export default function LessonsPage() {
       {/* Header */}
       <header style={{ background: "var(--ink)", padding: "16px 28px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
         <div style={{ color: "var(--paper)", fontFamily: "'Frank Ruhl Libre', serif", fontWeight: 700, fontSize: 18 }}>
-          שיעורים חיים
+          אזרחות מלאכותית
         </div>
         <Link href="/home" style={{ color: "rgba(245,241,230,0.6)", fontSize: 13, textDecoration: "none" }}>← חזרה</Link>
       </header>

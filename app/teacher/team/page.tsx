@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { StaffTasksTab } from "@/app/components/StaffTasksTab"
+import { driveIconFor } from "@/lib/driveIcon"
 
 type Tab = "tasks" | "files" | "events" | "forum"
 
@@ -47,15 +48,6 @@ export default function TeamPage() {
    FILES — a manually-curated list of Drive links
    ══════════════════════════════════════════════════════════ */
 interface TeamFileT { id: string; title: string; url: string; createdAt: string }
-
-export function driveIconFor(url: string): string {
-  if (/\/folders\//.test(url)) return "📁"
-  if (/spreadsheets/.test(url)) return "📊"
-  if (/document/.test(url)) return "📄"
-  if (/presentation/.test(url)) return "📽️"
-  if (/forms/.test(url)) return "📋"
-  return "🔗"
-}
 
 function FilesTab() {
   const [files, setFiles] = useState<TeamFileT[]>([])
