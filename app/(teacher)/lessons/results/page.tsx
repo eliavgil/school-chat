@@ -6,6 +6,7 @@ interface LessonStatus {
   lessonId: string
   lessonTitle: string
   status: "done" | "next" | "upcoming"
+  manual: boolean
   sessionId: string | null
   sessionDate: string | null
   roomCode: string | null
@@ -119,14 +120,18 @@ export default function ResultsPage() {
       .finally(() => setLoading(false))
   }, [selectedClass]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    if (view !== "tracking" || trackingData) return
+  function refreshTracking() {
     setTrackingLoading(true)
-    fetch("/api/tracking")
+    return fetch("/api/tracking")
       .then(r => r.json())
       .then(d => { if (!d.error) setTrackingData(d) })
       .catch(() => {})
       .finally(() => setTrackingLoading(false))
+  }
+
+  useEffect(() => {
+    if (view !== "tracking" || trackingData) return
+    refreshTracking()
   }, [view]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const session = useMemo(
@@ -183,7 +188,7 @@ export default function ResultsPage() {
 
         {data && !loading && view === "session" && <SessionView data={data} session={session} selectedSession={selectedSession} setSelectedSession={setSelectedSession} allQuestions={allQuestions} />}
         {data && !loading && view === "averages" && <AveragesView data={data} />}
-        {view === "tracking" && (trackingLoading ? <p style={{ color: "#64748b" }}>טוען...</p> : trackingData ? <TrackingView data={trackingData} /> : null)}
+        {view === "tracking" && (trackingLoading ? <p style={{ color: "#64748b" }}>טוען...</p> : trackingData ? <TrackingView data={trackingData} onChanged={refreshTracking} /> : null)}
       </div>
     </div>
   )
@@ -434,11 +439,32 @@ function AveragesView({ data }: { data: ApiData }) {
 }
 
 /* ── Tracking view ──────────────────────────────────────── */
-function TrackingView({ data }: { data: TrackingData }) {
+function TrackingView({ data, onChanged }: { data: TrackingData; onChanged: () => void }) {
   const { lessons, classTracking, unassigned } = data
+  const [togglingKey, setTogglingKey] = useState<string | null>(null)
 
   if (classTracking.length === 0) {
     return <p style={{ color: "#64748b" }}>אין כיתות במערכת.</p>
+  }
+
+  // Clicking a lesson marks it done "by hand" — for when it was actually
+  // taught but the slide deck wasn't finished (or the live-session flow
+  // wasn't used that day), so no session row exists to infer it from.
+  // Only ever toggles the manual override; a lesson that's done because a
+  // real session exists for it stays done either way.
+  async function toggleManual(ls: LessonStatus, classId: string) {
+    const key = `${classId}:${ls.lessonId}`
+    setTogglingKey(key)
+    try {
+      if (ls.status === "done" && ls.manual) {
+        await fetch("/api/tracking/manual", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lessonId: ls.lessonId, classId }) })
+      } else if (ls.status !== "done") {
+        await fetch("/api/tracking/manual", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ lessonId: ls.lessonId, classId }) })
+      }
+      onChanged()
+    } finally {
+      setTogglingKey(null)
+    }
   }
 
   return (
@@ -509,20 +535,36 @@ function TrackingView({ data }: { data: TrackingData }) {
                   {classTracking.map(cls => {
                     const ls = cls.lessons.find(l => l.lessonId === lesson.id)
                     if (!ls) return <td key={cls.classId} style={{ ...tdStyle, textAlign: "center", color: "#cbd5e1" }}>—</td>
+
+                    const key = `${cls.classId}:${ls.lessonId}`
+                    const busy = togglingKey === key
+                    const clickable = ls.status !== "done" || ls.manual
+
                     if (ls.status === "done") return (
-                      <td key={cls.classId} style={{ ...tdStyle, textAlign: "center", background: "#f0fdf4" }}>
+                      <td key={cls.classId}
+                        onClick={clickable ? () => toggleManual(ls, cls.classId) : undefined}
+                        title={ls.manual ? "סומן ידנית — לחצו לביטול" : undefined}
+                        style={{ ...tdStyle, textAlign: "center", background: "#f0fdf4", cursor: clickable ? "pointer" : "default", opacity: busy ? 0.5 : 1 }}>
                         <div style={{ color: "#16a34a", fontWeight: 700, fontSize: 16 }}>✓</div>
-                        <div style={{ fontSize: 10, color: "#86efac" }}>{ls.sessionDate ? new Date(ls.sessionDate).toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit" }) : ""}</div>
+                        <div style={{ fontSize: 10, color: "#86efac" }}>
+                          {ls.manual ? "ידני" : ls.sessionDate ? new Date(ls.sessionDate).toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit" }) : ""}
+                        </div>
                       </td>
                     )
                     if (ls.status === "next") return (
-                      <td key={cls.classId} style={{ ...tdStyle, textAlign: "center", background: "#eff6ff" }}>
+                      <td key={cls.classId}
+                        onClick={() => toggleManual(ls, cls.classId)}
+                        title="לחצו לסימון כבוצע"
+                        style={{ ...tdStyle, textAlign: "center", background: "#eff6ff", cursor: "pointer", opacity: busy ? 0.5 : 1 }}>
                         <div style={{ color: "#3b82f6", fontWeight: 700, fontSize: 16 }}>→</div>
                         <div style={{ fontSize: 10, color: "#93c5fd" }}>הבא</div>
                       </td>
                     )
                     return (
-                      <td key={cls.classId} style={{ ...tdStyle, textAlign: "center" }}>
+                      <td key={cls.classId}
+                        onClick={() => toggleManual(ls, cls.classId)}
+                        title="לחצו לסימון כבוצע"
+                        style={{ ...tdStyle, textAlign: "center", cursor: "pointer", opacity: busy ? 0.5 : 1 }}>
                         <span style={{ color: "#e2e8f0", fontSize: 18 }}>·</span>
                       </td>
                     )
@@ -538,6 +580,9 @@ function TrackingView({ data }: { data: TrackingData }) {
           <span>✓ בוצע</span>
           <span style={{ color: "#3b82f6" }}>→ השיעור הבא</span>
           <span style={{ color: "#cbd5e1" }}>· טרם הגיע</span>
+        </div>
+        <div style={{ marginTop: 6, fontSize: 12, color: "#94a3b8" }}>
+          לחצו על תא כדי לסמן שיעור כבוצע ידנית (למשל אם לימדתם בלי לסיים את המצגת) — ולחצו שוב על "ידני" כדי לבטל.
         </div>
       </Section>
 

@@ -10,7 +10,7 @@ export async function GET() {
 
   const sb = adminClient()
 
-  const [lessonsRes, sessionsRes, responsesRes, classes] = await Promise.all([
+  const [lessonsRes, sessionsRes, responsesRes, classes, manualDones] = await Promise.all([
     sb.from("lessons").select("id, title, created_at").order("created_at", { ascending: true }),
     sb.from("live_sessions").select("id, lesson_id, class_id, room_code").order("id", { ascending: false }),
     sb.from("responses").select("session_id, student_id"),
@@ -18,6 +18,7 @@ export async function GET() {
       select: { id: true, name: true, displayName: true },
       orderBy: { name: "asc" },
     }),
+    prisma.lessonManualDone.findMany({ select: { lessonId: true, classId: true } }),
   ])
 
   if (lessonsRes.error) return NextResponse.json({ error: lessonsRes.error.message }, { status: 500 })
@@ -68,6 +69,7 @@ export async function GET() {
 
   // Build per-class lesson tracking
   const classMap = new Map(classes.map(c => [c.id, c.displayName || c.name]))
+  const manualDoneSet = new Set(manualDones.map(m => `${m.classId}:${m.lessonId}`))
 
   const classTracking = classes.map(cls => {
     // Sessions that were for this class, newest first
@@ -89,8 +91,12 @@ export async function GET() {
     }
 
     let foundNext = false
+    let completedCount = 0
     const lessonList = lessons.map(l => {
-      const done = taughtLessonIds.has(l.id)
+      const auto = taughtLessonIds.has(l.id)
+      const manual = !auto && manualDoneSet.has(`${cls.id}:${l.id}`)
+      const done = auto || manual
+      if (done) completedCount++
       let status: "done" | "next" | "upcoming"
       if (done) {
         status = "done"
@@ -105,6 +111,7 @@ export async function GET() {
         lessonId: l.id,
         lessonTitle: l.title,
         status,
+        manual,
         sessionId: sess?.id ?? null,
         sessionDate: null,
         roomCode: sess?.room_code ?? null,
@@ -116,7 +123,7 @@ export async function GET() {
     return {
       classId: cls.id,
       className: cls.displayName || cls.name,
-      completedCount: taughtLessonIds.size,
+      completedCount,
       totalLessons: lessons.length,
       nextLesson,
       lessons: lessonList,

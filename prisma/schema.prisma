@@ -68,6 +68,7 @@ model User {
   teamEventsAdded     TeamEvent[]
   teamPosts           TeamPost[]
   studyMaterialsAdded StudyMaterial[]
+  lessonManualDones   LessonManualDone[]
   class               Class?             @relation(fields: [classId], references: [id])
   studentRecord       Student?           @relation(fields: [studentId], references: [id])
 }
@@ -115,6 +116,7 @@ model Class {
   schoolName           String    @default("")   // e.g. "כפר סילבר"
   students             Student[]
   teachers             User[]
+  lessonManualDones    LessonManualDone[]
 }
 
 model Student {
@@ -445,6 +447,26 @@ model StudyMaterial {
   createdBy   User     @relation(fields: [createdById], references: [id], onDelete: Cascade)
 
   @@index([createdById])
+}
+
+// Manual override for /lessons/results' "מעקב שיעורים" tracker. That
+// tracker infers a lesson as "done" for a class purely from whether a live
+// session row exists for it in the (separate, Supabase-hosted) lessons DB
+// — but a teacher who taught the material without finishing the slide deck,
+// or without going through the live-session flow at all, has no such row.
+// lessonId points at that Supabase lessons table (cross-database — no FK
+// here), classId is this app's own Class.
+model LessonManualDone {
+  id          String   @id @default(cuid())
+  lessonId    String
+  classId     String
+  markedById  String
+  createdAt   DateTime @default(now())
+  markedBy    User     @relation(fields: [markedById], references: [id], onDelete: Cascade)
+  class       Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+
+  @@unique([lessonId, classId])
+  @@index([classId])
 }
 
 // ── Student personal accommodations ──────────────────────
