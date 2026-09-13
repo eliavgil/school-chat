@@ -92,7 +92,8 @@ function cellBg(answer: string | undefined, q: Question): string {
   return correct ? "#dcfce7" : "#fee2e2"
 }
 
-function formatDate(iso: string) {
+function formatDate(iso: string | null) {
+  if (!iso) return ""
   return new Date(iso).toLocaleDateString("he-IL", { day: "2-digit", month: "2-digit", year: "2-digit", hour: "2-digit", minute: "2-digit" })
 }
 
@@ -222,7 +223,7 @@ function SessionView({ data, session, selectedSession, setSelectedSession, allQu
         >
           {data.sessions.map(s => (
             <option key={s.id} value={s.id}>
-              {s.lessonTitle} — {formatDate(s.createdAt)} ({s.roomCode})
+              {s.lessonTitle}{formatDate(s.createdAt) ? ` — ${formatDate(s.createdAt)}` : ""} ({s.roomCode})
             </option>
           ))}
         </select>

@@ -12,7 +12,7 @@ export async function GET() {
 
   const [lessonsRes, sessionsRes, responsesRes, classes, manualDones] = await Promise.all([
     sb.from("lessons").select("id, title, created_at").order("created_at", { ascending: true }),
-    sb.from("live_sessions").select("id, lesson_id, class_id, room_code, created_at").order("id", { ascending: false }),
+    sb.from("live_sessions").select("id, lesson_id, class_id, room_code").order("id", { ascending: false }),
     sb.from("responses").select("session_id, student_id"),
     prisma.class.findMany({
       select: { id: true, name: true, displayName: true },
@@ -113,7 +113,7 @@ export async function GET() {
         status,
         manual,
         sessionId: sess?.id ?? null,
-        sessionDate: sess?.created_at ?? null,
+        sessionDate: null,
         roomCode: sess?.room_code ?? null,
       }
     })
