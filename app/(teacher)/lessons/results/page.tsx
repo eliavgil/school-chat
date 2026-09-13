@@ -43,6 +43,7 @@ interface StudentResult {
   studentId: string
   studentName: string
   classId: string | null
+  unlinked: boolean
   answers: Record<string, string>
   quizCorrect: number
   quizTotal: number
@@ -268,7 +269,15 @@ function SessionView({ data, session, selectedSession, setSelectedSession, allQu
                       .sort((a, b) => (b.quizScore ?? 0) - (a.quizScore ?? 0))
                       .map(r => (
                         <tr key={r.studentId} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                          <td style={{ ...tdStyle, fontWeight: 600 }}>{r.studentName}</td>
+                          <td style={{ ...tdStyle, fontWeight: 600 }}>
+                            {r.studentName}
+                            {r.unlinked && (
+                              <span title="החשבון של התלמיד/ה הזו לא מקושר לרשומת תלמיד — השם עשוי להיות לא מדויק"
+                                style={{ marginRight: 6, fontSize: 11, color: "#d97706" }}>
+                                ⚠️ לא מקושר
+                              </span>
+                            )}
+                          </td>
                           {quizQs.map(q => {
                             const key = `${q.slideId}__${q.id}`
                             const ans = r.answers[key]
