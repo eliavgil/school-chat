@@ -13,7 +13,7 @@ async function requireAdmin() {
 export async function GET() {
   if (!await requireAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const [pendingParents, pendingStudents, approvedParents, approvedStudents, students, roster] = await Promise.all([
+  const [pendingParents, pendingStudents, pendingTeachers, approvedParents, approvedStudents, students, roster] = await Promise.all([
     prisma.user.findMany({
       where: { role: "PARENT", accessStatus: "PENDING" },
       select: { id: true, name: true, email: true, phone: true, requestedChildName: true, parentType: true, createdAt: true },
@@ -22,6 +22,11 @@ export async function GET() {
     prisma.user.findMany({
       where: { role: "STUDENT", accessStatus: "PENDING" },
       select: { id: true, name: true, email: true, requestedChildName: true, createdAt: true },
+      orderBy: { createdAt: "asc" },
+    }),
+    prisma.user.findMany({
+      where: { role: "TEACHER", accessStatus: "PENDING" },
+      select: { id: true, name: true, email: true, createdAt: true, class: { select: { id: true, name: true, displayName: true } } },
       orderBy: { createdAt: "asc" },
     }),
     prisma.user.findMany({
@@ -47,7 +52,7 @@ export async function GET() {
     }),
   ])
 
-  return NextResponse.json({ pendingParents, pendingStudents, approvedParents, approvedStudents, students, roster })
+  return NextResponse.json({ pendingParents, pendingStudents, pendingTeachers, approvedParents, approvedStudents, students, roster })
 }
 
 export async function POST(req: NextRequest) {
@@ -109,6 +114,17 @@ export async function PATCH(req: NextRequest) {
       },
     })
     return NextResponse.json({ ok: true, class: cls })
+  } else if (action === "update-class") {
+    if (!classId) return NextResponse.json({ error: "Missing classId" }, { status: 400 })
+    const cls = await prisma.class.update({
+      where: { id: classId },
+      data: {
+        ...(displayName !== undefined && { displayName: displayName?.trim() || "" }),
+        ...(teacherDisplayName !== undefined && { teacherDisplayName: teacherDisplayName?.trim() || "" }),
+        ...(schoolName !== undefined && { schoolName: schoolName?.trim() || "" }),
+      },
+    })
+    return NextResponse.json({ ok: true, class: cls })
   } else if (action === "add-students") {
     if (!classId) return NextResponse.json({ error: "Missing classId" }, { status: 400 })
     const list: string[] = Array.isArray(names) ? names : []
@@ -130,6 +146,22 @@ export async function PATCH(req: NextRequest) {
       where: { id: userId },
       data: { accessStatus: "APPROVED", ...(studentId ? { studentId } : {}) },
     })
+  } else if (action === "approve-teacher") {
+    const teacher = await prisma.user.update({
+      where: { id: userId },
+      data: { accessStatus: "APPROVED" },
+      select: { id: true, name: true },
+    })
+    // Staff-task assignments are matched by a free-text teacherLabel, not an
+    // account (see /api/tasks/staff) — link any existing ones for this name
+    // now, so the teacher can actually check off their own tasks right away
+    // instead of only the coordinator being able to.
+    if (teacher.name) {
+      await prisma.staffTaskAssignee.updateMany({
+        where: { teacherLabel: teacher.name, userId: null },
+        data: { userId: teacher.id },
+      })
+    }
   } else if (action === "deny") {
     await prisma.user.update({ where: { id: userId }, data: { accessStatus: "DENIED" } })
   } else if (action === "unlink-parent" && studentId) {

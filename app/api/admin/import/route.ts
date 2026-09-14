@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { readExcelBuffer } from "@/lib/csv/readExcel"
 import {
   importTeachers,
@@ -8,11 +10,17 @@ import {
   importBellSchedule,
   importCalendarRows,
 } from "@/lib/csv/importHandlers"
-import { DAY_TYPE_AGD, DAY_TYPE_B, DAY_TYPE_BH, TEACHER_OWN_SCHEDULE_ID } from "@/lib/bellSchedule"
+import { DAY_TYPE_AGD, DAY_TYPE_B, DAY_TYPE_BH, teacherOwnScheduleId } from "@/lib/bellSchedule"
 
 // POST /api/admin/import
 // Body: FormData with fields: type, classId?, file? OR sheetUrl?
 export async function POST(req: NextRequest) {
+  const session = await getServerSession(authOptions)
+  const role = (session?.user as any)?.role
+  if (!session?.user?.id || (role !== "TEACHER" && role !== "ADMIN")) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
   try {
   const formData = await req.formData()
   const type = formData.get("type") as string
@@ -55,7 +63,7 @@ export async function POST(req: NextRequest) {
         count = await importSchedule(sheets, classId)
         break
       case "homeroom-schedule":
-        count = await importSchedule(sheets, TEACHER_OWN_SCHEDULE_ID)
+        count = await importSchedule(sheets, teacherOwnScheduleId(session.user.id))
         break
       case "bell-schedule-agd":
         count = await importBellSchedule(sheets, DAY_TYPE_AGD)

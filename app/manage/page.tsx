@@ -453,6 +453,7 @@ function ScheduleTab() {
 // ────────────────────────────────────────────────────────────
 interface PendingParent  { id: string; name: string | null; email: string | null; phone: string | null; requestedChildName: string | null; parentType: string | null }
 interface PendingStudent { id: string; name: string | null; email: string | null; requestedChildName: string | null }
+interface PendingTeacher { id: string; name: string | null; email: string | null; class: { id: string; name: string; displayName: string } | null }
 interface ParentUser     { id: string; name: string | null; email: string | null; phone: string | null; parentStudents: { student: { id: string; name: string } }[] }
 interface StudentUser    { id: string; name: string | null; email: string | null; studentRecord: { id: string; name: string } | null }
 interface Student        { id: string; name: string }
@@ -508,6 +509,7 @@ function ConvertToStudent({ students, loading, onConvert, onCancel }: {
 function UsersTab() {
   const [pendingParents, setPendingParents]   = useState<PendingParent[]>([])
   const [pendingStudents, setPendingStudents] = useState<PendingStudent[]>([])
+  const [pendingTeachers, setPendingTeachers] = useState<PendingTeacher[]>([])
   const [approvedParents, setApprovedParents] = useState<ParentUser[]>([])
   const [approvedStudents, setApprovedStudents] = useState<StudentUser[]>([])
   const [students, setStudents]               = useState<Student[]>([])
@@ -528,6 +530,7 @@ function UsersTab() {
     const d = await fetch("/api/admin/users").then(r => r.json())
     setPendingParents(d.pendingParents ?? [])
     setPendingStudents(d.pendingStudents ?? [])
+    setPendingTeachers(d.pendingTeachers ?? [])
     setApprovedParents(d.approvedParents ?? [])
     setApprovedStudents(d.approvedStudents ?? [])
     setStudents(d.students ?? [])
@@ -554,7 +557,7 @@ function UsersTab() {
 
   if (usersLoading) return <p className="text-white/40 text-sm text-center py-8">טוען...</p>
 
-  const totalPending = pendingParents.length + pendingStudents.length
+  const totalPending = pendingParents.length + pendingStudents.length + pendingTeachers.length
 
   return (
     <div className="space-y-6">
@@ -641,6 +644,33 @@ function UsersTab() {
                   onCancel={() => setExpandedId(null)}
                   label="אשר תלמיד/ה 🎒" />
               )}
+            </div>
+          ))}
+          {pendingTeachers.map(u => (
+            <div key={u.id} className="bg-amber-900/20 border border-amber-500/25 rounded-xl p-4">
+              <div className="flex justify-between items-start">
+                <div className="text-sm space-y-0.5">
+                  <div className="font-medium text-white">{u.name ?? "—"}</div>
+                  <div className="text-white/50 text-xs">{u.email}</div>
+                  <div className="text-amber-300 text-xs mt-1">מחנך/ת של: {u.class ? (u.class.displayName || u.class.name) : "—"}</div>
+                </div>
+                <div className="flex gap-2 items-center">
+                  <button onClick={() => action(u.id, "approve-teacher")} disabled={actionLoading === u.id}
+                    className="bg-white/10 text-white rounded-lg px-3 py-1.5 text-xs font-medium hover:bg-white/20 interactive disabled:opacity-50">
+                    אשר מחנך/ת 👩‍🏫
+                  </button>
+                  <button onClick={() => action(u.id, "deny")} disabled={actionLoading === u.id}
+                    className="text-xs text-white/40 hover:text-white interactive">
+                    דחה
+                  </button>
+                  <button
+                    onClick={() => { if (confirm(`למחוק לחלוטין את חשבון ${u.name ?? u.email}?\nהמשתמש יוכל להירשם מחדש.`)) action(u.id, "delete-user") }}
+                    title="מחק חשבון"
+                    className="text-xs text-red-500/60 hover:text-red-500 interactive">
+                    🗑
+                  </button>
+                </div>
+              </div>
             </div>
           ))}
         </div>
@@ -998,7 +1028,7 @@ export default function ManagePage() {
   useEffect(() => {
     if (!isTeacher) return
     fetch("/api/admin/users").then(r => r.json()).then(d => {
-      setPendingCount((d.pendingParents?.length ?? 0) + (d.pendingStudents?.length ?? 0))
+      setPendingCount((d.pendingParents?.length ?? 0) + (d.pendingStudents?.length ?? 0) + (d.pendingTeachers?.length ?? 0))
     }).catch(() => {})
   }, [isTeacher])
 

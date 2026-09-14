@@ -30,9 +30,14 @@ export function dayTypeLabel(dayType: string): string {
   return dayType
 }
 
-// The teacher's own personal weekly schedule (what they teach/do each period,
+// A teacher's own personal weekly schedule (what they teach/do each period,
 // across all classes) — stored via the same ScheduleSlot pipeline as a class
-// schedule, but tagged with this fixed id instead of a real class, so it
-// never depends on (or collides with) whichever class happens to be selected
-// in the import picker or is set as the teacher's own classId.
-export const TEACHER_OWN_SCHEDULE_ID = "teacher-own"
+// schedule, tagged with a per-teacher sentinel id instead of a real class so
+// it never collides with an actual classId. Keyed by userId (not a single
+// fixed id) so each of several teachers gets their own — a fixed id used to
+// mean "the one teacher this app was built for", which stopped being true
+// once more than one teacher account exists.
+export function teacherOwnScheduleId(userId: string): string {
+  return `teacher-own:${userId}`
+}
+export const TEACHER_OWN_PREFIX = "teacher-own:"

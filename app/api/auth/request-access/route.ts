@@ -21,6 +21,22 @@ export async function POST(req: NextRequest) {
         accessStatus: "PENDING",
       },
     })
+  } else if (userType === "teacher") {
+    const { teacherName, classId } = body
+    if (!teacherName?.trim() || !classId) return NextResponse.json({ error: "Missing fields" }, { status: 400 })
+    // Role is set right away (same as student/parent below) — accessStatus
+    // stays PENDING until an admin approves, so claiming "I'm a teacher"
+    // here grants nothing by itself; middleware blocks every PENDING user
+    // regardless of role.
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        role: "TEACHER",
+        name: teacherName.trim(),
+        classId,
+        accessStatus: "PENDING",
+      },
+    })
   } else {
     const { childName, phone, parentType } = body
     if (!childName?.trim() || !phone?.trim()) return NextResponse.json({ error: "Missing fields" }, { status: 400 })

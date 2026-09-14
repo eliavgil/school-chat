@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db/prisma"
-import { dayTypeForWeekday, TEACHER_OWN_SCHEDULE_ID } from "@/lib/bellSchedule"
+import { dayTypeForWeekday, teacherOwnScheduleId } from "@/lib/bellSchedule"
 
 const DAY_TO_HEB = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"]
 
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
   // Teachers see their own personal weekly schedule (spans whichever classes
   // they actually teach each period), not just the one class their account
   // happens to be tied to.
-  const scheduleClassId = isTeacher ? TEACHER_OWN_SCHEDULE_ID : classId
+  const scheduleClassId = isTeacher ? teacherOwnScheduleId(session.user.id) : classId
   const todayDayType = dayTypeForWeekday(todayJS)
 
   const EXAM_KEYWORDS = ["מבחן", "בוחן", "בגרות"]
@@ -203,12 +203,23 @@ export async function GET(req: NextRequest) {
   let derivedTomorrow: { period: string; content: string }[] = []
   if (isStudent && todaySchedule.length === 0 && classProfile?.displayName && DERIVED_SCHEDULE_CLASSES.includes(classProfile.displayName)) {
     const classTag = classProfile.displayName.replace("י", "י'") // "י4" -> "י'4", matching the source spreadsheet's notation
-    const [ownToday, ownTomorrow] = await Promise.all([
-      prisma.scheduleSlot.findMany({ where: { classId: TEACHER_OWN_SCHEDULE_ID, dayHeb: todayHeb }, select: { period: true, content: true } }),
-      prisma.scheduleSlot.findMany({ where: { classId: TEACHER_OWN_SCHEDULE_ID, dayHeb: tomorrowHeb }, select: { period: true, content: true } }),
-    ])
-    derivedToday = ownToday.filter(s => s.content.includes(classTag))
-    derivedTomorrow = ownTomorrow.filter(s => s.content.includes(classTag))
+    // Derived from the class's own homeroom teacher's personal schedule
+    // (each teacher now has their own bucket, not one shared one) — if this
+    // class has no linked homeroom-teacher account yet, there's nothing to
+    // derive from.
+    const homeroomTeacher = await prisma.user.findFirst({
+      where: { classId, role: "TEACHER" },
+      select: { id: true },
+    })
+    if (homeroomTeacher) {
+      const ownId = teacherOwnScheduleId(homeroomTeacher.id)
+      const [ownToday, ownTomorrow] = await Promise.all([
+        prisma.scheduleSlot.findMany({ where: { classId: ownId, dayHeb: todayHeb }, select: { period: true, content: true } }),
+        prisma.scheduleSlot.findMany({ where: { classId: ownId, dayHeb: tomorrowHeb }, select: { period: true, content: true } }),
+      ])
+      derivedToday = ownToday.filter(s => s.content.includes(classTag))
+      derivedTomorrow = ownTomorrow.filter(s => s.content.includes(classTag))
+    }
   }
 
   return NextResponse.json({

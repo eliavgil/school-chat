@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Component, type ReactNode } from "react"
 import Link from "next/link"
-import { dayTypeForWeekday, TEACHER_OWN_SCHEDULE_ID } from "@/lib/bellSchedule"
+import { dayTypeForWeekday } from "@/lib/bellSchedule"
 
 // Events synced from the main spreadsheet never carry a `type` value (always
 // null in practice) — holidays can only be told apart by name, not a field.

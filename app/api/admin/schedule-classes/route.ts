@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db/prisma"
-import { TEACHER_OWN_SCHEDULE_ID } from "@/lib/bellSchedule"
+import { TEACHER_OWN_PREFIX } from "@/lib/bellSchedule"
 
 // GET — which real classes actually have an uploaded weekly schedule
 // (excludes the teacher's own personal-schedule placeholder id), so the
@@ -15,7 +15,7 @@ export async function GET() {
   }
 
   const rows = await prisma.scheduleSlot.findMany({
-    where: { classId: { not: TEACHER_OWN_SCHEDULE_ID } },
+    where: { classId: { not: { startsWith: TEACHER_OWN_PREFIX } } },
     select: { classId: true },
     distinct: ["classId"],
   })

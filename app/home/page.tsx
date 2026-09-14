@@ -652,15 +652,19 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
   const [classScheduleSlots, setClassScheduleSlots] = useState<(ScheduleSlot & { dayHeb: string })[]>([])
   const [classScheduleName, setClassScheduleName] = useState<string>("")
   useEffect(() => {
+    if (!data?.classId) return // wait for /api/home to resolve which class is actually this teacher's own
     (async () => {
       const classesRes = await fetch("/api/admin/schedule-classes").then(r => r.json()).catch(() => ({ classes: [] }))
-      const first = (classesRes.classes ?? [])[0]
-      if (!first) return
-      setClassScheduleName(first.name)
-      const cs = await fetch(`/api/schedule?classId=${encodeURIComponent(first.id)}`).then(r => r.json()).catch(() => ({ slots: [] }))
+      // Show *this* teacher's own class, not just whichever class happens to
+      // have data first — a different teacher's class showing up here under
+      // your name would be actively misleading, not just imprecise.
+      const own = (classesRes.classes ?? []).find((c: { id: string }) => c.id === data.classId)
+      if (!own) { setClassScheduleName(""); setClassScheduleSlots([]); return }
+      setClassScheduleName(own.name)
+      const cs = await fetch(`/api/schedule?classId=${encodeURIComponent(own.id)}`).then(r => r.json()).catch(() => ({ slots: [] }))
       setClassScheduleSlots(cs.slots ?? [])
     })()
-  }, [])
+  }, [data?.classId])
   // /api/schedule returns the whole week for that class, not just today —
   // and bellSlots above is only today's bell pattern (empty on Fri/Sat, when
   // there's no bell schedule at all), so building the timeline from the

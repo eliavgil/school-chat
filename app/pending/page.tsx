@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSession, signOut } from "next-auth/react"
 
-type UserType = "parent" | "student" | null
+type UserType = "parent" | "student" | "teacher" | null
 
 function StepDot({ n, active }: { n: number; active: boolean }) {
   return (
@@ -39,8 +39,16 @@ export default function PendingPage() {
   const [phone, setPhone]           = useState("")
   const [parentType, setParentType] = useState<"אבא" | "אמא" | "">("")
   const [studentName, setStudentName] = useState("")
+  const [teacherName, setTeacherName] = useState(session?.user?.name ?? "")
+  const [teacherClassId, setTeacherClassId] = useState("")
+  const [classes, setClasses] = useState<{ id: string; name: string }[]>([])
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading]     = useState(false)
+
+  useEffect(() => {
+    if (userType !== "teacher" || classes.length > 0) return
+    fetch("/api/classes").then(r => r.json()).then(d => setClasses(d.classes ?? [])).catch(() => {})
+  }, [userType]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function submit() {
     setLoading(true)
@@ -48,9 +56,9 @@ export default function PendingPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(
-        userType === "parent"
-          ? { userType: "parent", childName, phone, parentType }
-          : { userType: "student", studentName }
+        userType === "parent" ? { userType: "parent", childName, phone, parentType }
+        : userType === "student" ? { userType: "student", studentName }
+        : { userType: "teacher", teacherName, classId: teacherClassId }
       ),
     })
     setSubmitted(true)
@@ -59,7 +67,9 @@ export default function PendingPage() {
 
   const canSubmit = userType === "parent"
     ? childName.trim() && phone.trim() && parentType
-    : userType === "student" ? studentName.trim() : false
+    : userType === "student" ? studentName.trim()
+    : userType === "teacher" ? teacherName.trim() && teacherClassId
+    : false
 
   if (submitted) {
     return (
@@ -101,7 +111,7 @@ export default function PendingPage() {
           נכנסת בתור <span className="text-stone-700 font-medium">{session?.user?.email}</span>
         </p>
         <h1 className="text-3xl font-bold text-stone-900 leading-tight">
-          {!userType ? "מי אתה/את?" : userType === "parent" ? "פרטי ההורה" : "פרטי התלמיד/ה"}
+          {!userType ? "מי אתה/את?" : userType === "parent" ? "פרטי ההורה" : userType === "student" ? "פרטי התלמיד/ה" : "פרטי המחנך/ת"}
         </h1>
       </div>
 
@@ -111,6 +121,7 @@ export default function PendingPage() {
           {[
             { type: "parent" as const,  icon: "👨‍👩‍👧", title: "הורה",    sub: "הורה לתלמיד/ה בכיתה",  accent: "hover:border-emerald-400" },
             { type: "student" as const, icon: "🎒",       title: "תלמיד/ה", sub: "תלמיד/ה בכיתה",         accent: "hover:border-orange-400" },
+            { type: "teacher" as const, icon: "👩‍🏫",     title: "מחנך/ת",  sub: "מחנך/ת של כיתה",        accent: "hover:border-blue-400" },
           ].map(opt => (
             <button key={opt.type} onClick={() => setUserType(opt.type)}
               className={`w-full bg-white border border-stone-200 ${opt.accent} rounded-2xl p-5 text-right interactive btn-press group`}>
@@ -172,6 +183,35 @@ export default function PendingPage() {
 
           <p className="text-xs text-stone-500 leading-relaxed">
             המחנך/ת יזהה אותך לפי השם ויאשר את גישתך לאפליקציה.
+          </p>
+
+          <button onClick={submit} disabled={loading || !canSubmit}
+            className="w-full bg-stone-900 text-white font-semibold py-4 rounded-2xl text-base hover:bg-stone-800 disabled:opacity-40 btn-press interactive">
+            {loading ? "שולח..." : "שלח בקשת גישה"}
+          </button>
+        </div>
+      )}
+
+      {/* Step 2: teacher form */}
+      {userType === "teacher" && (
+        <div className="px-6 space-y-5 animate-fade-in">
+          <button onClick={() => setUserType(null)} className="flex items-center gap-1.5 text-xs text-stone-500 hover:text-stone-700 interactive mb-1">
+            <span>→</span> חזרה
+          </button>
+
+          <Input label="שם מלא" value={teacherName} onChange={setTeacherName} placeholder="שם מלא" />
+
+          <div>
+            <label className="block text-xs font-semibold text-stone-500 uppercase tracking-wide mb-1.5">כיתה</label>
+            <select value={teacherClassId} onChange={e => setTeacherClassId(e.target.value)}
+              className="w-full bg-stone-100 border-0 rounded-xl px-4 py-3 text-sm text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-900/20 transition-all">
+              <option value="">בחרו כיתה</option>
+              {classes.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+
+          <p className="text-xs text-stone-500 leading-relaxed">
+            מנהל/ת המערכת יאשר את הבקשה בקרוב.
           </p>
 
           <button onClick={submit} disabled={loading || !canSubmit}

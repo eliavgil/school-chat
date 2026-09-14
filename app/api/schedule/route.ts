@@ -2,20 +2,20 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db/prisma"
-import { TEACHER_OWN_SCHEDULE_ID } from "@/lib/bellSchedule"
+import { teacherOwnScheduleId } from "@/lib/bellSchedule"
 
 function isTeacher(session: any) {
   return session?.user?.role === "TEACHER" || session?.user?.role === "ADMIN"
 }
 
 // GET — fetch all schedule slots for a class. With no classId given, this is
-// the teacher's own "מערכת שעות" page, so it defaults to their personal
-// weekly schedule rather than the old hardcoded "class-y" placeholder.
+// the teacher's own "מערכת שעות" page, so it defaults to their own personal
+// weekly schedule (one per teacher, not a shared placeholder).
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id || !isTeacher(session)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const classId = new URL(req.url).searchParams.get("classId") ?? TEACHER_OWN_SCHEDULE_ID
+  const classId = new URL(req.url).searchParams.get("classId") ?? teacherOwnScheduleId(session.user.id)
   const slots = await prisma.scheduleSlot.findMany({
     where: { classId },
     orderBy: [{ dayHeb: "asc" }, { period: "asc" }],
