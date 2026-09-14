@@ -1154,6 +1154,16 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                 <span className="text-white/30 flex-shrink-0">←</span>
               </Link>
 
+              <Link href="/teacher/link-check"
+                className="glass rounded-2xl p-4 flex items-center gap-3 interactive btn-press hover:bg-white/15 transition-colors">
+                <span className="text-2xl flex-shrink-0">🔗</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-medium text-sm">בדיקת קישור תלמידים</p>
+                  <p className="text-white/40 text-xs">מי עוד לא מקושר, לפני שיעור חי</p>
+                </div>
+                <span className="text-white/30 flex-shrink-0">←</span>
+              </Link>
+
               <Link href="/teacher/civics-materials"
                 className="glass rounded-2xl p-4 flex items-center gap-3 interactive btn-press hover:bg-white/15 transition-colors">
                 <span className="text-2xl flex-shrink-0">📚</span>
