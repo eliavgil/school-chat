@@ -238,7 +238,8 @@ const FILE_JOBS: FileJob[] = [
   { type: "schedule",  label: "מערכת שעות כיתה",     emoji: "🏫", scope: "class" },
   { type: "homeroom-schedule", label: "מערכת השעות שלי (מחנך)", emoji: "👩‍🏫", scope: "school" },
   { type: "bell-schedule-agd", label: "לוח צלצולים — א׳, ג׳, ד׳", emoji: "🔔", scope: "school" },
-  { type: "bell-schedule-bh",  label: "לוח צלצולים — ב׳, ה׳",     emoji: "🔔", scope: "school" },
+  { type: "bell-schedule-b",   label: "לוח צלצולים — ב׳",         emoji: "🔔", scope: "school" },
+  { type: "bell-schedule-bh",  label: "לוח צלצולים — ה׳",         emoji: "🔔", scope: "school" },
 ]
 
 function ImportTab() {

@@ -8,7 +8,7 @@ import {
   importBellSchedule,
   importCalendarRows,
 } from "@/lib/csv/importHandlers"
-import { DAY_TYPE_AGD, DAY_TYPE_BH, TEACHER_OWN_SCHEDULE_ID } from "@/lib/bellSchedule"
+import { DAY_TYPE_AGD, DAY_TYPE_B, DAY_TYPE_BH, TEACHER_OWN_SCHEDULE_ID } from "@/lib/bellSchedule"
 
 // POST /api/admin/import
 // Body: FormData with fields: type, classId?, file? OR sheetUrl?
@@ -59,6 +59,9 @@ export async function POST(req: NextRequest) {
         break
       case "bell-schedule-agd":
         count = await importBellSchedule(sheets, DAY_TYPE_AGD)
+        break
+      case "bell-schedule-b":
+        count = await importBellSchedule(sheets, DAY_TYPE_B)
         break
       case "bell-schedule-bh":
         count = await importBellSchedule(sheets, DAY_TYPE_BH)
