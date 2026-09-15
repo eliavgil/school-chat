@@ -1,8 +1,13 @@
 // Talks to Mashov's internal (undocumented) API the same way the school's
-// own web portal does — mirrors scripts/mashov/fetch.py's login flow, just
-// in TypeScript so it can run as a Vercel serverless route instead of
-// requiring a local Python setup. Credentials come from env vars only,
-// never from a request body.
+// own web portal does. Credentials come from env vars only, never from a
+// request body.
+//
+// The login endpoint (POST /api/login) does NOT require a CSRF cookie to be
+// primed first, despite the old Python script fetching the homepage before
+// logging in — verified directly: a request with zero cookies still gets
+// validated against `semel` (403 for an unrecognized school code) and then
+// credentials (401 "NotAuthenticated" for a wrong username/password), so it
+// clearly reaches real auth logic without any cookie/CSRF priming.
 
 const BASE_URL = "https://web.mashov.info/api"
 
@@ -27,8 +32,6 @@ function cookieHeaderFrom(jar: Record<string, string>): string {
 }
 
 function getSetCookies(res: Response): string[] {
-  // Node's fetch (undici) exposes getSetCookie() for multi-value headers;
-  // fall back to the single combined header on runtimes without it.
   const anyHeaders = res.headers as any
   if (typeof anyHeaders.getSetCookie === "function") return anyHeaders.getSetCookie()
   const raw = res.headers.get("set-cookie")
@@ -54,23 +57,10 @@ export async function mashovLogin(): Promise<
     return { ok: false, error: "MASHOV_SEMEL / MASHOV_USERNAME / MASHOV_PASSWORD not set" }
   }
 
-  // Mashov requires a CSRF cookie to exist before login — fetch the app
-  // shell first, same as the Python script does. A realistic User-Agent and
-  // Origin/Referer are included since a server-to-server request without
-  // them can get rejected by anti-bot checks even with correct credentials.
-  const homeRes = await fetch("https://web.mashov.info", {
-    redirect: "follow",
-    headers: { "User-Agent": BROWSER_UA },
-  })
-  let jar = parseCookies(getSetCookies(homeRes))
-  const initialCsrf = jar["Csrf-Token"] || jar["csrf-token"] || ""
-
   const loginRes = await fetch(`${BASE_URL}/login`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Csrf-Token": initialCsrf,
-      "Cookie": cookieHeaderFrom(jar),
       "Accept": "application/json",
       "User-Agent": BROWSER_UA,
       "Origin": "https://web.mashov.info",
@@ -86,24 +76,27 @@ export async function mashovLogin(): Promise<
     }),
   })
 
+  const reason = loginRes.headers.get("reason")
+
   if (!loginRes.ok) {
     const text = await loginRes.text().catch(() => "")
+    let hint = "Unrecognized failure — see status/reason above."
+    if (loginRes.status === 403) {
+      hint = "semel (school code) not recognized by Mashov — double-check MASHOV_SEMEL."
+    } else if (loginRes.status === 401 && reason === "NotAuthenticated") {
+      hint = "semel is valid, but username/password were rejected — double-check MASHOV_USERNAME and MASHOV_PASSWORD (and that this login has portal access, not just app access)."
+    } else if (loginRes.status === 404) {
+      hint = "Request body missing a required field — this is a bug in the request shape, not credentials."
+    }
     return {
       ok: false,
-      error: `Login failed: ${loginRes.status} — ${text.slice(0, 300)}`,
-      debug: {
-        year,
-        semel,
-        homeStatus: homeRes.status,
-        cookieNamesFromHome: Object.keys(jar),
-        csrfFoundBeforeLogin: !!initialCsrf,
-      },
+      error: `Login failed: ${loginRes.status} (${reason ?? "no reason header"}) — ${text.slice(0, 300)}`,
+      debug: { year, semel, status: loginRes.status, reason, hint },
     }
   }
 
-  const newCookies = parseCookies(getSetCookies(loginRes))
-  jar = { ...jar, ...newCookies }
-  const csrfToken = jar["Csrf-Token"] || jar["csrf-token"] || initialCsrf
+  const jar = parseCookies(getSetCookies(loginRes))
+  const csrfToken = jar["Csrf-Token"] || jar["csrf-token"] || ""
 
   return { ok: true, session: { cookieHeader: cookieHeaderFrom(jar), csrfToken } }
 }
