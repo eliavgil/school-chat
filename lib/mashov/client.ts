@@ -122,3 +122,21 @@ export async function mashovGet(session: MashovSession, path: string): Promise<{
   try { data = await res.json() } catch { /* non-JSON response */ }
   return { status: res.status, data }
 }
+
+export async function mashovPost(session: MashovSession, path: string, body: unknown): Promise<{ status: number; data: unknown }> {
+  const res = await fetch(`${BASE_URL}/${path.replace(/^\//, "")}`, {
+    method: "POST",
+    headers: {
+      "Cookie": session.cookieHeader,
+      "X-Csrf-Token": session.csrfToken,
+      "Accept": "application/json",
+      "Content-Type": "application/json",
+      "User-Agent": BROWSER_UA,
+      "Referer": "https://web.mashov.info/",
+    },
+    body: JSON.stringify(body),
+  })
+  let data: unknown = null
+  try { data = await res.json() } catch { /* non-JSON response */ }
+  return { status: res.status, data }
+}
