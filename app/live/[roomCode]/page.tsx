@@ -17,7 +17,7 @@ const CSS = `
   .app{min-height:100vh;display:flex;flex-direction:column;background:var(--ink);position:relative;overflow:hidden;}
   .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid rgba(176,141,63,0.25);flex-shrink:0;}
   .code-badge{color:var(--gold);font-family:'Frank Ruhl Libre',serif;font-weight:700;font-size:15px;letter-spacing:2px;}
-  .slide-card{background:var(--paper);border-radius:20px;margin:12px;flex:1;padding:28px 24px 90px;overflow-y:auto;position:relative;}
+  .slide-card{background:var(--paper);border-radius:20px;margin:12px;flex:1;padding:28px 24px 90px;overflow-y:auto;position:relative;z-index:0;}
   .slide-card.has-bg{background-size:cover;background-position:center;}
   .slide-card.has-bg::before{content:'';position:absolute;inset:0;border-radius:20px;background:rgba(245,241,230,0.88);}
   .slide-card.has-bg>*{position:relative;z-index:1;}
@@ -76,22 +76,24 @@ const CSS = `
   .anim-across{position:absolute;bottom:50px;width:150px;height:150px;z-index:20;pointer-events:none;}
   .anim-across.once{animation:run-across 5s linear forwards;}
   .anim-across.loop{animation:run-across 6s linear infinite;}
-  /* Stationary positions have no z-index (unlike "across", which stays on top since it
-     passes through briefly) — they're rendered as the first child inside .slide-card, so
-     plain DOM order already puts them above the card's own background paint but below
-     the real content that follows. Negative z-index here would sit *behind* .slide-card
-     itself instead — invisible, since the card paints its own opaque background. */
-  .anim-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:180px;height:180px;pointer-events:none;}
-  .anim-big-center{position:absolute;top:70%;left:50%;transform:translate(-50%,-50%);width:240px;height:240px;pointer-events:none;}
+  /* Stationary positions sit at negative z-index (unlike "across", which stays on top
+     since it only passes through briefly) — .slide-card now establishes its own stacking
+     context (position:relative + z-index:0), so a negative z-index here paints above the
+     card's own background but below its real in-flow content instead of escaping behind
+     the card entirely. Without this, "center"/"big-center" in particular landed right on
+     top of the slide's own title/body text, since position:absolute descendants paint
+     after static in-flow content regardless of z-index:auto vs explicit 0. */
+  .anim-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:180px;height:180px;pointer-events:none;z-index:-1;}
+  .anim-big-center{position:absolute;top:70%;left:50%;transform:translate(-50%,-50%);width:240px;height:240px;pointer-events:none;z-index:-1;}
   .brain-break-wrap{position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:center;padding-top:36px;}
   .brain-break-title{font-family:'Frank Ruhl Libre',serif;font-weight:900;font-size:40px;color:var(--ink);text-align:center;}
   .practice-item{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--line);}
   .practice-item:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none;}
   .practice-tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.5px;color:#fff;background:var(--seal);border-radius:6px;padding:3px 9px;margin-bottom:8px;}
   .practice-text{font-size:16px;line-height:1.75;color:var(--ink);white-space:pre-line;}
-  .anim-corner-right{position:absolute;bottom:80px;right:20px;width:130px;height:130px;pointer-events:none;}
-  .anim-corner-left{position:absolute;bottom:80px;left:20px;width:130px;height:130px;pointer-events:none;}
-  .anim-top{position:absolute;top:70px;left:50%;transform:translateX(-50%);width:130px;height:130px;pointer-events:none;}
+  .anim-corner-right{position:absolute;bottom:80px;right:20px;width:130px;height:130px;pointer-events:none;z-index:-1;}
+  .anim-corner-left{position:absolute;bottom:80px;left:20px;width:130px;height:130px;pointer-events:none;z-index:-1;}
+  .anim-top{position:absolute;top:70px;left:50%;transform:translateX(-50%);width:130px;height:130px;pointer-events:none;z-index:-1;}
   .q-num{width:22px;height:22px;border-radius:50%;background:var(--seal);color:var(--paper);display:inline-flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;font-family:'Frank Ruhl Libre',serif;line-height:1;margin-left:8px;}
   .slide-card.nb-page{background:#FFFCF2;padding:0;}
   .nb-head{padding:18px 22px 6px;}
