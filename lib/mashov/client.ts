@@ -50,6 +50,11 @@ export interface MashovSession {
 
 const BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
 
+// Plain fetch() has no default timeout — if Mashov's server ever holds a
+// connection open without responding, a caller (e.g. the absences cron
+// looping over 7 classes) hangs indefinitely instead of failing fast.
+const REQUEST_TIMEOUT_MS = 15_000
+
 export async function mashovLogin(): Promise<
   { ok: true; session: MashovSession } | { ok: false; error: string; debug?: Record<string, unknown> }
 > {
@@ -64,6 +69,7 @@ export async function mashovLogin(): Promise<
 
   const loginRes = await fetch(`${BASE_URL}/login`, {
     method: "POST",
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     headers: {
       "Content-Type": "application/json",
       "Accept": "application/json",
@@ -110,6 +116,7 @@ export async function mashovLogin(): Promise<
 
 export async function mashovGet(session: MashovSession, path: string): Promise<{ status: number; data: unknown }> {
   const res = await fetch(`${BASE_URL}/${path.replace(/^\//, "")}`, {
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     headers: {
       "Cookie": session.cookieHeader,
       "X-Csrf-Token": session.csrfToken,
@@ -126,6 +133,7 @@ export async function mashovGet(session: MashovSession, path: string): Promise<{
 export async function mashovPost(session: MashovSession, path: string, body: unknown): Promise<{ status: number; data: unknown }> {
   const res = await fetch(`${BASE_URL}/${path.replace(/^\//, "")}`, {
     method: "POST",
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     headers: {
       "Cookie": session.cookieHeader,
       "X-Csrf-Token": session.csrfToken,

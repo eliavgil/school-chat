@@ -29,10 +29,16 @@ export async function GET(req: NextRequest) {
   let totalEvents = 0
   let newEvents = 0
   let notified = 0
-  const errors: { classCode: string; classNum: number; status: number }[] = []
+  const errors: { classCode: string; classNum: number; status: number | string }[] = []
 
   for (const { code, num } of CLASSES) {
-    const { status, data } = await mashovGet(login.session, `classes/${code}/${num}/behave`)
+    let status: number, data: unknown
+    try {
+      ;({ status, data } = await mashovGet(login.session, `classes/${code}/${num}/behave`))
+    } catch (err) {
+      errors.push({ classCode: code, classNum: num, status: err instanceof Error ? err.name : "fetch error" })
+      continue
+    }
     if (status !== 200 || !Array.isArray(data)) {
       if (status !== 200) errors.push({ classCode: code, classNum: num, status })
       continue
