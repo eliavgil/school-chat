@@ -45,6 +45,7 @@ function getSetCookies(res: Response): string[] {
 export interface MashovSession {
   cookieHeader: string
   csrfToken: string
+  loginBody: unknown
 }
 
 const BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
@@ -101,8 +102,10 @@ export async function mashovLogin(): Promise<
 
   const jar = parseCookies(getSetCookies(loginRes))
   const csrfToken = jar["Csrf-Token"] || jar["csrf-token"] || ""
+  let loginBody: unknown = null
+  try { loginBody = await loginRes.json() } catch { /* non-JSON response */ }
 
-  return { ok: true, session: { cookieHeader: cookieHeaderFrom(jar), csrfToken } }
+  return { ok: true, session: { cookieHeader: cookieHeaderFrom(jar), csrfToken, loginBody } }
 }
 
 export async function mashovGet(session: MashovSession, path: string): Promise<{ status: number; data: unknown }> {

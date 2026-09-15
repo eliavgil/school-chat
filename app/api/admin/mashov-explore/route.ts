@@ -9,6 +9,14 @@ import { mashovLogin, mashovGet } from "@/lib/mashov/client"
 // local Python setup. One-time diagnostic: run this once per school to find
 // out which endpoints actually respond, then build real syncing against
 // just those.
+//
+// Attendance/grades/schedule all 404 as flat top-level paths — Mashov scopes
+// them per student or class, same as fetch.py's old comment warned
+// ("Attendance and grades are per-class — discover classId from /classes
+// first."). So alongside the flat probe, this also returns a small sample
+// of the working list endpoints (teachers/classes/students/groups) and the
+// login response body, so the real id field names can be read directly
+// instead of guessed blind.
 const CANDIDATES = [
   "teachers", "classes", "students", "groups",
   "attendance", "absences", "lesson/attendance",
@@ -29,6 +37,7 @@ export async function GET() {
   if (!login.ok) return NextResponse.json({ error: login.error, debug: login.debug }, { status: 502 })
 
   const results: { path: string; status: number; ok: boolean; itemCount: number | null }[] = []
+  const samples: Record<string, unknown> = {}
   for (const path of CANDIDATES) {
     const { status, data } = await mashovGet(login.session, path)
     results.push({
@@ -37,7 +46,10 @@ export async function GET() {
       ok: status === 200,
       itemCount: Array.isArray(data) ? data.length : null,
     })
+    if (status === 200 && Array.isArray(data) && data.length > 0) {
+      samples[path] = data.slice(0, 2)
+    }
   }
 
-  return NextResponse.json({ ok: true, results })
+  return NextResponse.json({ ok: true, results, samples, loginBody: login.session.loginBody })
 }
