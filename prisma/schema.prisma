@@ -539,3 +539,24 @@ model EmotionalNote {
   @@index([classId, date])
   @@index([studentId])
 }
+
+// ── Mashov absence sync ───────────────────────────────────
+// One row per absence ("חיסור") event pulled from Mashov's per-class
+// behave log. mashovKey dedupes so the polling cron only pushes a
+// notification the first time it sees a given event.
+model MashovAbsenceEvent {
+  id           String    @id @default(cuid())
+  mashovKey    String    @unique
+  studentName  String
+  classCode    String
+  classNum     Int
+  subjectName  String
+  lessonDate   DateTime
+  lessonNum    Int
+  reportedAt   DateTime
+  justified    Boolean   @default(false)
+  notifiedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([classCode, classNum])
+}

@@ -1,0 +1,23 @@
+name: Mashov Absences Cron
+
+# Polls Mashov every 15 minutes for new absence ("חיסור") events across
+# grade י and pushes a notification to each class's homeroom teacher.
+# Same reason this lives in GitHub Actions instead of vercel.json as
+# task-reminders.yml — Vercel Hobby only allows daily cron.
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:   # הפעלה ידנית מה-Actions tab
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call mashov-absences endpoint
+        env:
+          SCHOOL_CHAT_URL: ${{ secrets.SCHOOL_CHAT_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -sf -X GET "$SCHOOL_CHAT_URL/api/cron/mashov-absences" \
+            -H "Authorization: Bearer $CRON_SECRET"
