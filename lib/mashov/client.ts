@@ -12,8 +12,12 @@
 const BASE_URL = "https://web.mashov.info/api"
 
 function currentSchoolYear(): number {
+  // Mashov labels a school year by the calendar year it ENDS in — e.g.
+  // Sept 2026–June 2027 (תשפ"ז) is "2027" on the login page's year picker,
+  // not "2026". So from September onward we're already in next calendar
+  // year's label; before that (Jan–Aug) the label matches the current year.
   const now = new Date()
-  return now.getMonth() >= 8 ? now.getFullYear() : now.getFullYear() - 1
+  return now.getMonth() >= 8 ? now.getFullYear() + 1 : now.getFullYear()
 }
 
 function parseCookies(setCookieHeaders: string[]): Record<string, string> {
