@@ -26,7 +26,7 @@ export async function GET() {
   }
 
   const login = await mashovLogin()
-  if (!login.ok) return NextResponse.json({ error: login.error }, { status: 502 })
+  if (!login.ok) return NextResponse.json({ error: login.error, debug: login.debug }, { status: 502 })
 
   const results: { path: string; status: number; ok: boolean; itemCount: number | null }[] = []
   for (const path of CANDIDATES) {

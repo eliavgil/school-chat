@@ -40,7 +40,11 @@ export interface MashovSession {
   csrfToken: string
 }
 
-export async function mashovLogin(): Promise<{ ok: true; session: MashovSession } | { ok: false; error: string }> {
+const BROWSER_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+
+export async function mashovLogin(): Promise<
+  { ok: true; session: MashovSession } | { ok: false; error: string; debug?: Record<string, unknown> }
+> {
   const semel = process.env.MASHOV_SEMEL
   const username = process.env.MASHOV_USERNAME
   const password = process.env.MASHOV_PASSWORD
@@ -51,8 +55,13 @@ export async function mashovLogin(): Promise<{ ok: true; session: MashovSession 
   }
 
   // Mashov requires a CSRF cookie to exist before login — fetch the app
-  // shell first, same as the Python script does.
-  const homeRes = await fetch("https://web.mashov.info", { redirect: "follow" })
+  // shell first, same as the Python script does. A realistic User-Agent and
+  // Origin/Referer are included since a server-to-server request without
+  // them can get rejected by anti-bot checks even with correct credentials.
+  const homeRes = await fetch("https://web.mashov.info", {
+    redirect: "follow",
+    headers: { "User-Agent": BROWSER_UA },
+  })
   let jar = parseCookies(getSetCookies(homeRes))
   const initialCsrf = jar["Csrf-Token"] || jar["csrf-token"] || ""
 
@@ -63,6 +72,9 @@ export async function mashovLogin(): Promise<{ ok: true; session: MashovSession 
       "X-Csrf-Token": initialCsrf,
       "Cookie": cookieHeaderFrom(jar),
       "Accept": "application/json",
+      "User-Agent": BROWSER_UA,
+      "Origin": "https://web.mashov.info",
+      "Referer": "https://web.mashov.info/",
     },
     body: JSON.stringify({
       semel: Number(semel),
@@ -76,7 +88,17 @@ export async function mashovLogin(): Promise<{ ok: true; session: MashovSession 
 
   if (!loginRes.ok) {
     const text = await loginRes.text().catch(() => "")
-    return { ok: false, error: `Login failed: ${loginRes.status} — ${text.slice(0, 300)}` }
+    return {
+      ok: false,
+      error: `Login failed: ${loginRes.status} — ${text.slice(0, 300)}`,
+      debug: {
+        year,
+        semel,
+        homeStatus: homeRes.status,
+        cookieNamesFromHome: Object.keys(jar),
+        csrfFoundBeforeLogin: !!initialCsrf,
+      },
+    }
   }
 
   const newCookies = parseCookies(getSetCookies(loginRes))
@@ -92,6 +114,8 @@ export async function mashovGet(session: MashovSession, path: string): Promise<{
       "Cookie": session.cookieHeader,
       "X-Csrf-Token": session.csrfToken,
       "Accept": "application/json",
+      "User-Agent": BROWSER_UA,
+      "Referer": "https://web.mashov.info/",
     },
   })
   let data: unknown = null
