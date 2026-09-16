@@ -3,15 +3,15 @@
 import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 
-interface RecentEvent {
-  id: string
+interface RecentGroup {
   studentName: string
   classCode: string
   classNum: number
-  subjectName: string
-  lessonNum: number
-  reportedAt: string
-  justified: boolean
+  date: string
+  lessonsMissed: number
+  subjects: string[]
+  lessonNums: number[]
+  anyUnjustified: boolean
 }
 interface SummaryRow {
   studentName: string
@@ -25,20 +25,32 @@ interface AbsencesData {
   dates: string[]
   date: string
   summary: SummaryRow[]
-  recent: RecentEvent[]
+  recent: RecentGroup[]
 }
 
 function fmtDay(iso: string) {
   return new Date(`${iso}T00:00:00`).toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "numeric" })
 }
-function fmtTime(iso: string) {
-  return new Date(iso).toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })
+function fmtShortDay(iso: string) {
+  const todayStr = new Date().toISOString().slice(0, 10)
+  if (iso === todayStr) return "היום"
+  return new Date(`${iso}T00:00:00`).toLocaleDateString("he-IL", { day: "numeric", month: "numeric" })
 }
 
 export default function GradeHubPage() {
   const [data, setData] = useState<AbsencesData | null>(null)
   const [loading, setLoading] = useState(true)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [expanded, setExpanded] = useState<Set<string>>(new Set())
+
+  function toggleExpanded(key: string) {
+    setExpanded(prev => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+  }
 
   const load = useCallback(async (date?: string) => {
     const qs = date ? `?date=${date}` : ""
@@ -93,22 +105,36 @@ export default function GradeHubPage() {
           </div>
         ) : (
           <>
-            {/* Live feed */}
+            {/* Live feed — grouped one row per student per day, subjects revealed on tap */}
             <section className="space-y-2">
               <h2 className="text-white/60 text-xs font-semibold px-1">עדכונים אחרונים</h2>
               <div className="space-y-1.5">
-                {data.recent.map(e => (
-                  <div key={e.id} className="bg-white/8 border border-white/10 rounded-2xl px-4 py-2.5 flex items-center gap-3">
-                    <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${e.justified ? "bg-white/20" : "bg-orange-400"}`} />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-white/85 truncate">
-                        {e.studentName} <span className="text-white/40">· {e.classCode}{e.classNum}</span>
-                      </p>
-                      <p className="text-white/35 text-[11px]">{e.subjectName} · שיעור {e.lessonNum}</p>
+                {data.recent.map(g => {
+                  const key = `${g.studentName}__${g.classCode}${g.classNum}__${g.date}`
+                  const isOpen = expanded.has(key)
+                  return (
+                    <div key={key} className="bg-white/8 border border-white/10 rounded-2xl overflow-hidden">
+                      <button onClick={() => toggleExpanded(key)}
+                        className="w-full px-4 py-2.5 flex items-center gap-3 interactive text-right">
+                        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${g.anyUnjustified ? "bg-orange-400" : "bg-white/20"}`} />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-white/85 truncate">
+                            {g.studentName} <span className="text-white/40">· {g.classCode}{g.classNum}</span>
+                          </p>
+                          <p className="text-white/35 text-[11px]">
+                            {g.lessonsMissed} {g.lessonsMissed === 1 ? "שיעור" : "שיעורים"} · {fmtShortDay(g.date)}
+                          </p>
+                        </div>
+                        <span className={`text-white/30 text-xs flex-shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}>▾</span>
+                      </button>
+                      {isOpen && (
+                        <div className="px-4 pb-3 pt-0.5 text-white/50 text-[12px] border-t border-white/5">
+                          {g.subjects.join(", ")} · שיעורים {g.lessonNums.sort((a, b) => a - b).join(", ")}
+                        </div>
+                      )}
                     </div>
-                    <span className="text-white/30 text-[11px] flex-shrink-0">{fmtTime(e.reportedAt)}</span>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </section>
 

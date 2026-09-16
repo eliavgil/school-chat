@@ -51,7 +51,40 @@ export async function GET(req: NextRequest) {
   }
   const summary = Array.from(bySt.values()).sort((a, b) => a.classNum - b.classNum || b.lessonsMissed - a.lessonsMissed)
 
-  const recent = await prisma.mashovAbsenceEvent.findMany({ orderBy: { reportedAt: "desc" }, take: 20 })
+  // "Recent" is grouped the same way as the daily summary — one row per
+  // student per day, not one row per lesson — since achvaEvent.timestamp
+  // reflects when the record was entered into Mashov (often long after the
+  // fact for retroactively-logged absences), not the real lesson time, so
+  // it's not a trustworthy sort/display key. lessonDate + lessonNum are.
+  const pool = await prisma.mashovAbsenceEvent.findMany({
+    orderBy: [{ lessonDate: "desc" }, { lessonNum: "desc" }],
+    take: 100,
+  })
+  const recentBy = new Map<string, {
+    studentName: string; classCode: string; classNum: number; date: string
+    lessonsMissed: number; subjects: string[]; lessonNums: number[]; anyUnjustified: boolean
+    sortKey: number
+  }>()
+  for (const e of pool) {
+    const dateStr = e.lessonDate.toISOString().slice(0, 10)
+    const key = `${e.studentName}__${e.classCode}${e.classNum}__${dateStr}`
+    if (!recentBy.has(key)) {
+      recentBy.set(key, {
+        studentName: e.studentName, classCode: e.classCode, classNum: e.classNum, date: dateStr,
+        lessonsMissed: 0, subjects: [], lessonNums: [], anyUnjustified: false,
+        sortKey: e.lessonDate.getTime() + e.lessonNum,
+      })
+    }
+    const row = recentBy.get(key)!
+    row.lessonsMissed++
+    if (!row.subjects.includes(e.subjectName)) row.subjects.push(e.subjectName)
+    row.lessonNums.push(e.lessonNum)
+    if (!e.justified) row.anyUnjustified = true
+  }
+  const recent = Array.from(recentBy.values())
+    .sort((a, b) => b.sortKey - a.sortKey)
+    .slice(0, 12)
+    .map(({ sortKey, ...row }) => row)
 
   return NextResponse.json({ dates, date, summary, recent })
 }
