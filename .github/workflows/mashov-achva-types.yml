@@ -1,0 +1,19 @@
+name: Mashov Achva Types (manual diagnostic)
+
+# One-time diagnostic, not a recurring cron — run manually to discover the
+# real Mashov achva codes for positive notes / discipline events.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diagnostic:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call mashov-achva-types endpoint
+        env:
+          SCHOOL_CHAT_URL: ${{ secrets.SCHOOL_CHAT_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -sf -X GET "$SCHOOL_CHAT_URL/api/cron/mashov-achva-types" \
+            -H "Authorization: Bearer $CRON_SECRET"
