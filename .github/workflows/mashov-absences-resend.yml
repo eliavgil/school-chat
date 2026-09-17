@@ -1,0 +1,21 @@
+name: Mashov Absences Resend (manual catch-up)
+
+# One-time catch-up, not a recurring cron — run this manually from the
+# Actions tab whenever today's absences were synced before push
+# notifications were properly set up (e.g. right after first enabling
+# push), so they don't stay silently un-notified for the rest of the day.
+
+on:
+  workflow_dispatch:
+
+jobs:
+  resend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call mashov-absences-resend endpoint
+        env:
+          SCHOOL_CHAT_URL: ${{ secrets.SCHOOL_CHAT_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -sf -X GET "$SCHOOL_CHAT_URL/api/cron/mashov-absences-resend" \
+            -H "Authorization: Bearer $CRON_SECRET"
