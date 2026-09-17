@@ -41,9 +41,13 @@ export async function GET(req: NextRequest) {
   if (coordinator) {
     for (const e of events) {
       const classKey = `${e.classCode}${e.classNum}`
+      const studentId = e.mashovKey.split(":")[0]
+      const yearTotal = await prisma.mashovAbsenceEvent.count({
+        where: { mashovKey: { startsWith: `${studentId}:` } },
+      })
       await sendPushToUser(coordinator.id, {
         title: "חיסור נרשם",
-        body: `${e.studentName} — ${e.subjectName} (${classKey}, שיעור ${e.lessonNum})`,
+        body: `${e.studentName} — ${e.subjectName} (${classKey}, שיעור ${e.lessonNum}) · סה״כ ${yearTotal} חיסורים השנה`,
       })
       notified++
     }

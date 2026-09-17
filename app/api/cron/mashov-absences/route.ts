@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
     if (!absences.length) continue
 
     type Parsed = {
-      mashovKey: string; studentName: string; subjectName: string
+      mashovKey: string; studentId: number; studentName: string; subjectName: string
       lessonDate: Date; lessonNum: number; reportedAt: Date; justified: boolean
     }
     const parsed: Parsed[] = []
@@ -74,7 +74,7 @@ export async function GET(req: NextRequest) {
 
       parsed.push({
         mashovKey: `${studentId}:${lessonId}:${eventCode}`,
-        studentName, subjectName: item.subjectName ?? "",
+        studentId, studentName, subjectName: item.subjectName ?? "",
         lessonDate, lessonNum: item.lessonLog?.lesson ?? 0, reportedAt, justified,
       })
     }
@@ -129,10 +129,16 @@ export async function GET(req: NextRequest) {
       for (const p of fresh) {
         if (p.justified) continue
         if (p.lessonDate.toISOString().slice(0, 10) !== todayStr) continue
+        // Total absences this student has had since the start of the year —
+        // the studentId is recoverable from any event's mashovKey (its
+        // "studentId:lessonId:eventCode" prefix), so no extra column needed.
+        const yearTotal = await prisma.mashovAbsenceEvent.count({
+          where: { mashovKey: { startsWith: `${p.studentId}:` } },
+        })
         for (const userId of uniqueRecipients) {
           await sendPushToUser(userId, {
             title: "חיסור נרשם",
-            body: `${p.studentName} — ${p.subjectName} (${code}${num}, שיעור ${p.lessonNum})`,
+            body: `${p.studentName} — ${p.subjectName} (${code}${num}, שיעור ${p.lessonNum}) · סה״כ ${yearTotal} חיסורים השנה`,
           })
           notified++
         }
