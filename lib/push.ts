@@ -16,6 +16,18 @@ function ensureVapid() {
   )
 }
 
+// web-push's sendNotification has no built-in timeout — a stale/unreachable
+// endpoint can hang the underlying request indefinitely, which would wedge
+// any caller that awaits several of these in a loop (e.g. a catch-up route
+// notifying many users in sequence). Race it against a hard cutoff so one
+// bad subscription can only ever cost a few seconds, never the whole run.
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error("push send timed out")), ms)),
+  ])
+}
+
 export async function sendPushToUser(userId: string, payload: PushPayload) {
   ensureVapid()
   const subs = await prisma.pushSubscription.findMany({ where: { userId } })
@@ -23,9 +35,12 @@ export async function sendPushToUser(userId: string, payload: PushPayload) {
 
   const results = await Promise.allSettled(
     subs.map(sub =>
-      webpush.sendNotification(
-        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-        JSON.stringify(payload)
+      withTimeout(
+        webpush.sendNotification(
+          { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+          JSON.stringify(payload)
+        ),
+        10_000
       )
     )
   )
