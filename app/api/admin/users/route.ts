@@ -13,7 +13,7 @@ async function requireAdmin() {
 export async function GET() {
   if (!await requireAdmin()) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const [pendingParents, pendingStudents, pendingTeachers, approvedParents, approvedStudents, students, roster] = await Promise.all([
+  const [pendingParents, pendingStudents, pendingTeachers, approvedParents, approvedStudents, approvedTeachers, students, roster] = await Promise.all([
     prisma.user.findMany({
       where: { role: "PARENT", accessStatus: "PENDING" },
       select: { id: true, name: true, email: true, phone: true, requestedChildName: true, parentType: true, createdAt: true },
@@ -42,6 +42,11 @@ export async function GET() {
       select: { id: true, name: true, email: true, accessStatus: true, studentRecord: { select: { id: true, name: true } } },
       orderBy: { createdAt: "asc" },
     }),
+    prisma.user.findMany({
+      where: { role: "TEACHER", accessStatus: "APPROVED" },
+      select: { id: true, name: true, email: true, class: { select: { id: true, name: true, displayName: true } } },
+      orderBy: { createdAt: "asc" },
+    }),
     prisma.student.findMany({
       select: { id: true, name: true },
       orderBy: { name: "asc" },
@@ -52,7 +57,7 @@ export async function GET() {
     }),
   ])
 
-  return NextResponse.json({ pendingParents, pendingStudents, pendingTeachers, approvedParents, approvedStudents, students, roster })
+  return NextResponse.json({ pendingParents, pendingStudents, pendingTeachers, approvedParents, approvedStudents, approvedTeachers, students, roster })
 }
 
 export async function POST(req: NextRequest) {
@@ -162,6 +167,14 @@ export async function PATCH(req: NextRequest) {
         data: { userId: teacher.id },
       })
     }
+  } else if (action === "set-teacher-class") {
+    // The only way a teacher's class link gets set today is at self-signup
+    // (see /api/auth/request-access) — this lets an admin fix or assign it
+    // afterward, the same way approved parents/students can already be
+    // re-linked, since until now an approved teacher had no admin-visible
+    // way to change or even see their class link.
+    if (!classId) return NextResponse.json({ error: "Missing classId" }, { status: 400 })
+    await prisma.user.update({ where: { id: userId }, data: { classId } })
   } else if (action === "deny") {
     await prisma.user.update({ where: { id: userId }, data: { accessStatus: "DENIED" } })
   } else if (action === "unlink-parent" && studentId) {

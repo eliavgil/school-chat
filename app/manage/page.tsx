@@ -454,6 +454,7 @@ function ScheduleTab() {
 interface PendingParent  { id: string; name: string | null; email: string | null; phone: string | null; requestedChildName: string | null; parentType: string | null }
 interface PendingStudent { id: string; name: string | null; email: string | null; requestedChildName: string | null }
 interface PendingTeacher { id: string; name: string | null; email: string | null; class: { id: string; name: string; displayName: string } | null }
+interface ApprovedTeacher { id: string; name: string | null; email: string | null; class: { id: string; name: string; displayName: string } | null }
 interface ParentUser     { id: string; name: string | null; email: string | null; phone: string | null; parentStudents: { student: { id: string; name: string } }[] }
 interface StudentUser    { id: string; name: string | null; email: string | null; studentRecord: { id: string; name: string } | null }
 interface Student        { id: string; name: string }
@@ -512,12 +513,16 @@ function UsersTab() {
   const [pendingTeachers, setPendingTeachers] = useState<PendingTeacher[]>([])
   const [approvedParents, setApprovedParents] = useState<ParentUser[]>([])
   const [approvedStudents, setApprovedStudents] = useState<StudentUser[]>([])
+  const [approvedTeachers, setApprovedTeachers] = useState<ApprovedTeacher[]>([])
+  const [classesList, setClassesList]         = useState<{ id: string; name: string; displayName: string }[]>([])
   const [students, setStudents]               = useState<Student[]>([])
   const [usersLoading, setUsersLoading]       = useState(false)
   const [actionLoading, setActionLoading]     = useState<string | null>(null)
   const [expandedId, setExpandedId]           = useState<string | null>(null)
   const [linkingStudentId, setLinkingStudentId] = useState<string | null>(null)
   const [linkSel, setLinkSel]                 = useState<Record<string, string>>({})
+  const [linkingTeacherId, setLinkingTeacherId] = useState<string | null>(null)
+  const [teacherClassSel, setTeacherClassSel] = useState<Record<string, string>>({})
   const [preEmail, setPreEmail]               = useState("")
   const [preStudentId, setPreStudentId]       = useState("")
   const [preLoading, setPreLoading]           = useState(false)
@@ -533,13 +538,15 @@ function UsersTab() {
     setPendingTeachers(d.pendingTeachers ?? [])
     setApprovedParents(d.approvedParents ?? [])
     setApprovedStudents(d.approvedStudents ?? [])
+    setApprovedTeachers(d.approvedTeachers ?? [])
+    setClassesList((d.roster ?? []).map((c: ClassWithStudents) => ({ id: c.id, name: c.name, displayName: c.displayName })))
     setStudents(d.students ?? [])
     setUsersLoading(false)
   }
 
-  async function action(userId: string, type: string, studentId?: string) {
+  async function action(userId: string, type: string, studentId?: string, classId?: string) {
     setActionLoading(userId)
-    await fetch("/api/admin/users", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, action: type, studentId }) })
+    await fetch("/api/admin/users", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ userId, action: type, studentId, classId }) })
     setExpandedId(null)
     await fetchUsers()
     setActionLoading(null)
@@ -766,6 +773,57 @@ function UsersTab() {
                       onClick={async () => { await action(s.id, "link-student", linkSel[s.id]); setLinkingStudentId(null); setLinkSel(prev => ({ ...prev, [s.id]: "" })) }}
                       className="bg-white/20 hover:bg-white/30 text-white rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50 btn-press interactive">
                       {actionLoading === s.id ? "..." : "קשר"}
+                    </button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>}
+      </div>
+
+      {/* Approved teachers */}
+      <div>
+        <h3 className="text-sm font-semibold text-white/60 mb-2">מחנכים מאושרים ({approvedTeachers.length})</h3>
+        {approvedTeachers.length === 0
+          ? <p className="text-white/30 text-xs">אין</p>
+          : <div className="bg-white/5 border border-white/10 rounded-2xl divide-y divide-white/5">
+            {approvedTeachers.map(t => (
+              <div key={t.id} className="px-4 py-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="text-sm space-y-0.5">
+                    <div className="font-medium text-white/85">{t.name ?? "—"}</div>
+                    <div className="text-white/40 text-xs">{t.email}</div>
+                    {t.class
+                      ? <span className="bg-white/10 text-white/60 text-xs rounded-full px-2 py-0.5 mt-1 inline-block">
+                          מחנך/ת של {t.class.displayName || t.class.name}
+                        </span>
+                      : <span className="text-amber-400 text-xs mt-1 inline-block">⚠️ לא מקושר לכיתה</span>}
+                  </div>
+                  <div className="flex gap-2 items-center flex-shrink-0">
+                    <button onClick={() => setLinkingTeacherId(linkingTeacherId === t.id ? null : t.id)}
+                      className="text-xs text-white/50 hover:text-white border border-white/15 rounded-lg px-2 py-1 interactive">
+                      {linkingTeacherId === t.id ? "ביטול" : (t.class ? "שנה" : "קשר")}
+                    </button>
+                    <button onClick={() => action(t.id, "deny")} className="text-xs text-red-400/70 hover:text-red-400 interactive">בטל</button>
+                    <button
+                      onClick={() => { if (confirm(`למחוק לחלוטין את חשבון ${t.name ?? t.email}?\nהמשתמש יוכל להירשם מחדש.`)) action(t.id, "delete-user") }}
+                      title="מחק חשבון לגמרי (מאפשר הרשמה מחדש)"
+                      className="text-xs text-red-500/60 hover:text-red-500 interactive">
+                      🗑
+                    </button>
+                  </div>
+                </div>
+                {linkingTeacherId === t.id && (
+                  <div className="mt-2 flex gap-2">
+                    <select value={teacherClassSel[t.id] ?? ""} onChange={e => setTeacherClassSel(prev => ({ ...prev, [t.id]: e.target.value }))}
+                      className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white/30">
+                      <option value="">בחר כיתה</option>
+                      {classesList.map(c => <option key={c.id} value={c.id}>{c.displayName || c.name}</option>)}
+                    </select>
+                    <button disabled={!teacherClassSel[t.id] || actionLoading === t.id}
+                      onClick={async () => { await action(t.id, "set-teacher-class", undefined, teacherClassSel[t.id]); setLinkingTeacherId(null); setTeacherClassSel(prev => ({ ...prev, [t.id]: "" })) }}
+                      className="bg-white/20 hover:bg-white/30 text-white rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50 btn-press interactive">
+                      {actionLoading === t.id ? "..." : "קשר"}
                     </button>
                   </div>
                 )}
