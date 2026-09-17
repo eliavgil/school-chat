@@ -507,6 +507,30 @@ function ConvertToStudent({ students, loading, onConvert, onCancel }: {
   )
 }
 
+function ConvertToTeacher({ classes, loading, onConvert, onCancel }: {
+  classes: { id: string; name: string; displayName: string }[]; loading: boolean
+  onConvert: (classId: string) => void; onCancel: () => void
+}) {
+  const [sel, setSel] = useState("")
+  return (
+    <div className="mt-3 space-y-2">
+      <p className="text-xs text-white/40">נרשם/ה בטעות כהורה? זה יהפוך את החשבון הזה למחנך/ת, מקושר לכיתה שתבחר, ויסיר כל קישור הורה-ילד קיים שלו.</p>
+      <select value={sel} onChange={e => setSel(e.target.value)}
+        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white/30">
+        <option value="">בחר כיתה</option>
+        {classes.map(c => <option key={c.id} value={c.id}>{c.displayName || c.name}</option>)}
+      </select>
+      <div className="flex gap-2">
+        <button onClick={() => sel && onConvert(sel)} disabled={loading || !sel}
+          className="flex-1 bg-white/20 hover:bg-white/30 text-white rounded-lg py-2 text-xs font-medium disabled:opacity-50 btn-press interactive">
+          {loading ? "ממיר..." : "👩‍🏫 המר למחנך/ת"}
+        </button>
+        <button onClick={onCancel} className="text-white/40 text-xs hover:text-white px-2 interactive">ביטול</button>
+      </div>
+    </div>
+  )
+}
+
 function UsersTab() {
   const [pendingParents, setPendingParents]   = useState<PendingParent[]>([])
   const [pendingStudents, setPendingStudents] = useState<PendingStudent[]>([])
@@ -523,6 +547,7 @@ function UsersTab() {
   const [linkSel, setLinkSel]                 = useState<Record<string, string>>({})
   const [linkingTeacherId, setLinkingTeacherId] = useState<string | null>(null)
   const [teacherClassSel, setTeacherClassSel] = useState<Record<string, string>>({})
+  const [convertTeacherId, setConvertTeacherId] = useState<string | null>(null)
   const [preEmail, setPreEmail]               = useState("")
   const [preStudentId, setPreStudentId]       = useState("")
   const [preLoading, setPreLoading]           = useState(false)
@@ -706,9 +731,13 @@ function UsersTab() {
                     </div>
                   </div>
                   <div className="flex gap-2 items-center flex-shrink-0">
-                    <button onClick={() => setExpandedId(expandedId === p.id ? null : p.id)}
+                    <button onClick={() => { setExpandedId(expandedId === p.id ? null : p.id); setConvertTeacherId(null) }}
                       className="text-xs text-white/50 hover:text-white interactive whitespace-nowrap" title="נרשם בטעות כהורה במקום תלמיד/ה">
                       {expandedId === p.id ? "ביטול" : "🎒 המר לתלמיד/ה"}
+                    </button>
+                    <button onClick={() => { setConvertTeacherId(convertTeacherId === p.id ? null : p.id); setExpandedId(null) }}
+                      className="text-xs text-white/50 hover:text-white interactive whitespace-nowrap" title="נרשם בטעות כהורה במקום מחנך/ת">
+                      {convertTeacherId === p.id ? "ביטול" : "👩‍🏫 המר למחנך/ת"}
                     </button>
                     <button onClick={() => action(p.id, "deny")} className="text-xs text-red-400/70 hover:text-red-400 interactive whitespace-nowrap">בטל גישה</button>
                     <button
@@ -723,6 +752,11 @@ function UsersTab() {
                   <ConvertToStudent students={students} loading={actionLoading === p.id}
                     onConvert={sid => action(p.id, "convert-to-student", sid)}
                     onCancel={() => setExpandedId(null)} />
+                )}
+                {convertTeacherId === p.id && (
+                  <ConvertToTeacher classes={classesList} loading={actionLoading === p.id}
+                    onConvert={classId => action(p.id, "convert-to-teacher", undefined, classId)}
+                    onCancel={() => setConvertTeacherId(null)} />
                 )}
               </div>
             ))}

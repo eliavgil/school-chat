@@ -183,6 +183,27 @@ export async function PATCH(req: NextRequest) {
     await prisma.user.update({ where: { id: userId }, data: { studentId: studentId ?? null } })
   } else if (action === "unlink-student") {
     await prisma.user.update({ where: { id: userId }, data: { studentId: null } })
+  } else if (action === "convert-to-teacher") {
+    // Mirrors convert-to-student: someone who picked "הורה" on /pending by
+    // mistake but is actually a homeroom teacher — flips the account to
+    // TEACHER + links it to the real class, in place, instead of deleting
+    // and re-registering. Drops any parent-child links since they no
+    // longer apply once this account is a teacher.
+    if (!classId) return NextResponse.json({ error: "Missing classId" }, { status: 400 })
+    await prisma.$transaction(async (tx) => {
+      await tx.parentStudent.deleteMany({ where: { userId } })
+      await tx.user.update({
+        where: { id: userId },
+        data: { role: "TEACHER", parentType: null, accessStatus: "APPROVED", classId },
+      })
+    })
+    const teacher = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true } })
+    if (teacher?.name) {
+      await prisma.staffTaskAssignee.updateMany({
+        where: { teacherLabel: teacher.name, userId: null },
+        data: { userId: teacher.id },
+      })
+    }
   } else if (action === "convert-to-student") {
     // A student who picked "הורה" on /pending by mistake, or was approved from
     // the wrong list — flips them to STUDENT in place instead of requiring a
