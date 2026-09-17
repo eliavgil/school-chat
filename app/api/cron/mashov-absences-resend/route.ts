@@ -4,7 +4,7 @@ import { sendPushToUser } from "@/lib/push"
 
 // GET — one-time catch-up utility, not part of the recurring poll. Push
 // only fires for an absence the moment it's first synced into
-// MashovAbsenceEvent (see /api/cron/mashov-absences) — an event synced
+// MashovBehaveEvent (see /api/cron/mashov-absences) — an event synced
 // before a recipient had a push subscription yet silently gets no
 // notification, and never gets a second chance since it's no longer "new"
 // on later runs. This re-sends today's unjustified absences to the grade
@@ -32,8 +32,8 @@ export async function GET(req: NextRequest) {
   const dayStart = new Date(`${todayStr}T00:00:00`)
   const dayEnd = new Date(`${todayStr}T23:59:59.999`)
 
-  const events = await prisma.mashovAbsenceEvent.findMany({
-    where: { lessonDate: { gte: dayStart, lte: dayEnd }, justified: false },
+  const events = await prisma.mashovBehaveEvent.findMany({
+    where: { lessonDate: { gte: dayStart, lte: dayEnd }, achvaCode: 1, justified: false },
   })
 
   let notified = 0
@@ -42,8 +42,8 @@ export async function GET(req: NextRequest) {
     for (const e of events) {
       const classKey = `${e.classCode}${e.classNum}`
       const studentId = e.mashovKey.split(":")[0]
-      const yearTotal = await prisma.mashovAbsenceEvent.count({
-        where: { mashovKey: { startsWith: `${studentId}:` } },
+      const yearTotal = await prisma.mashovBehaveEvent.count({
+        where: { achvaCode: 1, mashovKey: { startsWith: `${studentId}:` } },
       })
       await sendPushToUser(coordinator.id, {
         title: "חיסור נרשם",

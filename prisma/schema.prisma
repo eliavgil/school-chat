@@ -540,13 +540,18 @@ model EmotionalNote {
   @@index([studentId])
 }
 
-// ── Mashov absence sync ───────────────────────────────────
-// One row per absence ("חיסור") event pulled from Mashov's per-class
-// behave log. mashovKey dedupes so the polling cron only pushes a
-// notification the first time it sees a given event.
-model MashovAbsenceEvent {
+// ── Mashov behave-log sync ────────────────────────────────
+// One row per tracked behave event (חיסור / הפרת משמעת / הערה חיובית —
+// see achvaCode) pulled from Mashov's per-class behave log. mashovKey
+// dedupes so the polling cron only pushes a notification the first time
+// it sees a given event. Table name kept as MashovAbsenceEvent (via @@map)
+// since it predates achvaCode/achvaName and renaming would need a real
+// table rename migration for no functional benefit.
+model MashovBehaveEvent {
   id           String    @id @default(cuid())
   mashovKey    String    @unique
+  achvaCode    Int       @default(1)
+  achvaName    String    @default("חיסור")
   studentName  String
   classCode    String
   classNum     Int
@@ -559,4 +564,6 @@ model MashovAbsenceEvent {
   createdAt    DateTime  @default(now())
 
   @@index([classCode, classNum])
+  @@index([achvaCode])
+  @@map("MashovAbsenceEvent")
 }

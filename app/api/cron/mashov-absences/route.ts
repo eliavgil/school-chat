@@ -3,20 +3,31 @@ import { prisma } from "@/lib/db/prisma"
 import { sendPushToUser } from "@/lib/push"
 import { mashovLogin, mashovGet } from "@/lib/mashov/client"
 
-// GET — runs on a schedule (see .github/workflows/mashov-absences.yml),
-// pulls each grade-י class's behave log from Mashov, and pushes a
-// notification for every new "חיסור" (absence) event reported today:
-// to that class's homeroom teacher, and also to the grade coordinator
-// (the account this Mashov integration was set up for), who wants
-// visibility across the whole grade, not just their own homeroom class.
-// Guarded by CRON_SECRET, same pattern as /api/cron/task-reminders.
+// GET — runs on a schedule (see .github/workflows/mashov-absences.yml and
+// cron-job.org), pulls each grade-י class's behave log from Mashov, and
+// pushes a notification for every new tracked behave event reported
+// today (see TRACKED below) to the grade coordinator (the account this
+// Mashov integration was set up for). Guarded by CRON_SECRET, same
+// pattern as /api/cron/task-reminders.
+//
+// Route path kept as "mashov-absences" (this started absence-only) even
+// though it now also tracks discipline/positive-note events, since the
+// URL is already wired into cron-job.org and the GitHub Action — renaming
+// it would mean reconfiguring both for no functional benefit.
 //
 // Scoped to grade י (1–7) because that's what the connected Mashov account
 // (see MASHOV_* env vars) actually has permission to read — confirmed via
 // /api/admin/mashov-explore, whose rolePermissions only grant classCode "י".
 const CLASSES: { code: string; num: number }[] = [1, 2, 3, 4, 5, 6, 7].map(num => ({ code: "י", num }))
 
-const ABSENCE_ACHVA_CODE = 1 // "חיסור"
+// achva codes discovered via /api/cron/mashov-achva-types. requireUnjustified
+// only makes sense for חיסור — "justified" isn't a meaningful concept for a
+// discipline note or a positive note, so those always push.
+const TRACKED: Record<number, { name: string; pushTitle: string; requireUnjustified: boolean }> = {
+  1:   { name: "חיסור",       pushTitle: "חיסור נרשם",        requireUnjustified: true },
+  101: { name: "הפרת משמעת",  pushTitle: "הפרת משמעת נרשמה",  requireUnjustified: false },
+  105: { name: "הערה חיובית", pushTitle: "הערה חיובית נרשמה", requireUnjustified: false },
+}
 const GRADE_COORDINATOR_EMAIL = "eliavgil@gmail.com"
 
 export async function GET(req: NextRequest) {
@@ -52,16 +63,17 @@ export async function GET(req: NextRequest) {
       continue
     }
 
-    const absences = data.filter((item: any) => item?.achva?.code === ABSENCE_ACHVA_CODE)
-    totalEvents += absences.length
-    if (!absences.length) continue
+    const tracked = data.filter((item: any) => item?.achva?.code in TRACKED)
+    totalEvents += tracked.length
+    if (!tracked.length) continue
 
     type Parsed = {
-      mashovKey: string; studentId: number; studentName: string; subjectName: string
+      mashovKey: string; studentId: number; achvaCode: number; achvaName: string
+      studentName: string; subjectName: string
       lessonDate: Date; lessonNum: number; reportedAt: Date; justified: boolean
     }
     const parsed: Parsed[] = []
-    for (const item of absences as any[]) {
+    for (const item of tracked as any[]) {
       const studentId = item?.achvaEvent?.studentId ?? item?.student?.studentId
       const lessonId = item?.lessonLog?.lessonID ?? item?.achvaEvent?.lessonid
       const eventCode = item?.achvaEvent?.eventCode
@@ -74,7 +86,8 @@ export async function GET(req: NextRequest) {
 
       parsed.push({
         mashovKey: `${studentId}:${lessonId}:${eventCode}`,
-        studentId, studentName, subjectName: item.subjectName ?? "",
+        studentId, achvaCode: item.achva.code, achvaName: item.achva.name ?? TRACKED[item.achva.code].name,
+        studentName, subjectName: item.subjectName ?? "",
         lessonDate, lessonNum: item.lessonLog?.lesson ?? 0, reportedAt, justified,
       })
     }
@@ -84,7 +97,7 @@ export async function GET(req: NextRequest) {
     // per-event round trip — matters a lot on the first run, which
     // backfills the whole semester's history in one pass.
     const existingKeys = new Set(
-      (await prisma.mashovAbsenceEvent.findMany({
+      (await prisma.mashovBehaveEvent.findMany({
         where: { mashovKey: { in: parsed.map(p => p.mashovKey) } },
         select: { mashovKey: true },
       })).map(r => r.mashovKey)
@@ -100,9 +113,11 @@ export async function GET(req: NextRequest) {
       ? await prisma.user.findFirst({ where: { classId: cls.id, role: "TEACHER" }, select: { id: true } })
       : null
 
-    await prisma.mashovAbsenceEvent.createMany({
+    await prisma.mashovBehaveEvent.createMany({
       data: fresh.map(p => ({
         mashovKey: p.mashovKey,
+        achvaCode: p.achvaCode,
+        achvaName: p.achvaName,
         studentName: p.studentName,
         classCode: code,
         classNum: num,
@@ -127,18 +142,19 @@ export async function GET(req: NextRequest) {
     const uniqueRecipients = Array.from(new Set([coordinator?.id].filter((id): id is string => !!id)))
     if (uniqueRecipients.length) {
       for (const p of fresh) {
-        if (p.justified) continue
+        const cfg = TRACKED[p.achvaCode]
+        if (cfg.requireUnjustified && p.justified) continue
         if (p.lessonDate.toISOString().slice(0, 10) !== todayStr) continue
-        // Total absences this student has had since the start of the year —
-        // the studentId is recoverable from any event's mashovKey (its
-        // "studentId:lessonId:eventCode" prefix), so no extra column needed.
-        const yearTotal = await prisma.mashovAbsenceEvent.count({
-          where: { mashovKey: { startsWith: `${p.studentId}:` } },
+        // Total events of THIS SAME TYPE this student has had since the
+        // start of the year — the studentId is recoverable from any
+        // event's mashovKey (its "studentId:lessonId:eventCode" prefix).
+        const yearTotal = await prisma.mashovBehaveEvent.count({
+          where: { achvaCode: p.achvaCode, mashovKey: { startsWith: `${p.studentId}:` } },
         })
         for (const userId of uniqueRecipients) {
           await sendPushToUser(userId, {
-            title: "חיסור נרשם",
-            body: `${p.studentName} — ${p.subjectName} (${code}${num}, שיעור ${p.lessonNum}) · סה״כ ${yearTotal} חיסורים השנה`,
+            title: cfg.pushTitle,
+            body: `${p.studentName} — ${p.subjectName} (${code}${num}, שיעור ${p.lessonNum}) · סה״כ ${yearTotal} ${cfg.name} השנה`,
           })
           notified++
         }
