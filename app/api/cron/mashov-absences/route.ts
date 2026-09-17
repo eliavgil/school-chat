@@ -5,9 +5,11 @@ import { mashovLogin, mashovGet } from "@/lib/mashov/client"
 
 // GET — runs on a schedule (see .github/workflows/mashov-absences.yml),
 // pulls each grade-י class's behave log from Mashov, and pushes a
-// notification to that class's homeroom teacher for every new "חיסור"
-// (absence) event reported today. Guarded by CRON_SECRET, same pattern
-// as /api/cron/task-reminders.
+// notification for every new "חיסור" (absence) event reported today:
+// to that class's homeroom teacher, and also to the grade coordinator
+// (the account this Mashov integration was set up for), who wants
+// visibility across the whole grade, not just their own homeroom class.
+// Guarded by CRON_SECRET, same pattern as /api/cron/task-reminders.
 //
 // Scoped to grade י (1–7) because that's what the connected Mashov account
 // (see MASHOV_* env vars) actually has permission to read — confirmed via
@@ -15,6 +17,7 @@ import { mashovLogin, mashovGet } from "@/lib/mashov/client"
 const CLASSES: { code: string; num: number }[] = [1, 2, 3, 4, 5, 6, 7].map(num => ({ code: "י", num }))
 
 const ABSENCE_ACHVA_CODE = 1 // "חיסור"
+const GRADE_COORDINATOR_EMAIL = "eliavgil@gmail.com"
 
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization")
@@ -24,6 +27,11 @@ export async function GET(req: NextRequest) {
 
   const login = await mashovLogin()
   if (!login.ok) return NextResponse.json({ error: login.error, debug: login.debug }, { status: 502 })
+
+  const coordinator = await prisma.user.findUnique({
+    where: { email: GRADE_COORDINATOR_EMAIL },
+    select: { id: true },
+  })
 
   const todayStr = new Date().toISOString().slice(0, 10)
   let totalEvents = 0
@@ -103,23 +111,27 @@ export async function GET(req: NextRequest) {
         lessonNum: p.lessonNum,
         reportedAt: p.reportedAt,
         justified: p.justified,
-        notifiedAt: homeroomTeacher ? new Date() : null,
+        notifiedAt: (homeroomTeacher || coordinator) ? new Date() : null,
       })),
       skipDuplicates: true,
     })
     newEvents += fresh.length
 
     // Only push for events from today — a first-run backfill of the whole
-    // semester shouldn't flood the teacher with historical notifications.
-    if (homeroomTeacher) {
+    // semester shouldn't flood anyone with historical notifications.
+    const recipients = [homeroomTeacher?.id, coordinator?.id].filter((id): id is string => !!id)
+    const uniqueRecipients = Array.from(new Set(recipients))
+    if (uniqueRecipients.length) {
       for (const p of fresh) {
         if (p.justified) continue
         if (p.lessonDate.toISOString().slice(0, 10) !== todayStr) continue
-        await sendPushToUser(homeroomTeacher.id, {
-          title: "חיסור נרשם",
-          body: `${p.studentName} — ${p.subjectName} (${code}${num}, שיעור ${p.lessonNum})`,
-        })
-        notified++
+        for (const userId of uniqueRecipients) {
+          await sendPushToUser(userId, {
+            title: "חיסור נרשם",
+            body: `${p.studentName} — ${p.subjectName} (${code}${num}, שיעור ${p.lessonNum})`,
+          })
+          notified++
+        }
       }
     }
   }
