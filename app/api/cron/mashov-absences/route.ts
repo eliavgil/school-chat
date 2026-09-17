@@ -119,8 +119,12 @@ export async function GET(req: NextRequest) {
 
     // Only push for events from today — a first-run backfill of the whole
     // semester shouldn't flood anyone with historical notifications.
-    const recipients = [homeroomTeacher?.id, coordinator?.id].filter((id): id is string => !!id)
-    const uniqueRecipients = Array.from(new Set(recipients))
+    //
+    // Push goes to the coordinator only for now, not each class's homeroom
+    // teacher — per explicit request, until per-teacher notifications are
+    // actually wanted. homeroomTeacher is still looked up (used for
+    // notifiedAt) so re-enabling this later is a one-line change.
+    const uniqueRecipients = Array.from(new Set([coordinator?.id].filter((id): id is string => !!id)))
     if (uniqueRecipients.length) {
       for (const p of fresh) {
         if (p.justified) continue

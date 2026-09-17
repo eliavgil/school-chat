@@ -7,11 +7,14 @@ import { sendPushToUser } from "@/lib/push"
 // MashovAbsenceEvent (see /api/cron/mashov-absences) — an event synced
 // before a recipient had a push subscription yet silently gets no
 // notification, and never gets a second chance since it's no longer "new"
-// on later runs. This re-sends today's unjustified absences to the
-// current homeroom teacher + grade coordinator regardless of whether they
-// were "new" this run, for exactly that catch-up case. Safe to run more
-// than once — worst case is a duplicate notification for something
-// already delivered. Guarded by CRON_SECRET, same as the recurring cron.
+// on later runs. This re-sends today's unjustified absences to the grade
+// coordinator regardless of whether they were "new" this run, for exactly
+// that catch-up case. Safe to run more than once — worst case is a
+// duplicate notification for something already delivered. Guarded by
+// CRON_SECRET, same as the recurring cron.
+//
+// Coordinator-only for now, not each class's homeroom teacher — matches
+// /api/cron/mashov-absences, per explicit request.
 const GRADE_COORDINATOR_EMAIL = "eliavgil@gmail.com"
 
 export async function GET(req: NextRequest) {
@@ -34,25 +37,11 @@ export async function GET(req: NextRequest) {
   })
 
   let notified = 0
-  const homeroomCache = new Map<string, string | null>()
 
-  for (const e of events) {
-    const classKey = `${e.classCode}${e.classNum}`
-    if (!homeroomCache.has(classKey)) {
-      const cls = await prisma.class.findFirst({
-        where: { OR: [{ displayName: classKey }, { name: classKey }] },
-        select: { id: true },
-      })
-      const teacher = cls
-        ? await prisma.user.findFirst({ where: { classId: cls.id, role: "TEACHER" }, select: { id: true } })
-        : null
-      homeroomCache.set(classKey, teacher?.id ?? null)
-    }
-    const homeroomId = homeroomCache.get(classKey)
-
-    const recipients = Array.from(new Set([homeroomId, coordinator?.id].filter((id): id is string => !!id)))
-    for (const userId of recipients) {
-      await sendPushToUser(userId, {
+  if (coordinator) {
+    for (const e of events) {
+      const classKey = `${e.classCode}${e.classNum}`
+      await sendPushToUser(coordinator.id, {
         title: "חיסור נרשם",
         body: `${e.studentName} — ${e.subjectName} (${classKey}, שיעור ${e.lessonNum})`,
       })
