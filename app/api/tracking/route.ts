@@ -10,10 +10,16 @@ export async function GET() {
 
   const sb = adminClient()
 
-  const [lessonsRes, sessionsRes, responsesRes, classes, manualDones] = await Promise.all([
+  const [lessonsRes, sessionsRes, responsesRes, sbClassesRes, classes, manualDones] = await Promise.all([
     sb.from("lessons").select("id, title, created_at").order("created_at", { ascending: true }),
     sb.from("live_sessions").select("id, lesson_id, class_id, room_code").order("id", { ascending: false }),
     sb.from("responses").select("session_id, student_id"),
+    // live_sessions.class_id is a foreign key into Supabase's OWN "classes"
+    // table (see /api/sessions — it's created/looked up there by name), a
+    // completely different id space from the Prisma roster Class below.
+    // Comparing them directly (as this route used to) can never match —
+    // resolve through the shared name instead.
+    sb.from("classes").select("id, name"),
     prisma.class.findMany({
       select: { id: true, name: true, displayName: true },
       orderBy: { name: "asc" },
@@ -28,6 +34,10 @@ export async function GET() {
   const lessons = lessonsRes.data ?? []
   const sessions = sessionsRes.data ?? []
   const responses = responsesRes.data ?? []
+
+  // Supabase class id -> its name, then name -> Prisma roster Class.id
+  const sbClassNameById = new Map((sbClassesRes.data ?? []).map(c => [c.id, c.name]))
+  const rosterClassIdByName = new Map(classes.map(c => [c.displayName || c.name, c.id]))
 
   // Build student → classId map from Prisma
   const students = await prisma.student.findMany({ select: { id: true, classId: true } })
@@ -46,8 +56,15 @@ export async function GET() {
 
   for (const sess of sessions) {
     if (sess.class_id) {
-      sessionClassMap.set(sess.id, sess.class_id)
-      continue
+      const className = sbClassNameById.get(sess.class_id)
+      const rosterClassId = className ? rosterClassIdByName.get(className) : undefined
+      if (rosterClassId) {
+        sessionClassMap.set(sess.id, rosterClassId)
+        continue
+      }
+      // A Supabase class with no matching roster class (e.g. name typo) —
+      // fall through to the response-based guess rather than silently
+      // treating the session as unassigned.
     }
 
     const responders = responsesBySession.get(sess.id) ?? []

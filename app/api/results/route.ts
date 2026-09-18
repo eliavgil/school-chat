@@ -136,6 +136,7 @@ export async function GET(req: Request) {
         const r = s.studentResults.find(r => r.studentId === student.id)!
         return {
           sessionId: s.id,
+          lessonId: s.lessonId,
           lessonTitle: s.lessonTitle,
           createdAt: s.createdAt,
           score: r.quizScore,

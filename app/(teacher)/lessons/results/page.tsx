@@ -65,7 +65,7 @@ interface StudentAverage {
   className: string
   sessionsParticipated: number
   averageScore: number | null
-  sessions: { sessionId: string; lessonTitle: string; score: number | null; correct: number; total: number }[]
+  sessions: { sessionId: string; lessonId: string; lessonTitle: string; score: number | null; correct: number; total: number }[]
 }
 interface ApiData {
   classes: { id: string; name: string }[]
@@ -373,7 +373,14 @@ function SessionView({ data, session, selectedSession, setSelectedSession, allQu
 
 /* ── Averages view ──────────────────────────────────────── */
 function AveragesView({ data }: { data: ApiData }) {
+  // The same lesson taught to several classes gets a separate live_sessions
+  // row (and room code) per class, but it's still one lesson — one column,
+  // not one per class. Any of that lesson's sessions works as the column's
+  // display source (title, quiz question set); a student only ever has
+  // data in the one that was actually their own class's.
   const scoredSessions = data.sessions.filter(s => s.slidesWithQuestions.some(sg => sg.questions.some(q => q.correctIndex !== null)))
+  const lessonColumns = Array.from(new Map(scoredSessions.map(s => [s.lessonId, s])).values())
+  const totalLessons = new Set(data.sessions.map(s => s.lessonId)).size
 
   if (data.studentAverages.length === 0) {
     return <p style={{ color: "#64748b" }}>אין נתוני תלמידים להצגה.</p>
@@ -389,12 +396,11 @@ function AveragesView({ data }: { data: ApiData }) {
             <tr>
               <th style={{ ...thStyle, minWidth: 140, textAlign: "right" }}>תלמיד/ה</th>
               <th style={{ ...thStyle, minWidth: 100 }}>כיתה</th>
-              {scoredSessions.map(s => (
-                <th key={s.id} style={{ ...thStyle, minWidth: 90, fontSize: 12 }}>
+              {lessonColumns.map(s => (
+                <th key={s.lessonId} style={{ ...thStyle, minWidth: 90, fontSize: 12 }}>
                   <div style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: 100 }} title={s.lessonTitle}>
                     {s.lessonTitle.replace(/^שיעור \d+: /, "")}
                   </div>
-                  <div style={{ fontSize: 10, fontWeight: 400, color: "#94a3b8", marginTop: 2 }}>{formatDate(s.createdAt)}</div>
                 </th>
               ))}
               <th style={{ ...thStyle, minWidth: 80, background: "#f1f5f9" }}>ממוצע</th>
@@ -406,10 +412,10 @@ function AveragesView({ data }: { data: ApiData }) {
               <tr key={student.studentId} style={{ borderBottom: "1px solid #f1f5f9" }}>
                 <td style={{ ...tdStyle, fontWeight: 600 }}>{student.studentName}</td>
                 <td style={{ ...tdStyle, color: "#64748b", fontSize: 13 }}>{student.className}</td>
-                {scoredSessions.map(s => {
-                  const ss = student.sessions.find(x => x.sessionId === s.id)
+                {lessonColumns.map(s => {
+                  const ss = student.sessions.find(x => x.lessonId === s.lessonId)
                   return (
-                    <td key={s.id} style={{ ...tdStyle, textAlign: "center" }}>
+                    <td key={s.lessonId} style={{ ...tdStyle, textAlign: "center" }}>
                       {ss ? (
                         ss.score !== null ? (
                           <span style={{ fontWeight: 700, color: scoreColor(ss.score) }}>{pct(ss.score)}</span>
@@ -426,7 +432,7 @@ function AveragesView({ data }: { data: ApiData }) {
                   {student.averageScore !== null ? pct(student.averageScore) : "—"}
                 </td>
                 <td style={{ ...tdStyle, textAlign: "center", color: "#64748b", fontSize: 13 }}>
-                  {student.sessionsParticipated}/{data.sessions.length}
+                  {new Set(student.sessions.map(x => x.lessonId)).size}/{totalLessons}
                 </td>
               </tr>
             ))}
