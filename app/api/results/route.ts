@@ -8,8 +8,9 @@ import type { Slide } from "@/lib/lessons/types"
 // The only slide types where `questions` means something a student actually
 // submits an answer to — every other type (objectives, concept-grid, the
 // icon breakdown inside a study slide, ...) reuses the same field shape for
-// plain display content.
-const ANSWERABLE_SLIDE_TYPES = new Set(["alertness-check", "assessment", "opinion"])
+// plain display content. "feedback" (the 1–5 star end-of-lesson rating) is
+// answerable but never has a correct_index — it's aggregated separately.
+const ANSWERABLE_SLIDE_TYPES = new Set(["alertness-check", "assessment", "opinion", "feedback"])
 
 export async function GET(req: Request) {
   const session = await getServerSession(authOptions)
