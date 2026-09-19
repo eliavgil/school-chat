@@ -12,12 +12,18 @@ import { prisma } from "@/lib/db/prisma"
 // that gap without adding a DB round-trip to every already-approved request.
 export const runtime = "nodejs"
 
-// /api/cron/* isn't a public path in the "anyone can see it" sense — it's
-// authenticated on its own terms (a Bearer CRON_SECRET header, checked inside
-// the route), not by a signed-in session cookie. Vercel's cron caller sends
-// no session cookie at all, so without this exemption it would get bounced
-// to /login by the check below before ever reaching that route's own check.
-const PUBLIC_PATHS = ["/login", "/api/auth", "/api/cron"]
+// /api/cron/* and /api/widget/* aren't public in the "anyone can see it"
+// sense — each authenticates on its own terms inside the route (a Bearer
+// CRON_SECRET header, or a per-user ?token= for /api/widget/schedule), not
+// by a signed-in session cookie. A cron caller or a home-screen widget
+// (Scriptable/Shortcuts refreshing in the background) sends no session
+// cookie at all, so without this exemption it gets bounced to /login
+// before ever reaching the route's own check — for /api/widget/schedule
+// that means an HTML redirect where the widget expected JSON, which just
+// looks like "can't load" with no clue why. (/api/widget/token, which
+// hands out the token itself, still requires a real session — it checks
+// that itself inside the route, independent of this exemption.)
+const PUBLIC_PATHS = ["/login", "/api/auth", "/api/cron", "/api/widget"]
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
