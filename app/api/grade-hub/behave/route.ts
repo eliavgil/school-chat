@@ -93,14 +93,20 @@ export async function GET(req: NextRequest) {
 
   // Year-to-date total of this same achva type per student — shown next to
   // every row so a single new event reads in context ("is this a pattern?"),
-  // not just as an isolated count for that one day.
-  const studentIds = Array.from(new Set([...summaryRows, ...recentRows].map(r => r.studentId)))
-  const yearTotals = new Map<string, number>(
-    await Promise.all(studentIds.map(async id => [
-      id,
-      await prisma.mashovBehaveEvent.count({ where: { achvaCode, mashovKey: { startsWith: `${id}:` } } }),
-    ] as const))
-  )
+  // not just as an isolated count for that one day. One query for every
+  // event of this achva type (mashovKey only, so it stays light even with
+  // absences' much larger history) beats a separate count() per distinct
+  // student — that scaled badly enough with absences' student count to
+  // exhaust the connection pool and crash the whole request.
+  const allKeysForCode = await prisma.mashovBehaveEvent.findMany({
+    where: { achvaCode },
+    select: { mashovKey: true },
+  })
+  const yearTotals = new Map<string, number>()
+  for (const { mashovKey } of allKeysForCode) {
+    const id = mashovKey.split(":")[0]
+    yearTotals.set(id, (yearTotals.get(id) ?? 0) + 1)
+  }
 
   const summary = summaryRows.map(({ studentId, ...row }) => ({ ...row, yearTotal: yearTotals.get(studentId) ?? row.count }))
   const recent = recentRows.map(({ studentId, ...row }) => ({ ...row, yearTotal: yearTotals.get(studentId) ?? row.count }))
