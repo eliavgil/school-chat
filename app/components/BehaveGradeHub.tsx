@@ -12,6 +12,7 @@ interface RecentGroup {
   subjects: string[]
   lessonNums: number[]
   anyUnjustified: boolean
+  yearTotal: number
 }
 interface SummaryRow {
   studentName: string
@@ -20,6 +21,7 @@ interface SummaryRow {
   count: number
   subjects: string[]
   anyUnjustified: boolean
+  yearTotal: number
 }
 interface BehaveData {
   dates: string[]
@@ -149,7 +151,7 @@ export default function BehaveGradeHub({
                             {g.studentName} <span className="text-white/40">· {g.classCode}{g.classNum}</span>
                           </p>
                           <p className="text-white/35 text-[11px]">
-                            {g.count} {g.count === 1 ? "שיעור" : "שיעורים"} · {fmtShortDay(g.date)}
+                            {g.count} {g.count === 1 ? "שיעור" : "שיעורים"} · {fmtShortDay(g.date)} · סה״כ {g.yearTotal} השנה
                           </p>
                         </div>
                         <span className={`text-white/30 text-xs flex-shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}>▾</span>
@@ -190,6 +192,7 @@ export default function BehaveGradeHub({
                         <th className="text-right font-medium px-3 py-2">תלמיד/ה</th>
                         <th className="text-right font-medium px-3 py-2">כיתה</th>
                         <th className="text-center font-medium px-3 py-2">שיעורים</th>
+                        <th className="text-center font-medium px-3 py-2">סה״כ השנה</th>
                         <th className="text-right font-medium px-3 py-2">מקצועות</th>
                       </tr>
                     </thead>
@@ -204,6 +207,7 @@ export default function BehaveGradeHub({
                           </td>
                           <td className="px-3 py-2.5 text-white/60">{row.classCode}{row.classNum}</td>
                           <td className="px-3 py-2.5 text-white/60 text-center">{row.count}</td>
+                          <td className="px-3 py-2.5 text-white/60 text-center">{row.yearTotal}</td>
                           <td className="px-3 py-2.5 text-white/50 text-[12px]">{row.subjects.join(", ")}</td>
                         </tr>
                       ))}

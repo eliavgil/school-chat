@@ -40,20 +40,20 @@ export async function GET(req: NextRequest) {
   })
 
   const bySt = new Map<string, {
-    studentName: string; classCode: string; classNum: number
+    studentId: string; studentName: string; classCode: string; classNum: number
     count: number; subjects: string[]; anyUnjustified: boolean
   }>()
   for (const e of dayEvents) {
     const key = `${e.studentName}__${e.classCode}${e.classNum}`
     if (!bySt.has(key)) {
-      bySt.set(key, { studentName: e.studentName, classCode: e.classCode, classNum: e.classNum, count: 0, subjects: [], anyUnjustified: false })
+      bySt.set(key, { studentId: e.mashovKey.split(":")[0], studentName: e.studentName, classCode: e.classCode, classNum: e.classNum, count: 0, subjects: [], anyUnjustified: false })
     }
     const row = bySt.get(key)!
     row.count++
     if (!row.subjects.includes(e.subjectName)) row.subjects.push(e.subjectName)
     if (!e.justified) row.anyUnjustified = true
   }
-  const summary = Array.from(bySt.values()).sort((a, b) => a.classNum - b.classNum || b.count - a.count)
+  const summaryRows = Array.from(bySt.values()).sort((a, b) => a.classNum - b.classNum || b.count - a.count)
 
   // "Recent" is grouped the same way as the daily summary — one row per
   // student per day, not one row per lesson — since achvaEvent.timestamp
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest) {
     take: 100,
   })
   const recentBy = new Map<string, {
-    studentName: string; classCode: string; classNum: number; date: string
+    studentId: string; studentName: string; classCode: string; classNum: number; date: string
     count: number; subjects: string[]; lessonNums: number[]; anyUnjustified: boolean
     sortKey: number
   }>()
@@ -75,7 +75,7 @@ export async function GET(req: NextRequest) {
     const key = `${e.studentName}__${e.classCode}${e.classNum}__${dateStr}`
     if (!recentBy.has(key)) {
       recentBy.set(key, {
-        studentName: e.studentName, classCode: e.classCode, classNum: e.classNum, date: dateStr,
+        studentId: e.mashovKey.split(":")[0], studentName: e.studentName, classCode: e.classCode, classNum: e.classNum, date: dateStr,
         count: 0, subjects: [], lessonNums: [], anyUnjustified: false,
         sortKey: e.lessonDate.getTime() + e.lessonNum,
       })
@@ -86,10 +86,24 @@ export async function GET(req: NextRequest) {
     row.lessonNums.push(e.lessonNum)
     if (!e.justified) row.anyUnjustified = true
   }
-  const recent = Array.from(recentBy.values())
+  const recentRows = Array.from(recentBy.values())
     .sort((a, b) => b.sortKey - a.sortKey)
     .slice(0, 12)
     .map(({ sortKey, ...row }) => row)
+
+  // Year-to-date total of this same achva type per student — shown next to
+  // every row so a single new event reads in context ("is this a pattern?"),
+  // not just as an isolated count for that one day.
+  const studentIds = Array.from(new Set([...summaryRows, ...recentRows].map(r => r.studentId)))
+  const yearTotals = new Map<string, number>(
+    await Promise.all(studentIds.map(async id => [
+      id,
+      await prisma.mashovBehaveEvent.count({ where: { achvaCode, mashovKey: { startsWith: `${id}:` } } }),
+    ] as const))
+  )
+
+  const summary = summaryRows.map(({ studentId, ...row }) => ({ ...row, yearTotal: yearTotals.get(studentId) ?? row.count }))
+  const recent = recentRows.map(({ studentId, ...row }) => ({ ...row, yearTotal: yearTotals.get(studentId) ?? row.count }))
 
   return NextResponse.json({ dates, date, summary, recent })
 }
