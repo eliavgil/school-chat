@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import ThemePicker from "@/app/components/ThemePicker"
 import PushManager from "@/app/components/PushManager"
+import WidgetSetup from "@/app/components/WidgetSetup"
 import { BackgroundPicker } from "@/app/components/BackgroundPicker"
 import {
   getPersonalEvents, addPersonalEvent, updatePersonalEvent, deletePersonalEvent,
@@ -1195,6 +1196,9 @@ export default function ManagePage() {
               <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">הודעות Push</p>
               <PushManager />
             </div>
+            <div className="pt-2 border-t border-white/10 mt-2">
+              <WidgetSetup />
+            </div>
             <div className="pt-2"><DesignEditor /></div>
           </>
         )}
@@ -1209,6 +1213,9 @@ export default function ManagePage() {
             <div className="pt-2 border-t border-white/10 mt-2">
               <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">הודעות Push</p>
               <PushManager />
+            </div>
+            <div className="pt-2 border-t border-white/10 mt-2">
+              <WidgetSetup />
             </div>
           </>
         )}
