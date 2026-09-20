@@ -27,6 +27,23 @@ function periodNum(p: string): string {
 function parseSubject(content: string) { return content.split(/\s{2,}/)[0].trim() }
 function timeToMin(t: string) { const [h, m] = t.split(":").map(Number); return h * 60 + m }
 
+// The home page computes "now" in the browser, so it's naturally the
+// viewer's own local time. This route runs on Vercel's server (UTC),
+// where a plain new Date().getHours()/getDay() would be wrong by Israel's
+// UTC+2/+3 offset — a real bug this route hit (a 15:36 Israel request
+// read as 12:36, landing on the wrong "current" period). Resolve the
+// weekday/hour/minute explicitly in Asia/Jerusalem instead, DST-safe.
+function israelNow(): { weekday: number; hours: number; minutes: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Jerusalem",
+    weekday: "short", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(new Date())
+  const map = Object.fromEntries(parts.map(p => [p.type, p.value]))
+  const WEEKDAYS: Record<string, number> = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }
+  const hourStr = map.hour === "24" ? "0" : map.hour // some ICU builds emit "24" for midnight even with hour12:false
+  return { weekday: WEEKDAYS[map.weekday] ?? 0, hours: Number(hourStr), minutes: Number(map.minute) }
+}
+
 function buildTimeline(slots: ScheduleSlotT[], bellSlots: BellSlotT[]): TimelineEntry[] {
   const bellByPeriod = new Map(bellSlots.map(b => [b.period, { start: b.startTime, end: b.endTime }]))
 
@@ -69,7 +86,7 @@ export async function GET(req: NextRequest) {
       : null)
     ?? "class-y"
 
-  const todayJS = new Date().getDay()
+  const { weekday: todayJS, hours: nowHours, minutes: nowMinutes } = israelNow()
   const todayHeb = DAY_TO_HEB[todayJS]
   const todayDayType = dayTypeForWeekday(todayJS)
   const scheduleClassId = isTeacher ? teacherOwnScheduleId(user.id) : classId
@@ -89,9 +106,20 @@ export async function GET(req: NextRequest) {
   const timeline = buildTimeline(todaySchedule, bellSlots)
 
   let nowIndex = -1
-  const nowMin = new Date().getHours() * 60 + new Date().getMinutes()
+  const nowMin = nowHours * 60 + nowMinutes
   for (let i = 0; i < timeline.length; i++) {
     if (nowMin >= timeToMin(timeline[i].start) && nowMin < timeToMin(timeline[i].end)) { nowIndex = i; break }
+  }
+
+  // Mirrors the home page's own DayState (app/home/page.tsx's getNowNext):
+  // "no-school" (Fri/Sat or nothing published), "before-school" (hasn't
+  // started yet — show what's first), "now" (mid-lesson/break), "done"
+  // (everything for today has already finished).
+  let dayState: "no-school" | "before-school" | "now" | "done" = "no-school"
+  if (todayDayType !== null && timeline.length > 0) {
+    if (nowMin < timeToMin(timeline[0].start)) dayState = "before-school"
+    else if (nowIndex !== -1) dayState = "now"
+    else dayState = "done"
   }
 
   return NextResponse.json({
@@ -100,5 +128,6 @@ export async function GET(req: NextRequest) {
     hasSchoolToday: todayDayType !== null,
     timeline,
     nowIndex,
+    dayState,
   })
 }
