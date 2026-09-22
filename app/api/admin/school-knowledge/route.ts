@@ -187,7 +187,8 @@ export async function POST(req: NextRequest) {
   if (!(file instanceof Blob)) return NextResponse.json({ error: "No file provided" }, { status: 400 })
   if (file.size > MAX_BYTES) return NextResponse.json({ error: "הקובץ גדול מדי (מקסימום 15MB)" }, { status: 413 })
 
-  const filename = (formData.get("filename") as string) || "קובץ"
+  const rawFilename = formData.get("filename") as string | null
+  const filename = rawFilename ? decodeURIComponent(rawFilename) : "קובץ"
   const mimeType = file.type
   const buffer = Buffer.from(await file.arrayBuffer())
 

@@ -75,15 +75,19 @@ export default function SchoolAssistantAdminPage() {
     for (let i = 0; i < list.length; i++) {
       const file = list[i]
       setUploads(prev => prev.map((u, idx) => idx === i ? { ...u, status: "uploading" } : u))
-      const fd = new FormData()
-      // Some browsers throw building the multipart body when the File's own
-      // .name has non-Latin characters (Hebrew filenames here) — give the
-      // part itself a plain ASCII name and send the real one separately as
-      // a normal form field instead, which the server already prefers.
-      const ext = file.name.split(".").pop() || "bin"
-      fd.append("file", file, `upload.${ext}`)
-      fd.append("filename", file.name)
       try {
+        // Some browsers throw building the multipart body when a File's own
+        // .name has non-Latin characters (Hebrew filenames here) — even
+        // overriding the append() filename wasn't enough on its own, so
+        // this rebuilds the upload as a plain Blob from raw bytes, fully
+        // detached from the original File's name/metadata, and sends the
+        // real name separately as an encoded text field the server decodes.
+        const bytes = await file.arrayBuffer()
+        const cleanBlob = new Blob([bytes], { type: file.type })
+        const ext = file.name.split(".").pop() || "bin"
+        const fd = new FormData()
+        fd.append("file", cleanBlob, `upload.${ext}`)
+        fd.append("filename", encodeURIComponent(file.name))
         const res = await fetch("/api/admin/school-knowledge", { method: "POST", body: fd })
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || "שגיאה")
