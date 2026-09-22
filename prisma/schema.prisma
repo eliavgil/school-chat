@@ -328,6 +328,16 @@ model SchoolKnowledgeDoc {
   createdAt      DateTime @default(now())
 }
 
+// Singleton row (fixed id) holding the teacher's behavioral instructions for
+// the assistant bot — tone, what to say when a fact isn't covered, anything
+// it should never do. Kept separate from SchoolKnowledgeDoc, which is facts
+// only: this is instructions, edited from the same admin page.
+model SchoolAssistantSettings {
+  id           String   @id @default("default")
+  instructions String   @db.Text
+  updatedAt    DateTime @updatedAt
+}
+
 // Bot response cache — avoid repeat Claude calls for identical questions
 model BotCache {
   id        String   @id @default(cuid())

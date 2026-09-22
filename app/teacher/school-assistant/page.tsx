@@ -29,9 +29,13 @@ export default function SchoolAssistantAdminPage() {
   const [sheetLoading, setSheetLoading] = useState(false)
   const [sheetError, setSheetError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const [instructions, setInstructions] = useState("")
+  const [instructionsLoading, setInstructionsLoading] = useState(true)
+  const [instructionsSaving, setInstructionsSaving] = useState(false)
+  const [instructionsSaved, setInstructionsSaved] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { load(); loadInstructions() }, [])
 
   async function load() {
     setLoading(true)
@@ -39,6 +43,24 @@ export default function SchoolAssistantAdminPage() {
     setDocs(d.docs ?? [])
     setServiceAccountEmail(d.serviceAccountEmail ?? null)
     setLoading(false)
+  }
+
+  async function loadInstructions() {
+    setInstructionsLoading(true)
+    const d = await fetch("/api/admin/assistant-settings").then(r => r.json()).catch(() => ({ instructions: "" }))
+    setInstructions(d.instructions ?? "")
+    setInstructionsLoading(false)
+  }
+
+  async function saveInstructions() {
+    setInstructionsSaving(true)
+    await fetch("/api/admin/assistant-settings", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ instructions }),
+    })
+    setInstructionsSaving(false)
+    setInstructionsSaved(true)
+    setTimeout(() => setInstructionsSaved(false), 2000)
   }
 
   async function handleFiles(files: FileList | null) {
@@ -121,6 +143,28 @@ export default function SchoolAssistantAdminPage() {
       </header>
 
       <div className="max-w-2xl mx-auto p-4 space-y-5">
+        <div className="bg-white/8 border border-white/15 rounded-2xl p-4 space-y-3">
+          <div>
+            <h2 className="text-white text-sm font-medium mb-1">הוראות לבוט</h2>
+            <p className="text-white/40 text-xs leading-relaxed">
+              טון דיבור, מה לענות כשמשהו לא ידוע, ניסוחים שחשוב להשתמש/להימנע מהם וכד׳ — בנפרד מהעובדות עצמן. כמה חוקים תמיד קבועים ולא ניתנים לשינוי מכאן: הבוט לעולם לא מלמד, לא פותר תרגילים, ולא נוגע בציונים או במידע אישי/אקדמי — גם אם ההוראות כאן יגידו אחרת.
+            </p>
+          </div>
+          {instructionsLoading ? (
+            <p className="text-white/30 text-xs">טוען...</p>
+          ) : (
+            <>
+              <textarea value={instructions} onChange={e => setInstructions(e.target.value)} rows={4}
+                placeholder="לדוגמה: תענה בטון חם ולא רשמי. אם משהו לא ברור, תמיד תפנה ל-office@... ולא רק 'למזכירות'. אל תשתמש במילה 'תלמיד/ה' — תפנה בגוף שני."
+                className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/25 leading-relaxed focus:outline-none focus:ring-2 focus:ring-white/30" />
+              <button onClick={saveInstructions} disabled={instructionsSaving}
+                className="bg-white/15 hover:bg-white/25 text-white text-sm px-4 py-2 rounded-xl interactive btn-press transition-colors disabled:opacity-40">
+                {instructionsSaved ? "✓ נשמר" : instructionsSaving ? "שומר..." : "שמור"}
+              </button>
+            </>
+          )}
+        </div>
+
         <div className="bg-white/8 border border-white/15 rounded-2xl p-4 space-y-3">
           <p className="text-white/50 text-xs leading-relaxed">
             אפשר לזרוק כמה קבצים שרוצים בבת אחת — PDF, אקסל (xlsx/xls), תמונות (jpg/png) או טקסט (txt/md/csv). לכל קובץ, Claude יעבור עליו ויחלץ ממנו את העובדות הרלוונטיות אוטומטית; אפשר לערוך את מה שחולץ בהמשך אם צריך לתקן משהו. קבצי Word — יש להמיר קודם ל-PDF.

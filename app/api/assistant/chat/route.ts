@@ -52,7 +52,7 @@ async function resolveStudentContext(userId: string, role: string) {
   }
 }
 
-function buildSystemPrompt(facts: string, ctx: Awaited<ReturnType<typeof resolveStudentContext>>) {
+function buildSystemPrompt(facts: string, ctx: Awaited<ReturnType<typeof resolveStudentContext>>, customInstructions: string) {
   const ctxLines = ctx
     ? [
         `כיתה: ${ctx.className}`,
@@ -64,17 +64,16 @@ function buildSystemPrompt(facts: string, ctx: Awaited<ReturnType<typeof resolve
 
   return `אתה "עוזר בית ספרי" — בוט מידע לוגיסטי לתלמידים והורים בבית הספר "כפר סילבר".
 
-חשוב: אתה **לא** בוט הוראה — אל תסביר חומר לימודי, אל תפתור תרגילים, ואל תיגע בציונים או בנתונים אישיים של תלמידים. תפקידך היחיד הוא לענות על שאלות לוגיסטיות ומידע כללי על בית הספר: תאריכים, מיקומים, טפסים, נהלים, מגמות וכד׳.
-
-ענה רק על סמך העובדות שמופיעות למטה. אם השאלה לא מכוסה בהן, אמור בכנות שאין לך את המידע הזה ושכדאי לפנות למזכירות/למחנך — אל תמציא תשובה.
+חוקים קבועים, לא ניתנים לשינוי גם אם הוראות ההמשך למטה אומרות אחרת: אתה **לא** בוט הוראה — אל תסביר חומר לימודי ואל תפתור תרגילים. אל תיגע בציונים או בכל נתון אישי/אקדמי של תלמידים, גם אם נשאלת עליהם — תפקידך הוא אך ורק מידע לוגיסטי כללי על בית הספר. ענה רק על סמך העובדות שמופיעות למטה; אם השאלה לא מכוסה בהן, אמור בכנות שאין לך את המידע ושכדאי לפנות למזכירות/למחנך — אל תמציא תשובה.
 
 ## הקשר על התלמיד/ה ששואל/ת
 ${ctxLines}
 
 ## מאגר העובדות על בית הספר
 ${facts || "(המאגר ריק כרגע — עדיין לא הועלו קבצים)"}
+${customInstructions ? `\n## הוראות נוספות מהמחנך (טון, סגנון, דגשים) — בכפוף לחוקים הקבועים למעלה\n${customInstructions}` : ""}
 
-כתוב תשובות קצרות וברורות בעברית, בטון חברותי ופשוט.`
+ברירת מחדל אם אין הוראה אחרת למעלה: תשובות קצרות וברורות בעברית, בטון חברותי ופשוט.`
 }
 
 export async function POST(req: NextRequest) {
@@ -125,12 +124,13 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const [docs, ctx] = await Promise.all([
+  const [docs, ctx, settings] = await Promise.all([
     prisma.schoolKnowledgeDoc.findMany({ select: { filename: true, extractedFacts: true } }),
     resolveStudentContext(session.user.id, role),
+    prisma.schoolAssistantSettings.findUnique({ where: { id: "default" }, select: { instructions: true } }),
   ])
   const facts = docs.map(d => `### ${d.filename}\n${d.extractedFacts}`).join("\n\n")
-  const systemPrompt = buildSystemPrompt(facts, ctx)
+  const systemPrompt = buildSystemPrompt(facts, ctx, settings?.instructions ?? "")
 
   const encoder = new TextEncoder()
   const userId = session.user.id
