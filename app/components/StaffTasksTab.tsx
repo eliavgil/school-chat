@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { israelLocalToUtc } from "@/lib/israel-time"
 
 export type Importance = "RED" | "YELLOW" | "BLUE"
 
@@ -31,10 +32,18 @@ interface StaffAssigneeT {
   reminderAt: string | null
 }
 
+// Always renders in Israel time regardless of the browser/computer's own
+// clock timezone — the previous version used getHours()/getMinutes(),
+// which read the *device's* local time, so editing a reminder from a
+// machine not set to Israel time showed the wrong hour entirely.
 function toDatetimeLocalValue(iso: string): string {
-  const d = new Date(iso)
-  const pad = (n: number) => String(n).padStart(2, "0")
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Jerusalem",
+    year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(new Date(iso))
+  const get = (t: string) => parts.find(p => p.type === t)?.value ?? "00"
+  const hour = get("hour") === "24" ? "00" : get("hour")
+  return `${get("year")}-${get("month")}-${get("day")}T${hour}:${get("minute")}`
 }
 
 interface StaffTaskT {
@@ -170,7 +179,7 @@ export function StaffTasksTab() {
           assignees: t.assignees.map(a => ({
             ...a,
             reminderAt: draft.reminderTeachers.includes(a.teacherLabel) && draft.reminderAt
-              ? new Date(draft.reminderAt).toISOString()
+              ? israelLocalToUtc(draft.reminderAt).toISOString()
               : null,
           })),
         }
