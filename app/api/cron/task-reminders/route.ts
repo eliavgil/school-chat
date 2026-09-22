@@ -25,7 +25,7 @@ export async function GET(req: NextRequest) {
   })
   if (unlinked.length) {
     const teachers = await prisma.user.findMany({
-      where: { name: { in: unlinked.map(a => a.teacherLabel) }, role: "TEACHER" },
+      where: { name: { in: unlinked.map(a => a.teacherLabel) }, role: { in: ["TEACHER", "ADMIN"] } },
       select: { id: true, name: true },
     })
     const userIdByName = new Map(teachers.map(u => [u.name, u.id]))

@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
   // that already existed at approval time) — link it now too, otherwise
   // a reminder for this brand-new assignee can never be pushed to them.
   const existingTeachers = await prisma.user.findMany({
-    where: { name: { in: names }, role: "TEACHER" },
+    where: { name: { in: names }, role: { in: ["TEACHER", "ADMIN"] } },
     select: { id: true, name: true },
   })
   const userIdByName = new Map(existingTeachers.map(u => [u.name, u.id]))
