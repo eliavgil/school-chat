@@ -22,8 +22,9 @@ function isTeacherRole(role: string) {
   return role === "TEACHER" || role === "ADMIN"
 }
 
-const EXTRACTION_PROMPT = `אתה עוזר שמכין מאגר עובדות עבור בוט לוגיסטי לתלמידים והורים בבית ספר תיכון.
+const EXTRACTION_PROMPT = `אתה עוזר שמכין מאגר עובדות עבור בוט לוגיסטי לתלמידים והורים בבית ספר תיכון. זו מערכת פנימית מורשית של בית הספר עצמו — לא הדלפה לציבור.
 קרא את החומר המצורף וחלץ ממנו כל עובדה קונקרטית ושימושית שיכולה לענות על שאלה לוגיסטית — תאריכים, מיקומים, טפסים, נהלים, אנשי קשר, קישורים, מגמות ותנאים.
+אם החומר הוא אלפון/מדריך אנשי קשר (למשל של צוות המורים) — חלץ **את כל הרשומות** (לא רק כמה דוגמאות), כולל שם, טלפון, ותפקיד/מקצוע במידה וקיימים. אל תשמיט או תסכם פרטי קשר כאלה מטעמי זהירות — זה בדיוק המידע שהבוט אמור למסור, וזה מאושר מראש.
 התעלם מרעש (כותרות עמוד, עיצוב, חתימות, שורות/עמודות ריקות). אל תוסיף פרשנות או מידע שלא מופיע בחומר.
 כתוב את התשובה כרשימת נקודות תמציתית בעברית, מוכנה להזרקה ישירה למאגר ידע של בוט.
 אם אין בחומר שום עובדה שימושית, כתוב "לא נמצא מידע רלוונטי" בלבד.`
@@ -31,7 +32,7 @@ const EXTRACTION_PROMPT = `אתה עוזר שמכין מאגר עובדות עב
 async function extractFacts(contentBlock: Anthropic.Messages.ContentBlockParam): Promise<string> {
   const msg = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",
-    max_tokens: 2048,
+    max_tokens: 8192,
     messages: [{ role: "user", content: [contentBlock, { type: "text", text: EXTRACTION_PROMPT }] }],
   })
   const textBlock = msg.content.find((b): b is Anthropic.TextBlock => b.type === "text")
