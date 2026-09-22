@@ -28,6 +28,13 @@ interface StaffAssigneeT {
   userId: string | null
   done: boolean
   note: string | null
+  reminderAt: string | null
+}
+
+function toDatetimeLocalValue(iso: string): string {
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, "0")
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 interface StaffTaskT {
@@ -72,7 +79,7 @@ export function StaffTasksTab() {
   // name on every card.
   const [expandedAssignees, setExpandedAssignees] = useState<Record<string, boolean>>({})
   // Task-level edit form draft (task id -> fields) — absent means not editing.
-  const [editingTask, setEditingTask] = useState<Record<string, { title: string; link: string; deadline: string; importance: Importance }>>({})
+  const [editingTask, setEditingTask] = useState<Record<string, { title: string; link: string; deadline: string; importance: Importance; reminderAt: string; reminderTeachers: string[] }>>({})
 
   useEffect(() => { fetchTasks() }, [])
 
@@ -141,23 +148,52 @@ export function StaffTasksTab() {
   }
 
   function startEditTask(t: StaffTaskT) {
+    const withReminder = t.assignees.find(a => a.reminderAt)
     setEditingTask(prev => ({
       ...prev,
-      [t.id]: { title: t.title, link: t.link ?? "", deadline: t.deadline ? t.deadline.slice(0, 10) : "", importance: t.importance },
+      [t.id]: {
+        title: t.title, link: t.link ?? "", deadline: t.deadline ? t.deadline.slice(0, 10) : "", importance: t.importance,
+        reminderAt: withReminder ? toDatetimeLocalValue(withReminder.reminderAt!) : "",
+        reminderTeachers: t.assignees.filter(a => a.reminderAt).map(a => a.teacherLabel),
+      },
     }))
   }
 
   function saveTaskEdit(taskId: string) {
     const draft = editingTask[taskId]
     if (!draft || !draft.title.trim()) return
+    const task = tasks.find(t => t.id === taskId)
     setTasks(prev => prev.map(t => t.id === taskId
-      ? { ...t, title: draft.title.trim(), link: draft.link.trim() || null, deadline: draft.deadline ? new Date(draft.deadline).toISOString() : null, importance: draft.importance }
+      ? {
+          ...t, title: draft.title.trim(), link: draft.link.trim() || null,
+          deadline: draft.deadline ? new Date(draft.deadline).toISOString() : null, importance: draft.importance,
+          assignees: t.assignees.map(a => ({
+            ...a,
+            reminderAt: draft.reminderTeachers.includes(a.teacherLabel) && draft.reminderAt
+              ? new Date(draft.reminderAt).toISOString()
+              : null,
+          })),
+        }
       : t))
     setEditingTask(prev => { const next = { ...prev }; delete next[taskId]; return next })
     fetch("/api/tasks/staff", {
       method: "PATCH", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id: taskId, title: draft.title, link: draft.link || null, deadline: draft.deadline || null, importance: draft.importance }),
     })
+    // Reminder is per-assignee — push a separate PATCH for anyone whose
+    // reminder state actually changed (added, changed, or cleared).
+    if (task) {
+      for (const a of task.assignees) {
+        const wantsReminder = draft.reminderTeachers.includes(a.teacherLabel) && !!draft.reminderAt
+        const hadReminder = !!a.reminderAt
+        if (wantsReminder || hadReminder) {
+          fetch("/api/tasks/staff", {
+            method: "PATCH", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ assigneeId: a.id, reminderAt: wantsReminder ? draft.reminderAt : null }),
+          })
+        }
+      }
+    }
   }
 
   async function remove(id: string) {
@@ -214,7 +250,7 @@ export function StaffTasksTab() {
           {selected.length > 0 && (
             <div>
               <label className="text-white/40 text-xs mb-1.5 block">תזכורת (אופציונלי)</label>
-              <input type="datetime-local" value={reminderAt} onChange={e => setReminderAt(e.target.value)}
+              <input type="datetime-local" dir="ltr" value={reminderAt} onChange={e => setReminderAt(e.target.value)}
                 className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white/30" />
               {reminderAt && (
                 <div className="mt-2 space-y-1.5">
@@ -277,6 +313,36 @@ export function StaffTasksTab() {
                     ))}
                   </div>
                 </div>
+                {t.assignees.length > 0 && (
+                  <div>
+                    <label className="text-white/40 text-xs mb-1.5 block">תזכורת (אופציונלי)</label>
+                    <input type="datetime-local" dir="ltr" value={draft.reminderAt}
+                      onChange={e => setEditingTask(prev => ({ ...prev, [t.id]: { ...draft, reminderAt: e.target.value } }))}
+                      className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white/30" />
+                    {draft.reminderAt && (
+                      <div className="mt-2 space-y-1.5">
+                        <p className="text-white/30 text-[11px]">למי לשלוח את התזכורת:</p>
+                        <div className="flex flex-wrap gap-2">
+                          {t.assignees.map(a => (
+                            <button key={a.id} type="button"
+                              onClick={() => setEditingTask(prev => ({
+                                ...prev,
+                                [t.id]: {
+                                  ...draft,
+                                  reminderTeachers: draft.reminderTeachers.includes(a.teacherLabel)
+                                    ? draft.reminderTeachers.filter(n => n !== a.teacherLabel)
+                                    : [...draft.reminderTeachers, a.teacherLabel],
+                                },
+                              }))}
+                              className={`px-3 py-1.5 rounded-xl text-xs interactive btn-press transition-colors ${draft.reminderTeachers.includes(a.teacherLabel) ? "bg-blue-500/40 text-white" : "bg-white/5 text-white/40 hover:text-white/70"}`}>
+                              {a.teacherLabel}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="flex gap-2">
                   <button onClick={() => saveTaskEdit(t.id)} disabled={!draft.title.trim()}
                     className="bg-white/20 hover:bg-white/30 text-white text-sm px-4 py-2 rounded-xl disabled:opacity-40 btn-press interactive transition-colors">
@@ -352,6 +418,7 @@ export function StaffTasksTab() {
                                 {a.done && <span className="text-white text-[8px]">✓</span>}
                               </span>
                               <span className={`text-xs ${a.done ? "text-white/35 line-through" : "text-white/70"}`}>{a.teacherLabel}</span>
+                              {a.reminderAt && <span title="תזכורת מוגדרת" className="text-white/30 text-[10px]">🔔</span>}
                               {!a.userId && <span className="text-white/20 text-[10px]">(טרם הצטרף/ה)</span>}
                             </button>
                             <button onClick={() => setEditingAssigneeNote(prev => ({ ...prev, [a.id]: a.note ?? "" }))}

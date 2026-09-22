@@ -86,7 +86,7 @@ export async function PATCH(req: NextRequest) {
   const role = (session?.user as any)?.role
   if (!session?.user?.id || !isTeacherRole(role)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { id, assigneeId, done, note, title, link, deadline, importance } = await req.json()
+  const { id, assigneeId, done, note, title, link, deadline, importance, reminderAt } = await req.json()
 
   if (assigneeId) {
     const assignee = await prisma.staffTaskAssignee.findUnique({
@@ -105,6 +105,10 @@ export async function PATCH(req: NextRequest) {
       data: {
         ...(done !== undefined && { done: !!done }),
         ...(note !== undefined && { note: note?.trim() || null }),
+        ...(reminderAt !== undefined && {
+          reminderAt: reminderAt ? israelLocalToUtc(reminderAt) : null,
+          reminderSent: false, // a changed reminder time needs to fire again
+        }),
       },
     })
     return NextResponse.json({ assignee: updated })
