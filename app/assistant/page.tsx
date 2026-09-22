@@ -15,7 +15,7 @@ export default function AssistantPage() {
             <span className="text-lg">🤖</span>
           </div>
           <div>
-            <div className="font-semibold text-stone-900 text-sm">עוזר אישי</div>
+            <div className="font-semibold text-stone-900 text-sm">פקפקובי בוט - עוזר אישי</div>
             <div className="text-xs text-stone-500">מידע לוגיסטי על בית הספר</div>
           </div>
         </div>

@@ -1286,7 +1286,7 @@ function ParentHome({ session, data }: { session: any; data: HomeData | null }) 
               {[
                 { label: "עמוד הבית",   href: "/home",         emoji: "🏠" },
                 { label: "צ׳אט עם המחנך", href: "/chat",       emoji: "💬" },
-                { label: "עוזר אישי", href: "/assistant", emoji: "🤖" },
+                { label: "פקפקובי בוט - עוזר אישי", href: "/assistant", emoji: "🤖" },
                 { label: "הגדרות אישיות", href: "/manage", emoji: "⚙️" },
               ].map(item => (
                 <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}

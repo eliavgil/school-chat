@@ -137,7 +137,7 @@ export default function SchoolAssistantAdminPage() {
       <header className="bg-black/30 backdrop-blur-md border-b border-white/10 px-5 header-pt pb-4 flex items-center gap-4 sticky top-0 z-10">
         <Link href="/home" className="text-white/60 hover:text-white text-xl interactive">←</Link>
         <div className="flex-1">
-          <h1 className="font-semibold text-lg text-white">עוזר בית ספרי — מאגר ידע</h1>
+          <h1 className="font-semibold text-lg text-white">פקפקובי בוט - עוזר אישי — מאגר ידע</h1>
           <p className="text-white/40 text-xs">קבצים שהבוט הלוגיסטי לתלמידים והורים עונה מתוכם</p>
         </div>
       </header>

@@ -96,7 +96,7 @@ export default function AssistantChat() {
         {messages.length === 0 && !loading && (
           <div className="text-center py-6">
             <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3">🤖</div>
-            <p className="text-stone-800 font-medium text-sm mb-1">עוזר בית ספרי</p>
+            <p className="text-stone-800 font-medium text-sm mb-1">פקפקובי בוט - עוזר אישי</p>
             <p className="text-stone-500 text-xs mb-4">שאל אותי שאלות לוגיסטיות — תאריכים, מגמות, טפסים ועוד</p>
             <div className="flex flex-col gap-2 max-w-xs mx-auto">
               {QUICK_ACTIONS.map(qa => (
