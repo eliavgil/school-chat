@@ -108,23 +108,23 @@ export function StaffTasksTab() {
     fetchTasks()
   }
 
-  async function toggleAssignee(assigneeId: string, done: boolean) {
-    await fetch("/api/tasks/staff", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ assigneeId, done: !done }) })
+  function toggleAssignee(assigneeId: string, done: boolean) {
     setTasks(prev => prev.map(t => ({ ...t, assignees: t.assignees.map(a => a.id === assigneeId ? { ...a, done: !done } : a) })))
+    fetch("/api/tasks/staff", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ assigneeId, done: !done }) })
   }
 
-  async function saveAssigneeNote(assigneeId: string) {
+  function saveAssigneeNote(assigneeId: string) {
     const note = editingAssigneeNote[assigneeId] ?? ""
-    await fetch("/api/tasks/staff", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ assigneeId, note }) })
     setTasks(prev => prev.map(t => ({ ...t, assignees: t.assignees.map(a => a.id === assigneeId ? { ...a, note: note || null } : a) })))
     setEditingAssigneeNote(prev => { const next = { ...prev }; delete next[assigneeId]; return next })
+    fetch("/api/tasks/staff", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ assigneeId, note }) })
   }
 
-  async function saveTaskNote(taskId: string) {
+  function saveTaskNote(taskId: string) {
     const note = editingTaskNote[taskId] ?? ""
-    await fetch("/api/tasks/staff", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: taskId, note }) })
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, note: note || null } : t))
     setEditingTaskNote(prev => { const next = { ...prev }; delete next[taskId]; return next })
+    fetch("/api/tasks/staff", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: taskId, note }) })
   }
 
   async function remove(id: string) {
@@ -249,7 +249,7 @@ export function StaffTasksTab() {
                     </button>
                   ) : (
                     <button onClick={() => setEditingTaskNote(prev => ({ ...prev, [t.id]: "" }))}
-                      className="text-white/25 text-[11px] hover:text-white/50 interactive">
+                      className="text-white/50 hover:text-white hover:bg-white/15 text-[11px] interactive px-2 py-1 rounded-lg bg-white/8 border border-white/15">
                       + הערה כללית
                     </button>
                   )}
@@ -270,8 +270,8 @@ export function StaffTasksTab() {
                             {!a.userId && <span className="text-white/20 text-[10px]">(טרם הצטרף/ה)</span>}
                           </button>
                           <button onClick={() => setEditingAssigneeNote(prev => ({ ...prev, [a.id]: a.note ?? "" }))}
-                            className="text-white/25 hover:text-white text-[10px] interactive flex-shrink-0 px-1">
-                            {a.note ? "✎" : "+ הערה"}
+                            className="text-white/60 hover:text-white hover:bg-white/15 text-[11px] interactive flex-shrink-0 px-2 py-1 rounded-lg bg-white/8 border border-white/15">
+                            {a.note ? "✎ הערה" : "+ הערה"}
                           </button>
                         </div>
                         {!editingNote && a.note && <p className="text-white/35 text-[11px] pr-6 mt-0.5">{a.note}</p>}
