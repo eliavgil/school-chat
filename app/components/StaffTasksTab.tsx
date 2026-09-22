@@ -27,6 +27,7 @@ interface StaffAssigneeT {
   teacherLabel: string
   userId: string | null
   done: boolean
+  note: string | null
 }
 
 interface StaffTaskT {
@@ -34,6 +35,7 @@ interface StaffTaskT {
   title: string
   link: string | null
   deadline: string | null
+  note: string | null
   importance: Importance
   assignees: StaffAssigneeT[]
 }
@@ -55,7 +57,15 @@ export function StaffTasksTab() {
   const [deadline, setDeadline] = useState("")
   const [importance, setImportance] = useState<Importance>("BLUE")
   const [selected, setSelected] = useState<string[]>([])
+  const [reminderAt, setReminderAt] = useState("")
+  const [reminderTeachers, setReminderTeachers] = useState<string[]>([])
   const [saving, setSaving] = useState(false)
+
+  // Per-assignee note being edited right now (id -> draft text), and the
+  // task-level general note being edited (task id -> draft text) — both
+  // null/absent means "not currently open for editing".
+  const [editingAssigneeNote, setEditingAssigneeNote] = useState<Record<string, string>>({})
+  const [editingTaskNote, setEditingTaskNote] = useState<Record<string, string>>({})
 
   useEffect(() => { fetchTasks() }, [])
 
@@ -68,11 +78,19 @@ export function StaffTasksTab() {
   }
 
   function resetForm() {
-    setTitle(""); setLink(""); setDeadline(""); setImportance("BLUE"); setSelected([]); setShowAdd(false)
+    setTitle(""); setLink(""); setDeadline(""); setImportance("BLUE"); setSelected([])
+    setReminderAt(""); setReminderTeachers([]); setShowAdd(false)
   }
 
   function toggleSelected(name: string) {
-    setSelected(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name])
+    const wasSelected = selected.includes(name)
+    setSelected(prev => wasSelected ? prev.filter(n => n !== name) : [...prev, name])
+    // A teacher removed from "assigned to" can't still be picked "to remind"
+    if (wasSelected) setReminderTeachers(prev => prev.filter(n => n !== name))
+  }
+
+  function toggleReminderTeacher(name: string) {
+    setReminderTeachers(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name])
   }
 
   async function save() {
@@ -80,7 +98,10 @@ export function StaffTasksTab() {
     setSaving(true)
     await fetch("/api/tasks/staff", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, link: link || null, deadline: deadline || null, importance, assignees: selected }),
+      body: JSON.stringify({
+        title, link: link || null, deadline: deadline || null, importance, assignees: selected,
+        reminderAt: reminderAt || null, reminderTeachers,
+      }),
     })
     setSaving(false)
     resetForm()
@@ -90,6 +111,20 @@ export function StaffTasksTab() {
   async function toggleAssignee(assigneeId: string, done: boolean) {
     await fetch("/api/tasks/staff", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ assigneeId, done: !done }) })
     setTasks(prev => prev.map(t => ({ ...t, assignees: t.assignees.map(a => a.id === assigneeId ? { ...a, done: !done } : a) })))
+  }
+
+  async function saveAssigneeNote(assigneeId: string) {
+    const note = editingAssigneeNote[assigneeId] ?? ""
+    await fetch("/api/tasks/staff", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ assigneeId, note }) })
+    setTasks(prev => prev.map(t => ({ ...t, assignees: t.assignees.map(a => a.id === assigneeId ? { ...a, note: note || null } : a) })))
+    setEditingAssigneeNote(prev => { const next = { ...prev }; delete next[assigneeId]; return next })
+  }
+
+  async function saveTaskNote(taskId: string) {
+    const note = editingTaskNote[taskId] ?? ""
+    await fetch("/api/tasks/staff", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: taskId, note }) })
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, note: note || null } : t))
+    setEditingTaskNote(prev => { const next = { ...prev }; delete next[taskId]; return next })
   }
 
   async function remove(id: string) {
@@ -139,6 +174,26 @@ export function StaffTasksTab() {
               </div>
             )}
           </div>
+          {selected.length > 0 && (
+            <div>
+              <label className="text-white/40 text-xs mb-1.5 block">תזכורת (אופציונלי)</label>
+              <input type="datetime-local" value={reminderAt} onChange={e => setReminderAt(e.target.value)}
+                className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white/30" />
+              {reminderAt && (
+                <div className="mt-2 space-y-1.5">
+                  <p className="text-white/30 text-[11px]">למי לשלוח את התזכורת:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {selected.map(name => (
+                      <button key={name} type="button" onClick={() => toggleReminderTeacher(name)}
+                        className={`px-3 py-1.5 rounded-xl text-xs interactive btn-press transition-colors ${reminderTeachers.includes(name) ? "bg-blue-500/40 text-white" : "bg-white/5 text-white/40 hover:text-white/70"}`}>
+                        {name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           <div className="flex gap-2">
             <button onClick={save} disabled={!title.trim() || selected.length === 0 || saving}
               className="bg-white/20 hover:bg-white/30 text-white text-sm px-4 py-2 rounded-xl disabled:opacity-40 btn-press interactive transition-colors">
@@ -177,17 +232,60 @@ export function StaffTasksTab() {
                   {t.deadline && <span className={`text-[11px] ${overdue ? "text-red-400" : "text-white/40"}`}>📅 {fmtDate(t.deadline)}{overdue && " — פג תוקף"}</span>}
                   {t.link && <a href={t.link} target="_blank" rel="noopener noreferrer" className="text-blue-300/80 hover:text-blue-300 text-[11px] underline">🔗 קישור</a>}
                 </div>
-                <div className="space-y-1 pt-2 border-t border-white/5">
-                  {t.assignees.map(a => (
-                    <button key={a.id} onClick={() => toggleAssignee(a.id, a.done)}
-                      className="w-full flex items-center gap-2.5 py-1 interactive text-right">
-                      <span className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${a.done ? "bg-green-500 border-green-500" : "border-white/30"}`}>
-                        {a.done && <span className="text-white text-[8px]">✓</span>}
-                      </span>
-                      <span className={`text-xs ${a.done ? "text-white/35 line-through" : "text-white/70"}`}>{a.teacherLabel}</span>
-                      {!a.userId && <span className="text-white/20 text-[10px]">(טרם הצטרף/ה)</span>}
+
+                {/* General note on the task itself */}
+                <div className="mb-2">
+                  {t.id in editingTaskNote ? (
+                    <div className="flex gap-1.5">
+                      <input value={editingTaskNote[t.id]} onChange={e => setEditingTaskNote(prev => ({ ...prev, [t.id]: e.target.value }))}
+                        placeholder="הערה כללית..." autoFocus
+                        className="flex-1 bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-[11px] text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30" />
+                      <button onClick={() => saveTaskNote(t.id)} className="text-[11px] text-white/70 hover:text-white interactive px-1.5">שמור</button>
+                    </div>
+                  ) : t.note ? (
+                    <button onClick={() => setEditingTaskNote(prev => ({ ...prev, [t.id]: t.note ?? "" }))}
+                      className="text-white/50 text-[11px] text-right w-full hover:text-white/70 interactive">
+                      💬 {t.note}
                     </button>
-                  ))}
+                  ) : (
+                    <button onClick={() => setEditingTaskNote(prev => ({ ...prev, [t.id]: "" }))}
+                      className="text-white/25 text-[11px] hover:text-white/50 interactive">
+                      + הערה כללית
+                    </button>
+                  )}
+                </div>
+
+                <div className="space-y-1.5 pt-2 border-t border-white/5">
+                  {t.assignees.map(a => {
+                    const editingNote = a.id in editingAssigneeNote
+                    return (
+                      <div key={a.id}>
+                        <div className="w-full flex items-center gap-2">
+                          <button onClick={() => toggleAssignee(a.id, a.done)}
+                            className="flex-1 min-w-0 flex items-center gap-2.5 py-0.5 interactive text-right">
+                            <span className={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center transition-colors ${a.done ? "bg-green-500 border-green-500" : "border-white/30"}`}>
+                              {a.done && <span className="text-white text-[8px]">✓</span>}
+                            </span>
+                            <span className={`text-xs ${a.done ? "text-white/35 line-through" : "text-white/70"}`}>{a.teacherLabel}</span>
+                            {!a.userId && <span className="text-white/20 text-[10px]">(טרם הצטרף/ה)</span>}
+                          </button>
+                          <button onClick={() => setEditingAssigneeNote(prev => ({ ...prev, [a.id]: a.note ?? "" }))}
+                            className="text-white/25 hover:text-white text-[10px] interactive flex-shrink-0 px-1">
+                            {a.note ? "✎" : "+ הערה"}
+                          </button>
+                        </div>
+                        {!editingNote && a.note && <p className="text-white/35 text-[11px] pr-6 mt-0.5">{a.note}</p>}
+                        {editingNote && (
+                          <div className="flex gap-1.5 mt-1 pr-6">
+                            <input value={editingAssigneeNote[a.id]} onChange={e => setEditingAssigneeNote(prev => ({ ...prev, [a.id]: e.target.value }))}
+                              placeholder="הערה..." autoFocus
+                              className="flex-1 bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-[11px] text-white placeholder:text-white/30 focus:outline-none focus:ring-1 focus:ring-white/30" />
+                            <button onClick={() => saveAssigneeNote(a.id)} className="text-[11px] text-white/70 hover:text-white interactive px-1.5">שמור</button>
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
                 </div>
               </div>
             )

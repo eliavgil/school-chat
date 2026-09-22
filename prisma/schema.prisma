@@ -369,6 +369,7 @@ model StaffTask {
   title       String              @db.Text
   link        String?             @db.Text
   deadline    DateTime?
+  note        String?             @db.Text // general note on the task, separate from any per-assignee note
   importance  TaskImportance      @default(BLUE)
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
@@ -388,6 +389,7 @@ model StaffTaskAssignee {
   teacherLabel String
   userId       String?
   done         Boolean   @default(false)
+  note         String?   @db.Text // e.g. "will finish by Thursday" — visible next to this teacher only
   reminderAt   DateTime?
   reminderSent Boolean   @default(false)
   staffTask    StaffTask @relation(fields: [staffTaskId], references: [id], onDelete: Cascade)

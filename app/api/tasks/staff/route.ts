@@ -38,10 +38,15 @@ export async function POST(req: NextRequest) {
   const role = (session?.user as any)?.role
   if (!session?.user?.id || !isTeacherRole(role)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { title, link, deadline, importance, assignees } = await req.json()
+  const { title, link, deadline, importance, assignees, reminderAt, reminderTeachers } = await req.json()
   if (!title?.trim()) return NextResponse.json({ error: "Missing title" }, { status: 400 })
   const names: string[] = Array.isArray(assignees) ? assignees.map((n: string) => n.trim()).filter(Boolean) : []
   if (names.length === 0) return NextResponse.json({ error: "Missing assignees" }, { status: 400 })
+
+  // One reminder date+time, applied only to whichever assignees were
+  // actually picked to be reminded — not every assignee has to be.
+  const remindSet = new Set(Array.isArray(reminderTeachers) ? reminderTeachers : [])
+  const reminderDate = reminderAt ? new Date(reminderAt) : null
 
   const task = await prisma.staffTask.create({
     data: {
@@ -50,7 +55,12 @@ export async function POST(req: NextRequest) {
       link: link?.trim() || null,
       deadline: deadline ? new Date(deadline) : null,
       importance: importance ?? "BLUE",
-      assignees: { create: names.map(teacherLabel => ({ teacherLabel })) },
+      assignees: {
+        create: names.map(teacherLabel => ({
+          teacherLabel,
+          reminderAt: reminderDate && remindSet.has(teacherLabel) ? reminderDate : null,
+        })),
+      },
     },
     include: { assignees: true },
   })
@@ -64,7 +74,7 @@ export async function PATCH(req: NextRequest) {
   const role = (session?.user as any)?.role
   if (!session?.user?.id || !isTeacherRole(role)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { id, assigneeId, done, title, link, deadline, importance } = await req.json()
+  const { id, assigneeId, done, note, title, link, deadline, importance } = await req.json()
 
   if (assigneeId) {
     const assignee = await prisma.staffTaskAssignee.findUnique({
@@ -73,12 +83,18 @@ export async function PATCH(req: NextRequest) {
     })
     if (!assignee) return NextResponse.json({ error: "Not found" }, { status: 404 })
     // Either the coordinator who created the task, or the linked teacher
-    // themselves once their account exists, can toggle this.
+    // themselves once their account exists, can toggle this / leave a note.
     const isOwner = assignee.staffTask.createdById === session.user.id
     const isAssignee = assignee.userId === session.user.id
     if (!isOwner && !isAssignee) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
-    const updated = await prisma.staffTaskAssignee.update({ where: { id: assigneeId }, data: { done: !!done } })
+    const updated = await prisma.staffTaskAssignee.update({
+      where: { id: assigneeId },
+      data: {
+        ...(done !== undefined && { done: !!done }),
+        ...(note !== undefined && { note: note?.trim() || null }),
+      },
+    })
     return NextResponse.json({ assignee: updated })
   }
 
@@ -93,6 +109,7 @@ export async function PATCH(req: NextRequest) {
       ...(link !== undefined && { link: link?.trim() || null }),
       ...(deadline !== undefined && { deadline: deadline ? new Date(deadline) : null }),
       ...(importance !== undefined && { importance }),
+      ...(note !== undefined && { note: note?.trim() || null }),
     },
     include: { assignees: true },
   })
