@@ -49,7 +49,11 @@ export default function SchoolAssistantAdminPage() {
   const [instructionsLoading, setInstructionsLoading] = useState(true)
   const [instructionsSaving, setInstructionsSaving] = useState(false)
   const [instructionsSaved, setInstructionsSaved] = useState(false)
+  const [dirLoading, setDirLoading] = useState(false)
+  const [dirResult, setDirResult] = useState<{ updated: number; total: number; notFound: string[]; ambiguous: string[]; errors: string[] } | null>(null)
+  const [dirError, setDirError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const dirInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { load(); loadInstructions() }, [])
 
@@ -113,6 +117,28 @@ export default function SchoolAssistantAdminPage() {
     setUploading(false)
     load()
     if (fileInputRef.current) fileInputRef.current.value = ""
+  }
+
+  async function handleDirectoryFile(files: FileList | null) {
+    const file = files?.[0]
+    if (!file) return
+    setDirLoading(true)
+    setDirError(null)
+    setDirResult(null)
+    try {
+      const bytes = await file.arrayBuffer()
+      const cleanBlob = new Blob([bytes], { type: MIME_BY_EXT["xlsx"] })
+      const fd = new FormData()
+      fd.append("file", cleanBlob, "upload.xlsx")
+      const res = await fetch("/api/admin/import-student-directory", { method: "POST", body: fd })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "שגיאה")
+      setDirResult(data)
+    } catch (e: any) {
+      setDirError(e?.message ?? "שגיאה")
+    }
+    setDirLoading(false)
+    if (dirInputRef.current) dirInputRef.current.value = ""
   }
 
   async function addSheet() {
@@ -189,9 +215,39 @@ export default function SchoolAssistantAdminPage() {
       <div className="max-w-2xl mx-auto p-4 space-y-5">
         <div className="bg-white/8 border border-white/15 rounded-2xl p-4 space-y-3">
           <div>
+            <h2 className="text-white text-sm font-medium mb-1">ייבוא אלפון תלמידים</h2>
+            <p className="text-white/40 text-xs leading-relaxed">
+              קובץ אלפון (ייצוא ממשוב) — מייבא לכל תלמיד/ה בהתאמה: מגמה, יישוב מגורים, ושמות ההורים. מותאם בשמו לתלמיד קיים במערכת (ואז לפי ת.ז בהרצות חוזרות). שדות אחרים בקובץ (ת.ז הורים, טלפונים, כתובת מדויקת וכו׳) לא מיובאים בכלל — רק מה שהבוט צריך כדי להתייחס לתלמיד/ה עצמו/ה, לא יותר.
+            </p>
+          </div>
+          <input ref={dirInputRef} type="file" accept=".xlsx,.xls" className="hidden"
+            onChange={e => handleDirectoryFile(e.target.files)} />
+          <button onClick={() => dirInputRef.current?.click()} disabled={dirLoading}
+            className="w-full bg-white/15 hover:bg-white/25 text-white text-sm font-medium py-2.5 rounded-xl interactive btn-press transition-colors disabled:opacity-40">
+            {dirLoading ? "מייבא..." : "+ ייבוא קובץ אלפון"}
+          </button>
+          {dirError && <p className="text-red-400 text-xs">{dirError}</p>}
+          {dirResult && (
+            <div className="text-xs space-y-1">
+              <p className="text-green-400">✓ עודכנו {dirResult.updated} מתוך {dirResult.total}</p>
+              {dirResult.notFound.length > 0 && (
+                <p className="text-white/40">לא נמצאו במערכת ({dirResult.notFound.length}): {dirResult.notFound.join(", ")}</p>
+              )}
+              {dirResult.ambiguous.length > 0 && (
+                <p className="text-amber-400">שם כפול, לא הצלחתי להכריע ({dirResult.ambiguous.length}): {dirResult.ambiguous.join(", ")}</p>
+              )}
+              {dirResult.errors.length > 0 && (
+                <p className="text-red-400">שגיאה בעדכון ({dirResult.errors.length}): {dirResult.errors.join(", ")}</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white/8 border border-white/15 rounded-2xl p-4 space-y-3">
+          <div>
             <h2 className="text-white text-sm font-medium mb-1">הוראות לבוט</h2>
             <p className="text-white/40 text-xs leading-relaxed">
-              טון דיבור, מה לענות כשמשהו לא ידוע, ניסוחים שחשוב להשתמש/להימנע מהם וכד׳ — בנפרד מהעובדות עצמן. כמה חוקים תמיד קבועים ולא ניתנים לשינוי מכאן: הבוט לעולם לא מלמד, לא פותר תרגילים, ולא נוגע בציונים או במידע אישי/אקדמי — גם אם ההוראות כאן יגידו אחרת.
+              טון דיבור, מה לענות כשמשהו לא ידוע, ניסוחים שחשוב להשתמש/להימנע מהם וכד׳ — בנפרד מהעובדות עצמן. כמה חוקים תמיד קבועים ולא ניתנים לשינוי מכאן: הבוט לעולם לא מלמד, לא פותר תרגילים, לא נוגע בציונים, ולעולם לא חושף מידע אישי (כתובת/הורים/פרטים) על שום תלמיד/ה מלבד זה/זו שמדבר/ת איתו כרגע — גם אם ההוראות כאן יגידו אחרת.
             </p>
           </div>
           {instructionsLoading ? (

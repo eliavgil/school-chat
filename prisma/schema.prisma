@@ -131,6 +131,15 @@ model Student {
   track           String?
   mathUnits       Int?
   englishUnits    Int?
+  // Imported from the school's own "אלפון" (student directory) export —
+  // deliberately a narrow subset, not the whole file: only what the
+  // assistant bot needs to greet a student personally and answer about
+  // *themselves*. Never surfaced about any other student. idNumber above
+  // is also populated by this same import (matches students by name on
+  // first run, then by idNumber on any re-run).
+  city            String? // ישוב 1 — city/town, not the exact street address
+  parent1Name     String?
+  parent2Name     String?
   messages        Message[]
   parents         ParentStudent[]
   class           Class                  @relation(fields: [classId], references: [id])
