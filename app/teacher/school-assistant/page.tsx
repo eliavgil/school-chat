@@ -76,7 +76,12 @@ export default function SchoolAssistantAdminPage() {
       const file = list[i]
       setUploads(prev => prev.map((u, idx) => idx === i ? { ...u, status: "uploading" } : u))
       const fd = new FormData()
-      fd.append("file", file)
+      // Some browsers throw building the multipart body when the File's own
+      // .name has non-Latin characters (Hebrew filenames here) — give the
+      // part itself a plain ASCII name and send the real one separately as
+      // a normal form field instead, which the server already prefers.
+      const ext = file.name.split(".").pop() || "bin"
+      fd.append("file", file, `upload.${ext}`)
       fd.append("filename", file.name)
       try {
         const res = await fetch("/api/admin/school-knowledge", { method: "POST", body: fd })
