@@ -49,6 +49,30 @@ function extractSpreadsheetId(url: string): string | null {
   return m ? m[1] : (/^[a-zA-Z0-9-_]{20,}$/.test(url.trim()) ? url.trim() : null)
 }
 
+// Rough HTML → text: drop script/style entirely, strip remaining tags,
+// unescape the handful of entities that actually show up in body copy.
+// Good enough for a static published page (e.g. a Canva site) — no need
+// for a full DOM parser dependency for this.
+function stripHtml(html: string): string {
+  const withoutJunk = html
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+  const text = withoutJunk
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+  return text.replace(/[ \t]+/g, " ").replace(/\n\s*\n+/g, "\n").trim()
+}
+
+function extractTitle(html: string): string | null {
+  const m = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)
+  return m ? m[1].trim() : null
+}
+
 export async function GET() {
   const session = await getServerSession(authOptions)
   const role = (session?.user as any)?.role
@@ -67,7 +91,50 @@ export async function POST(req: NextRequest) {
 
   // ── Google Sheets link, instead of an uploaded file ──────
   if (contentType.includes("application/json")) {
-    const { sheetUrl } = await req.json()
+    const body = await req.json()
+
+    // ── A regular webpage link (e.g. a published Canva site) ──
+    if (body.pageUrl) {
+      const pageUrl = String(body.pageUrl).trim()
+      if (!/^https?:\/\//i.test(pageUrl)) return NextResponse.json({ error: "כתובת לא תקינה — צריכה להתחיל ב-http(s)://" }, { status: 400 })
+
+      let res: Response
+      try {
+        res = await fetch(pageUrl, { headers: { "User-Agent": "Mozilla/5.0 (compatible; SchoolAssistantBot/1.0)" } })
+      } catch (e: any) {
+        return NextResponse.json({ error: `לא הצלחתי לגשת לכתובת: ${e?.message ?? "unknown"}` }, { status: 502 })
+      }
+      if (!res.ok) return NextResponse.json({ error: `הדף החזיר שגיאה (${res.status})` }, { status: 502 })
+
+      const pageContentType = res.headers.get("content-type") || ""
+      let contentBlock: Anthropic.Messages.ContentBlockParam
+      let title = pageUrl
+      if (pageContentType.includes("application/pdf")) {
+        const buffer = Buffer.from(await res.arrayBuffer())
+        if (buffer.length > MAX_BYTES) return NextResponse.json({ error: "הקובץ בכתובת גדול מדי (מקסימום 15MB)" }, { status: 413 })
+        contentBlock = { type: "document", source: { type: "base64", media_type: "application/pdf", data: buffer.toString("base64") } }
+      } else {
+        const html = await res.text()
+        title = extractTitle(html) || title
+        const text = stripHtml(html)
+        if (!text) return NextResponse.json({ error: "לא הצלחתי לחלץ טקסט מהדף — ייתכן שהוא נטען כולו ב-JavaScript" }, { status: 422 })
+        contentBlock = { type: "text", text }
+      }
+
+      let extractedFacts: string
+      try {
+        extractedFacts = await extractFacts(contentBlock)
+      } catch (e: any) {
+        return NextResponse.json({ error: `שגיאה בעיבוד: ${e?.message ?? "unknown"}` }, { status: 502 })
+      }
+
+      const doc = await prisma.schoolKnowledgeDoc.create({
+        data: { filename: title, fileUrl: pageUrl, extractedFacts, uploadedById: session.user.id },
+      })
+      return NextResponse.json({ doc })
+    }
+
+    const { sheetUrl } = body
     const spreadsheetId = extractSpreadsheetId((sheetUrl || "").trim())
     if (!spreadsheetId) return NextResponse.json({ error: "לא זיהיתי קישור/מזהה תקין לגיליון" }, { status: 400 })
 

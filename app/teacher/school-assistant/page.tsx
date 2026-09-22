@@ -28,6 +28,9 @@ export default function SchoolAssistantAdminPage() {
   const [sheetUrl, setSheetUrl] = useState("")
   const [sheetLoading, setSheetLoading] = useState(false)
   const [sheetError, setSheetError] = useState<string | null>(null)
+  const [pageUrl, setPageUrl] = useState("")
+  const [pageLoading, setPageLoading] = useState(false)
+  const [pageError, setPageError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [instructions, setInstructions] = useState("")
   const [instructionsLoading, setInstructionsLoading] = useState(true)
@@ -107,6 +110,25 @@ export default function SchoolAssistantAdminPage() {
       setSheetError(e?.message ?? "שגיאה")
     }
     setSheetLoading(false)
+  }
+
+  async function addPage() {
+    if (!pageUrl.trim()) return
+    setPageLoading(true)
+    setPageError(null)
+    try {
+      const res = await fetch("/api/admin/school-knowledge", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pageUrl: pageUrl.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "שגיאה")
+      setPageUrl("")
+      load()
+    } catch (e: any) {
+      setPageError(e?.message ?? "שגיאה")
+    }
+    setPageLoading(false)
   }
 
   function copyEmail() {
@@ -217,6 +239,21 @@ export default function SchoolAssistantAdminPage() {
             </button>
           </div>
           {sheetError && <p className="text-red-400 text-xs">{sheetError}</p>}
+        </div>
+
+        <div className="bg-white/8 border border-white/15 rounded-2xl p-4 space-y-3">
+          <p className="text-white/50 text-xs leading-relaxed">
+            אפשר גם להדביק קישור לדף אינטרנט רגיל (למשל אתר שפורסם מ-Canva) — הבוט יקרא את הטקסט מהדף. עובד רק על דפים שהתוכן שלהם קיים ב-HTML עצמו, לא כאלה שנטענים לגמרי ב-JavaScript אחרי הטעינה.
+          </p>
+          <div className="flex gap-2">
+            <input value={pageUrl} onChange={e => setPageUrl(e.target.value)} dir="ltr" placeholder="https://..."
+              className="flex-1 bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/30" />
+            <button onClick={addPage} disabled={pageLoading || !pageUrl.trim()}
+              className="bg-white/15 hover:bg-white/25 text-white text-sm px-4 py-2 rounded-xl interactive btn-press transition-colors disabled:opacity-40 flex-shrink-0">
+              {pageLoading ? "מוסיף..." : "הוסף"}
+            </button>
+          </div>
+          {pageError && <p className="text-red-400 text-xs">{pageError}</p>}
         </div>
 
         {loading && <p className="text-white/40 text-sm text-center py-8">טוען...</p>}
