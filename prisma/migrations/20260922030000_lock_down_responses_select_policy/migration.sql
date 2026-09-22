@@ -1,0 +1,12 @@
+-- `responses` also had a SELECT policy ("students_read_responses",
+-- checked into supabase-lessons-schema.sql as `using (true)` — "open for
+-- now; tighten later") letting anyone with the public anon key read every
+-- student's answers across every lesson and session. Supabase's linter
+-- doesn't flag open SELECT policies by default (deliberately, since public
+-- read access is sometimes intentional), but this one isn't: confirmed via
+-- the codebase that every read of `responses` (app/api/responses,
+-- app/api/results, app/api/tracking, app/api/debug-responses,
+-- app/api/seed/delete-lesson) goes through the Supabase service-role key
+-- server-side, which bypasses RLS regardless of policies — nothing needs
+-- this open policy to function.
+DROP POLICY IF EXISTS "students_read_responses" ON "responses";
