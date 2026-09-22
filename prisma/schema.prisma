@@ -333,6 +333,11 @@ model SchoolKnowledgeDoc {
   filename       String
   fileUrl        String   // original file, kept for the admin to re-download/review
   extractedFacts String   @db.Text
+  // Teacher-written guidance on how to treat *this specific document* — e.g.
+  // "this is the official teacher directory, give out these numbers freely"
+  // or "dates here are tentative, say so". Fed to the extraction step as
+  // context, and shown alongside the facts in the bot's own system prompt.
+  note           String?  @db.Text
   uploadedById   String
   createdAt      DateTime @default(now())
 }

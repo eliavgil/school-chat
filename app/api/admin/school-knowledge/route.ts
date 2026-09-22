@@ -29,11 +29,14 @@ const EXTRACTION_PROMPT = `אתה עוזר שמכין מאגר עובדות עב
 כתוב את התשובה כרשימת נקודות תמציתית בעברית, מוכנה להזרקה ישירה למאגר ידע של בוט.
 אם אין בחומר שום עובדה שימושית, כתוב "לא נמצא מידע רלוונטי" בלבד.`
 
-async function extractFacts(contentBlock: Anthropic.Messages.ContentBlockParam): Promise<string> {
+async function extractFacts(contentBlock: Anthropic.Messages.ContentBlockParam, note?: string): Promise<string> {
+  const prompt = note
+    ? `${EXTRACTION_PROMPT}\n\nהערת המחנך/ת על החומר הזה — קח אותה בחשבון בזמן החילוץ:\n${note}`
+    : EXTRACTION_PROMPT
   const msg = await anthropic.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 8192,
-    messages: [{ role: "user", content: [contentBlock, { type: "text", text: EXTRACTION_PROMPT }] }],
+    messages: [{ role: "user", content: [contentBlock, { type: "text", text: prompt }] }],
   })
   const textBlock = msg.content.find((b): b is Anthropic.TextBlock => b.type === "text")
   return textBlock?.text?.trim() || "לא נמצא מידע רלוונטי"
@@ -97,6 +100,7 @@ export async function POST(req: NextRequest) {
     // ── A regular webpage link (e.g. a published Canva site) ──
     if (body.pageUrl) {
       const pageUrl = String(body.pageUrl).trim()
+      const note: string | undefined = body.note?.trim() || undefined
       if (!/^https?:\/\//i.test(pageUrl)) return NextResponse.json({ error: "כתובת לא תקינה — צריכה להתחיל ב-http(s)://" }, { status: 400 })
 
       let res: Response
@@ -124,18 +128,18 @@ export async function POST(req: NextRequest) {
 
       let extractedFacts: string
       try {
-        extractedFacts = await extractFacts(contentBlock)
+        extractedFacts = await extractFacts(contentBlock, note)
       } catch (e: any) {
         return NextResponse.json({ error: `שגיאה בעיבוד: ${e?.message ?? "unknown"}` }, { status: 502 })
       }
 
       const doc = await prisma.schoolKnowledgeDoc.create({
-        data: { filename: title, fileUrl: pageUrl, extractedFacts, uploadedById: session.user.id },
+        data: { filename: title, fileUrl: pageUrl, extractedFacts, note, uploadedById: session.user.id },
       })
       return NextResponse.json({ doc })
     }
 
-    const { sheetUrl } = body
+    const { sheetUrl, note: sheetNote } = body
     const spreadsheetId = extractSpreadsheetId((sheetUrl || "").trim())
     if (!spreadsheetId) return NextResponse.json({ error: "לא זיהיתי קישור/מזהה תקין לגיליון" }, { status: 400 })
 
@@ -163,15 +167,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: `שגיאה בקריאת הגיליון: ${e?.message ?? "unknown"}` }, { status: 502 })
     }
 
+    const note: string | undefined = sheetNote?.trim() || undefined
     let extractedFacts: string
     try {
-      extractedFacts = await extractFacts({ type: "text", text })
+      extractedFacts = await extractFacts({ type: "text", text }, note)
     } catch (e: any) {
       return NextResponse.json({ error: `שגיאה בעיבוד: ${e?.message ?? "unknown"}` }, { status: 502 })
     }
 
     const doc = await prisma.schoolKnowledgeDoc.create({
-      data: { filename: title, fileUrl: sheetUrl, extractedFacts, uploadedById: session.user.id },
+      data: { filename: title, fileUrl: sheetUrl, extractedFacts, note, uploadedById: session.user.id },
     })
     return NextResponse.json({ doc })
   }
@@ -190,6 +195,8 @@ export async function POST(req: NextRequest) {
 
   const rawFilename = formData.get("filename") as string | null
   const filename = rawFilename ? decodeURIComponent(rawFilename) : "קובץ"
+  const rawNote = formData.get("note") as string | null
+  const note = rawNote ? decodeURIComponent(rawNote).trim() || undefined : undefined
   const mimeType = file.type
   const buffer = Buffer.from(await file.arrayBuffer())
 
@@ -215,7 +222,7 @@ export async function POST(req: NextRequest) {
 
   let extractedFacts: string
   try {
-    extractedFacts = await extractFacts(contentBlock)
+    extractedFacts = await extractFacts(contentBlock, note)
   } catch (e: any) {
     return NextResponse.json({ error: `שגיאה בעיבוד הקובץ: ${e?.message ?? "unknown"}` }, { status: 502 })
   }
@@ -229,7 +236,7 @@ export async function POST(req: NextRequest) {
   const { data: { publicUrl } } = sb.storage.from(BUCKET).getPublicUrl(path)
 
   const doc = await prisma.schoolKnowledgeDoc.create({
-    data: { filename, fileUrl: publicUrl, extractedFacts, uploadedById: session.user.id },
+    data: { filename, fileUrl: publicUrl, extractedFacts, note, uploadedById: session.user.id },
   })
   return NextResponse.json({ doc })
 }
@@ -239,10 +246,16 @@ export async function PATCH(req: NextRequest) {
   const role = (session?.user as any)?.role
   if (!session?.user?.id || !isTeacherRole(role)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const { id, extractedFacts } = await req.json()
-  if (!id || extractedFacts === undefined) return NextResponse.json({ error: "Missing fields" }, { status: 400 })
+  const { id, extractedFacts, note } = await req.json()
+  if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 })
 
-  const doc = await prisma.schoolKnowledgeDoc.update({ where: { id }, data: { extractedFacts } })
+  const doc = await prisma.schoolKnowledgeDoc.update({
+    where: { id },
+    data: {
+      ...(extractedFacts !== undefined && { extractedFacts }),
+      ...(note !== undefined && { note: note?.trim() || null }),
+    },
+  })
   return NextResponse.json({ doc })
 }
 

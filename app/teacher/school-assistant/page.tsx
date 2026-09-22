@@ -8,6 +8,7 @@ interface DocT {
   filename: string
   fileUrl: string
   extractedFacts: string
+  note: string | null
   createdAt: string
 }
 
@@ -37,11 +38,14 @@ export default function SchoolAssistantAdminPage() {
   const [loading, setLoading] = useState(true)
   const [uploads, setUploads] = useState<UploadItem[]>([])
   const [uploading, setUploading] = useState(false)
-  const [editing, setEditing] = useState<Record<string, string>>({})
+  const [uploadNote, setUploadNote] = useState("")
+  const [editing, setEditing] = useState<Record<string, { extractedFacts: string; note: string }>>({})
   const [sheetUrl, setSheetUrl] = useState("")
+  const [sheetNote, setSheetNote] = useState("")
   const [sheetLoading, setSheetLoading] = useState(false)
   const [sheetError, setSheetError] = useState<string | null>(null)
   const [pageUrl, setPageUrl] = useState("")
+  const [pageNote, setPageNote] = useState("")
   const [pageLoading, setPageLoading] = useState(false)
   const [pageError, setPageError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -105,6 +109,7 @@ export default function SchoolAssistantAdminPage() {
         const fd = new FormData()
         fd.append("file", cleanBlob, `upload.${ext}`)
         fd.append("filename", encodeURIComponent(file.name))
+        if (uploadNote.trim()) fd.append("note", encodeURIComponent(uploadNote.trim()))
         const res = await fetch("/api/admin/school-knowledge", { method: "POST", body: fd })
         const data = await res.json()
         if (!res.ok) throw new Error(data.error || "שגיאה")
@@ -115,6 +120,7 @@ export default function SchoolAssistantAdminPage() {
     }
 
     setUploading(false)
+    setUploadNote("")
     load()
     if (fileInputRef.current) fileInputRef.current.value = ""
   }
@@ -148,11 +154,12 @@ export default function SchoolAssistantAdminPage() {
     try {
       const res = await fetch("/api/admin/school-knowledge", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sheetUrl: sheetUrl.trim() }),
+        body: JSON.stringify({ sheetUrl: sheetUrl.trim(), note: sheetNote.trim() || undefined }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "שגיאה")
       setSheetUrl("")
+      setSheetNote("")
       load()
     } catch (e: any) {
       setSheetError(e?.message ?? "שגיאה")
@@ -167,11 +174,12 @@ export default function SchoolAssistantAdminPage() {
     try {
       const res = await fetch("/api/admin/school-knowledge", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pageUrl: pageUrl.trim() }),
+        body: JSON.stringify({ pageUrl: pageUrl.trim(), note: pageNote.trim() || undefined }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || "שגיאה")
       setPageUrl("")
+      setPageNote("")
       load()
     } catch (e: any) {
       setPageError(e?.message ?? "שגיאה")
@@ -187,12 +195,13 @@ export default function SchoolAssistantAdminPage() {
   }
 
   async function saveEdit(id: string) {
-    const extractedFacts = editing[id] ?? ""
+    const draft = editing[id]
+    if (!draft) return
     await fetch("/api/admin/school-knowledge", {
       method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, extractedFacts }),
+      body: JSON.stringify({ id, extractedFacts: draft.extractedFacts, note: draft.note }),
     })
-    setDocs(prev => prev.map(d => d.id === id ? { ...d, extractedFacts } : d))
+    setDocs(prev => prev.map(d => d.id === id ? { ...d, extractedFacts: draft.extractedFacts, note: draft.note || null } : d))
     setEditing(prev => { const next = { ...prev }; delete next[id]; return next })
   }
 
@@ -269,6 +278,9 @@ export default function SchoolAssistantAdminPage() {
           <p className="text-white/50 text-xs leading-relaxed">
             אפשר לזרוק כמה קבצים שרוצים בבת אחת — PDF, אקסל (xlsx/xls), תמונות (jpg/png) או טקסט (txt/md/csv). לכל קובץ, Claude יעבור עליו ויחלץ ממנו את העובדות הרלוונטיות אוטומטית; אפשר לערוך את מה שחולץ בהמשך אם צריך לתקן משהו. קבצי Word — יש להמיר קודם ל-PDF.
           </p>
+          <input value={uploadNote} onChange={e => setUploadNote(e.target.value)}
+            placeholder="הערה אופציונלית — איך להתייחס לקבצים האלה (חלה על כל הקבצים שתבחר כעת)"
+            className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-white/30" />
           <input ref={fileInputRef} type="file" multiple accept=".pdf,.xlsx,.xls,image/*,.txt,.md,.csv" className="hidden"
             onChange={e => handleFiles(e.target.files)} />
           <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
@@ -316,6 +328,9 @@ export default function SchoolAssistantAdminPage() {
               {sheetLoading ? "מוסיף..." : "הוסף"}
             </button>
           </div>
+          <input value={sheetNote} onChange={e => setSheetNote(e.target.value)}
+            placeholder="הערה אופציונלית — איך להתייחס לגיליון הזה"
+            className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-white/30" />
           {sheetError && <p className="text-red-400 text-xs">{sheetError}</p>}
         </div>
 
@@ -331,6 +346,9 @@ export default function SchoolAssistantAdminPage() {
               {pageLoading ? "מוסיף..." : "הוסף"}
             </button>
           </div>
+          <input value={pageNote} onChange={e => setPageNote(e.target.value)}
+            placeholder="הערה אופציונלית — איך להתייחס לדף הזה"
+            className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-white/30" />
           {pageError && <p className="text-red-400 text-xs">{pageError}</p>}
         </div>
 
@@ -358,7 +376,7 @@ export default function SchoolAssistantAdminPage() {
                     </div>
                     <div className="flex items-center gap-1 flex-shrink-0">
                       {!isEditing && (
-                        <button onClick={() => setEditing(prev => ({ ...prev, [d.id]: d.extractedFacts }))}
+                        <button onClick={() => setEditing(prev => ({ ...prev, [d.id]: { extractedFacts: d.extractedFacts, note: d.note ?? "" } }))}
                           className="text-white/40 hover:text-white text-xs interactive px-2 py-1 rounded-lg bg-white/8">
                           ✎ ערוך
                         </button>
@@ -371,9 +389,18 @@ export default function SchoolAssistantAdminPage() {
 
                   {isEditing ? (
                     <div className="space-y-2">
-                      <textarea value={editing[d.id]} onChange={e => setEditing(prev => ({ ...prev, [d.id]: e.target.value }))}
-                        rows={6}
-                        className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-xs text-white leading-relaxed focus:outline-none focus:ring-1 focus:ring-white/30" />
+                      <div>
+                        <label className="text-white/30 text-[10px] mb-1 block">הערה למחנך/ת (איך להתייחס לחומר הזה)</label>
+                        <input value={editing[d.id].note} onChange={e => setEditing(prev => ({ ...prev, [d.id]: { ...prev[d.id], note: e.target.value } }))}
+                          placeholder="לדוגמה: זה האלפון הרשמי של המורים — אפשר למסור טלפונים מכאן בחופשיות"
+                          className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-xs text-white placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-white/30" />
+                      </div>
+                      <div>
+                        <label className="text-white/30 text-[10px] mb-1 block">העובדות שחולצו</label>
+                        <textarea value={editing[d.id].extractedFacts} onChange={e => setEditing(prev => ({ ...prev, [d.id]: { ...prev[d.id], extractedFacts: e.target.value } }))}
+                          rows={6}
+                          className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-xs text-white leading-relaxed focus:outline-none focus:ring-1 focus:ring-white/30" />
+                      </div>
                       <div className="flex gap-2">
                         <button onClick={() => saveEdit(d.id)} className="text-xs text-white/80 hover:text-white interactive bg-white/15 px-3 py-1.5 rounded-lg">שמור</button>
                         <button onClick={() => setEditing(prev => { const next = { ...prev }; delete next[d.id]; return next })}
@@ -381,7 +408,10 @@ export default function SchoolAssistantAdminPage() {
                       </div>
                     </div>
                   ) : (
-                    <p className="text-white/50 text-xs leading-relaxed whitespace-pre-wrap">{d.extractedFacts}</p>
+                    <>
+                      {d.note && <p className="text-white/35 text-[11px] mb-1.5">💬 {d.note}</p>}
+                      <p className="text-white/50 text-xs leading-relaxed whitespace-pre-wrap">{d.extractedFacts}</p>
+                    </>
                   )}
                 </div>
               )

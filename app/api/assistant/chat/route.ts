@@ -141,11 +141,13 @@ export async function POST(req: NextRequest) {
   }
 
   const [docs, ctx, settings] = await Promise.all([
-    prisma.schoolKnowledgeDoc.findMany({ select: { filename: true, extractedFacts: true } }),
+    prisma.schoolKnowledgeDoc.findMany({ select: { filename: true, extractedFacts: true, note: true } }),
     resolveStudentContext(session.user.id, role),
     prisma.schoolAssistantSettings.findUnique({ where: { id: "default" }, select: { instructions: true } }),
   ])
-  const facts = docs.map(d => `### ${d.filename}\n${d.extractedFacts}`).join("\n\n")
+  const facts = docs
+    .map(d => `### ${d.filename}${d.note ? ` — הערת המחנך/ת: ${d.note}` : ""}\n${d.extractedFacts}`)
+    .join("\n\n")
   const systemPrompt = buildSystemPrompt(facts, ctx, settings?.instructions ?? "")
 
   const encoder = new TextEncoder()
