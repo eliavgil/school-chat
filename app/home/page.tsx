@@ -367,7 +367,7 @@ function StudentHome({ session, data, isPreview }: { session: any; data: HomeDat
               <span className="text-2xl">🧑‍🏫</span>
               <span className="text-white/80 text-[11px] font-medium text-center leading-tight">בוט<br/>מורה פרטי</span>
             </Link>
-            <Link href="/student"
+            <Link href="/assistant"
               className="flex-1 glass rounded-2xl px-2 py-3 flex flex-col items-center gap-1.5 hover:bg-white/15 interactive btn-press transition-colors">
               <span className="text-2xl">🤖</span>
               <span className="text-white/80 text-[11px] font-medium text-center leading-tight">עוזר<br/>אישי</span>
@@ -1286,6 +1286,7 @@ function ParentHome({ session, data }: { session: any; data: HomeData | null }) 
               {[
                 { label: "עמוד הבית",   href: "/home",         emoji: "🏠" },
                 { label: "צ׳אט עם המחנך", href: "/chat",       emoji: "💬" },
+                { label: "עוזר אישי", href: "/assistant", emoji: "🤖" },
                 { label: "הגדרות אישיות", href: "/manage", emoji: "⚙️" },
               ].map(item => (
                 <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}

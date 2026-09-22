@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import BottomNav from "@/app/components/BottomNav"
 import ComingSoon from "@/app/components/ComingSoon"
+import AssistantChat from "@/app/components/AssistantChat"
 import { getPersonalDisplayName } from "@/app/components/personalStore"
 import { dayTypeForWeekday } from "@/lib/bellSchedule"
 
@@ -408,7 +409,7 @@ export default function StudentPage() {
     { label: "לוח",     icon: <IconCalendar /> },
     { label: "שאלונים", icon: <IconTrophy /> },
     { label: "לימוד",   icon: <IconBook />, comingSoon: true },
-    { label: "עוזר",    icon: <IconStar />, comingSoon: true },
+    { label: "עוזר",    icon: <IconStar /> },
   ]
 
   if (status === "loading") return null
@@ -592,11 +593,7 @@ export default function StudentPage() {
             featureKey="student-learning-bot" accentColor="bg-stone-900" accentLight="bg-stone-100" accentText="text-stone-700" />
         )}
 
-        {mainTab === "עוזר" && (
-          <ComingSoon icon="🧠" title="עוזר אישי"
-            description="תכנון שבועי, מעקב משימות ותזכורות חכמות — כדי שלא תפספס כלום."
-            featureKey="student-assistant" accentColor="bg-stone-900" accentLight="bg-stone-100" accentText="text-stone-700" />
-        )}
+        {mainTab === "עוזר" && <AssistantChat />}
 
       </div>
 

@@ -254,11 +254,89 @@ function PersonalEventsEditor() {
   )
 }
 
+// ── Study profile (track + math/English units) ───────────
+// Unlike the rest of this page, this is server-persisted (not
+// localStorage) — the school-assistant bot reads it to answer
+// track-specific questions without asking every time.
+const UNIT_OPTIONS = [3, 4, 5]
+
+function StudyProfileEditor() {
+  const [track, setTrack] = useState("")
+  const [mathUnits, setMathUnits] = useState<number | null>(null)
+  const [englishUnits, setEnglishUnits] = useState<number | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    fetch("/api/student/profile").then(r => r.json()).then(d => {
+      setTrack(d.profile?.track ?? "")
+      setMathUnits(d.profile?.mathUnits ?? null)
+      setEnglishUnits(d.profile?.englishUnits ?? null)
+      setLoading(false)
+    }).catch(() => setLoading(false))
+  }, [])
+
+  async function save() {
+    setSaving(true)
+    await fetch("/api/student/profile", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ track: track || null, mathUnits, englishUnits }),
+    })
+    setSaving(false)
+    setSaved(true)
+    setTimeout(() => setSaved(false), 2000)
+  }
+
+  if (loading) return <p className="text-sm text-stone-400">טוען...</p>
+
+  return (
+    <div className="bg-[var(--bg-card,white)] border border-stone-200 rounded-2xl p-5 space-y-4">
+      <p className="text-sm text-stone-500">
+        אלו עוזרות ל״עוזר האישי״ לענות לך על שאלות לפי המגמה שלך, בלי שתצטרך לחזור ולציין אותה בכל שיחה.
+      </p>
+      <div>
+        <label className="text-xs text-stone-500 mb-1.5 block">מגמה</label>
+        <input value={track} onChange={e => setTrack(e.target.value)} placeholder="לדוגמה: פיזיקה"
+          className="w-full bg-stone-100 border-0 rounded-lg px-3 py-2 text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-stone-300" />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="text-xs text-stone-500 mb-1.5 block">יחידות מתמטיקה</label>
+          <div className="flex gap-1.5">
+            {UNIT_OPTIONS.map(u => (
+              <button key={u} type="button" onClick={() => setMathUnits(mathUnits === u ? null : u)}
+                className={`flex-1 rounded-lg py-2 text-sm interactive btn-press transition-colors ${mathUnits === u ? "bg-stone-900 text-white" : "bg-stone-100 text-stone-500 hover:text-stone-800"}`}>
+                {u}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label className="text-xs text-stone-500 mb-1.5 block">יחידות אנגלית</label>
+          <div className="flex gap-1.5">
+            {UNIT_OPTIONS.map(u => (
+              <button key={u} type="button" onClick={() => setEnglishUnits(englishUnits === u ? null : u)}
+                className={`flex-1 rounded-lg py-2 text-sm interactive btn-press transition-colors ${englishUnits === u ? "bg-stone-900 text-white" : "bg-stone-100 text-stone-500 hover:text-stone-800"}`}>
+                {u}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <button onClick={save} disabled={saving}
+        className="bg-stone-900 text-white text-sm px-4 py-2 rounded-lg hover:bg-stone-800 btn-press interactive transition-colors disabled:opacity-50">
+        {saved ? "✓ נשמר" : saving ? "שומר..." : "שמור"}
+      </button>
+    </div>
+  )
+}
+
 // ── Main page ─────────────────────────────────────────────
 export default function StudentEditPage() {
   const router = useRouter()
   const { status } = useSession()
-  const [tab, setTab] = useState<"name" | "events" | "design">("name")
+  const [tab, setTab] = useState<"name" | "study" | "events" | "design">("name")
 
   if (status === "unauthenticated") {
     router.replace("/")
@@ -276,7 +354,7 @@ export default function StudentEditPage() {
           </div>
           <p className="text-xs text-stone-500 mb-3">שינויים אלו גלויים רק לך — לא משפיעים על שאר הכיתה</p>
           <div className="flex gap-4 text-sm font-medium overflow-x-auto">
-            {([["name", "שם"], ["events", "אירועים"], ["design", "עיצוב ורקע"]] as const).map(([id, label]) => (
+            {([["name", "שם"], ["study", "פרטי לימודים"], ["events", "אירועים"], ["design", "עיצוב ורקע"]] as const).map(([id, label]) => (
               <button key={id} onClick={() => setTab(id)}
                 className={`pb-3 border-b-2 transition-colors interactive whitespace-nowrap ${tab === id ? "border-stone-900 text-stone-900" : "border-transparent text-stone-500 hover:text-stone-700"}`}>
                 {label}
@@ -288,6 +366,7 @@ export default function StudentEditPage() {
 
       <div className="max-w-2xl mx-auto p-4">
         {tab === "name" && <NameEditor />}
+        {tab === "study" && <StudyProfileEditor />}
         {tab === "events" && <PersonalEventsEditor />}
         {tab === "design" && (
           <div className="space-y-6">

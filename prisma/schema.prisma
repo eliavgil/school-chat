@@ -125,6 +125,12 @@ model Student {
   name            String
   idNumber        String?                @unique // ת.ז
   classId         String
+  // Self-reported by the student (edited from /student/edit) — not grades,
+  // just enough context for the school-logistics assistant bot to answer
+  // track-specific questions ("איפה מגמת פיזיקה יושבת") without asking every time.
+  track           String?
+  mathUnits       Int?
+  englishUnits    Int?
   messages        Message[]
   parents         ParentStudent[]
   class           Class                  @relation(fields: [classId], references: [id])
@@ -307,13 +313,28 @@ model TeacherRecord {
   @@index([classId])
 }
 
+// A document a teacher uploaded for the school-logistics assistant bot
+// (/api/assistant/chat) — the raw file isn't kept for RAG/search, it's
+// processed once at upload time (Claude reads it directly and extracts
+// facts as text), and every doc's extractedFacts is concatenated whole
+// into the bot's system prompt. Small enough corpus for a school that this
+// needs no chunking/embeddings.
+model SchoolKnowledgeDoc {
+  id             String   @id @default(cuid())
+  filename       String
+  fileUrl        String   // original file, kept for the admin to re-download/review
+  extractedFacts String   @db.Text
+  uploadedById   String
+  createdAt      DateTime @default(now())
+}
+
 // Bot response cache — avoid repeat Claude calls for identical questions
 model BotCache {
   id        String   @id @default(cuid())
   userId    String
   question  String   @db.Text
   answer    String   @db.Text
-  fromBot   String   @default("student") // "student" | "parent"
+  fromBot   String   @default("student") // "student" | "parent" | "assistant"
   createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
