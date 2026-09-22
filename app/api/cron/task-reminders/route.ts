@@ -15,6 +15,26 @@ export async function GET(req: NextRequest) {
   const now = new Date()
   let sent = 0
 
+  // Self-heal: assignees created before a teacher's account existed (or
+  // before this backfill existed) never got userId linked, since that only
+  // happened at account-approval time — without it a reminder can never be
+  // pushed to them. Cheap to re-check every run.
+  const unlinked = await prisma.staffTaskAssignee.findMany({
+    where: { userId: null, reminderAt: { not: null }, reminderSent: false },
+    select: { id: true, teacherLabel: true },
+  })
+  if (unlinked.length) {
+    const teachers = await prisma.user.findMany({
+      where: { name: { in: unlinked.map(a => a.teacherLabel) }, role: "TEACHER" },
+      select: { id: true, name: true },
+    })
+    const userIdByName = new Map(teachers.map(u => [u.name, u.id]))
+    for (const a of unlinked) {
+      const userId = userIdByName.get(a.teacherLabel)
+      if (userId) await prisma.staffTaskAssignee.update({ where: { id: a.id }, data: { userId } })
+    }
+  }
+
   const personalDue = await prisma.personalTask.findMany({
     where: { reminderAt: { lte: now }, reminderSent: false, done: false },
     select: { id: true, userId: true, title: true, link: true },

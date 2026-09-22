@@ -48,6 +48,16 @@ export async function POST(req: NextRequest) {
   const remindSet = new Set(Array.isArray(reminderTeachers) ? reminderTeachers : [])
   const reminderDate = reminderAt ? new Date(reminderAt) : null
 
+  // A teacher may already have an approved account matching this display
+  // name (the /pending approval flow only backfills userId on assignees
+  // that already existed at approval time) — link it now too, otherwise
+  // a reminder for this brand-new assignee can never be pushed to them.
+  const existingTeachers = await prisma.user.findMany({
+    where: { name: { in: names }, role: "TEACHER" },
+    select: { id: true, name: true },
+  })
+  const userIdByName = new Map(existingTeachers.map(u => [u.name, u.id]))
+
   const task = await prisma.staffTask.create({
     data: {
       createdById: session.user.id,
@@ -58,6 +68,7 @@ export async function POST(req: NextRequest) {
       assignees: {
         create: names.map(teacherLabel => ({
           teacherLabel,
+          userId: userIdByName.get(teacherLabel) ?? null,
           reminderAt: reminderDate && remindSet.has(teacherLabel) ? reminderDate : null,
         })),
       },
