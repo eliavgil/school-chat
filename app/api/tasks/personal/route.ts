@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db/prisma"
+import { israelLocalToUtc } from "@/lib/israel-time"
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
       link: link?.trim() || null,
       deadline: deadline ? new Date(deadline) : null,
       importance: importance ?? "BLUE",
-      reminderAt: reminderAt ? new Date(reminderAt) : null,
+      reminderAt: reminderAt ? israelLocalToUtc(reminderAt) : null,
     },
   })
   return NextResponse.json({ task })
@@ -54,7 +55,7 @@ export async function PATCH(req: NextRequest) {
       ...(deadline !== undefined && { deadline: deadline ? new Date(deadline) : null }),
       ...(importance !== undefined && { importance }),
       ...(reminderAt !== undefined && {
-        reminderAt: reminderAt ? new Date(reminderAt) : null,
+        reminderAt: reminderAt ? israelLocalToUtc(reminderAt) : null,
         reminderSent: false, // a changed reminder time needs to fire again
       }),
     },

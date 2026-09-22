@@ -96,6 +96,12 @@ export function StaffTasksTab() {
     if (wasSelected) setReminderTeachers(prev => prev.filter(n => n !== name))
   }
 
+  function toggleSelectAll() {
+    const allSelected = teacherNames.length > 0 && selected.length === teacherNames.length
+    setSelected(allSelected ? [] : [...teacherNames])
+    if (allSelected) setReminderTeachers([])
+  }
+
   function toggleReminderTeacher(name: string) {
     setReminderTeachers(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name])
   }
@@ -192,6 +198,10 @@ export function StaffTasksTab() {
               <p className="text-white/25 text-xs">אין עדיין מחנכים מוגדרים במערכת (מוגדר לפי "מחנך" על כל כיתה)</p>
             ) : (
               <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={toggleSelectAll}
+                  className={`px-3 py-1.5 rounded-xl text-xs interactive btn-press transition-colors border ${selected.length === teacherNames.length ? "bg-blue-500/40 border-blue-400/40 text-white" : "bg-white/5 border-white/15 text-white/50 hover:text-white/80"}`}>
+                  כולם
+                </button>
                 {teacherNames.map(name => (
                   <button key={name} type="button" onClick={() => toggleSelected(name)}
                     className={`px-3 py-1.5 rounded-xl text-xs interactive btn-press transition-colors ${selected.includes(name) ? "bg-white/25 text-white" : "bg-white/5 text-white/40 hover:text-white/70"}`}>
@@ -284,7 +294,7 @@ export function StaffTasksTab() {
                     <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dotFor(t.importance)}`} />
                     <p className="text-sm text-white/85 truncate">{t.title}</p>
                   </div>
-                  <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1 flex-shrink-0">
                     <button onClick={() => startEditTask(t)} className="text-white/25 hover:text-white interactive p-1 rounded">
                       <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
                     </button>

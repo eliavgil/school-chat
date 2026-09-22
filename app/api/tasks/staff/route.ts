@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db/prisma"
+import { israelLocalToUtc } from "@/lib/israel-time"
 
 function isTeacherRole(role: string) {
   return role === "TEACHER" || role === "ADMIN"
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
   // One reminder date+time, applied only to whichever assignees were
   // actually picked to be reminded — not every assignee has to be.
   const remindSet = new Set(Array.isArray(reminderTeachers) ? reminderTeachers : [])
-  const reminderDate = reminderAt ? new Date(reminderAt) : null
+  const reminderDate = reminderAt ? israelLocalToUtc(reminderAt) : null
 
   // A teacher may already have an approved account matching this display
   // name (the /pending approval flow only backfills userId on assignees
