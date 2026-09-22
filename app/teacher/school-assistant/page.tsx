@@ -20,10 +20,15 @@ function fmtDate(iso: string) {
 
 export default function SchoolAssistantAdminPage() {
   const [docs, setDocs] = useState<DocT[]>([])
+  const [serviceAccountEmail, setServiceAccountEmail] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [uploads, setUploads] = useState<UploadItem[]>([])
   const [uploading, setUploading] = useState(false)
   const [editing, setEditing] = useState<Record<string, string>>({})
+  const [sheetUrl, setSheetUrl] = useState("")
+  const [sheetLoading, setSheetLoading] = useState(false)
+  const [sheetError, setSheetError] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => { load() }, [])
@@ -32,6 +37,7 @@ export default function SchoolAssistantAdminPage() {
     setLoading(true)
     const d = await fetch("/api/admin/school-knowledge").then(r => r.json()).catch(() => ({ docs: [] }))
     setDocs(d.docs ?? [])
+    setServiceAccountEmail(d.serviceAccountEmail ?? null)
     setLoading(false)
   }
 
@@ -60,6 +66,32 @@ export default function SchoolAssistantAdminPage() {
     setUploading(false)
     load()
     if (fileInputRef.current) fileInputRef.current.value = ""
+  }
+
+  async function addSheet() {
+    if (!sheetUrl.trim()) return
+    setSheetLoading(true)
+    setSheetError(null)
+    try {
+      const res = await fetch("/api/admin/school-knowledge", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sheetUrl: sheetUrl.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "שגיאה")
+      setSheetUrl("")
+      load()
+    } catch (e: any) {
+      setSheetError(e?.message ?? "שגיאה")
+    }
+    setSheetLoading(false)
+  }
+
+  function copyEmail() {
+    if (!serviceAccountEmail) return
+    navigator.clipboard.writeText(serviceAccountEmail).catch(() => {})
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
   }
 
   async function saveEdit(id: string) {
@@ -91,9 +123,9 @@ export default function SchoolAssistantAdminPage() {
       <div className="max-w-2xl mx-auto p-4 space-y-5">
         <div className="bg-white/8 border border-white/15 rounded-2xl p-4 space-y-3">
           <p className="text-white/50 text-xs leading-relaxed">
-            אפשר לזרוק כמה קבצים שרוצים בבת אחת — PDF, תמונות (jpg/png) או טקסט (txt/md/csv). לכל קובץ, Claude יעבור עליו ויחלץ ממנו את העובדות הרלוונטיות אוטומטית; אפשר לערוך את מה שחולץ בהמשך אם צריך לתקן משהו. קבצי Word/Excel — יש להמיר קודם ל-PDF.
+            אפשר לזרוק כמה קבצים שרוצים בבת אחת — PDF, אקסל (xlsx/xls), תמונות (jpg/png) או טקסט (txt/md/csv). לכל קובץ, Claude יעבור עליו ויחלץ ממנו את העובדות הרלוונטיות אוטומטית; אפשר לערוך את מה שחולץ בהמשך אם צריך לתקן משהו. קבצי Word — יש להמיר קודם ל-PDF.
           </p>
-          <input ref={fileInputRef} type="file" multiple accept=".pdf,image/*,.txt,.md,.csv" className="hidden"
+          <input ref={fileInputRef} type="file" multiple accept=".pdf,.xlsx,.xls,image/*,.txt,.md,.csv" className="hidden"
             onChange={e => handleFiles(e.target.files)} />
           <button onClick={() => fileInputRef.current?.click()} disabled={uploading}
             className="w-full bg-white/15 hover:bg-white/25 text-white text-sm font-medium py-2.5 rounded-xl interactive btn-press transition-colors disabled:opacity-40">
@@ -119,6 +151,28 @@ export default function SchoolAssistantAdminPage() {
               ))}
             </div>
           )}
+        </div>
+
+        <div className="bg-white/8 border border-white/15 rounded-2xl p-4 space-y-3">
+          <p className="text-white/50 text-xs leading-relaxed">
+            אפשר גם להדביק קישור לגיליון Google Sheets במקום להעלות קובץ — הבוט יקרא את כל הלשוניות שלו. הגיליון חייב להיות משותף עם חשבון השירות של האפליקציה:
+          </p>
+          {serviceAccountEmail && (
+            <button onClick={copyEmail}
+              className="w-full flex items-center justify-between gap-2 bg-white/10 border border-white/15 rounded-lg px-3 py-2 text-xs interactive">
+              <span dir="ltr" className="text-white/70 truncate">{serviceAccountEmail}</span>
+              <span className="text-white/40 flex-shrink-0">{copied ? "✓ הועתק" : "העתק"}</span>
+            </button>
+          )}
+          <div className="flex gap-2">
+            <input value={sheetUrl} onChange={e => setSheetUrl(e.target.value)} dir="ltr" placeholder="https://docs.google.com/spreadsheets/d/..."
+              className="flex-1 bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/30" />
+            <button onClick={addSheet} disabled={sheetLoading || !sheetUrl.trim()}
+              className="bg-white/15 hover:bg-white/25 text-white text-sm px-4 py-2 rounded-xl interactive btn-press transition-colors disabled:opacity-40 flex-shrink-0">
+              {sheetLoading ? "מוסיף..." : "הוסף"}
+            </button>
+          </div>
+          {sheetError && <p className="text-red-400 text-xs">{sheetError}</p>}
         </div>
 
         {loading && <p className="text-white/40 text-sm text-center py-8">טוען...</p>}

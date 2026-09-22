@@ -3,7 +3,9 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db/prisma"
 import { adminClient } from "@/lib/lessons/supabase"
+import { fetchSheetValues, listSheetTabs, getSheetsClient, getServiceAccountEmail } from "@/lib/sheets/client"
 import Anthropic from "@anthropic-ai/sdk"
+import * as XLSX from "xlsx"
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 const BUCKET = "school-knowledge-docs"
@@ -11,16 +13,41 @@ const MAX_BYTES = 15 * 1024 * 1024 // 15 MB — Claude's own document/image limi
 
 const IMAGE_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"]
 const TEXT_TYPES = ["text/plain", "text/markdown", "text/csv"]
+const EXCEL_TYPES = [
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+]
 
 function isTeacherRole(role: string) {
   return role === "TEACHER" || role === "ADMIN"
 }
 
 const EXTRACTION_PROMPT = `אתה עוזר שמכין מאגר עובדות עבור בוט לוגיסטי לתלמידים והורים בבית ספר תיכון.
-קרא את הקובץ המצורף וחלץ ממנו כל עובדה קונקרטית ושימושית שיכולה לענות על שאלה לוגיסטית — תאריכים, מיקומים, טפסים, נהלים, אנשי קשר, קישורים, מגמות ותנאים.
-התעלם מרעש (כותרות עמוד, עיצוב, חתימות). אל תוסיף פרשנות או מידע שלא מופיע בקובץ.
+קרא את החומר המצורף וחלץ ממנו כל עובדה קונקרטית ושימושית שיכולה לענות על שאלה לוגיסטית — תאריכים, מיקומים, טפסים, נהלים, אנשי קשר, קישורים, מגמות ותנאים.
+התעלם מרעש (כותרות עמוד, עיצוב, חתימות, שורות/עמודות ריקות). אל תוסיף פרשנות או מידע שלא מופיע בחומר.
 כתוב את התשובה כרשימת נקודות תמציתית בעברית, מוכנה להזרקה ישירה למאגר ידע של בוט.
-אם אין בקובץ שום עובדה שימושית, כתוב "לא נמצא מידע רלוונטי" בלבד.`
+אם אין בחומר שום עובדה שימושית, כתוב "לא נמצא מידע רלוונטי" בלבד.`
+
+async function extractFacts(contentBlock: Anthropic.Messages.ContentBlockParam): Promise<string> {
+  const msg = await anthropic.messages.create({
+    model: "claude-haiku-4-5-20251001",
+    max_tokens: 2048,
+    messages: [{ role: "user", content: [contentBlock, { type: "text", text: EXTRACTION_PROMPT }] }],
+  })
+  const textBlock = msg.content.find((b): b is Anthropic.TextBlock => b.type === "text")
+  return textBlock?.text?.trim() || "לא נמצא מידע רלוונטי"
+}
+
+// Every sheet tab, dumped as CSV-ish text — small enough for a school's
+// spreadsheets that this needs no smarter chunking.
+function workbookToText(wb: XLSX.WorkBook): string {
+  return wb.SheetNames.map(name => `## ${name}\n${XLSX.utils.sheet_to_csv(wb.Sheets[name])}`).join("\n\n")
+}
+
+function extractSpreadsheetId(url: string): string | null {
+  const m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)
+  return m ? m[1] : (/^[a-zA-Z0-9-_]{20,}$/.test(url.trim()) ? url.trim() : null)
+}
 
 export async function GET() {
   const session = await getServerSession(authOptions)
@@ -28,7 +55,7 @@ export async function GET() {
   if (!session?.user?.id || !isTeacherRole(role)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   const docs = await prisma.schoolKnowledgeDoc.findMany({ orderBy: { createdAt: "desc" } })
-  return NextResponse.json({ docs })
+  return NextResponse.json({ docs, serviceAccountEmail: getServiceAccountEmail() })
 }
 
 export async function POST(req: NextRequest) {
@@ -36,6 +63,52 @@ export async function POST(req: NextRequest) {
   const role = (session?.user as any)?.role
   if (!session?.user?.id || !isTeacherRole(role)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
+  const contentType = req.headers.get("content-type") || ""
+
+  // ── Google Sheets link, instead of an uploaded file ──────
+  if (contentType.includes("application/json")) {
+    const { sheetUrl } = await req.json()
+    const spreadsheetId = extractSpreadsheetId((sheetUrl || "").trim())
+    if (!spreadsheetId) return NextResponse.json({ error: "לא זיהיתי קישור/מזהה תקין לגיליון" }, { status: 400 })
+
+    let title = spreadsheetId
+    let text: string
+    try {
+      const sheets = getSheetsClient()
+      const meta = await sheets.spreadsheets.get({ spreadsheetId, fields: "properties.title" })
+      title = meta.data.properties?.title || title
+      const tabs = await listSheetTabs(spreadsheetId)
+      const parts = await Promise.all(tabs.map(async t => {
+        const values = await fetchSheetValues(spreadsheetId, t.title)
+        return `## ${t.title}\n${values.map(row => row.join(",")).join("\n")}`
+      }))
+      text = parts.join("\n\n")
+    } catch (e: any) {
+      const email = getServiceAccountEmail()
+      if (e?.code === 403 || e?.code === 404) {
+        return NextResponse.json({
+          error: email
+            ? `אין גישה לגיליון — יש לשתף אותו עם ${email} (כמו כל גיליון שהאפליקציה קוראת)`
+            : "אין גישה לגיליון — צריך לשתף אותו עם חשבון השירות של האפליקציה",
+        }, { status: 403 })
+      }
+      return NextResponse.json({ error: `שגיאה בקריאת הגיליון: ${e?.message ?? "unknown"}` }, { status: 502 })
+    }
+
+    let extractedFacts: string
+    try {
+      extractedFacts = await extractFacts({ type: "text", text })
+    } catch (e: any) {
+      return NextResponse.json({ error: `שגיאה בעיבוד: ${e?.message ?? "unknown"}` }, { status: 502 })
+    }
+
+    const doc = await prisma.schoolKnowledgeDoc.create({
+      data: { filename: title, fileUrl: sheetUrl, extractedFacts, uploadedById: session.user.id },
+    })
+    return NextResponse.json({ doc })
+  }
+
+  // ── Uploaded file ─────────────────────────────────────────
   let formData: FormData
   try {
     formData = await req.formData()
@@ -56,23 +129,24 @@ export async function POST(req: NextRequest) {
     contentBlock = { type: "document", source: { type: "base64", media_type: "application/pdf", data: buffer.toString("base64") } }
   } else if (IMAGE_TYPES.includes(mimeType)) {
     contentBlock = { type: "image", source: { type: "base64", media_type: mimeType as any, data: buffer.toString("base64") } }
+  } else if (EXCEL_TYPES.includes(mimeType) || /\.(xlsx|xls)$/i.test(filename)) {
+    try {
+      const wb = XLSX.read(buffer, { type: "buffer" })
+      contentBlock = { type: "text", text: workbookToText(wb) }
+    } catch {
+      return NextResponse.json({ error: "לא הצלחתי לקרוא את קובץ האקסל — ודא שהוא לא פגום" }, { status: 400 })
+    }
   } else if (TEXT_TYPES.includes(mimeType) || /\.(txt|md|csv)$/i.test(filename)) {
     contentBlock = { type: "text", text: buffer.toString("utf-8") }
   } else {
     return NextResponse.json({
-      error: "סוג קובץ לא נתמך כרגע — אפשר PDF, תמונה (jpg/png), או טקסט (txt/md/csv). קבצי Word/Excel — המר קודם ל-PDF.",
+      error: "סוג קובץ לא נתמך כרגע — אפשר PDF, אקסל (xlsx/xls), תמונה (jpg/png), או טקסט (txt/md/csv). קבצי Word — המר קודם ל-PDF.",
     }, { status: 415 })
   }
 
   let extractedFacts: string
   try {
-    const msg = await anthropic.messages.create({
-      model: "claude-haiku-4-5-20251001",
-      max_tokens: 2048,
-      messages: [{ role: "user", content: [contentBlock, { type: "text", text: EXTRACTION_PROMPT }] }],
-    })
-    const textBlock = msg.content.find((b): b is Anthropic.TextBlock => b.type === "text")
-    extractedFacts = textBlock?.text?.trim() || "לא נמצא מידע רלוונטי"
+    extractedFacts = await extractFacts(contentBlock)
   } catch (e: any) {
     return NextResponse.json({ error: `שגיאה בעיבוד הקובץ: ${e?.message ?? "unknown"}` }, { status: 502 })
   }
