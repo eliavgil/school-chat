@@ -14,6 +14,19 @@ interface DocT {
 type UploadStatus = "pending" | "uploading" | "done" | "error"
 interface UploadItem { name: string; status: UploadStatus; error?: string }
 
+// A browser-reported File.type isn't guaranteed to be a well-formed MIME
+// string — Safari validates the Blob() constructor's `type` option against
+// strict MIME grammar and throws if it isn't, which some odd exports (e.g.
+// a PDF saved out of another app) can trigger. Deriving it ourselves from
+// the extension sidesteps that entirely.
+const MIME_BY_EXT: Record<string, string> = {
+  pdf: "application/pdf",
+  xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  xls: "application/vnd.ms-excel",
+  jpg: "image/jpeg", jpeg: "image/jpeg", png: "image/png", gif: "image/gif", webp: "image/webp",
+  txt: "text/plain", md: "text/markdown", csv: "text/csv",
+}
+
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString("he-IL", { day: "numeric", month: "numeric", year: "2-digit" })
 }
@@ -83,8 +96,8 @@ export default function SchoolAssistantAdminPage() {
         // detached from the original File's name/metadata, and sends the
         // real name separately as an encoded text field the server decodes.
         const bytes = await file.arrayBuffer()
-        const cleanBlob = new Blob([bytes], { type: file.type })
-        const ext = file.name.split(".").pop() || "bin"
+        const ext = (file.name.split(".").pop() || "bin").toLowerCase()
+        const cleanBlob = new Blob([bytes], { type: MIME_BY_EXT[ext] || "application/octet-stream" })
         const fd = new FormData()
         fd.append("file", cleanBlob, `upload.${ext}`)
         fd.append("filename", encodeURIComponent(file.name))
