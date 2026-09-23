@@ -53,6 +53,7 @@ export default function SchoolAssistantAdminPage() {
   const [instructionsLoading, setInstructionsLoading] = useState(true)
   const [instructionsSaving, setInstructionsSaving] = useState(false)
   const [instructionsSaved, setInstructionsSaved] = useState(false)
+  const [expandedDocs, setExpandedDocs] = useState<Record<string, boolean>>({})
   const [dirLoading, setDirLoading] = useState(false)
   const [dirResult, setDirResult] = useState<{ updated: number; total: number; notFound: string[]; ambiguous: string[]; errors: string[] } | null>(null)
   const [dirError, setDirError] = useState<string | null>(null)
@@ -365,16 +366,27 @@ export default function SchoolAssistantAdminPage() {
           <div className="space-y-2">
             {docs.map(d => {
               const isEditing = d.id in editing
+              const expanded = !!expandedDocs[d.id]
+              const firstLine = d.extractedFacts.split("\n").find(l => l.trim()) ?? ""
               return (
                 <div key={d.id} className="bg-white/8 border border-white/10 rounded-2xl p-4">
                   <div className="flex items-start justify-between gap-3 mb-2">
-                    <div className="min-w-0">
-                      <a href={d.fileUrl} target="_blank" rel="noopener noreferrer" className="text-white/85 text-sm font-medium hover:underline truncate block">
-                        {d.filename}
-                      </a>
+                    <button onClick={() => setExpandedDocs(prev => ({ ...prev, [d.id]: !prev[d.id] }))}
+                      className="min-w-0 text-right interactive flex-1">
+                      <span className="flex items-center gap-1.5">
+                        <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}
+                          className={`flex-shrink-0 text-white/40 transition-transform ${expanded ? "rotate-180" : ""}`}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                        <span className="text-white/85 text-sm font-medium truncate">{d.filename}</span>
+                      </span>
                       <p className="text-white/30 text-[11px] mt-0.5">נוסף {fmtDate(d.createdAt)}</p>
-                    </div>
+                    </button>
                     <div className="flex items-center gap-1 flex-shrink-0">
+                      <a href={d.fileUrl} target="_blank" rel="noopener noreferrer"
+                        className="text-white/40 hover:text-white text-xs interactive px-2 py-1 rounded-lg bg-white/8" title="פתח את הקובץ המקורי">
+                        ↗
+                      </a>
                       {!isEditing && (
                         <button onClick={() => setEditing(prev => ({ ...prev, [d.id]: { extractedFacts: d.extractedFacts, note: d.note ?? "" } }))}
                           className="text-white/40 hover:text-white text-xs interactive px-2 py-1 rounded-lg bg-white/8">
@@ -407,11 +419,13 @@ export default function SchoolAssistantAdminPage() {
                           className="text-xs text-white/40 hover:text-white interactive px-3 py-1.5">ביטול</button>
                       </div>
                     </div>
-                  ) : (
+                  ) : expanded ? (
                     <>
                       {d.note && <p className="text-white/35 text-[11px] mb-1.5">💬 {d.note}</p>}
                       <p className="text-white/50 text-xs leading-relaxed whitespace-pre-wrap">{d.extractedFacts}</p>
                     </>
+                  ) : (
+                    <p className="text-white/40 text-xs leading-relaxed truncate">{firstLine}</p>
                   )}
                 </div>
               )
