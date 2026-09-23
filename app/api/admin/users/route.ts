@@ -221,6 +221,14 @@ export async function PATCH(req: NextRequest) {
         },
       })
     })
+  } else if (action === "move-student-class") {
+    // Moves a Student record to a different class — e.g. a mid-year class
+    // transfer. Until this existed there was no way at all to update an
+    // existing student's classId (only creation ever set it), so a
+    // transferred student stayed shown under their old class everywhere,
+    // including in the school-assistant bot's answers about themselves.
+    if (!studentId || !classId) return NextResponse.json({ error: "Missing studentId/classId" }, { status: 400 })
+    await prisma.student.update({ where: { id: studentId }, data: { classId } })
   } else if (action === "delete-user") {
     // Fully removes the User + cascaded Account/Session records so the Google
     // account can re-register from scratch.

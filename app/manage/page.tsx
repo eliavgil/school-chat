@@ -985,6 +985,8 @@ function RosterTab() {
   const [roster, setRoster] = useState<ClassWithStudents[]>([])
   const [loading, setLoading] = useState(false)
   const [actionLoading, setActionLoading] = useState<string | null>(null)
+  const [movingStudentId, setMovingStudentId] = useState<string | null>(null)
+  const [moveClassSel, setMoveClassSel] = useState<Record<string, string>>({})
 
   useEffect(() => { fetchRoster() }, [])
 
@@ -1036,17 +1038,40 @@ function RosterTab() {
             ? <p className="text-white/30 text-xs px-4 py-3">אין תלמידים בכיתה זו</p>
             : <div className="divide-y divide-white/5">
                 {cls.students.map(s => (
-                  <div key={s.id} className="flex items-center justify-between px-4 py-2.5">
-                    <span className="text-sm text-white/80">{s.name}</span>
-                    <button
-                      disabled={actionLoading === s.id}
-                      onClick={() => {
-                        if (!confirm(`למחוק את התלמיד/ה "${s.name}"?\nפעולה זו אינה הפיכה.`)) return
-                        rosterAction("delete-student", s.id)
-                      }}
-                      className="text-xs text-red-400/60 hover:text-red-400 interactive disabled:opacity-40">
-                      {actionLoading === s.id ? "..." : "מחק"}
-                    </button>
+                  <div key={s.id} className="px-4 py-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-white/80">{s.name}</span>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => { setMovingStudentId(movingStudentId === s.id ? null : s.id); setMoveClassSel(prev => ({ ...prev, [s.id]: "" })) }}
+                          className="text-xs text-white/40 hover:text-white interactive">
+                          {movingStudentId === s.id ? "ביטול" : "העבר כיתה"}
+                        </button>
+                        <button
+                          disabled={actionLoading === s.id}
+                          onClick={() => {
+                            if (!confirm(`למחוק את התלמיד/ה "${s.name}"?\nפעולה זו אינה הפיכה.`)) return
+                            rosterAction("delete-student", s.id)
+                          }}
+                          className="text-xs text-red-400/60 hover:text-red-400 interactive disabled:opacity-40">
+                          {actionLoading === s.id ? "..." : "מחק"}
+                        </button>
+                      </div>
+                    </div>
+                    {movingStudentId === s.id && (
+                      <div className="mt-2 flex gap-2">
+                        <select value={moveClassSel[s.id] ?? ""} onChange={e => setMoveClassSel(prev => ({ ...prev, [s.id]: e.target.value }))}
+                          className="flex-1 bg-white/10 border border-white/20 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white/30">
+                          <option value="">בחר כיתה חדשה</option>
+                          {roster.filter(c => c.id !== cls.id).map(c => <option key={c.id} value={c.id}>{c.displayName || c.name}</option>)}
+                        </select>
+                        <button disabled={!moveClassSel[s.id] || actionLoading === s.id}
+                          onClick={async () => { await rosterAction("move-student-class", s.id, moveClassSel[s.id]); setMovingStudentId(null) }}
+                          className="bg-white/20 hover:bg-white/30 text-white rounded-lg px-3 py-1.5 text-sm font-medium disabled:opacity-50 btn-press interactive">
+                          {actionLoading === s.id ? "..." : "העבר"}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
