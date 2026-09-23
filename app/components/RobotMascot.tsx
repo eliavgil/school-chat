@@ -14,12 +14,14 @@ type ThinkingVariant = (typeof THINKING_VARIANTS)[number]
 // pool above.
 export const BIG_THINKING_VARIANTS: readonly ThinkingVariant[] = ["jump", "dance", "wiggle"]
 
-// מיסטר פקפקובי — an old tin-toy robot: oversized round head on a tiny body,
-// one expressive camera-lens eye instead of two (reads as "device," not
-// "person," and is far easier to animate for personality than a face).
-// Copper/brass palette instead of the sleek AI-orb look every chatbot
-// defaults to. All animation is plain CSS keyframes scoped to this file —
-// no Lottie assets available, so this is drawn and rigged entirely in SVG.
+// מיסטר פקפקובי — a friendly robotic wizard: a bronze/copper mechanical
+// face (kept from the original tin-toy design) under a soft blue-grey
+// wizard's hood, with a stylized silver beard and a small glowing staff in
+// place of an antenna. One expressive camera-lens eye behind round
+// spectacles instead of two (reads as "device," not "person," and is far
+// easier to animate for personality than a face). All animation is plain
+// CSS keyframes scoped to this file — no Lottie assets available, so this
+// is drawn and rigged entirely in SVG.
 export default function RobotMascot({
   state = "idle", size = 160, variantPool = THINKING_VARIANTS,
 }: { state?: MascotState; size?: number; variantPool?: readonly ThinkingVariant[] }) {
@@ -45,13 +47,17 @@ export default function RobotMascot({
             <stop offset="100%" stopColor="#9C5A2E" />
           </radialGradient>
           <radialGradient id="rm-eye-grad" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stopColor="#FFE8B8" />
-            <stop offset="45%" stopColor="#FFD37A" />
-            <stop offset="100%" stopColor="#B8791F" />
+            <stop offset="0%" stopColor="#EAF6FF" />
+            <stop offset="45%" stopColor="#7EC8F2" />
+            <stop offset="100%" stopColor="#1C6FA8" />
           </radialGradient>
-          <linearGradient id="rm-body-grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#D4924F" />
-            <stop offset="100%" stopColor="#9C5A2E" />
+          <linearGradient id="rm-robe-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#5C6E93" />
+            <stop offset="100%" stopColor="#31384E" />
+          </linearGradient>
+          <linearGradient id="rm-beard-grad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#F0EEE9" />
+            <stop offset="100%" stopColor="#BDB8AC" />
           </linearGradient>
         </defs>
 
@@ -66,60 +72,73 @@ export default function RobotMascot({
         </g>
 
         {/* floating question mark (confused state only) */}
-        <text className="rm-qmark" x="152" y="38" fontSize="26" fontWeight="700" fill="#FFD37A" fontFamily="system-ui">?</text>
+        <text className="rm-qmark" x="152" y="38" fontSize="26" fontWeight="700" fill="#7EC8F2" fontFamily="system-ui">?</text>
 
         <g className="rm-bob">
-          {/* body */}
+          {/* arms */}
           <g className="rm-arm-left">
-            <path d="M62 150 Q40 158 36 178" stroke="#9C5A2E" strokeWidth="9" fill="none" strokeLinecap="round" />
-            <circle cx="35" cy="181" r="8" fill="#C9793F" stroke="#8B4F2A" strokeWidth="2" />
+            <path d="M66 148 Q44 156 40 178" stroke="url(#rm-robe-grad)" strokeWidth="10" fill="none" strokeLinecap="round" />
+            <circle cx="39" cy="181" r="8" fill="url(#rm-head-grad)" stroke="#7A4523" strokeWidth="2" />
           </g>
           <g className="rm-arm-right">
-            <path d="M138 150 Q160 158 164 178" stroke="#9C5A2E" strokeWidth="9" fill="none" strokeLinecap="round" />
-            <circle cx="165" cy="181" r="8" fill="#C9793F" stroke="#8B4F2A" strokeWidth="2" />
+            <path d="M134 148 Q156 156 160 178" stroke="url(#rm-robe-grad)" strokeWidth="10" fill="none" strokeLinecap="round" />
+            <circle cx="161" cy="181" r="8" fill="url(#rm-head-grad)" stroke="#7A4523" strokeWidth="2" />
           </g>
 
-          <rect x="68" y="140" width="64" height="56" rx="14" fill="url(#rm-body-grad)" stroke="#7A4523" strokeWidth="2.5" />
-          <circle cx="100" cy="166" r="9" fill="#6FCF97" opacity="0.9" />
-          <circle cx="100" cy="166" r="4" fill="#2E7D53" />
-          <rect x="80" y="184" width="14" height="6" rx="3" fill="#7A4523" opacity="0.6" />
-          <rect x="106" y="184" width="14" height="6" rx="3" fill="#7A4523" opacity="0.6" />
+          {/* robe body */}
+          <path d="M76 140 Q68 162 60 196 L140 196 Q132 162 124 140 Z" fill="url(#rm-robe-grad)" stroke="#242A3D" strokeWidth="2.5" />
+          {/* chest emblem — soft glow */}
+          <circle cx="100" cy="166" r="11" fill="#3FA9F5" opacity="0.22" />
+          <circle cx="100" cy="166" r="7" fill="url(#rm-eye-grad)" />
+          <circle cx="100" cy="166" r="3" fill="#EAF6FF" opacity="0.9" />
+          {/* feet, peeking from the hem */}
+          <rect x="72" y="195" width="16" height="7" rx="3.5" fill="url(#rm-head-grad)" stroke="#7A4523" strokeWidth="1.5" />
+          <rect x="112" y="195" width="16" height="7" rx="3.5" fill="url(#rm-head-grad)" stroke="#7A4523" strokeWidth="1.5" />
 
           {/* neck */}
           <rect x="88" y="128" width="24" height="18" rx="6" fill="#8B4F2A" />
 
-          {/* head */}
+          {/* head + hood */}
           <g className="rm-head">
-            {/* antenna */}
+            {/* staff (was a plain antenna) */}
             <g className="rm-antenna">
-              <path d="M118 40 Q132 18 126 4" stroke="#8B4F2A" strokeWidth="6" fill="none" strokeLinecap="round" />
-              <circle cx="126" cy="4" r="7" fill="#6FCF97" stroke="#2E7D53" strokeWidth="2" />
+              <path d="M114 38 Q128 14 122 2" stroke="#8B4F2A" strokeWidth="5" fill="none" strokeLinecap="round" />
+              <circle cx="122" cy="2" r="9" fill="#3FA9F5" opacity="0.28" />
+              <circle cx="122" cy="2" r="5.5" fill="url(#rm-eye-grad)" stroke="#EAF6FF" strokeWidth="1" />
             </g>
 
-            <circle cx="100" cy="82" r="72" fill="url(#rm-head-grad)" stroke="#7A4523" strokeWidth="3" />
+            {/* wizard hood, behind the face */}
+            <path d="M100 4 C56 4 26 44 26 84 C26 102 33 115 44 124 L156 124 C167 115 174 102 174 84 C174 44 144 4 100 4 Z"
+              fill="url(#rm-robe-grad)" stroke="#242A3D" strokeWidth="3" />
+
+            {/* face */}
+            <circle cx="100" cy="82" r="62" fill="url(#rm-head-grad)" stroke="#7A4523" strokeWidth="3" />
             {/* rivets */}
-            <circle cx="46" cy="55" r="3.2" fill="#7A4523" opacity="0.55" />
-            <circle cx="154" cy="55" r="3.2" fill="#7A4523" opacity="0.55" />
-            <circle cx="38" cy="90" r="3.2" fill="#7A4523" opacity="0.55" />
-            <circle cx="162" cy="90" r="3.2" fill="#7A4523" opacity="0.55" />
+            <circle cx="72" cy="32" r="3" fill="#7A4523" opacity="0.5" />
+            <circle cx="128" cy="32" r="3" fill="#7A4523" opacity="0.5" />
 
-            {/* ear discs */}
-            <circle cx="30" cy="82" r="10" fill="#B8703B" stroke="#7A4523" strokeWidth="2" />
-            <circle cx="170" cy="82" r="10" fill="#B8703B" stroke="#7A4523" strokeWidth="2" />
-
-            {/* eye housing */}
-            <circle cx="100" cy="88" r="42" fill="#3A2517" />
-            <circle cx="100" cy="88" r="37" fill="#1C130B" />
+            {/* spectacles + eye — sized and raised to leave room for the
+                mouth/beard below, unlike the original bigger-headed robot
+                where the eye could fill most of the face */}
+            <circle cx="100" cy="80" r="36" fill="#3A2517" />
+            <circle cx="100" cy="80" r="31" fill="#1C130B" />
+            <circle cx="100" cy="80" r="28.5" fill="none" stroke="#B8703B" strokeWidth="2.2" opacity="0.6" />
             <g className="rm-eye">
-              <circle cx="100" cy="88" r="30" fill="url(#rm-eye-grad)" />
-              <circle className="rm-pupil" cx="100" cy="88" r="12" fill="#3A2211" />
-              <circle cx="94" cy="80" r="4.5" fill="#FFF7E6" opacity="0.85" />
+              <circle cx="100" cy="80" r="25" fill="url(#rm-eye-grad)" />
+              <circle className="rm-pupil" cx="100" cy="80" r="10" fill="#0E3854" />
+              <circle cx="95" cy="73" r="4" fill="#FFFFFF" opacity="0.9" />
             </g>
             {/* eyelid for blinking */}
-            <rect className="rm-eyelid" x="58" y="46" width="84" height="0" fill="#C9793F" />
+            <rect className="rm-eyelid" x="64" y="44" width="72" height="0" fill="#C9793F" />
 
-            {/* mouth */}
-            <rect className="rm-mouth" x="78" y="122" width="44" height="8" rx="4" fill="#6FCF97" opacity="0.9" />
+            {/* mouth (drawn before the beard so the beard's top wisps can
+                overlap its edges slightly, the way facial hair naturally
+                frames a mouth) */}
+            <rect className="rm-mouth" x="82" y="116" width="36" height="7" rx="3.5" fill="#3FA9F5" opacity="0.85" />
+
+            {/* beard */}
+            <path d="M56 118 Q56 138 63 149 Q71 140 79 150 Q87 138 96 152 Q105 138 113 150 Q121 140 129 149 Q136 138 136 118 Q100 130 56 118 Z"
+              fill="url(#rm-beard-grad)" stroke="#A19C90" strokeWidth="1.5" opacity="0.94" />
           </g>
         </g>
       </svg>
@@ -128,19 +147,19 @@ export default function RobotMascot({
         .rm-root { position: relative; display: inline-block; }
         .rm-bob { transform-origin: 100px 196px; animation: rm-bob 3.2s ease-in-out infinite; }
         .rm-head { transform-origin: 100px 128px; }
-        .rm-eye { transform-origin: 100px 88px; }
-        .rm-pupil { transform-origin: 100px 88px; }
-        .rm-antenna { transform-origin: 118px 40px; animation: rm-antenna-sway 2.6s ease-in-out infinite; }
-        .rm-eyelid { transform-origin: 100px 46px; }
-        .rm-arm-left, .rm-arm-right { transform-origin: 62px 150px; }
-        .rm-arm-right { transform-origin: 138px 150px; }
+        .rm-eye { transform-origin: 100px 80px; }
+        .rm-pupil { transform-origin: 100px 80px; }
+        .rm-antenna { transform-origin: 114px 38px; animation: rm-antenna-sway 2.6s ease-in-out infinite; }
+        .rm-eyelid { transform-origin: 100px 44px; }
+        .rm-arm-left, .rm-arm-right { transform-origin: 66px 148px; }
+        .rm-arm-right { transform-origin: 134px 148px; }
         .rm-steam circle { fill: #cfe8ff; opacity: 0; }
         .rm-qmark { opacity: 0; transform-origin: 152px 30px; }
         .rm-shadow { transform-origin: 100px 205px; }
 
         @keyframes rm-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
         @keyframes rm-antenna-sway { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(4deg); } }
-        @keyframes rm-blink { 0%, 88%, 100% { height: 0; } 92%, 96% { height: 84px; } }
+        @keyframes rm-blink { 0%, 88%, 100% { height: 0; } 92%, 96% { height: 72px; } }
 
         /* idle: gentle blink loop */
         .rm-idle .rm-eyelid { animation: rm-blink 4.5s ease-in-out infinite; }
