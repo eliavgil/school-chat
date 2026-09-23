@@ -6,6 +6,7 @@ import RobotMascot from "./RobotMascot"
 interface Message { role: "user" | "bot"; text: string; needsHelp?: boolean }
 
 const URL_PATTERN = /(https?:\/\/[^\s)]+)/g
+const BOLD_PATTERN = /\*\*(.+?)\*\*/g
 // The model prefixes an "I don't know" answer with this hidden marker so
 // the UI can swap in the confused mascot + escalation prompt instead of
 // just showing the raw text — stripped before display either way.
@@ -26,6 +27,15 @@ function linkify(text: string) {
       ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline break-all" onClick={e => e.stopPropagation()}>{part}</a>
       : <Fragment key={i}>{part}</Fragment>
   )
+}
+
+// The model is told not to use markdown, but a stray **bold** slips
+// through often enough to be worth rendering rather than showing raw
+// asterisks — same split-on-capture-group trick as linkify, layered on
+// top of it so a URL inside a bold span still becomes a link.
+function renderMessage(text: string) {
+  const parts = text.split(BOLD_PATTERN)
+  return parts.map((part, i) => (i % 2 === 1 ? <strong key={i}>{linkify(part)}</strong> : <Fragment key={i}>{linkify(part)}</Fragment>))
 }
 
 const EXAMPLE_QUESTIONS = [
@@ -186,7 +196,7 @@ export default function AssistantChat() {
                 m.role === "user" ? "bg-stone-900 text-white rounded-tr-sm" :
                 m.needsHelp ? "bg-amber-50 border border-amber-200 text-stone-800 rounded-tl-sm" : "bg-stone-100 text-stone-800 rounded-tl-sm"
               }`}>
-                {m.role === "bot" ? linkify(m.text) : m.text}
+                {m.role === "bot" ? renderMessage(m.text) : m.text}
               </div>
               {m.role === "bot" && (
                 <FeedbackRow question={messages[i - 1]?.text ?? ""} answer={m.text} needsHelp={m.needsHelp} />
