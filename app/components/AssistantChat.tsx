@@ -1,8 +1,27 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, Fragment } from "react"
 
 interface Message { role: "user" | "bot"; text: string }
+
+const URL_PATTERN = /(https?:\/\/[^\s)]+)/g
+
+// The bot is instructed to include plain https:// URLs (not markdown
+// links) when handing out a link, so a message can just be scanned for
+// URL substrings — no markdown parser needed. Only applied to settled
+// messages, not the live-streaming text, so a URL never renders half-cut.
+function linkify(text: string) {
+  // split() with one capturing group interleaves as [text, match, text,
+  // match, ...] — odd indices are always the captured URLs, so no need
+  // to re-test each part (and re-testing a global regex via .test() has
+  // its own lastIndex footgun).
+  const parts = text.split(URL_PATTERN)
+  return parts.map((part, i) =>
+    i % 2 === 1
+      ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="underline break-all" onClick={e => e.stopPropagation()}>{part}</a>
+      : <Fragment key={i}>{part}</Fragment>
+  )
+}
 
 const QUICK_ACTIONS = [
   { label: "🚌 טיול שנתי", text: "מתי הטיול השנתי?" },
@@ -119,7 +138,7 @@ export default function AssistantChat() {
             <div className={`max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap ${
               m.role === "user" ? "bg-stone-900 text-white rounded-tr-sm" : "bg-stone-100 text-stone-800 rounded-tl-sm"
             }`}>
-              {m.text}
+              {m.role === "bot" ? linkify(m.text) : m.text}
             </div>
           </div>
         ))}

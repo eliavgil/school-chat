@@ -353,6 +353,19 @@ model SchoolAssistantSettings {
   updatedAt    DateTime @updatedAt
 }
 
+// A named link the teacher wants the assistant bot able to hand out —
+// e.g. a permission-slip form, a registration page — with a description
+// of when it's relevant, separate from SchoolKnowledgeDoc facts since
+// these are meant to be inserted verbatim into an answer, not summarized.
+model SchoolAssistantLink {
+  id           String   @id @default(cuid())
+  label        String
+  url          String
+  whenToUse    String   @db.Text
+  createdById  String
+  createdAt    DateTime @default(now())
+}
+
 // Bot response cache — avoid repeat Claude calls for identical questions
 model BotCache {
   id        String   @id @default(cuid())

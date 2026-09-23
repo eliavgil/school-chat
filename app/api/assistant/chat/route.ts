@@ -60,7 +60,12 @@ async function resolveStudentContext(userId: string, role: string) {
   }
 }
 
-function buildSystemPrompt(facts: string, ctx: Awaited<ReturnType<typeof resolveStudentContext>>, customInstructions: string) {
+function buildSystemPrompt(
+  facts: string,
+  ctx: Awaited<ReturnType<typeof resolveStudentContext>>,
+  customInstructions: string,
+  links: { label: string; url: string; whenToUse: string }[]
+) {
   const ctxLines = ctx
     ? [
         `שם: ${ctx.studentName}`,
@@ -74,6 +79,10 @@ function buildSystemPrompt(facts: string, ctx: Awaited<ReturnType<typeof resolve
         ctx.gender ? `מגדר: ${ctx.gender === "נ" ? "נקבה — פני אליו/ה בלשון נקבה (את, יכולה, לומדת וכו')" : "זכר — פני אליו/ה בלשון זכר (אתה, יכול, לומד וכו')"}` : null,
       ].filter(Boolean).join("\n")
     : "לא ידוע (לא זוהה תלמיד מקושר לחשבון)"
+
+  const linksBlock = links.length
+    ? `\n## קישורים שאפשר לצרף לתשובה\nכשאחד מהם רלוונטי לשאלה, כלול אותו בתשובה — כתוב את הכתובת המלאה כטקסט רגיל (https://...), **לא** בפורמט מרקדאון כמו [טקסט](קישור), כי זה לא יהפוך ללחיץ. אל תצרף קישור שלא רלוונטי לשאלה הספציפית.\n${links.map(l => `- ${l.label}${l.whenToUse ? ` (${l.whenToUse})` : ""}: ${l.url}`).join("\n")}\n`
+    : ""
 
   return `אתה "פקפקובי בוט - עוזר אישי" — בוט מידע לוגיסטי לתלמידים והורים בבית הספר "כפר סילבר".
 
@@ -89,7 +98,7 @@ ${ctxLines}
 
 ## מאגר העובדות על בית הספר
 ${facts || "(המאגר ריק כרגע — עדיין לא הועלו קבצים)"}
-${customInstructions ? `\n## הוראות נוספות מהמחנך (טון, סגנון, דגשים) — בכפוף לחוקים הקבועים למעלה\n${customInstructions}` : ""}
+${linksBlock}${customInstructions ? `\n## הוראות נוספות מהמחנך (טון, סגנון, דגשים) — בכפוף לחוקים הקבועים למעלה\n${customInstructions}` : ""}
 
 ברירת מחדל אם אין הוראה אחרת למעלה: תשובות קצרות וברורות בעברית, בטון חברותי ופשוט.`
 }
@@ -142,15 +151,16 @@ export async function POST(req: NextRequest) {
     })
   }
 
-  const [docs, ctx, settings] = await Promise.all([
+  const [docs, ctx, settings, links] = await Promise.all([
     prisma.schoolKnowledgeDoc.findMany({ select: { filename: true, extractedFacts: true, note: true } }),
     resolveStudentContext(session.user.id, role),
     prisma.schoolAssistantSettings.findUnique({ where: { id: "default" }, select: { instructions: true } }),
+    prisma.schoolAssistantLink.findMany({ select: { label: true, url: true, whenToUse: true } }),
   ])
   const facts = docs
     .map(d => `### ${d.filename}${d.note ? ` — הערת המחנך/ת: ${d.note}` : ""}\n${d.extractedFacts}`)
     .join("\n\n")
-  const systemPrompt = buildSystemPrompt(facts, ctx, settings?.instructions ?? "")
+  const systemPrompt = buildSystemPrompt(facts, ctx, settings?.instructions ?? "", links)
 
   const encoder = new TextEncoder()
   const userId = session.user.id

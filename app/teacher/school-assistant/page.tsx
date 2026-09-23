@@ -12,6 +12,14 @@ interface DocT {
   createdAt: string
 }
 
+interface LinkT {
+  id: string
+  label: string
+  url: string
+  whenToUse: string
+  createdAt: string
+}
+
 type UploadStatus = "pending" | "uploading" | "done" | "error"
 interface UploadItem { name: string; status: UploadStatus; error?: string }
 
@@ -60,7 +68,16 @@ export default function SchoolAssistantAdminPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dirInputRef = useRef<HTMLInputElement>(null)
 
-  useEffect(() => { load(); loadInstructions() }, [])
+  const [links, setLinks] = useState<LinkT[]>([])
+  const [linksLoading, setLinksLoading] = useState(true)
+  const [newLinkLabel, setNewLinkLabel] = useState("")
+  const [newLinkUrl, setNewLinkUrl] = useState("")
+  const [newLinkWhen, setNewLinkWhen] = useState("")
+  const [linkSaving, setLinkSaving] = useState(false)
+  const [linkError, setLinkError] = useState<string | null>(null)
+  const [editingLink, setEditingLink] = useState<Record<string, { label: string; url: string; whenToUse: string }>>({})
+
+  useEffect(() => { load(); loadInstructions(); loadLinks() }, [])
 
   async function load() {
     setLoading(true)
@@ -86,6 +103,49 @@ export default function SchoolAssistantAdminPage() {
     setInstructionsSaving(false)
     setInstructionsSaved(true)
     setTimeout(() => setInstructionsSaved(false), 2000)
+  }
+
+  async function loadLinks() {
+    setLinksLoading(true)
+    const d = await fetch("/api/admin/assistant-links").then(r => r.json()).catch(() => ({ links: [] }))
+    setLinks(d.links ?? [])
+    setLinksLoading(false)
+  }
+
+  async function addLink() {
+    if (!newLinkLabel.trim() || !newLinkUrl.trim()) return
+    setLinkSaving(true)
+    setLinkError(null)
+    try {
+      const res = await fetch("/api/admin/assistant-links", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label: newLinkLabel.trim(), url: newLinkUrl.trim(), whenToUse: newLinkWhen.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "שגיאה")
+      setNewLinkLabel(""); setNewLinkUrl(""); setNewLinkWhen("")
+      loadLinks()
+    } catch (e: any) {
+      setLinkError(e?.message ?? "שגיאה")
+    }
+    setLinkSaving(false)
+  }
+
+  async function saveLinkEdit(id: string) {
+    const draft = editingLink[id]
+    if (!draft) return
+    await fetch("/api/admin/assistant-links", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, ...draft }),
+    })
+    setLinks(prev => prev.map(l => l.id === id ? { ...l, ...draft } : l))
+    setEditingLink(prev => { const next = { ...prev }; delete next[id]; return next })
+  }
+
+  async function removeLink(id: string) {
+    if (!confirm("למחוק קישור זה?")) return
+    await fetch("/api/admin/assistant-links", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) })
+    setLinks(prev => prev.filter(l => l.id !== id))
   }
 
   async function handleFiles(files: FileList | null) {
@@ -273,6 +333,72 @@ export default function SchoolAssistantAdminPage() {
               </button>
             </>
           )}
+        </div>
+
+        <div className="bg-white/8 border border-white/15 rounded-2xl p-4 space-y-3">
+          <div>
+            <h2 className="text-white text-sm font-medium mb-1">קישורים</h2>
+            <p className="text-white/40 text-xs leading-relaxed">
+              קישורים שהבוט יכול לצרף לתשובות שלו — למשל טופס יציאה, דף הרשמה. תכתוב לכל אחד מתי הוא רלוונטי; הבוט יצרף אותו רק כשזה מתאים לשאלה.
+            </p>
+          </div>
+
+          {!linksLoading && links.length > 0 && (
+            <div className="space-y-1.5">
+              {links.map(l => {
+                const isEditingLink = l.id in editingLink
+                return (
+                  <div key={l.id} className="bg-white/6 rounded-lg p-2.5">
+                    {isEditingLink ? (
+                      <div className="space-y-1.5">
+                        <input value={editingLink[l.id].label} onChange={e => setEditingLink(prev => ({ ...prev, [l.id]: { ...prev[l.id], label: e.target.value } }))}
+                          placeholder="שם הקישור"
+                          className="w-full bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-xs text-white placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-white/30" />
+                        <input value={editingLink[l.id].url} onChange={e => setEditingLink(prev => ({ ...prev, [l.id]: { ...prev[l.id], url: e.target.value } }))}
+                          dir="ltr" placeholder="https://..."
+                          className="w-full bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-xs text-white placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-white/30" />
+                        <input value={editingLink[l.id].whenToUse} onChange={e => setEditingLink(prev => ({ ...prev, [l.id]: { ...prev[l.id], whenToUse: e.target.value } }))}
+                          placeholder="מתי להשתמש בקישור הזה"
+                          className="w-full bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-xs text-white placeholder:text-white/25 focus:outline-none focus:ring-1 focus:ring-white/30" />
+                        <div className="flex gap-2">
+                          <button onClick={() => saveLinkEdit(l.id)} className="text-[11px] text-white/80 hover:text-white interactive bg-white/15 px-2 py-1 rounded-lg">שמור</button>
+                          <button onClick={() => setEditingLink(prev => { const next = { ...prev }; delete next[l.id]; return next })}
+                            className="text-[11px] text-white/40 hover:text-white interactive px-2 py-1">ביטול</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="text-white/80 text-xs font-medium truncate">{l.label}</p>
+                          {l.whenToUse && <p className="text-white/35 text-[11px] mt-0.5">{l.whenToUse}</p>}
+                          <a href={l.url} target="_blank" rel="noopener noreferrer" dir="ltr" className="text-blue-300/70 hover:text-blue-300 text-[11px] underline truncate block mt-0.5">{l.url}</a>
+                        </div>
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          <button onClick={() => setEditingLink(prev => ({ ...prev, [l.id]: { label: l.label, url: l.url, whenToUse: l.whenToUse } }))}
+                            className="text-white/40 hover:text-white text-[11px] interactive px-1.5 py-0.5 rounded-lg bg-white/8">✎</button>
+                          <button onClick={() => removeLink(l.id)} className="text-white/40 hover:text-red-400 text-[11px] interactive px-1.5 py-0.5 rounded-lg bg-white/8">מחק</button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          )}
+
+          <div className="space-y-1.5 pt-1 border-t border-white/5">
+            <input value={newLinkLabel} onChange={e => setNewLinkLabel(e.target.value)} placeholder="שם הקישור (לדוגמה: טופס יציאה לפעילות ערב)"
+              className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-white/30" />
+            <input value={newLinkUrl} onChange={e => setNewLinkUrl(e.target.value)} dir="ltr" placeholder="https://..."
+              className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/30" />
+            <input value={newLinkWhen} onChange={e => setNewLinkWhen(e.target.value)} placeholder="מתי להשתמש בו (לדוגמה: כשתלמיד שואל על יציאה לפעילות ערב)"
+              className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-xs text-white placeholder:text-white/25 focus:outline-none focus:ring-2 focus:ring-white/30" />
+            <button onClick={addLink} disabled={linkSaving || !newLinkLabel.trim() || !newLinkUrl.trim()}
+              className="w-full bg-white/15 hover:bg-white/25 text-white text-sm font-medium py-2 rounded-xl interactive btn-press transition-colors disabled:opacity-40">
+              {linkSaving ? "מוסיף..." : "+ הוסף קישור"}
+            </button>
+            {linkError && <p className="text-red-400 text-xs">{linkError}</p>}
+          </div>
         </div>
 
         <div className="bg-white/8 border border-white/15 rounded-2xl p-4 space-y-3">
