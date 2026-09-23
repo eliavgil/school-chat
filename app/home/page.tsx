@@ -682,7 +682,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
   const NUM_PAGES = 6
   const NUM_LABELS = ["בית", "יומן", "תפריט", "כיתה"] // kept for accessibility/future use
-  const MENU_LINKS = [
+  const MENU_LINKS: { label: string; href: string; emoji: string; icon?: string; soon: boolean }[] = [
     { label: "אזרחות מלאכותית",      href: "/lessons",                emoji: "🎓", soon: false },
     { label: "שאלונים",           href: "/teacher/surveys",        emoji: "📋", soon: false },
     { label: "צוות מחנכים",       href: "/teacher/team",           emoji: "🧑‍🏫", soon: false },
@@ -691,7 +691,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
     { label: "לוח KPI",           href: "/kpi",                    emoji: "📊", soon: false },
     { label: "מורה מקצועי",       href: "/teacher/subject",        emoji: "📚", soon: false },
     { label: "ניהול שכבה",        href: "/teacher/grade-hub",      emoji: "🏫", soon: false },
-    { label: "מיסטר פקפקובי",      href: "/assistant",                emoji: "🤖", soon: false },
+    { label: "מיסטר פקפקובי",      href: "/assistant",                emoji: "🤖", icon: "/mascot/face.png", soon: false },
     { label: "פקפקובי בוט - ניהול מאגר ידע", href: "/teacher/school-assistant", emoji: "🗂️", soon: false },
     { label: "פקפקובי בוט - מורה פרטי",      href: "#",                         emoji: "🧑‍🏫", soon: true },
     { label: "הגדרות",            href: "/manage",                 emoji: "⚙️", soon: false },
@@ -765,14 +765,14 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
               <button onClick={() => setMenuOpen(false)} className="text-white/60 hover:text-white text-xl interactive">✕</button>
             </div>
             <nav className="flex-1 px-4 py-4 space-y-1">
-              {[
+              {([
                 { label: "עמוד הבית",       href: "/home",                   emoji: "🏠" },
                 { label: "אזרחות מלאכותית",     href: "/lessons",                emoji: "🎓" },
                 { label: "שאלונים",          href: "/teacher/surveys",        emoji: "📋" },
                 { label: "צוות מחנכים",      href: "/teacher/team",           emoji: "🧑‍🏫" },
                 { label: "שיחות הורים",      href: "/dashboard",              emoji: "💬" },
                 { label: "משימות",           href: "/teacher/tasks",          emoji: "✅" },
-                { label: "מיסטר פקפקובי",      href: "/assistant",              emoji: "🤖" },
+                { label: "מיסטר פקפקובי",      href: "/assistant",              emoji: "🤖", icon: "/mascot/face.png" },
                 { label: "פקפקובי בוט - ניהול מאגר ידע", href: "/teacher/school-assistant", emoji: "🗂️" },
                 { label: "מענים אישיים",     href: "/teacher/accommodations", emoji: "🧩" },
                 { label: "מעקב רגשי-חברתי", href: "/teacher/emotional",      emoji: "💙" },
@@ -780,10 +780,10 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                 { label: "ניהול שכבה",       href: "/teacher/grade-hub",      emoji: "🏫" },
                 { label: "הגדרות",           href: "/manage",                 emoji: "⚙️" },
                 ...(isAdmin ? [{ label: "פרופיל", href: "/profile", emoji: "👤" }] : []),
-              ].map(item => (
+              ] as { label: string; href: string; emoji: string; icon?: string }[]).map(item => (
                 <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/80 hover:text-white hover:bg-white/10 interactive transition-colors text-sm">
-                  <span className="text-base">{item.emoji}</span>
+                  {item.icon ? <img src={item.icon} alt="" className="w-5 h-5 object-contain" /> : <span className="text-base">{item.emoji}</span>}
                   <span>{item.label}</span>
                 </Link>
               ))}
@@ -1028,14 +1028,14 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                 {MENU_LINKS.map(l => (
                   l.soon ? (
                     <div key={l.label} className="glass rounded-2xl py-6 flex flex-col items-center gap-2 opacity-40 relative border border-dashed border-white/20">
-                      <span className="text-3xl">{l.emoji}</span>
+                      {l.icon ? <img src={l.icon} alt="" className="w-9 h-9 object-contain" /> : <span className="text-3xl">{l.emoji}</span>}
                       <span className="text-white/60 text-xs font-medium text-center leading-tight">{l.label}</span>
                       <span className="absolute top-2 left-2 text-[9px] bg-white/10 text-white/40 px-1.5 py-0.5 rounded-full">בקרוב</span>
                     </div>
                   ) : (
                     <Link key={l.label} href={l.href}
                       className="glass rounded-2xl py-6 flex flex-col items-center gap-2 hover:bg-white/15 interactive btn-press transition-colors">
-                      <span className="text-3xl">{l.emoji}</span>
+                      {l.icon ? <img src={l.icon} alt="" className="w-9 h-9 object-contain" /> : <span className="text-3xl">{l.emoji}</span>}
                       <span className="text-white/75 text-xs font-medium text-center leading-tight">{l.label}</span>
                     </Link>
                   )
@@ -1288,15 +1288,15 @@ function ParentHome({ session, data }: { session: any; data: HomeData | null }) 
               <button onClick={() => setMenuOpen(false)} className="text-white/60 hover:text-white text-xl interactive">✕</button>
             </div>
             <nav className="flex-1 px-4 py-4 space-y-1">
-              {[
+              {([
                 { label: "עמוד הבית",   href: "/home",         emoji: "🏠" },
                 { label: "צ׳אט עם המחנך", href: "/chat",       emoji: "💬" },
-                { label: "מיסטר פקפקובי", href: "/assistant", emoji: "🤖" },
+                { label: "מיסטר פקפקובי", href: "/assistant", emoji: "🤖", icon: "/mascot/face.png" },
                 { label: "הגדרות אישיות", href: "/manage", emoji: "⚙️" },
-              ].map(item => (
+              ] as { label: string; href: string; emoji: string; icon?: string }[]).map(item => (
                 <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}
                   className="flex items-center gap-3 px-3 py-3 rounded-xl text-white/80 hover:text-white hover:bg-white/10 interactive transition-colors text-sm">
-                  <span className="text-lg">{item.emoji}</span>
+                  {item.icon ? <img src={item.icon} alt="" className="w-5 h-5 object-contain" /> : <span className="text-lg">{item.emoji}</span>}
                   <span>{item.label}</span>
                 </Link>
               ))}
