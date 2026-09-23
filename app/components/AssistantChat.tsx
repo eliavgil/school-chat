@@ -55,10 +55,10 @@ const EXAMPLE_QUESTIONS = [
   "מי יודע מדוע ולמה לובשת הזברה פיג'מה?",
 ]
 
-function MiniMascot({ talking }: { talking?: boolean }) {
+function MiniMascot() {
   return (
     <div className="w-9 h-9 flex-shrink-0 mt-0.5">
-      <RobotMascot state={talking ? "talking" : "idle"} size={36} />
+      <RobotMascot state="idle" size={36} />
     </div>
   )
 }
@@ -233,20 +233,12 @@ export default function AssistantChat() {
           </div>
         ))}
 
-        {loading && streamingText && (
-          <div className="flex justify-start gap-2">
-            <MiniMascot talking />
-            <div className="max-w-[80%] flex-1">
-              <ProgressBar progress={ringComplete ? 1 : streamingText.length / STREAM_TARGET_CHARS} />
-              <div className="rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap bg-stone-100 text-stone-800">
-                {streamingText}
-              </div>
-            </div>
-          </div>
-        )}
-        {loading && !streamingText && (
-          <div className="fixed inset-0 z-40 flex items-center justify-center bg-white/65 backdrop-blur-[2px] pointer-events-none">
+        {loading && (
+          <div className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-4 bg-white/65 backdrop-blur-[2px] pointer-events-none">
             <RobotMascot state="thinking" size={260} />
+            <div className="w-48">
+              <ProgressBar progress={ringComplete ? 1 : streamingText.length / STREAM_TARGET_CHARS} />
+            </div>
           </div>
         )}
         {error && <p className="text-red-500 text-xs text-center">{error}</p>}

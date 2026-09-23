@@ -117,39 +117,13 @@ export async function POST(req: NextRequest) {
         .map((m: any) => ({ role: m.role, content: m.content }))
     : []
 
-  // The cache only makes sense for a question asked with no prior
-  // conversation — once there's real back-and-forth, the same question text
-  // can mean something different depending on context, so a cached reply
-  // from an unrelated earlier conversation could be flat wrong.
-  const oneDayAgo = new Date(Date.now() - 24 * 3600 * 1000)
-  const cached = history.length === 0 ? await prisma.botCache.findFirst({
-    where: { userId: session.user.id, question, fromBot: "assistant", createdAt: { gte: oneDayAgo } },
-  }) : null
-  if (cached) {
-    const encoder = new TextEncoder()
-    const cachedAnswer = cached.answer
-    const stream = new ReadableStream({
-      start(controller) {
-        const chunkSize = 20
-        let i = 0
-        const interval = setInterval(() => {
-          if (i >= cachedAnswer.length) {
-            clearInterval(interval)
-            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true, fromCache: true })}\n\n`))
-            controller.close()
-            return
-          }
-          const chunk = cachedAnswer.slice(i, i + chunkSize)
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk })}\n\n`))
-          i += chunkSize
-        }, 20)
-      },
-    })
-    return new Response(stream, {
-      headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", "Connection": "keep-alive" },
-    })
-  }
-
+  // Deliberately no answer caching here (unlike /api/student/chat's
+  // BotCache) — this bot's system prompt includes the current date/time and
+  // per-student context that both change day to day, so a cached reply for
+  // the same literal question text can go stale and wrong within the same
+  // day (confirmed live: a cached "what day is it" answer from earlier in
+  // the day got replayed verbatim after later fixes to date-awareness and
+  // student data, ignoring everything that had since changed).
   const [docs, ctx, settings, links] = await Promise.all([
     prisma.schoolKnowledgeDoc.findMany({ select: { filename: true, extractedFacts: true, note: true } }),
     resolveStudentContext(session.user.id, role),
@@ -162,10 +136,8 @@ export async function POST(req: NextRequest) {
   const systemPrompt = buildSystemPrompt(facts, ctx, settings?.instructions ?? "", links)
 
   const encoder = new TextEncoder()
-  const userId = session.user.id
   const stream = new ReadableStream({
     async start(controller) {
-      let fullText = ""
       try {
         const claudeStream = anthropic.messages.stream({
           model: "claude-sonnet-5",
@@ -175,14 +147,8 @@ export async function POST(req: NextRequest) {
         })
         for await (const chunk of claudeStream) {
           if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
-            fullText += chunk.delta.text
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`))
           }
-        }
-        if (fullText && history.length === 0) {
-          prisma.botCache.create({
-            data: { userId, question, answer: fullText, fromBot: "assistant" },
-          }).catch(() => {})
         }
       } catch {
         controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: true })}\n\n`))
