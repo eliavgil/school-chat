@@ -102,6 +102,10 @@ async function runImport(rows: unknown[][]) {
     if (!studentId) { notFound.push(name); continue }
 
     try {
+      // Only overwrite studyGroups when this file actually matched at
+      // least one group for the student — a narrower/reduced export
+      // (fewer subject-group columns) must not wipe out fuller data a
+      // previous import already wrote for groups it doesn't cover.
       await prisma.student.update({
         where: { id: studentId },
         data: {
@@ -109,7 +113,7 @@ async function runImport(rows: unknown[][]) {
           ...(track && { track }),
           ...(mathUnits && { mathUnits }),
           ...(englishUnits && { englishUnits }),
-          studyGroups: myGroups.join("\n") || null,
+          ...(myGroups.length > 0 && { studyGroups: myGroups.join("\n") }),
         },
       })
       updated.push(name)
