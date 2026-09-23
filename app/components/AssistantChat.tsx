@@ -99,6 +99,9 @@ export default function AssistantChat() {
     if (!q || loading) return
     setError(null)
     setInput("")
+    // Snapshot before appending the new question — this is what the server
+    // treats as prior turns; the question itself is sent separately.
+    const history = messages.map(m => ({ role: m.role === "user" ? "user" : "assistant", content: m.text }))
     setMessages(prev => [...prev, { role: "user", text: q }])
     setLoading(true)
     setStreamingText("")
@@ -106,7 +109,7 @@ export default function AssistantChat() {
     const res = await fetch("/api/assistant/chat", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ question: q }),
+      body: JSON.stringify({ question: q, history }),
     })
 
     if (res.status === 429) {

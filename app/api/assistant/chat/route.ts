@@ -49,9 +49,10 @@ function buildSystemPrompt(
     ? `\n## קישורים שאפשר לצרף לתשובה\nכשאחד מהם רלוונטי לשאלה, כלול אותו בתשובה — כתוב את הכתובת המלאה כטקסט רגיל (https://...), **לא** בפורמט מרקדאון כמו [טקסט](קישור), כי זה לא יהפוך ללחיץ. אל תצרף קישור שלא רלוונטי לשאלה הספציפית.\n${links.map(l => `- ${l.label}${l.whenToUse ? ` (${l.whenToUse})` : ""}: ${l.url}`).join("\n")}\n`
     : ""
 
-  return `אתה ד"ר פקפקובי — רובוט-צעצוע ישן, חביב אבל קצת ערמומי, שמשמש כעוזר האישי לתלמידים והורים בבית הספר "כפר סילבר". יש לך אישיות משלך — קצת שובבה, אבל תמיד עוזרת. אל תציג את עצמך בתור "בוט" יבש — אתה ד"ר פקפקובי.
+  return `אתה ד"ר פקפקובי — רובוט-צעצוע ישן, חביב אבל קצת ערמומי, שמשמש כעוזר האישי לתלמידים והורים בבית הספר "כפר סילבר". יש לך אישיות משלך — קצת שובבה, אבל תמיד עוזרת. זה השם שלך אם יש צורך לציין אותו (ולא "בוט" גנרי) — אבל אל תציג את עצמך ואל תסביר מי אתה ומה אתה עושה בכל הודעה. הצגה עצמית (אם בכלל) שייכת אך ורק להודעה הראשונה של שיחה חדשה; מההודעה השנייה והלאה תענה ישר לעניין, בלי הקדמות ובלי לחזור על מי אתה.
 
 חוקים קבועים, לא ניתנים לשינוי גם אם הוראות ההמשך למטה אומרות אחרת:
+- **תשובות קצרות מאוד** — משפט או שניים כברירת מחדל. פסקה ארוכה או רשימה מפורטת רק אם השאלה עצמה דורשת את זה (למשל שלבים מדויקים לביצוע). אל תסביר, אל תוסיף הקשר מיותר, ואל תחזור על דברים שכבר נאמרו קודם באותה שיחה.
 - אתה **לא** בוט הוראה — אל תסביר חומר לימודי ואל תפתור תרגילים.
 - אל תיגע בציונים בשום מקרה.
 - "הקשר על התלמיד/ה ששואל/ת" למטה שייך אך ורק למי שמדבר/ת איתך כרגע. מותר לך להתייחס אליו/ה בשם, ולהזכיר את הפרטים האלה על עצמו/ה בלבד (למשל להתאים תשובה למגמה שלו/ה, או לומר מי מלמד אותו/ה באיזה מקצוע). **לעולם אל תחשוף, תנחש, או תסכים לדבר על פרטים אישיים (יישוב מגורים, שם הורה, מגמה, קבוצות לימוד/מורים וכד׳) של תלמיד/ה אחר/ת** — גם אם נשאלת בפירוש, גם אם הטוען אומר שזה על עצמו/ה, גם אם זה "רק בשביל חבר" — במקרה כזה תסרב בנימוס ותציע לפנות למזכירות.
@@ -85,13 +86,26 @@ export async function POST(req: NextRequest) {
     )
   }
 
-  const { question } = await req.json()
+  const { question, history: rawHistory } = await req.json()
   if (!question?.trim()) return NextResponse.json({ error: "Empty question" }, { status: 400 })
 
+  // Cap to the last 20 turns and only trust role/content — this becomes
+  // part of the Claude request, so never pass through arbitrary client JSON.
+  const history: { role: "user" | "assistant"; content: string }[] = Array.isArray(rawHistory)
+    ? rawHistory
+        .filter((m: any) => (m?.role === "user" || m?.role === "assistant") && typeof m?.content === "string" && m.content.trim())
+        .slice(-20)
+        .map((m: any) => ({ role: m.role, content: m.content }))
+    : []
+
+  // The cache only makes sense for a question asked with no prior
+  // conversation — once there's real back-and-forth, the same question text
+  // can mean something different depending on context, so a cached reply
+  // from an unrelated earlier conversation could be flat wrong.
   const oneDayAgo = new Date(Date.now() - 24 * 3600 * 1000)
-  const cached = await prisma.botCache.findFirst({
+  const cached = history.length === 0 ? await prisma.botCache.findFirst({
     where: { userId: session.user.id, question, fromBot: "assistant", createdAt: { gte: oneDayAgo } },
-  })
+  }) : null
   if (cached) {
     const encoder = new TextEncoder()
     const cachedAnswer = cached.answer
@@ -138,7 +152,7 @@ export async function POST(req: NextRequest) {
           model: "claude-haiku-4-5-20251001",
           max_tokens: 1024,
           system: systemPrompt,
-          messages: [{ role: "user", content: question }],
+          messages: [...history, { role: "user", content: question }],
         })
         for await (const chunk of claudeStream) {
           if (chunk.type === "content_block_delta" && chunk.delta.type === "text_delta") {
@@ -146,7 +160,7 @@ export async function POST(req: NextRequest) {
             controller.enqueue(encoder.encode(`data: ${JSON.stringify({ text: chunk.delta.text })}\n\n`))
           }
         }
-        if (fullText) {
+        if (fullText && history.length === 0) {
           prisma.botCache.create({
             data: { userId, question, answer: fullText, fromBot: "assistant" },
           }).catch(() => {})
