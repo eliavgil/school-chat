@@ -1234,6 +1234,171 @@ function CalendarModal({ items, title, onClose }: {
   )
 }
 
+// A much narrower home for a plain homeroom teacher (TEACHER role, not
+// ADMIN) — the full TeacherHome above is really the coordinator's own
+// dashboard (roster management, imports, KPI, civics content, ...), which
+// was being shown to every teacher regardless of role and read as
+// cluttered/irrelevant to them. Just today's schedule plus the four things
+// a homeroom teacher actually needs a fast link to.
+function HomeroomTeacherHome({ session, data }: { session: any; data: HomeData | null }) {
+  const now = useTick()
+  const { bgId, customUrl } = useBg("teacher")
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [personalName] = useState(() => {
+    if (typeof window === "undefined") return ""
+    return getPersonalDisplayName()
+  })
+  const firstName = personalName || (session?.user?.name?.split(" ")[0] ?? "")
+
+  const dateStr = now.toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" })
+  const todaySlots = data?.todaySchedule ?? []
+  const bellSlots = data?.bellSlots ?? []
+  const timeline = buildTimeline(todaySlots, bellSlots)
+  const nowNext = getNowNext(timeline, now, bellSlots.length > 0)
+
+  const LINKS: { label: string; href: string; emoji: string; icon?: string }[] = [
+    { label: "צוות מחנכי י",              href: "/teacher/team",              emoji: "🧑‍🏫" },
+    { label: "מערכת, לוז אירועים",        href: "/teacher/schedule",          emoji: "🗓️" },
+    { label: "מיסטר פקפקובי",             href: "/assistant",                 emoji: "🤖", icon: "/mascot/face.png" },
+    { label: "השכלה כללית חינוכית",       href: "/teacher/general-education", emoji: "📖" },
+  ]
+
+  return (
+    <div className="flex flex-col h-screen" dir="rtl">
+      <div className="fixed inset-0" style={{ zIndex: -2 }}><NatureBackground bgId={bgId} customUrl={customUrl} /></div>
+      <div className="fixed inset-0 pointer-events-none bg-gradient-to-b from-black/55 via-black/28 to-black/70" style={{ zIndex: -1 }} />
+
+      <header className="relative z-20 flex items-center justify-between px-4 pb-1.5 header-pt flex-shrink-0" dir="ltr">
+        <p className="text-white/45 text-[11px] font-medium">{dateStr}</p>
+        <div className="flex items-center gap-2.5">
+          <div dir="rtl" className="text-right leading-tight">
+            <p className="text-white/80 text-[12px] font-medium">{firstName} · {data?.classProfile?.displayName ?? ""}</p>
+          </div>
+          <button onClick={() => setMenuOpen(true)}
+            className="w-7 h-7 flex items-center justify-center glass rounded-lg btn-press interactive">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="text-white/80">
+              <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      {menuOpen && (
+        <>
+          <div className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm" onClick={() => setMenuOpen(false)} />
+          <div className="fixed top-0 bottom-0 z-40 w-64 bg-black/85 backdrop-blur-xl flex flex-col" style={{ right: 0 }} dir="rtl">
+            <div className="flex items-center justify-between px-5 pt-12 pb-4 border-b border-white/10">
+              <span className="text-white font-semibold text-lg">תפריט</span>
+              <button onClick={() => setMenuOpen(false)} className="text-white/60 hover:text-white text-xl interactive">✕</button>
+            </div>
+            <nav className="flex-1 px-4 py-4 space-y-1">
+              {[...LINKS, { label: "הגדרות", href: "/manage", emoji: "⚙️" }].map(item => (
+                <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-white/80 hover:text-white hover:bg-white/10 interactive transition-colors text-sm">
+                  {item.icon ? <img src={item.icon} alt="" className="w-5 h-5 object-contain" /> : <span className="text-base">{item.emoji}</span>}
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </nav>
+            <div className="px-4 pb-10 border-t border-white/10 pt-4">
+              <button onClick={() => signOut({ callbackUrl: "/login" })}
+                className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-white/50 hover:text-red-400 hover:bg-white/5 interactive text-sm">
+                <span className="text-lg">🚪</span><span>יציאה</span>
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+
+      <main className="relative z-10 flex-1 overflow-y-auto px-5 pt-3 pb-10">
+        <div className="grid grid-cols-2 gap-3 mb-5">
+          {LINKS.map(l => (
+            <Link key={l.href} href={l.href}
+              className="glass rounded-2xl py-5 flex flex-col items-center gap-2 hover:bg-white/15 interactive btn-press transition-colors">
+              {l.icon ? <img src={l.icon} alt="" className="w-8 h-8 object-contain" /> : <span className="text-2xl">{l.emoji}</span>}
+              <span className="text-white/80 text-xs font-medium text-center leading-tight">{l.label}</span>
+            </Link>
+          ))}
+        </div>
+
+        <div className="flex flex-col gap-4">
+          <p className="text-white/50 text-sm font-medium">מערכת היום</p>
+
+          {nowNext.state === "no-school" && (
+            <div className="glass rounded-3xl px-6 py-10 text-center">
+              <div className="text-4xl mb-3">🌿</div>
+              <p className="text-white text-2xl font-light">אין לימודים היום</p>
+            </div>
+          )}
+          {nowNext.state === "done" && (
+            <div className="glass rounded-3xl px-6 py-10 text-center">
+              <div className="text-4xl mb-3">🎉</div>
+              <p className="text-white text-2xl font-light">יום הלימודים הסתיים</p>
+            </div>
+          )}
+          {(nowNext.state === "now" || nowNext.state === "before-school") && (
+            <div className="glass rounded-3xl px-6 py-6">
+              <p className="text-white/50 text-xs font-semibold uppercase tracking-widest mb-2">
+                {nowNext.state === "now" ? (nowNext.current!.isBreak ? "עכשיו" : "מתקיים עכשיו") : "עוד לא התחיל"}
+              </p>
+              {nowNext.state === "now" ? (
+                <>
+                  <p className="text-white font-semibold tabular-nums leading-none" style={{ fontSize: "clamp(2.2rem, 11vw, 3.6rem)" }} dir="ltr">
+                    {nowNext.current!.start}–{nowNext.current!.end}
+                  </p>
+                  <h1 className="text-white/85 font-light leading-tight mt-3" style={{ fontSize: "clamp(1.1rem, 5vw, 1.7rem)" }}>
+                    {nowNext.current!.label}
+                  </h1>
+                </>
+              ) : (
+                <p className="text-white/60 text-lg font-light">הלימודים עוד לא התחילו</p>
+              )}
+            </div>
+          )}
+          {(nowNext.state === "now" || nowNext.state === "before-school") && nowNext.next && (
+            <div className="glass rounded-3xl px-6 py-5">
+              <p className="text-white/40 text-xs font-semibold uppercase tracking-widest mb-1.5">הבא בתור</p>
+              <p className="text-white/90 font-semibold tabular-nums leading-none" style={{ fontSize: "clamp(1.6rem, 8vw, 2.4rem)" }} dir="ltr">
+                {nowNext.next.start}–{nowNext.next.end}
+              </p>
+              <h2 className="text-white/70 font-light leading-tight mt-2" style={{ fontSize: "clamp(1rem, 4.5vw, 1.4rem)" }}>
+                {nowNext.next.label}
+              </h2>
+            </div>
+          )}
+
+          {timeline.length > 0 && (
+            <div className="glass rounded-2xl overflow-hidden">
+              <div className="divide-y divide-white/5">
+                {timeline.map((t, i) => {
+                  const isCurrent = nowNext.state === "now" && nowNext.current === t
+                  const isNext = nowNext.next === t
+                  return (
+                    <div key={i} className={`flex items-center gap-3 px-4 py-2 ${isCurrent ? "bg-white/10" : ""}`}>
+                      {!t.isBreak && (
+                        <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${isCurrent ? "bg-white/25 text-white" : "bg-white/10 text-white/50"}`}>
+                          {t.period}
+                        </span>
+                      )}
+                      <span className={`text-[13px] font-semibold font-mono flex-shrink-0 ${t.isBreak ? "w-24" : "w-[76px]"} ${isCurrent ? "text-white" : "text-white/45"}`} dir="ltr">{t.start}–{t.end}</span>
+                      <span className={`flex-1 text-[13px] truncate ${isCurrent ? "text-white font-medium" : t.isBreak ? "text-white/40 italic" : "text-white/70"}`}>{t.label}</span>
+                      {isCurrent && <span className="text-[9px] bg-green-500/30 text-green-300 px-1.5 py-0.5 rounded-full flex-shrink-0">עכשיו</span>}
+                      {isNext && <span className="text-[9px] bg-amber-500/30 text-amber-300 px-1.5 py-0.5 rounded-full flex-shrink-0">הבא</span>}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+          {timeline.length === 0 && nowNext.state !== "no-school" && nowNext.state !== "done" && (
+            <p className="text-white/30 text-xs text-center py-4">אין מערכת שעות זמינה</p>
+          )}
+        </div>
+      </main>
+    </div>
+  )
+}
+
 function ParentHome({ session, data }: { session: any; data: HomeData | null }) {
   const now = useTick()
   const { bgId, customUrl } = useBg("parent")
@@ -1529,7 +1694,8 @@ function HomePageInner() {
 
   if (previewAsStudent) return <StudentHome session={session} data={data} isPreview />
   if (role === "STUDENT") return <StudentHome session={session} data={data} />
-  if (role === "TEACHER" || role === "ADMIN") return <TeacherHome session={session} data={data} />
+  if (role === "ADMIN") return <TeacherHome session={session} data={data} />
+  if (role === "TEACHER") return <HomeroomTeacherHome session={session} data={data} />
   return <ParentHome session={session} data={data} />
 }
 

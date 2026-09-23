@@ -1137,18 +1137,22 @@ export default function ManagePage() {
   const router = useRouter()
   const role = (session?.user as any)?.role as string | undefined
   const isTeacher = role === "TEACHER" || role === "ADMIN"
+  // A plain homeroom teacher only ever sees the cut-down settings panel
+  // below (name/background/push) — the multi-tab management view (import,
+  // user approvals, roster) is the coordinator's own tooling, gated to ADMIN.
+  const isAdmin = role === "ADMIN"
 
   const [teacherTab, setTeacherTab] = useState<TeacherTab>("settings")
   const [userTab, setUserTab]       = useState<UserTab>("settings")
   const [pendingCount, setPendingCount] = useState(0)
 
-  // Badge: fetch pending count when teacher mounts
+  // Badge: fetch pending count when an admin mounts
   useEffect(() => {
-    if (!isTeacher) return
+    if (!isAdmin) return
     fetch("/api/admin/users").then(r => r.json()).then(d => {
       setPendingCount((d.pendingParents?.length ?? 0) + (d.pendingStudents?.length ?? 0) + (d.pendingTeachers?.length ?? 0))
     }).catch(() => {})
-  }, [isTeacher])
+  }, [isAdmin])
 
   if (status === "loading") {
     return <div className="min-h-screen bg-black/50 backdrop-blur-sm flex items-center justify-center"><div className="text-white/40 text-sm">טוען...</div></div>
@@ -1180,8 +1184,8 @@ export default function ManagePage() {
             <button onClick={() => router.back()} className="text-sm text-white/50 hover:text-white interactive">← חזרה</button>
           </div>
 
-          {/* Teacher tabs */}
-          {isTeacher && (
+          {/* Teacher tabs — admin only; a plain teacher has one view, no tabs */}
+          {isAdmin && (
             <div className="flex gap-5 text-sm font-medium overflow-x-auto" style={{ scrollbarWidth: "none" }}>
               {teacherTabs.map(([id, label]) => (
                 <button key={id} onClick={() => setTeacherTab(id)}
@@ -1213,7 +1217,7 @@ export default function ManagePage() {
 
       {/* Content */}
       <div className="max-w-2xl mx-auto p-4 space-y-4">
-        {isTeacher && teacherTab === "settings"  && (
+        {isAdmin && teacherTab === "settings"  && (
           <>
             <p className="text-xs text-white/30">שינויים אלו גלויים רק לך</p>
             <NameEditor />
@@ -1227,9 +1231,26 @@ export default function ManagePage() {
             <div className="pt-2"><DesignEditor /></div>
           </>
         )}
-        {isTeacher && teacherTab === "import"    && <ImportTab />}
-        {isTeacher && teacherTab === "users"     && <UsersTab />}
-        {isTeacher && teacherTab === "roster"    && <RosterTab />}
+        {isAdmin && teacherTab === "import"    && <ImportTab />}
+        {isAdmin && teacherTab === "users"     && <UsersTab />}
+        {isAdmin && teacherTab === "roster"    && <RosterTab />}
+
+        {/* Plain homeroom teacher — just the three settings a teacher asked
+            for, no tabs, no admin tooling. */}
+        {isTeacher && !isAdmin && (
+          <>
+            <p className="text-xs text-white/30">שינויים אלו גלויים רק לך</p>
+            <NameEditor />
+            <div className="pt-2 border-t border-white/10 mt-2">
+              <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">רקע</p>
+              <BackgroundPicker />
+            </div>
+            <div className="pt-2 border-t border-white/10 mt-2">
+              <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">הודעות Push</p>
+              <PushManager />
+            </div>
+          </>
+        )}
 
         {!isTeacher && userTab === "settings"   && (
           <>
