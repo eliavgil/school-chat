@@ -169,7 +169,7 @@ export default function AssistantChat() {
         {messages.length === 0 && !loading && (
           <div className="flex flex-col items-center pt-2 pb-4">
             <div className="mb-1"><RobotMascot state="idle" size={148} /></div>
-            <p className="text-stone-800 font-bold text-lg">ד״ר פקפקובי</p>
+            <p className="text-stone-800 font-bold text-lg">מיסטר פקפקובי</p>
             <p className="text-stone-400 text-xs mb-5">העוזר האישי שלך — תאריכים, מגמות, טפסים ועוד</p>
             <div className="flex flex-wrap justify-center gap-2 max-w-sm">
               {EXAMPLE_QUESTIONS.map((q, i) => (
@@ -214,8 +214,8 @@ export default function AssistantChat() {
           </div>
         )}
         {loading && !streamingText && (
-          <div className="flex justify-start gap-2 items-center">
-            <RobotMascot state="thinking" size={56} />
+          <div className="fixed inset-0 z-40 flex items-center justify-center bg-white/65 backdrop-blur-[2px] pointer-events-none">
+            <RobotMascot state="thinking" size={260} />
           </div>
         )}
         {error && <p className="text-red-500 text-xs text-center">{error}</p>}
@@ -230,7 +230,7 @@ export default function AssistantChat() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === "Enter") send() }}
-            placeholder="שאל את ד״ר פקפקובי משהו..."
+            placeholder="שאל את מיסטר פקפקובי משהו..."
             disabled={loading}
             className="flex-1 bg-stone-100 border-0 rounded-full px-4 py-2 text-base focus:outline-none focus:ring-2 focus:ring-amber-300 text-stone-900 placeholder-stone-400"
             style={{ fontSize: "16px" }}

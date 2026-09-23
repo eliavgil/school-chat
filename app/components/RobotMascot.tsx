@@ -4,10 +4,10 @@ import { useEffect, useState } from "react"
 
 export type MascotState = "idle" | "thinking" | "confused" | "talking"
 
-const THINKING_VARIANTS = ["scratch", "spin-eyes", "dizzy", "steam", "watch", "brow"] as const
+const THINKING_VARIANTS = ["scratch", "spin-eyes", "dizzy", "steam", "watch", "brow", "jump", "dance", "wiggle"] as const
 type ThinkingVariant = (typeof THINKING_VARIANTS)[number]
 
-// ד"ר פקפקובי — an old tin-toy robot: oversized round head on a tiny body,
+// מיסטר פקפקובי — an old tin-toy robot: oversized round head on a tiny body,
 // one expressive camera-lens eye instead of two (reads as "device," not
 // "person," and is far easier to animate for personality than a face).
 // Copper/brass palette instead of the sleek AI-orb look every chatbot
@@ -47,7 +47,7 @@ export default function RobotMascot({ state = "idle", size = 160 }: { state?: Ma
         </defs>
 
         {/* soft ground shadow */}
-        <ellipse cx="100" cy="205" rx="42" ry="7" fill="#000" opacity="0.18" />
+        <ellipse className="rm-shadow" cx="100" cy="205" rx="42" ry="7" fill="#000" opacity="0.18" />
 
         {/* steam puffs (only visible in "steam" thinking variant) */}
         <g className="rm-steam">
@@ -127,6 +127,7 @@ export default function RobotMascot({ state = "idle", size = 160 }: { state?: Ma
         .rm-arm-right { transform-origin: 138px 150px; }
         .rm-steam circle { fill: #cfe8ff; opacity: 0; }
         .rm-qmark { opacity: 0; transform-origin: 152px 30px; }
+        .rm-shadow { transform-origin: 100px 205px; }
 
         @keyframes rm-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
         @keyframes rm-antenna-sway { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(4deg); } }
@@ -172,6 +173,43 @@ export default function RobotMascot({ state = "idle", size = 160 }: { state?: Ma
         @keyframes rm-brow { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-22deg) translateY(-3px); } }
         .rm-think-brow .rm-mouth { animation: rm-smirk 0.9s ease-in-out infinite; }
         @keyframes rm-smirk { 0%, 100% { transform: skewX(0deg); } 50% { transform: skewX(-8deg) translateX(4px); } }
+
+        /* jump: whole body leaps with a squash-and-stretch, shadow squeezes on landing */
+        .rm-think-jump .rm-bob { animation: rm-jump 0.7s ease-in-out infinite; }
+        @keyframes rm-jump {
+          0%, 100% { transform: translateY(0) scaleY(1); }
+          15% { transform: translateY(5px) scaleY(0.9); }
+          45% { transform: translateY(-30px) scaleY(1.08); }
+          75% { transform: translateY(5px) scaleY(0.9); }
+        }
+        .rm-think-jump .rm-shadow { animation: rm-shadow-squash 0.7s ease-in-out infinite; }
+        @keyframes rm-shadow-squash { 0%, 100% { transform: scale(1); opacity: 0.18; } 45% { transform: scale(0.55); opacity: 0.08; } }
+        .rm-think-jump .rm-arm-left { animation: rm-jump-arm-l 0.7s ease-in-out infinite; }
+        .rm-think-jump .rm-arm-right { animation: rm-jump-arm-r 0.7s ease-in-out infinite; }
+        @keyframes rm-jump-arm-l { 45% { transform: rotate(-50deg) translate(4px,-8px); } }
+        @keyframes rm-jump-arm-r { 45% { transform: rotate(50deg) translate(-4px,-8px); } }
+
+        /* dance: hips sway side to side with a matching arm swing */
+        .rm-think-dance .rm-bob { animation: rm-dance 0.55s ease-in-out infinite; }
+        @keyframes rm-dance {
+          0%, 100% { transform: translateX(0) rotate(0deg); }
+          25% { transform: translateX(-9px) rotate(-7deg); }
+          75% { transform: translateX(9px) rotate(7deg); }
+        }
+        .rm-think-dance .rm-arm-left { animation: rm-dance-arm-l 0.55s ease-in-out infinite; }
+        .rm-think-dance .rm-arm-right { animation: rm-dance-arm-r 0.55s ease-in-out infinite; }
+        @keyframes rm-dance-arm-l { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-38deg) translate(5px,-6px); } }
+        @keyframes rm-dance-arm-r { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(38deg) translate(-5px,-6px); } }
+        .rm-think-dance .rm-antenna { animation: rm-antenna-sway 0.4s ease-in-out infinite; }
+
+        /* wiggle: a full comedic shimmy — rock side to side with a pulse */
+        .rm-think-wiggle .rm-bob { animation: rm-wiggle 0.32s ease-in-out infinite; }
+        @keyframes rm-wiggle {
+          0%, 100% { transform: rotate(0deg) scale(1); }
+          25% { transform: rotate(-11deg) scale(1.03); }
+          75% { transform: rotate(11deg) scale(1.03); }
+        }
+        .rm-think-wiggle .rm-antenna { animation: rm-antenna-sway 0.3s ease-in-out infinite; }
 
         @media (prefers-reduced-motion: reduce) {
           .rm-root * { animation: none !important; }

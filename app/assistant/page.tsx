@@ -16,7 +16,7 @@ export default function AssistantPage() {
             <RobotMascot state="idle" size={36} />
           </div>
           <div>
-            <div className="font-semibold text-stone-900 text-sm">ד״ר פקפקובי</div>
+            <div className="font-semibold text-stone-900 text-sm">מיסטר פקפקובי</div>
             <div className="text-xs text-stone-500">העוזר האישי — מידע לוגיסטי על בית הספר</div>
           </div>
         </div>

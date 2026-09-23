@@ -354,7 +354,7 @@ export default function SchoolAssistantAdminPage() {
       <header className="bg-black/30 backdrop-blur-md border-b border-white/10 px-5 header-pt pb-4 flex items-center gap-4 sticky top-0 z-10">
         <Link href="/home" className="text-white/60 hover:text-white text-xl interactive">←</Link>
         <div className="flex-1">
-          <h1 className="font-semibold text-lg text-white">ד״ר פקפקובי — מאגר ידע</h1>
+          <h1 className="font-semibold text-lg text-white">מיסטר פקפקובי — מאגר ידע</h1>
           <p className="text-white/40 text-xs">קבצים שהבוט הלוגיסטי לתלמידים והורים עונה מתוכם</p>
         </div>
       </header>
@@ -370,7 +370,7 @@ export default function SchoolAssistantAdminPage() {
             )}
           </div>
           <p className="text-white/40 text-xs leading-relaxed">
-            שאלות שד״ר פקפקובי לא ידע לענות עליהן, או שתלמיד/ה סימן/ה כשגויות — כדי שתוכל להשלים מידע במאגר הידע.
+            שאלות שמיסטר פקפקובי לא ידע לענות עליהן, או שתלמיד/ה סימן/ה כשגויות — כדי שתוכל להשלים מידע במאגר הידע.
           </p>
 
           {escalationsLoading ? (
