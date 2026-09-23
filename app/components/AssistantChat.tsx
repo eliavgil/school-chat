@@ -6,8 +6,10 @@ import RobotMascot, { BIG_THINKING_VARIANTS } from "./RobotMascot"
 // No real total-length signal from the streaming API (Claude doesn't send
 // one), so this is a calibrated guess at a typical answer length — good
 // enough to give the ring a sense of "filling up as it streams" rather than
-// literal percent-complete accuracy.
-const STREAM_TARGET_CHARS = 260
+// literal percent-complete accuracy. Kept low because the brevity-tuned
+// system prompt means most answers are short: a high target would leave
+// the ring barely moving before the answer's already done.
+const STREAM_TARGET_CHARS = 140
 
 interface Message { role: "user" | "bot"; text: string; needsHelp?: boolean }
 
@@ -56,15 +58,18 @@ const EXAMPLE_QUESTIONS = [
 function MiniMascot({ talking, progress }: { talking?: boolean; progress?: number }) {
   const r = 16
   const c = 2 * Math.PI * r
+  // A tiny floor so the ring reads as present from the very first frame
+  // instead of starting invisibly thin.
+  const shown = progress === undefined ? undefined : Math.max(0.12, Math.min(1, progress))
   return (
     <div className="relative w-9 h-9 flex-shrink-0 mt-0.5">
       <RobotMascot state={talking ? "talking" : "idle"} size={36} />
-      {progress !== undefined && (
+      {shown !== undefined && (
         <svg width="36" height="36" viewBox="0 0 36 36" className="absolute inset-0 -rotate-90 pointer-events-none">
-          <circle cx="18" cy="18" r={r} fill="none" stroke="#e7e0d4" strokeWidth={2.5} />
-          <circle cx="18" cy="18" r={r} fill="none" stroke="#d97706" strokeWidth={2.5} strokeLinecap="round"
-            strokeDasharray={c} strokeDashoffset={c * (1 - Math.min(1, Math.max(0, progress)))}
-            style={{ transition: "stroke-dashoffset 0.15s linear" }} />
+          <circle cx="18" cy="18" r={r} fill="none" stroke="#e7e0d4" strokeWidth={3.5} />
+          <circle cx="18" cy="18" r={r} fill="none" stroke="#d97706" strokeWidth={3.5} strokeLinecap="round"
+            strokeDasharray={c} strokeDashoffset={c * (1 - shown)}
+            style={{ transition: "stroke-dashoffset 0.2s linear" }} />
         </svg>
       )}
     </div>
@@ -114,6 +119,7 @@ export default function AssistantChat() {
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [streamingText, setStreamingText] = useState("")
+  const [ringComplete, setRingComplete] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -131,6 +137,7 @@ export default function AssistantChat() {
     setMessages(prev => [...prev, { role: "user", text: q }])
     setLoading(true)
     setStreamingText("")
+    setRingComplete(false)
 
     const res = await fetch("/api/assistant/chat", {
       method: "POST",
@@ -169,8 +176,14 @@ export default function AssistantChat() {
           if (json.done) {
             const needsHelp = fullText.startsWith(NEEDS_HELP_MARKER)
             const clean = needsHelp ? fullText.slice(NEEDS_HELP_MARKER.length).trim() : fullText
+            // Hold the ring at a full circle for a beat before swapping to
+            // the finished bubble — a short/fast answer would otherwise
+            // finalize before the ring visibly completes at all.
+            setRingComplete(true)
+            await new Promise(r => setTimeout(r, 220))
             setMessages(prev => [...prev, { role: "bot", text: clean || "שגיאה — נסה שוב", needsHelp }])
             setStreamingText("")
+            setRingComplete(false)
           }
         } catch {}
       }
@@ -223,7 +236,7 @@ export default function AssistantChat() {
 
         {loading && streamingText && (
           <div className="flex justify-start gap-2">
-            <MiniMascot talking progress={streamingText.length / STREAM_TARGET_CHARS} />
+            <MiniMascot talking progress={ringComplete ? 1 : streamingText.length / STREAM_TARGET_CHARS} />
             <div className="max-w-[80%] rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap bg-stone-100 text-stone-800">
               {streamingText}
             </div>
