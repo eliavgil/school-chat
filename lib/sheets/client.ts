@@ -2,6 +2,12 @@ import { google } from "googleapis"
 
 export const SHEET_ID = "1fo8pKLjhM0nmzl5moG5YEL-RJH-6J7udWoXtwIQ5RKU"
 
+// Accepts either a full Google Sheets URL or a bare spreadsheet ID.
+export function extractSpreadsheetId(url: string): string | null {
+  const m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)
+  return m ? m[1] : (/^[a-zA-Z0-9-_]{20,}$/.test(url.trim()) ? url.trim() : null)
+}
+
 export function getSheetsClient() {
   const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON
   if (!raw) throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON env var is not set")

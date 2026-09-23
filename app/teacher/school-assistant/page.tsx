@@ -65,8 +65,13 @@ export default function SchoolAssistantAdminPage() {
   const [dirLoading, setDirLoading] = useState(false)
   const [dirResult, setDirResult] = useState<{ updated: number; total: number; notFound: string[]; ambiguous: string[]; errors: string[] } | null>(null)
   const [dirError, setDirError] = useState<string | null>(null)
+  const [groupsLoading, setGroupsLoading] = useState(false)
+  const [groupsResult, setGroupsResult] = useState<{ updated: number; total: number; notFound: string[]; ambiguous: string[]; errors: string[] } | null>(null)
+  const [groupsError, setGroupsError] = useState<string | null>(null)
+  const [groupsSheetUrl, setGroupsSheetUrl] = useState("")
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dirInputRef = useRef<HTMLInputElement>(null)
+  const groupsInputRef = useRef<HTMLInputElement>(null)
 
   const [links, setLinks] = useState<LinkT[]>([])
   const [linksLoading, setLinksLoading] = useState(true)
@@ -208,6 +213,47 @@ export default function SchoolAssistantAdminPage() {
     if (dirInputRef.current) dirInputRef.current.value = ""
   }
 
+  async function handleGroupsFile(files: FileList | null) {
+    const file = files?.[0]
+    if (!file) return
+    setGroupsLoading(true)
+    setGroupsError(null)
+    setGroupsResult(null)
+    try {
+      const bytes = await file.arrayBuffer()
+      const cleanBlob = new Blob([bytes], { type: MIME_BY_EXT["xlsx"] })
+      const fd = new FormData()
+      fd.append("file", cleanBlob, "upload.xlsx")
+      const res = await fetch("/api/admin/import-study-groups", { method: "POST", body: fd })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "שגיאה")
+      setGroupsResult(data)
+    } catch (e: any) {
+      setGroupsError(e?.message ?? "שגיאה")
+    }
+    setGroupsLoading(false)
+    if (groupsInputRef.current) groupsInputRef.current.value = ""
+  }
+
+  async function handleGroupsSheet() {
+    if (!groupsSheetUrl.trim()) return
+    setGroupsLoading(true)
+    setGroupsError(null)
+    setGroupsResult(null)
+    try {
+      const res = await fetch("/api/admin/import-study-groups", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sheetUrl: groupsSheetUrl.trim() }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || "שגיאה")
+      setGroupsResult(data)
+    } catch (e: any) {
+      setGroupsError(e?.message ?? "שגיאה")
+    }
+    setGroupsLoading(false)
+  }
+
   async function addSheet() {
     if (!sheetUrl.trim()) return
     setSheetLoading(true)
@@ -308,6 +354,44 @@ export default function SchoolAssistantAdminPage() {
               )}
               {dirResult.errors.length > 0 && (
                 <p className="text-red-400">שגיאה בעדכון ({dirResult.errors.length}): {dirResult.errors.join(", ")}</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="bg-white/8 border border-white/15 rounded-2xl p-4 space-y-3">
+          <div>
+            <h2 className="text-white text-sm font-medium mb-1">ייבוא קבוצות לימוד</h2>
+            <p className="text-white/40 text-xs leading-relaxed">
+              קובץ "קבוצות לימוד" (ייצוא ממשוב) — מייבא לכל תלמיד/ה בהתאמה רק את הקבוצות שהוא/היא רשום/ה בהן (מקצוע + מורה), ומעדכן מגמה/יחידות לימוד כשזה ברור מהקבוצה. שוב — רק המידע של כל תלמיד/ה על עצמו/ה, לא רשימות שמות.
+            </p>
+          </div>
+          <input ref={groupsInputRef} type="file" accept=".xlsx,.xls" className="hidden"
+            onChange={e => handleGroupsFile(e.target.files)} />
+          <button onClick={() => groupsInputRef.current?.click()} disabled={groupsLoading}
+            className="w-full bg-white/15 hover:bg-white/25 text-white text-sm font-medium py-2.5 rounded-xl interactive btn-press transition-colors disabled:opacity-40">
+            {groupsLoading ? "מייבא..." : "+ ייבוא קובץ קבוצות לימוד"}
+          </button>
+          <div className="flex gap-2">
+            <input value={groupsSheetUrl} onChange={e => setGroupsSheetUrl(e.target.value)} dir="ltr" placeholder="או קישור לגיליון Google Sheets..."
+              className="flex-1 bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/30 focus:outline-none focus:ring-2 focus:ring-white/30" />
+            <button onClick={handleGroupsSheet} disabled={groupsLoading || !groupsSheetUrl.trim()}
+              className="bg-white/15 hover:bg-white/25 text-white text-sm px-4 py-2 rounded-xl interactive btn-press transition-colors disabled:opacity-40 flex-shrink-0">
+              ייבוא
+            </button>
+          </div>
+          {groupsError && <p className="text-red-400 text-xs">{groupsError}</p>}
+          {groupsResult && (
+            <div className="text-xs space-y-1">
+              <p className="text-green-400">✓ עודכנו {groupsResult.updated} מתוך {groupsResult.total}</p>
+              {groupsResult.notFound.length > 0 && (
+                <p className="text-white/40">לא נמצאו במערכת ({groupsResult.notFound.length}): {groupsResult.notFound.join(", ")}</p>
+              )}
+              {groupsResult.ambiguous.length > 0 && (
+                <p className="text-amber-400">שם כפול, לא הצלחתי להכריע ({groupsResult.ambiguous.length}): {groupsResult.ambiguous.join(", ")}</p>
+              )}
+              {groupsResult.errors.length > 0 && (
+                <p className="text-red-400">שגיאה בעדכון ({groupsResult.errors.length}): {groupsResult.errors.join(", ")}</p>
               )}
             </div>
           )}

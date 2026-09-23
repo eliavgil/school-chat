@@ -141,6 +141,11 @@ model Student {
   parent1Name     String?
   parent2Name     String?
   gender          String? // "ז" | "נ" — from אלפון's "מין" column, needed so the assistant bot addresses the student with correct Hebrew grammar
+  // From the "קבוצות לימוד" export — one line per subject group the
+  // student is actually enrolled in (subject + class range + teacher name),
+  // so the assistant bot can answer "who teaches me X" per student. Same
+  // narrow-subset, per-student-only principle as the fields above.
+  studyGroups     String?  @db.Text
   messages        Message[]
   parents         ParentStudent[]
   class           Class                  @relation(fields: [classId], references: [id])

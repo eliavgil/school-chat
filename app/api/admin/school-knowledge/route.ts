@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db/prisma"
 import { adminClient } from "@/lib/lessons/supabase"
-import { fetchSheetValues, listSheetTabs, getSheetsClient, getServiceAccountEmail } from "@/lib/sheets/client"
+import { fetchSheetValues, listSheetTabs, getSheetsClient, getServiceAccountEmail, extractSpreadsheetId } from "@/lib/sheets/client"
 import Anthropic from "@anthropic-ai/sdk"
 import * as XLSX from "xlsx"
 
@@ -47,11 +47,6 @@ async function extractFacts(contentBlock: Anthropic.Messages.ContentBlockParam, 
 // spreadsheets that this needs no smarter chunking.
 function workbookToText(wb: XLSX.WorkBook): string {
   return wb.SheetNames.map(name => `## ${name}\n${XLSX.utils.sheet_to_csv(wb.Sheets[name])}`).join("\n\n")
-}
-
-function extractSpreadsheetId(url: string): string | null {
-  const m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)
-  return m ? m[1] : (/^[a-zA-Z0-9-_]{20,}$/.test(url.trim()) ? url.trim() : null)
 }
 
 // Rough HTML → text: drop script/style entirely, strip remaining tags,

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db/prisma"
 import * as XLSX from "xlsx"
+import { colIndex, cellStr } from "@/lib/importHelpers"
 
 // One-off (re-runnable) import of the school's "אלפון" (student directory)
 // export into a deliberately narrow set of Student fields — see the
@@ -15,15 +16,6 @@ import * as XLSX from "xlsx"
 
 function isTeacherRole(role: string) {
   return role === "TEACHER" || role === "ADMIN"
-}
-
-function colIndex(header: string[], label: string): number {
-  return header.findIndex(h => (h ?? "").toString().trim() === label)
-}
-
-function cellStr(v: unknown): string {
-  if (v === null || v === undefined) return ""
-  return String(v).trim()
 }
 
 export async function POST(req: NextRequest) {
