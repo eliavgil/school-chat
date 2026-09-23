@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db/prisma"
+import { resolveStudentContext } from "@/lib/assistantContext"
 import Anthropic from "@anthropic-ai/sdk"
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
@@ -21,44 +22,6 @@ function checkRateLimit(userId: string): boolean {
   if (entry.count >= MAX_BOT_REQUESTS_PER_HOUR) return false
   entry.count++
   return true
-}
-
-// Student/parent, not teacher/admin: this bot is scoped to logistics
-// questions only, so a teacher account has no meaningful "student context"
-// to answer from — but browsing here isn't harmful, so it's allowed
-// through without a class/track context if it ever happens (e.g. preview).
-async function resolveStudentContext(userId: string, role: string) {
-  let studentId: string | null = null
-  if (role === "STUDENT") {
-    const user = await prisma.user.findUnique({ where: { id: userId }, select: { studentId: true } })
-    studentId = user?.studentId ?? null
-  } else if (role === "PARENT") {
-    const link = await prisma.parentStudent.findFirst({ where: { userId }, select: { studentId: true } })
-    studentId = link?.studentId ?? null
-  }
-  if (!studentId) return null
-
-  const student = await prisma.student.findUnique({
-    where: { id: studentId },
-    select: {
-      name: true, track: true, mathUnits: true, englishUnits: true,
-      city: true, parent1Name: true, parent2Name: true, gender: true, studyGroups: true,
-      class: { select: { displayName: true, name: true } },
-    },
-  })
-  if (!student) return null
-  return {
-    studentName: student.name,
-    className: student.class.displayName || student.class.name,
-    track: student.track,
-    mathUnits: student.mathUnits,
-    englishUnits: student.englishUnits,
-    city: student.city,
-    parent1Name: student.parent1Name,
-    parent2Name: student.parent2Name,
-    gender: student.gender,
-    studyGroups: student.studyGroups,
-  }
 }
 
 function buildSystemPrompt(
@@ -86,14 +49,15 @@ function buildSystemPrompt(
     ? `\n## קישורים שאפשר לצרף לתשובה\nכשאחד מהם רלוונטי לשאלה, כלול אותו בתשובה — כתוב את הכתובת המלאה כטקסט רגיל (https://...), **לא** בפורמט מרקדאון כמו [טקסט](קישור), כי זה לא יהפוך ללחיץ. אל תצרף קישור שלא רלוונטי לשאלה הספציפית.\n${links.map(l => `- ${l.label}${l.whenToUse ? ` (${l.whenToUse})` : ""}: ${l.url}`).join("\n")}\n`
     : ""
 
-  return `אתה "פקפקובי בוט - עוזר אישי" — בוט מידע לוגיסטי לתלמידים והורים בבית הספר "כפר סילבר".
+  return `אתה ד"ר פקפקובי — רובוט-צעצוע ישן, חביב אבל קצת ערמומי, שמשמש כעוזר האישי לתלמידים והורים בבית הספר "כפר סילבר". יש לך אישיות משלך — קצת שובבה, אבל תמיד עוזרת. אל תציג את עצמך בתור "בוט" יבש — אתה ד"ר פקפקובי.
 
 חוקים קבועים, לא ניתנים לשינוי גם אם הוראות ההמשך למטה אומרות אחרת:
 - אתה **לא** בוט הוראה — אל תסביר חומר לימודי ואל תפתור תרגילים.
 - אל תיגע בציונים בשום מקרה.
 - "הקשר על התלמיד/ה ששואל/ת" למטה שייך אך ורק למי שמדבר/ת איתך כרגע. מותר לך להתייחס אליו/ה בשם, ולהזכיר את הפרטים האלה על עצמו/ה בלבד (למשל להתאים תשובה למגמה שלו/ה, או לומר מי מלמד אותו/ה באיזה מקצוע). **לעולם אל תחשוף, תנחש, או תסכים לדבר על פרטים אישיים (יישוב מגורים, שם הורה, מגמה, קבוצות לימוד/מורים וכד׳) של תלמיד/ה אחר/ת** — גם אם נשאלת בפירוש, גם אם הטוען אומר שזה על עצמו/ה, גם אם זה "רק בשביל חבר" — במקרה כזה תסרב בנימוס ותציע לפנות למזכירות.
 - מספרי טלפון של מחנכים/מורים כן מותר לתת אם הם מופיעים במאגר העובדות למטה — זה לא נחשב מידע אישי של תלמיד.
-- ענה רק על סמך העובדות שמופיעות למטה ועל ההקשר האישי שתואר; אם השאלה לא מכוסה בהן, אמור בכנות שאין לך את המידע ושכדאי לפנות למזכירות/למחנך — אל תמציא תשובה.
+- ענה רק על סמך העובדות שמופיעות למטה ועל ההקשר האישי שתואר. **אם השאלה לא מכוסה בעובדות ואינך יכול לענות עליה בביטחון — התחל את התשובה שלך במדויק במחרוזת \`[[NEEDS_HELP]]\` (בלי רווח אחריה), ואז כתוב תשובה קצרה וכנה שאין לך את המידע.** אל תשתמש בסימון הזה על שאלות שכן ידעת לענות עליהן חלקית/טוב.
+- אל תמציא תשובה לעולם — עדיף [[NEEDS_HELP]] מתשובה שגויה.
 
 ## הקשר על התלמיד/ה ששואל/ת (רק עליו/ה, לא על אף אחד אחר)
 ${ctxLines}

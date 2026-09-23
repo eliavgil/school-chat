@@ -20,6 +20,18 @@ interface LinkT {
   createdAt: string
 }
 
+interface EscalationT {
+  id: string
+  askerName: string
+  askerRole: string
+  className: string | null
+  question: string
+  answer: string
+  reason: string
+  resolved: boolean
+  createdAt: string
+}
+
 type UploadStatus = "pending" | "uploading" | "done" | "error"
 interface UploadItem { name: string; status: UploadStatus; error?: string }
 
@@ -82,7 +94,11 @@ export default function SchoolAssistantAdminPage() {
   const [linkError, setLinkError] = useState<string | null>(null)
   const [editingLink, setEditingLink] = useState<Record<string, { label: string; url: string; whenToUse: string }>>({})
 
-  useEffect(() => { load(); loadInstructions(); loadLinks() }, [])
+  const [escalations, setEscalations] = useState<EscalationT[]>([])
+  const [escalationsLoading, setEscalationsLoading] = useState(true)
+  const [showResolved, setShowResolved] = useState(false)
+
+  useEffect(() => { load(); loadInstructions(); loadLinks(); loadEscalations() }, [])
 
   async function load() {
     setLoading(true)
@@ -151,6 +167,21 @@ export default function SchoolAssistantAdminPage() {
     if (!confirm("למחוק קישור זה?")) return
     await fetch("/api/admin/assistant-links", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) })
     setLinks(prev => prev.filter(l => l.id !== id))
+  }
+
+  async function loadEscalations() {
+    setEscalationsLoading(true)
+    const d = await fetch("/api/admin/assistant-escalations").then(r => r.json()).catch(() => ({ escalations: [] }))
+    setEscalations(d.escalations ?? [])
+    setEscalationsLoading(false)
+  }
+
+  function toggleResolved(id: string, resolved: boolean) {
+    setEscalations(prev => prev.map(e => e.id === id ? { ...e, resolved: !resolved } : e))
+    fetch("/api/admin/assistant-escalations", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, resolved: !resolved }),
+    })
   }
 
   async function handleFiles(files: FileList | null) {
@@ -323,12 +354,59 @@ export default function SchoolAssistantAdminPage() {
       <header className="bg-black/30 backdrop-blur-md border-b border-white/10 px-5 header-pt pb-4 flex items-center gap-4 sticky top-0 z-10">
         <Link href="/home" className="text-white/60 hover:text-white text-xl interactive">←</Link>
         <div className="flex-1">
-          <h1 className="font-semibold text-lg text-white">פקפקובי בוט - עוזר אישי — מאגר ידע</h1>
+          <h1 className="font-semibold text-lg text-white">ד״ר פקפקובי — מאגר ידע</h1>
           <p className="text-white/40 text-xs">קבצים שהבוט הלוגיסטי לתלמידים והורים עונה מתוכם</p>
         </div>
       </header>
 
       <div className="max-w-2xl mx-auto p-4 space-y-5">
+        <div className="bg-white/8 border border-white/15 rounded-2xl p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-white text-sm font-medium">שאלות שהועברו אליך</h2>
+            {!escalationsLoading && escalations.some(e => !e.resolved) && (
+              <span className="bg-amber-400/90 text-amber-950 text-[11px] font-bold px-2 py-0.5 rounded-full">
+                {escalations.filter(e => !e.resolved).length} חדשות
+              </span>
+            )}
+          </div>
+          <p className="text-white/40 text-xs leading-relaxed">
+            שאלות שד״ר פקפקובי לא ידע לענות עליהן, או שתלמיד/ה סימן/ה כשגויות — כדי שתוכל להשלים מידע במאגר הידע.
+          </p>
+
+          {escalationsLoading ? (
+            <p className="text-white/30 text-xs">טוען...</p>
+          ) : escalations.filter(e => showResolved || !e.resolved).length === 0 ? (
+            <p className="text-white/30 text-xs">{showResolved ? "אין שאלות" : "אין שאלות חדשות 🎉"}</p>
+          ) : (
+            <div className="space-y-1.5">
+              {escalations.filter(e => showResolved || !e.resolved).map(e => (
+                <div key={e.id} className={`rounded-lg p-2.5 ${e.resolved ? "bg-white/4 opacity-60" : "bg-white/6"}`}>
+                  <div className="flex items-start justify-between gap-2 mb-1">
+                    <p className="text-white/70 text-xs">
+                      <span className="font-medium">{e.askerName}</span>
+                      {e.className && <span className="text-white/40"> · {e.className}</span>}
+                      <span className={`mr-2 text-[10px] px-1.5 py-0.5 rounded-full ${e.reason === "dont_know" ? "bg-blue-500/20 text-blue-300" : "bg-red-500/20 text-red-300"}`}>
+                        {e.reason === "dont_know" ? "לא ידע לענות" : "סומן כשגוי"}
+                      </span>
+                    </p>
+                    <button onClick={() => toggleResolved(e.id, e.resolved)}
+                      className="text-[11px] text-white/40 hover:text-white interactive px-1.5 py-0.5 rounded-lg bg-white/8 flex-shrink-0">
+                      {e.resolved ? "↺ פתח מחדש" : "✓ טופל"}
+                    </button>
+                  </div>
+                  <p className="text-white/85 text-xs font-medium">{e.question}</p>
+                  <p className="text-white/40 text-[11px] mt-0.5 whitespace-pre-wrap">{e.answer}</p>
+                  <p className="text-white/20 text-[10px] mt-1">{fmtDate(e.createdAt)}</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <button onClick={() => setShowResolved(s => !s)} className="text-white/30 hover:text-white/60 text-[11px] interactive">
+            {showResolved ? "הסתר מטופלות" : "הצג גם מטופלות"}
+          </button>
+        </div>
+
         <div className="bg-white/8 border border-white/15 rounded-2xl p-4 space-y-3">
           <div>
             <h2 className="text-white text-sm font-medium mb-1">ייבוא אלפון תלמידים</h2>

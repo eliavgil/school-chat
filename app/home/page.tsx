@@ -691,7 +691,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
     { label: "לוח KPI",           href: "/kpi",                    emoji: "📊", soon: false },
     { label: "מורה מקצועי",       href: "/teacher/subject",        emoji: "📚", soon: false },
     { label: "ניהול שכבה",        href: "/teacher/grade-hub",      emoji: "🏫", soon: false },
-    { label: "פקפקובי בוט - עוזר אישי",      href: "/assistant",                emoji: "🤖", soon: false },
+    { label: "ד״ר פקפקובי",      href: "/assistant",                emoji: "🤖", soon: false },
     { label: "פקפקובי בוט - ניהול מאגר ידע", href: "/teacher/school-assistant", emoji: "🗂️", soon: false },
     { label: "פקפקובי בוט - מורה פרטי",      href: "#",                         emoji: "🧑‍🏫", soon: true },
     { label: "הגדרות",            href: "/manage",                 emoji: "⚙️", soon: false },
@@ -772,7 +772,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                 { label: "צוות מחנכים",      href: "/teacher/team",           emoji: "🧑‍🏫" },
                 { label: "שיחות הורים",      href: "/dashboard",              emoji: "💬" },
                 { label: "משימות",           href: "/teacher/tasks",          emoji: "✅" },
-                { label: "פקפקובי בוט - עוזר אישי",      href: "/assistant",              emoji: "🤖" },
+                { label: "ד״ר פקפקובי",      href: "/assistant",              emoji: "🤖" },
                 { label: "פקפקובי בוט - ניהול מאגר ידע", href: "/teacher/school-assistant", emoji: "🗂️" },
                 { label: "מענים אישיים",     href: "/teacher/accommodations", emoji: "🧩" },
                 { label: "מעקב רגשי-חברתי", href: "/teacher/emotional",      emoji: "💙" },
@@ -1291,7 +1291,7 @@ function ParentHome({ session, data }: { session: any; data: HomeData | null }) 
               {[
                 { label: "עמוד הבית",   href: "/home",         emoji: "🏠" },
                 { label: "צ׳אט עם המחנך", href: "/chat",       emoji: "💬" },
-                { label: "פקפקובי בוט - עוזר אישי", href: "/assistant", emoji: "🤖" },
+                { label: "ד״ר פקפקובי", href: "/assistant", emoji: "🤖" },
                 { label: "הגדרות אישיות", href: "/manage", emoji: "⚙️" },
               ].map(item => (
                 <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}

@@ -371,6 +371,25 @@ model SchoolAssistantLink {
   createdAt    DateTime @default(now())
 }
 
+// A question the assistant bot either couldn't answer confidently
+// (reason: dont_know, server-detected from the [[NEEDS_HELP]] marker) or
+// that a student flagged as wrong (reason: flagged_wrong) — surfaced to
+// the coordinator so the knowledge base/links can be improved. Who asked
+// is resolved and stored at write time (not just a userId) so the admin
+// list doesn't need extra joins to be useful.
+model SchoolAssistantEscalation {
+  id          String   @id @default(cuid())
+  userId      String
+  askerName   String
+  askerRole   String
+  className   String?
+  question    String   @db.Text
+  answer      String   @db.Text
+  reason      String // "dont_know" | "flagged_wrong"
+  resolved    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
 // Bot response cache — avoid repeat Claude calls for identical questions
 model BotCache {
   id        String   @id @default(cuid())
