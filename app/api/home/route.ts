@@ -34,13 +34,21 @@ export async function GET(req: NextRequest) {
 
   const parentStudentId = isParent ? (user?.parentStudents?.[0]?.studentId ?? null) : null
 
-  const classId = user?.classId
-    ?? (parentStudentId
-      ? (await prisma.student.findFirst({
-          where: { id: parentStudentId },
-          select: { classId: true },
-        }))?.classId
-      : null)
+  // A student's real current class lives on their linked Student record
+  // (editable via the roster's "העבר כיתה" tool, so it reflects mid-year
+  // transfers) — not on User.classId, which is only ever set once at
+  // signup/pre-register (hardcoded to whichever class was created first)
+  // and never updated afterward. Prefer the Student record whenever one is
+  // linked, for both students and parents; fall back to User.classId only
+  // when there isn't one (teachers, or an unlinked account).
+  const linkedStudentId = isStudent ? (user?.studentId ?? null) : parentStudentId
+  const classId = (linkedStudentId
+    ? (await prisma.student.findFirst({
+        where: { id: linkedStudentId },
+        select: { classId: true },
+      }))?.classId
+    : null)
+    ?? user?.classId
     ?? "class-y"
 
   const todayJS = new Date().getDay()

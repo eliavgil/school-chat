@@ -80,10 +80,14 @@ export async function GET(req: NextRequest) {
   const isParent = !isStudent && !isTeacher
   const parentStudentId = isParent ? (user.parentStudents?.[0]?.studentId ?? null) : null
 
-  const classId = user.classId
-    ?? (parentStudentId
-      ? (await prisma.student.findFirst({ where: { id: parentStudentId }, select: { classId: true } }))?.classId
-      : null)
+  // See app/api/home/route.ts for why this prefers the linked Student's own
+  // classId over User.classId (which is only ever set once at signup and
+  // never updated on a class transfer).
+  const linkedStudentId = isStudent ? user.studentId : parentStudentId
+  const classId = (linkedStudentId
+    ? (await prisma.student.findFirst({ where: { id: linkedStudentId }, select: { classId: true } }))?.classId
+    : null)
+    ?? user.classId
     ?? "class-y"
 
   const { weekday: todayJS, hours: nowHours, minutes: nowMinutes } = israelNow()
