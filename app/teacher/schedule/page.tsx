@@ -333,36 +333,90 @@ function EventsSection({ events, loading }: { events: EventT[]; loading: boolean
   )
 }
 
+// Self-serve class-schedule upload, scoped to the logged-in teacher's own
+// class — no class picker, so there's no way to accidentally overwrite a
+// different class's schedule. Was previously only reachable through the
+// admin-only "ייבוא נתונים" tab, which a plain homeroom teacher no longer
+// has access to at all; this replaces that dead-end pointer.
+function ScheduleUploader({ classId, onUploaded }: { classId: string | null; onUploaded: () => void }) {
+  const [loading, setLoading] = useState(false)
+  const [result, setResult]   = useState<{ ok: boolean; text: string } | null>(null)
+
+  async function upload(file: File) {
+    if (!classId) return
+    setLoading(true)
+    setResult(null)
+    try {
+      const fd = new FormData()
+      fd.append("type", "schedule")
+      fd.append("classId", classId)
+      fd.append("file", file)
+      const d = await fetch("/api/admin/import", { method: "POST", body: fd }).then(r => r.json())
+      if (d.ok) { setResult({ ok: true, text: `✓ עודכנו ${d.count} שיעורים` }); onUploaded() }
+      else setResult({ ok: false, text: d.error ?? "שגיאה" })
+    } catch {
+      setResult({ ok: false, text: "שגיאת רשת" })
+    }
+    setLoading(false)
+  }
+
+  return (
+    <div className="bg-white/5 border border-white/10 rounded-2xl p-4 space-y-3">
+      <div>
+        <p className="text-white/85 text-sm font-medium mb-1">מעלים מערכת שעות לכיתה שלך</p>
+        <p className="text-white/40 text-xs leading-relaxed">
+          אם המערכת הכיתתית שלמעלה לא מעודכנת, אפשר להעלות כאן קובץ Excel של מערכת השעות — זה יחליף את מה שקיים לכיתה שלך בלבד.
+        </p>
+      </div>
+      <label className={`block ${loading || !classId ? "cursor-not-allowed opacity-40" : "cursor-pointer"}`}>
+        <div className="border-2 border-dashed border-white/15 rounded-xl py-3 text-center hover:border-white/30 transition-colors">
+          {loading ? <span className="text-white/50 text-sm">מעלה...</span> : <><span className="text-white/50 text-sm">בחר קובץ </span><span className="text-white/70 text-xs">.xlsx</span></>}
+        </div>
+        <input type="file" accept=".xlsx,.xls" className="hidden" disabled={loading || !classId}
+          onChange={e => { const f = e.target.files?.[0]; if (f) { upload(f); e.target.value = "" } }} />
+      </label>
+      {result && <p className={`text-xs ${result.ok ? "text-green-400" : "text-red-400"}`}>{result.text}</p>}
+    </div>
+  )
+}
+
 export default function SchedulePage() {
   const [classSchedules, setClassSchedules] = useState<{ id: string; name: string; slots: Slot[] }[]>([])
   const [ownSlots, setOwnSlots]         = useState<Slot[]>([])
   const [bellSlots, setBellSlots]       = useState<BellSlotT[]>([])
   const [events, setEvents]             = useState<EventT[]>([])
+  const [myClassId, setMyClassId]       = useState<string | null>(null)
   const [loading, setLoading]           = useState(true)
   const [loadError, setLoadError]       = useState<string | null>(null)
+
+  async function refetchClassSchedules() {
+    const classesRes = await fetch("/api/admin/schedule-classes").then(r => r.json()).catch(() => ({ classes: [] }))
+    const classes = (classesRes.classes ?? []) as { id: string; name: string }[]
+    const withSlots = await Promise.all(classes.map(async c => {
+      const cs = await fetch(`/api/schedule?classId=${encodeURIComponent(c.id)}`).then(r => r.json()).catch(() => ({ slots: [] }))
+      return { ...c, slots: (cs.slots ?? []) as Slot[] }
+    }))
+    setClassSchedules(withSlots)
+  }
 
   useEffect(() => {
     (async () => {
       try {
-        const [ownRes, bellRes, eventsRes, classesRes] = await Promise.all([
+        const [ownRes, bellRes, eventsRes, homeRes] = await Promise.all([
           fetch("/api/schedule").then(r => r.json()).catch(() => ({ slots: [] })),
           fetch("/api/student/bell-schedule").then(r => r.json()).catch(() => ({ slots: [] })),
           fetch("/api/events").then(r => r.json()).catch(() => ({ events: [] })),
-          fetch("/api/admin/schedule-classes").then(r => r.json()).catch(() => ({ classes: [] })),
+          fetch("/api/home").then(r => r.json()).catch(() => ({ classId: null })),
         ])
         setOwnSlots(ownRes.slots ?? [])
         setBellSlots(bellRes.slots ?? [])
         setEvents(eventsRes.events ?? [])
+        setMyClassId(homeRes.classId ?? null)
 
         // Every real class that has an uploaded schedule gets its own section —
         // picking just "the first" one risks showing stale data instead of
         // whatever was actually just uploaded.
-        const classes = (classesRes.classes ?? []) as { id: string; name: string }[]
-        const withSlots = await Promise.all(classes.map(async c => {
-          const cs = await fetch(`/api/schedule?classId=${encodeURIComponent(c.id)}`).then(r => r.json()).catch(() => ({ slots: [] }))
-          return { ...c, slots: (cs.slots ?? []) as Slot[] }
-        }))
-        setClassSchedules(withSlots)
+        await refetchClassSchedules()
       } catch (err: any) {
         // Surfaced directly on the page — no dev tools needed to see what broke.
         setLoadError(err?.message ?? String(err))
@@ -415,9 +469,11 @@ export default function SchedulePage() {
             emptyText="אין עדיין מערכת אישית טעונה" />
         </SectionErrorBoundary>
 
-        <p className="text-white/15 text-[10px] text-center">
-          לעריכת המערכות — עבור להגדרות ← ייבוא נתונים
-        </p>
+        {!loading && (
+          <SectionErrorBoundary>
+            <ScheduleUploader classId={myClassId} onUploaded={refetchClassSchedules} />
+          </SectionErrorBoundary>
+        )}
       </div>
     </div>
   )
