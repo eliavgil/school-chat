@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState, Fragment } from "react"
-import RobotMascot, { BIG_THINKING_VARIANTS } from "./RobotMascot"
+import RobotMascot from "./RobotMascot"
 
 // No real total-length signal from the streaming API (Claude doesn't send
 // one), so this is a calibrated guess at a typical answer length — good
@@ -244,7 +244,7 @@ export default function AssistantChat() {
         )}
         {loading && !streamingText && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-white/65 backdrop-blur-[2px] pointer-events-none">
-            <RobotMascot state="thinking" size={260} variantPool={BIG_THINKING_VARIANTS} />
+            <RobotMascot state="thinking" size={260} />
           </div>
         )}
         {error && <p className="text-red-500 text-xs text-center">{error}</p>}
