@@ -1,7 +1,13 @@
 "use client"
 
 import { useEffect, useRef, useState, Fragment } from "react"
-import RobotMascot from "./RobotMascot"
+import RobotMascot, { BIG_THINKING_VARIANTS } from "./RobotMascot"
+
+// No real total-length signal from the streaming API (Claude doesn't send
+// one), so this is a calibrated guess at a typical answer length — good
+// enough to give the ring a sense of "filling up as it streams" rather than
+// literal percent-complete accuracy.
+const STREAM_TARGET_CHARS = 260
 
 interface Message { role: "user" | "bot"; text: string; needsHelp?: boolean }
 
@@ -47,10 +53,20 @@ const EXAMPLE_QUESTIONS = [
   "מי יודע מדוע ולמה לובשת הזברה פיג'מה?",
 ]
 
-function MiniMascot({ talking }: { talking?: boolean }) {
+function MiniMascot({ talking, progress }: { talking?: boolean; progress?: number }) {
+  const r = 16
+  const c = 2 * Math.PI * r
   return (
-    <div className="w-9 h-9 flex-shrink-0 mt-0.5">
+    <div className="relative w-9 h-9 flex-shrink-0 mt-0.5">
       <RobotMascot state={talking ? "talking" : "idle"} size={36} />
+      {progress !== undefined && (
+        <svg width="36" height="36" viewBox="0 0 36 36" className="absolute inset-0 -rotate-90 pointer-events-none">
+          <circle cx="18" cy="18" r={r} fill="none" stroke="#e7e0d4" strokeWidth={2.5} />
+          <circle cx="18" cy="18" r={r} fill="none" stroke="#d97706" strokeWidth={2.5} strokeLinecap="round"
+            strokeDasharray={c} strokeDashoffset={c * (1 - Math.min(1, Math.max(0, progress)))}
+            style={{ transition: "stroke-dashoffset 0.15s linear" }} />
+        </svg>
+      )}
     </div>
   )
 }
@@ -207,7 +223,7 @@ export default function AssistantChat() {
 
         {loading && streamingText && (
           <div className="flex justify-start gap-2">
-            <MiniMascot talking />
+            <MiniMascot talking progress={streamingText.length / STREAM_TARGET_CHARS} />
             <div className="max-w-[80%] rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap bg-stone-100 text-stone-800">
               {streamingText}
             </div>
@@ -215,7 +231,7 @@ export default function AssistantChat() {
         )}
         {loading && !streamingText && (
           <div className="fixed inset-0 z-40 flex items-center justify-center bg-white/65 backdrop-blur-[2px] pointer-events-none">
-            <RobotMascot state="thinking" size={260} />
+            <RobotMascot state="thinking" size={260} variantPool={BIG_THINKING_VARIANTS} />
           </div>
         )}
         {error && <p className="text-red-500 text-xs text-center">{error}</p>}

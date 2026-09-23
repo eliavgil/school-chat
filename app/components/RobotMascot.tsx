@@ -7,20 +7,29 @@ export type MascotState = "idle" | "thinking" | "confused" | "talking"
 const THINKING_VARIANTS = ["scratch", "spin-eyes", "dizzy", "steam", "watch", "brow", "jump", "dance", "wiggle"] as const
 type ThinkingVariant = (typeof THINKING_VARIANTS)[number]
 
+// The subset of thinking variants that move the whole body, not just an
+// eye/arm/antenna — for the large full-screen "thinking" moment, where a
+// subtle head-tilt would just look like a bigger static image with no
+// visible motion. The small inline indicator still samples from the full
+// pool above.
+export const BIG_THINKING_VARIANTS: readonly ThinkingVariant[] = ["jump", "dance", "wiggle"]
+
 // מיסטר פקפקובי — an old tin-toy robot: oversized round head on a tiny body,
 // one expressive camera-lens eye instead of two (reads as "device," not
 // "person," and is far easier to animate for personality than a face).
 // Copper/brass palette instead of the sleek AI-orb look every chatbot
 // defaults to. All animation is plain CSS keyframes scoped to this file —
 // no Lottie assets available, so this is drawn and rigged entirely in SVG.
-export default function RobotMascot({ state = "idle", size = 160 }: { state?: MascotState; size?: number }) {
+export default function RobotMascot({
+  state = "idle", size = 160, variantPool = THINKING_VARIANTS,
+}: { state?: MascotState; size?: number; variantPool?: readonly ThinkingVariant[] }) {
   const [thinkingVariant, setThinkingVariant] = useState<ThinkingVariant>("scratch")
 
   useEffect(() => {
     if (state === "thinking") {
-      setThinkingVariant(THINKING_VARIANTS[Math.floor(Math.random() * THINKING_VARIANTS.length)])
+      setThinkingVariant(variantPool[Math.floor(Math.random() * variantPool.length)])
     }
-  }, [state])
+  }, [state, variantPool])
 
   return (
     <div
