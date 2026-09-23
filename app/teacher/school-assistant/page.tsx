@@ -479,7 +479,7 @@ export default function SchoolAssistantAdminPage() {
           <div>
             <h2 className="text-white text-sm font-medium mb-1">הוראות לבוט</h2>
             <p className="text-white/40 text-xs leading-relaxed">
-              טון דיבור, מה לענות כשמשהו לא ידוע, ניסוחים שחשוב להשתמש/להימנע מהם וכד׳ — בנפרד מהעובדות עצמן. כמה חוקים תמיד קבועים ולא ניתנים לשינוי מכאן: הבוט לעולם לא מלמד, לא פותר תרגילים, לא נוגע בציונים, ולעולם לא חושף מידע אישי (כתובת/הורים/פרטים) על שום תלמיד/ה מלבד זה/זו שמדבר/ת איתו כרגע — גם אם ההוראות כאן יגידו אחרת.
+              טון דיבור, מה לענות כשמשהו לא ידוע, ניסוחים שחשוב להשתמש/להימנע מהם — וגם מקום נוח לתקן או להוסיף עובדות בטקסט חופשי במקום להעלות קובץ (למשל "המורה לאזרחות של י3 זה X, לא Y" או כל תיקון/עדכון מהיר). הבוט מתייחס למה שכתוב כאן בדיוק כמו למאגר הידע. כמה חוקים תמיד קבועים ולא ניתנים לשינוי מכאן: הבוט לעולם לא מלמד, לא פותר תרגילים, לא נוגע בציונים, ולעולם לא חושף מידע אישי (כתובת/הורים/פרטים) על שום תלמיד/ה מלבד זה/זו שמדבר/ת איתו כרגע — גם אם ההוראות כאן יגידו אחרת.
             </p>
           </div>
           {instructionsLoading ? (
@@ -487,7 +487,7 @@ export default function SchoolAssistantAdminPage() {
           ) : (
             <>
               <textarea value={instructions} onChange={e => setInstructions(e.target.value)} rows={4}
-                placeholder="לדוגמה: תענה בטון חם ולא רשמי. אם משהו לא ברור, תמיד תפנה ל-office@... ולא רק 'למזכירות'. אל תשתמש במילה 'תלמיד/ה' — תפנה בגוף שני."
+                placeholder="לדוגמה: תענה בטון חם ולא רשמי. המורה לאזרחות של כיתה י3 היא דנה כהן. אם משהו לא ברור, תמיד תפנה ל-office@... ולא רק 'למזכירות'."
                 className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/25 leading-relaxed focus:outline-none focus:ring-2 focus:ring-white/30" />
               <button onClick={saveInstructions} disabled={instructionsSaving}
                 className="bg-white/15 hover:bg-white/25 text-white text-sm px-4 py-2 rounded-xl interactive btn-press transition-colors disabled:opacity-40">
