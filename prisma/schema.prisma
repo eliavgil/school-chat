@@ -390,6 +390,20 @@ model SchoolAssistantEscalation {
   createdAt   DateTime @default(now())
 }
 
+// Per-user daily question cap for the assistant bot — DB-backed (not
+// in-memory like the hourly limiter in /api/student/chat) because this one
+// enforces an actual budget number quoted to the user, and an in-memory
+// counter resets on every cold start/redeploy on serverless, which would
+// make the cap far more porous than intended over a whole day.
+model AssistantDailyUsage {
+  id     String @id @default(cuid())
+  userId String
+  date   String // "YYYY-MM-DD" in Israel local time
+  count  Int    @default(0)
+
+  @@unique([userId, date])
+}
+
 // Bot response cache — avoid repeat Claude calls for identical questions
 model BotCache {
   id        String   @id @default(cuid())

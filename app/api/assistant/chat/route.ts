@@ -7,20 +7,26 @@ import Anthropic from "@anthropic-ai/sdk"
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 
-// ── In-memory rate limiting (mirrors /api/student/chat) ──────
-const rateLimitMap = new Map<string, { count: number; windowStart: number }>()
-const MAX_BOT_REQUESTS_PER_HOUR = 20
-const RATE_WINDOW_MS = 60 * 60 * 1000
+// ── Daily question cap, DB-backed ─────────────────────────────
+// This is a real budget limit (Sonnet costs more per question than the
+// Haiku-era hourly cap was guarding against), so it needs to actually hold
+// over a full day — an in-memory counter would reset on every serverless
+// cold start/redeploy long before the day is up.
+const MAX_BOT_REQUESTS_PER_DAY = 5
 
-function checkRateLimit(userId: string): boolean {
-  const now = Date.now()
-  const entry = rateLimitMap.get(userId)
-  if (!entry || now - entry.windowStart > RATE_WINDOW_MS) {
-    rateLimitMap.set(userId, { count: 1, windowStart: now })
-    return true
-  }
-  if (entry.count >= MAX_BOT_REQUESTS_PER_HOUR) return false
-  entry.count++
+function israelDateKey(): string {
+  return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" }) // YYYY-MM-DD
+}
+
+async function checkAndConsumeDailyLimit(userId: string): Promise<boolean> {
+  const date = israelDateKey()
+  const existing = await prisma.assistantDailyUsage.findUnique({ where: { userId_date: { userId, date } } })
+  if (existing && existing.count >= MAX_BOT_REQUESTS_PER_DAY) return false
+  await prisma.assistantDailyUsage.upsert({
+    where: { userId_date: { userId, date } },
+    update: { count: { increment: 1 } },
+    create: { userId, date, count: 1 },
+  })
   return true
 }
 
@@ -90,9 +96,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
-  if (!checkRateLimit(session.user.id)) {
+  if (!(await checkAndConsumeDailyLimit(session.user.id))) {
     return NextResponse.json(
-      { error: "הגעת למגבלת הבקשות לשעה (20 בקשות). נסה שוב בעוד שעה." },
+      { error: `הגעתם ל-${MAX_BOT_REQUESTS_PER_DAY} השאלות ליום — זה מה שהתקציב שלנו מאפשר כרגע 😊 נתראה מחר!` },
       { status: 429 }
     )
   }
@@ -160,7 +166,7 @@ export async function POST(req: NextRequest) {
       let fullText = ""
       try {
         const claudeStream = anthropic.messages.stream({
-          model: "claude-haiku-4-5-20251001",
+          model: "claude-sonnet-5",
           max_tokens: 1024,
           system: systemPrompt,
           messages: [...history, { role: "user", content: question }],

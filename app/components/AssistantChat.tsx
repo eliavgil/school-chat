@@ -124,7 +124,7 @@ export default function AssistantChat() {
 
     if (res.status === 429) {
       const data = await res.json()
-      setMessages(prev => [...prev, { role: "bot", text: data.error ?? "הגעת למגבלת הבקשות. נסה שוב בעוד שעה." }])
+      setMessages(prev => [...prev, { role: "bot", text: data.error ?? "הגעת למגבלת השאלות היומית. נסה שוב מחר." }])
       setLoading(false)
       return
     }
