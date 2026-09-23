@@ -12,7 +12,9 @@ const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
 // Haiku-era hourly cap was guarding against), so it needs to actually hold
 // over a full day — an in-memory counter would reset on every serverless
 // cold start/redeploy long before the day is up.
-const MAX_BOT_REQUESTS_PER_DAY = 5
+// TEMP: raised for testing while Eliav QAs the bot — bring back to 5 when
+// he says the limit should be restored (see chat history around 2026-09-23).
+const MAX_BOT_REQUESTS_PER_DAY = 500
 
 function israelDateKey(): string {
   return new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" }) // YYYY-MM-DD
