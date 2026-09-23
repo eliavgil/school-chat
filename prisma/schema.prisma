@@ -140,6 +140,7 @@ model Student {
   city            String? // ישוב 1 — city/town, not the exact street address
   parent1Name     String?
   parent2Name     String?
+  gender          String? // "ז" | "נ" — from אלפון's "מין" column, needed so the assistant bot addresses the student with correct Hebrew grammar
   messages        Message[]
   parents         ParentStudent[]
   class           Class                  @relation(fields: [classId], references: [id])

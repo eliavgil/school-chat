@@ -42,7 +42,7 @@ async function resolveStudentContext(userId: string, role: string) {
     where: { id: studentId },
     select: {
       name: true, track: true, mathUnits: true, englishUnits: true,
-      city: true, parent1Name: true, parent2Name: true,
+      city: true, parent1Name: true, parent2Name: true, gender: true,
       class: { select: { displayName: true, name: true } },
     },
   })
@@ -56,6 +56,7 @@ async function resolveStudentContext(userId: string, role: string) {
     city: student.city,
     parent1Name: student.parent1Name,
     parent2Name: student.parent2Name,
+    gender: student.gender,
   }
 }
 
@@ -70,6 +71,7 @@ function buildSystemPrompt(facts: string, ctx: Awaited<ReturnType<typeof resolve
         ctx.city ? `יישוב מגורים: ${ctx.city}` : null,
         ctx.parent1Name ? `הורה 1: ${ctx.parent1Name}` : null,
         ctx.parent2Name ? `הורה 2: ${ctx.parent2Name}` : null,
+        ctx.gender ? `מגדר: ${ctx.gender === "נ" ? "נקבה — פני אליו/ה בלשון נקבה (את, יכולה, לומדת וכו')" : "זכר — פני אליו/ה בלשון זכר (אתה, יכול, לומד וכו')"}` : null,
       ].filter(Boolean).join("\n")
     : "לא ידוע (לא זוהה תלמיד מקושר לחשבון)"
 

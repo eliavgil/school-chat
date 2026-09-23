@@ -63,6 +63,7 @@ export async function POST(req: NextRequest) {
     city: colIndex(header, "ישוב 1"),
     parent1: colIndex(header, "שם הורה 1"),
     parent2: colIndex(header, "שם הורה 2"),
+    gender: colIndex(header, "מין"),
   }
   if (col.name === -1) return NextResponse.json({ error: "לא מצאתי עמודת שם תלמיד" }, { status: 400 })
 
@@ -83,6 +84,7 @@ export async function POST(req: NextRequest) {
     const city = col.city !== -1 ? cellStr(row[col.city]) : ""
     const parent1Name = col.parent1 !== -1 ? cellStr(row[col.parent1]) : ""
     const parent2Name = col.parent2 !== -1 ? cellStr(row[col.parent2]) : ""
+    const gender = col.gender !== -1 ? cellStr(row[col.gender]) : ""
     const parallel = col.parallel !== -1 ? cellStr(row[col.parallel]).replace(/\.0$/, "") : ""
     const grade = col.grade !== -1 ? cellStr(row[col.grade]) : ""
     const expectedClassName = grade && parallel ? `${grade}${parallel}` : null
@@ -121,6 +123,7 @@ export async function POST(req: NextRequest) {
           ...(city && { city }),
           ...(parent1Name && { parent1Name }),
           ...(parent2Name && { parent2Name }),
+          ...(gender && { gender }),
         },
       })
       updated.push(name)
