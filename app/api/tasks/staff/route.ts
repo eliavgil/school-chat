@@ -8,10 +8,18 @@ function isTeacherRole(role: string) {
   return role === "TEACHER" || role === "ADMIN"
 }
 
-// GET — the coordinator's staff tasks, each with its per-teacher assignees,
-// plus the list of known homeroom-teacher names (from Class.teacherDisplayName)
-// to pick from when assigning — most of them don't have real accounts yet,
-// so assignment is by display name, not a User relation, for now.
+// GET — every staff task relevant to the viewer: ones they created (the
+// coordinator's own view) plus ones they're an assignee on (a regular
+// teacher's view) — StaffTaskAssignee.userId links an assignee to a real
+// account once one exists, precisely so that teacher can see and check off
+// their own tasks, but the query here previously only ever matched
+// createdById, so a teacher who didn't create a task (the normal case —
+// the coordinator assigns tasks to teachers, not the other way around)
+// never saw tasks assigned to them at all.
+// Also returns the list of known homeroom-teacher names (from
+// Class.teacherDisplayName) to pick from when assigning — most of them
+// don't have real accounts yet, so assignment is by display name, not a
+// User relation, for now.
 export async function GET() {
   const session = await getServerSession(authOptions)
   const role = (session?.user as any)?.role
@@ -19,7 +27,12 @@ export async function GET() {
 
   const [tasks, classes] = await Promise.all([
     prisma.staffTask.findMany({
-      where: { createdById: session.user.id },
+      where: {
+        OR: [
+          { createdById: session.user.id },
+          { assignees: { some: { userId: session.user.id } } },
+        ],
+      },
       include: { assignees: true },
       orderBy: [{ deadline: "asc" }, { createdAt: "desc" }],
     }),
