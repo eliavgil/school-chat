@@ -6,11 +6,11 @@ export type MascotState = "idle" | "talking" | "thinking"
 
 // The three "thinking" poses — each is its own AI-generated image (see
 // public/mascot/*.png), not a CSS-only variation like the old hand-drawn
-// SVG had. The character's body language itself (slouched/bored,
-// clutching-head/frantic, arms-up/excited) already carries most of the
-// personality, so each only needs a light CSS animation layered on top to
-// sell the motion, not a full pose change.
-const POSES = ["jump", "bored", "frantic"] as const
+// SVG had. The character's body language itself (steam from overthinking,
+// impatiently waiting under a floating hourglass, meditating) already
+// carries most of the personality, so each only needs a light CSS
+// animation layered on top to sell the motion, not a full pose change.
+const POSES = ["steam", "waiting", "meditation"] as const
 type Pose = (typeof POSES)[number]
 
 // מיסטר פקפקובי — a friendly robotic wizard, bronze/copper mechanical face
@@ -19,7 +19,7 @@ type Pose = (typeof POSES)[number]
 // SVG) per the user's own reference images, background-removed to real
 // transparent PNGs. One image per pose; CSS handles the motion on top.
 export default function RobotMascot({ state = "idle", size = 160 }: { state?: MascotState; size?: number }) {
-  const [pose, setPose] = useState<Pose>("jump")
+  const [pose, setPose] = useState<Pose>("steam")
 
   useEffect(() => {
     if (state === "thinking") {
@@ -55,32 +55,32 @@ export default function RobotMascot({ state = "idle", size = 160 }: { state?: Ma
         .rm-talking .rm-img { animation: rm-talk-pulse 0.6s ease-in-out infinite; }
         @keyframes rm-talk-pulse { 0%, 100% { transform: scale(1); filter: brightness(1); } 50% { transform: scale(1.02); filter: brightness(1.1); } }
 
-        /* jump: bouncy hop, shadow squashes on landing */
-        .rm-pose-jump .rm-img { animation: rm-jump 0.7s ease-in-out infinite; }
-        @keyframes rm-jump {
-          0%, 100% { transform: translateY(0) scaleY(1); }
-          15% { transform: translateY(2%) scaleY(0.95); }
-          45% { transform: translateY(-14%) scaleY(1.03); }
-          75% { transform: translateY(2%) scaleY(0.95); }
-        }
-        .rm-pose-jump .rm-shadow { animation: rm-shadow-squash 0.7s ease-in-out infinite; }
-        @keyframes rm-shadow-squash { 0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; } 45% { transform: translateX(-50%) scale(0.55); opacity: 0.5; } }
-
-        /* bored: slow, exaggerated sigh-like sway */
-        .rm-pose-bored .rm-img { animation: rm-bored 2.8s ease-in-out infinite; transform-origin: 50% 100%; }
-        @keyframes rm-bored {
-          0%, 100% { transform: rotate(0deg) scale(1); }
-          50% { transform: rotate(-3deg) scale(0.985); }
-        }
-
-        /* frantic: quick anxious jitter */
-        .rm-pose-frantic .rm-img { animation: rm-frantic 0.18s ease-in-out infinite; }
-        @keyframes rm-frantic {
+        /* steam: overheating from thinking too hard — a tight, straining
+           vibration with an occasional bigger wobble, plus a brightness
+           pulse suggesting the steam is puffing */
+        .rm-pose-steam .rm-img { animation: rm-steam-shake 0.22s ease-in-out infinite, rm-steam-glow 1.4s ease-in-out infinite; transform-origin: 50% 100%; }
+        @keyframes rm-steam-shake {
           0%, 100% { transform: translate(0, 0) rotate(0deg); }
-          25% { transform: translate(-1.5%, -1%) rotate(-2deg); }
-          50% { transform: translate(1.5%, 0.5%) rotate(1.5deg); }
-          75% { transform: translate(-1%, 1%) rotate(-1deg); }
+          25% { transform: translate(-0.6%, 0) rotate(-0.8deg); }
+          50% { transform: translate(0.6%, -0.3%) rotate(0.6deg); }
+          75% { transform: translate(-0.3%, 0) rotate(-0.5deg); }
         }
+        @keyframes rm-steam-glow { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.12); } }
+
+        /* waiting: impatient side-to-side weight shift under the floating
+           hourglass, brisk pace */
+        .rm-pose-waiting .rm-img { animation: rm-waiting 1s ease-in-out infinite; transform-origin: 50% 100%; }
+        @keyframes rm-waiting {
+          0%, 100% { transform: rotate(0deg) translateX(0); }
+          25% { transform: rotate(-4deg) translateX(-1.5%); }
+          75% { transform: rotate(4deg) translateX(1.5%); }
+        }
+
+        /* meditation: slow, calm breathing — minimal, gentle motion */
+        .rm-pose-meditation .rm-img { animation: rm-meditate 4s ease-in-out infinite; }
+        @keyframes rm-meditate { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-1.5%) scale(1.015); } }
+        .rm-pose-meditation .rm-shadow { animation: rm-meditate-shadow 4s ease-in-out infinite; }
+        @keyframes rm-meditate-shadow { 0%, 100% { opacity: 1; } 50% { opacity: 0.75; } }
 
         @media (prefers-reduced-motion: reduce) {
           .rm-root * { animation: none !important; }
