@@ -142,6 +142,12 @@ export async function POST(req: NextRequest) {
         const claudeStream = anthropic.messages.stream({
           model: "claude-sonnet-5",
           max_tokens: 1024,
+          // Sonnet 5 runs adaptive extended thinking by default even with no
+          // `thinking` param set at all — real latency for a bot that only
+          // ever does short factual lookups and brief answers, never
+          // multi-step reasoning. Disabling it trades away reasoning depth
+          // this bot was never using anyway for a faster response.
+          thinking: { type: "disabled" },
           system: systemPrompt,
           messages: [...history, { role: "user", content: question }],
         })
