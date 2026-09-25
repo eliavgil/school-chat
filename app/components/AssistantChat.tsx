@@ -195,9 +195,9 @@ export default function AssistantChat() {
     <div className="flex flex-col flex-1 min-h-0">
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {messages.length === 0 && !loading && (
-          <div className="flex flex-col items-center pt-2 pb-4">
-            <div className="mb-1"><RobotMascot state="idle" size={148} /></div>
-            <p className="text-stone-800 font-bold text-lg">מיסטר פקפקובי</p>
+          <div className="flex flex-col items-center pt-4 pb-4">
+            <div className="mb-1"><RobotMascot state="idle" size={190} /></div>
+            <p className="text-stone-800 font-bold text-xl">מיסטר פקפקובי</p>
             <p className="text-stone-400 text-xs mb-5">העוזר האישי שלך — תאריכים, מגמות, טפסים ועוד</p>
             <div className="flex flex-wrap justify-center gap-2 max-w-sm">
               {EXAMPLE_QUESTIONS.map((q, i) => (
