@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
+import Link from "next/link"
 import ThemePicker from "@/app/components/ThemePicker"
 import PushManager from "@/app/components/PushManager"
 import WidgetSetup from "@/app/components/WidgetSetup"
@@ -19,6 +20,19 @@ const DAYS = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", 
 // ────────────────────────────────────────────────────────────
 // Shared personal editors (localStorage only)
 // ────────────────────────────────────────────────────────────
+function InstallAppLink() {
+  return (
+    <Link href="/install-app"
+      className="flex items-center justify-between bg-white/8 border border-white/10 rounded-2xl px-4 py-3.5 hover:bg-white/12 interactive btn-press transition-colors">
+      <div className="flex items-center gap-3">
+        <span className="text-xl">📲</span>
+        <span className="text-white/85 text-sm font-medium">איך מתקינים את האתר כאפליקציה</span>
+      </div>
+      <span className="text-white/30">←</span>
+    </Link>
+  )
+}
+
 function NameEditor() {
   const [name, setName] = useState("")
   const [saved, setSaved] = useState(false)
@@ -1229,6 +1243,9 @@ export default function ManagePage() {
               <WidgetSetup />
             </div>
             <div className="pt-2"><DesignEditor /></div>
+            <div className="pt-2 border-t border-white/10 mt-2">
+              <InstallAppLink />
+            </div>
           </>
         )}
         {isAdmin && teacherTab === "import"    && <ImportTab />}
@@ -1249,6 +1266,9 @@ export default function ManagePage() {
               <p className="text-xs font-semibold text-white/50 uppercase tracking-wide mb-3">הודעות Push</p>
               <PushManager />
             </div>
+            <div className="pt-2 border-t border-white/10 mt-2">
+              <InstallAppLink />
+            </div>
           </>
         )}
 
@@ -1262,6 +1282,9 @@ export default function ManagePage() {
             </div>
             <div className="pt-2 border-t border-white/10 mt-2">
               <WidgetSetup />
+            </div>
+            <div className="pt-2 border-t border-white/10 mt-2">
+              <InstallAppLink />
             </div>
           </>
         )}
