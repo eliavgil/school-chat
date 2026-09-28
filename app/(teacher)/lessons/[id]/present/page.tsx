@@ -1029,7 +1029,13 @@ export default function PresentPage({ params }: Props) {
             </div>
           </div>
         ) : (
-          // Desktop: 1280×720 fixed canvas, scaled to fit
+          // Desktop: 1280×720 fixed canvas, scaled to fit. zIndex:0 for the
+          // same reason as the mobile branch above — without an explicit
+          // z-index this div doesn't establish its own stacking context, so
+          // a "behind" animation's negative z-index escapes to compare
+          // against ancestors outside the slide instead of staying trapped
+          // here, and can end up painting over the slide's own text instead
+          // of behind it.
           <div style={{
             position: "absolute",
             left: "50%",
@@ -1041,6 +1047,7 @@ export default function PresentPage({ params }: Props) {
             background: "var(--paper)",
             borderRadius: 12,
             overflow: "hidden",
+            zIndex: 0,
           }}>
             {slide && (
               <SlideView key={slide.id} slide={slide} agg={agg} revealOpen={revealOpen} setRevealOpen={setRevealOpen} />
