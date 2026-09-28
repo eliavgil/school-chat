@@ -159,7 +159,6 @@ export const slides: Slide[] = [
     type: "practice",
     eyebrow: "תרגול",
     title: "עדיפות לעולים חדשים בקורס צוערים",
-    animation: { name: "dog", delay: 3, position: "across", loop: true },
     questions: [
       {
         id: "pq1",

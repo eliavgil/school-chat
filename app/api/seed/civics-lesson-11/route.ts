@@ -116,7 +116,6 @@ export const slides: Slide[] = [
     type: "study",
     eyebrow: "הקניה",
     title: "התמודדות חופשית / הוגנת",
-    animation: { name: "dog", delay: 3, position: "across", loop: true },
     body: "תחרות הוגנת המבוססת על **חירויות פוליטיות** (חופש הביטוי, התאגדות) המאפשרת למועמדים שונים להציג את דעתם.",
   },
 

@@ -175,7 +175,6 @@ export const slides: Slide[] = [
     type: "practice",
     eyebrow: "תרגול",
     title: "דמוקרטיה ישירה מול ייצוגית",
-    animation: { name: "turkey", delay: 3, position: "across", loop: true },
     questions: [
       {
         id: "pq1",

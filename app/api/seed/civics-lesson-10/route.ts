@@ -100,7 +100,6 @@ export const slides: Slide[] = [
     type: "study",
     eyebrow: "הקניה",
     title: "משאל עם",
-    animation: { name: "runner", delay: 3, position: "across", loop: true },
     body: `כלי של דמוקרטיה ישירה בתוך משטר ייצוגי. הממשל מפנה שאלה מוגדרת לכלל ציבור הבוחרים כדי לשקף את עמדתם ישירות.
 
 > בחלק מהמדינות הוא **מחייב**, ובחלקן הוא כלי **מייעץ** בלבד.`,
