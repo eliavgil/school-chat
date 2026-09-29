@@ -16,12 +16,15 @@ const SIDES: Side[] = ["top", "bottom", "left", "right"]
 // Each desk seats two — seat 0 and seat 1 — so a key is "row-col-seat".
 function seatKey(row: number, col: number, seat: 0 | 1) { return `${row}-${col}-${seat}` }
 
-// "משה כהן" → "משה כ." — first name + first letter of last name, for the
-// seating chart's own display (grid + shared image), not the roster editor.
+// Student names come from the school's own export as "משפחה פרטי" (family
+// name first, given name after) — so "כהן משה" → "משה כ.": given name in
+// full + first letter of the family name. For the seating chart's own
+// display (grid + shared image) only, not the roster editor.
 function shortName(fullName: string) {
   const parts = fullName.trim().split(/\s+/)
   if (parts.length < 2) return parts[0] ?? ""
-  return `${parts[0]} ${parts[1][0]}.`
+  const [lastName, ...rest] = parts
+  return `${rest.join(" ")} ${lastName[0]}.`
 }
 
 /* ── Small side picker (board / door) ─────────────────────────────────── */
