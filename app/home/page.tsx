@@ -278,7 +278,6 @@ function StudentHome({ session, data, isPreview }: { session: any; data: HomeDat
               {[
                 { label: "עמוד הבית", href: isPreview ? "/home?preview=student" : "/home", emoji: "🏠" },
                 { label: "בוט לימוד", href: "/student", emoji: "🤖" },
-                { label: "מילון מושגים", href: "/glossary", emoji: "📖" },
                 { label: "הגדרות אישיות", href: "/manage", emoji: "⚙️" },
               ].map(item => (
                 <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}
@@ -363,33 +362,25 @@ function StudentHome({ session, data, isPreview }: { session: any; data: HomeDat
 
           {/* 3 bot buttons */}
           <div className="flex gap-3 mt-8 animate-fade-in stagger-3">
-            <Link href="/student"
-              className="flex-1 glass rounded-2xl px-2 py-3 flex flex-col items-center gap-1.5 hover:bg-white/15 interactive btn-press transition-colors">
-              <span className="text-2xl">🧑‍🏫</span>
-              <span className="text-white/80 text-[11px] font-medium text-center leading-tight">בוט<br/>מורה פרטי</span>
-            </Link>
             <Link href="/assistant"
               className="flex-1 glass rounded-2xl px-2 py-3 flex flex-col items-center gap-1.5 hover:bg-white/15 interactive btn-press transition-colors">
-              <span className="text-2xl">🤖</span>
-              <span className="text-white/80 text-[11px] font-medium text-center leading-tight">עוזר<br/>אישי</span>
+              <img src="/mascot/face.png" alt="" className="w-7 h-7 object-contain" />
+              <span className="text-white/80 text-[11px] font-medium text-center leading-tight">מיסטר<br/>פקפקובי</span>
             </Link>
-            <Link href="/student"
+            <Link href="/student/logistics"
+              className="flex-1 glass rounded-2xl px-2 py-3 flex flex-col items-center gap-1.5 hover:bg-white/15 interactive btn-press transition-colors">
+              <span className="text-2xl">🧃</span>
+              <span className="text-white/80 text-[11px] font-medium text-center leading-tight">לוגיסטיקה<br/>ומיץ תפוזים</span>
+            </Link>
+            <Link href="/student/studies"
               className="flex-1 glass rounded-2xl px-2 py-3 flex flex-col items-center gap-1.5 hover:bg-white/15 interactive btn-press transition-colors">
               <span className="text-2xl">📚</span>
-              <span className="text-white/80 text-[11px] font-medium text-center leading-tight">מידע<br/>כיתתי ואישי</span>
+              <span className="text-white/80 text-[11px] font-medium text-center leading-tight">לימודים<br/>זה החיים</span>
             </Link>
           </div>
 
-          {/* Glossary */}
-          <Link href="/glossary"
-            className="mt-3 glass rounded-2xl px-4 py-3 flex items-center gap-2.5 hover:bg-white/15 interactive btn-press transition-colors animate-fade-in stagger-3">
-            <span className="text-lg">📖</span>
-            <span className="text-white/80 text-sm font-medium">מילון מושגים</span>
-            <span className="text-white/30 text-xs mr-auto">כל המושגים מהשיעורים ←</span>
-          </Link>
-
           {/* Join lesson */}
-          <div className="mt-3 glass rounded-2xl px-4 py-3 flex items-center gap-2 animate-fade-in stagger-3">
+          <div className="mt-5 glass rounded-2xl px-4 py-3 flex items-center gap-2 animate-fade-in stagger-3">
             <span className="text-white/60 text-xs font-semibold whitespace-nowrap">📡 קוד שיעור</span>
             <input
               value={joinCode}
@@ -623,6 +614,9 @@ function SettingsPanel({ isAdmin }: { isAdmin: boolean }) {
 // TEACHER HOME
 // ══════════════════════════════════════════════════════════
 function TeacherHome({ session, data }: { session: any; data: HomeData | null }) {
+  // Glossary is still eliavgil-only while it's being trialed — not shown to
+  // the rest of the teaching staff yet.
+  const showGlossary = session?.user?.email === "eliavgil@gmail.com"
   const now  = useTick()
   const router = useRouter()
   const { bgId, customUrl } = useBg("teacher")
@@ -701,7 +695,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
     { label: "מורה מקצועי",       href: "/teacher/subject",        emoji: "📚", soon: false },
     { label: "ניהול שכבה",        href: "/teacher/grade-hub",      emoji: "🏫", soon: false },
     { label: "סידור ישיבה",       href: "/teacher/seating-chart",  emoji: "🪑", soon: false },
-    { label: "מילון מושגים",      href: "/glossary",               emoji: "📖", soon: false },
+    ...(showGlossary ? [{ label: "מילון מושגים", href: "/glossary", emoji: "📖", soon: false }] : []),
     { label: "מיסטר פקפקובי",      href: "/assistant",                emoji: "🤖", icon: "/mascot/face.png", soon: false },
     { label: "פקפקובי בוט - ניהול מאגר ידע", href: "/teacher/school-assistant", emoji: "🗂️", soon: false },
     { label: "פקפקובי בוט - מורה פרטי",      href: "#",                         emoji: "🧑‍🏫", soon: true },
@@ -790,7 +784,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                 { label: "מורה מקצועי",      href: "/teacher/subject",        emoji: "📚" },
                 { label: "ניהול שכבה",       href: "/teacher/grade-hub",      emoji: "🏫" },
                 { label: "סידור ישיבה",      href: "/teacher/seating-chart",  emoji: "🪑" },
-                { label: "מילון מושגים",     href: "/glossary",               emoji: "📖" },
+                ...(showGlossary ? [{ label: "מילון מושגים", href: "/glossary", emoji: "📖" }] : []),
                 { label: "הגדרות",           href: "/manage",                 emoji: "⚙️" },
                 ...(isAdmin ? [{ label: "פרופיל", href: "/profile", emoji: "👤" }] : []),
               ] as { label: string; href: string; emoji: string; icon?: string }[]).map(item => (
@@ -1269,13 +1263,15 @@ function HomeroomTeacherHome({ session, data }: { session: any; data: HomeData |
   const timeline = buildTimeline(todaySlots, bellSlots)
   const nowNext = getNowNext(timeline, now, bellSlots.length > 0)
 
+  // Glossary is still eliavgil-only while it's being trialed.
+  const showGlossary = session?.user?.email === "eliavgil@gmail.com"
   const LINKS: { label: string; href: string; emoji: string; icon?: string }[] = [
     { label: "צוות מחנכי י",              href: "/teacher/team",              emoji: "🧑‍🏫" },
     { label: "מערכת, לוז אירועים",        href: "/teacher/schedule",          emoji: "🗓️" },
     { label: "מיסטר פקפקובי",             href: "/assistant",                 emoji: "🤖", icon: "/mascot/face.png" },
     { label: "השכלה כללית חינוכית",       href: "/teacher/general-education", emoji: "📖" },
     { label: "סידור ישיבה",               href: "/teacher/seating-chart",     emoji: "🪑" },
-    { label: "מילון מושגים",              href: "/glossary",                  emoji: "📕" },
+    ...(showGlossary ? [{ label: "מילון מושגים", href: "/glossary", emoji: "📕" }] : []),
   ]
 
   return (
