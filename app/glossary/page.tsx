@@ -10,12 +10,13 @@ interface Term {
   shortDefinition: string
   extendedArticle: string | null
   practiceSlideId: string | null
-  practiceUrl: string | null
   lessonSlug: string
   lessonTitle: string
   lessonOrder: number
   order: number
 }
+
+interface PracticeQuestion { tag: string | null; text: string }
 
 // Minimal renderer for the extended article's light markdown (**bold**,
 // blank-line paragraphs) — matches the same convention used elsewhere in
@@ -86,24 +87,42 @@ function TermCard({ t, canEdit, onSaved }: { t: Term; canEdit: boolean; onSaved:
       </div>
       <p className="text-white/65 text-sm leading-relaxed mt-1.5">{t.shortDefinition}</p>
 
-      <div className="flex items-center gap-4 mt-3">
-        {t.extendedArticle && (
+      {t.extendedArticle && (
+        <div className="flex items-center gap-4 mt-3">
           <button onClick={() => setExpanded(!expanded)}
             className="text-white/50 hover:text-white text-xs font-medium interactive flex items-center gap-1">
             הרחבה {expanded ? "↑" : "←"}
           </button>
-        )}
-        {t.practiceUrl && (
-          <a href={t.practiceUrl} target="_blank" rel="noopener noreferrer"
-            className="text-amber-300/80 hover:text-amber-300 text-xs font-medium interactive flex items-center gap-1">
-            שאלת אירוע ←
-          </a>
-        )}
-      </div>
+        </div>
+      )}
 
       {expanded && t.extendedArticle && (
         <div className="mt-3 pt-3 border-t border-white/10">
           {renderArticle(t.extendedArticle)}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Shown once below a whole lesson's group of terms (not on the specific
+// matching term) so the group doesn't give away which term the question is
+// about. Reveals the actual question text inline, same interaction as
+// "הרחבה", instead of navigating to the full (and comparatively cluttered)
+// lesson print view.
+function PracticeBlock({ q }: { q: PracticeQuestion }) {
+  const [expanded, setExpanded] = useState(false)
+  return (
+    <div className="rounded-2xl border border-amber-400/20 bg-amber-400/5 p-4">
+      <button onClick={() => setExpanded(!expanded)}
+        className="w-full flex items-center justify-between text-amber-300/90 hover:text-amber-300 text-sm font-medium interactive">
+        <span>שאלת אירוע מהשיעור</span>
+        <span className="text-xs">{expanded ? "↑" : "←"}</span>
+      </button>
+      {expanded && (
+        <div className="mt-3 pt-3 border-t border-amber-400/15">
+          {q.tag && <span className="inline-block text-[10px] font-bold text-amber-300/80 bg-amber-400/10 rounded-full px-2 py-0.5 mb-2">{q.tag}</span>}
+          <p className="text-white/75 text-sm leading-relaxed whitespace-pre-line">{q.text}</p>
         </div>
       )}
     </div>
@@ -116,11 +135,15 @@ export default function GlossaryPage() {
   const canEdit = role === "TEACHER" || role === "ADMIN"
 
   const [terms, setTerms] = useState<Term[]>([])
+  const [practiceByLesson, setPracticeByLesson] = useState<Record<string, PracticeQuestion | null>>({})
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState("")
 
   function refetch() {
-    return fetch("/api/glossary").then(r => r.json()).then(d => setTerms(d.terms ?? []))
+    return fetch("/api/glossary").then(r => r.json()).then(d => {
+      setTerms(d.terms ?? [])
+      setPracticeByLesson(d.practiceByLesson ?? {})
+    })
   }
 
   useEffect(() => { refetch().finally(() => setLoading(false)) }, [])
@@ -171,6 +194,7 @@ export default function GlossaryPage() {
             <h2 className="text-white/50 text-xs font-semibold mb-2 px-1">{g.lessonTitle}</h2>
             <div className="space-y-2.5">
               {g.items.map(t => <TermCard key={t.id} t={t} canEdit={canEdit} onSaved={refetch} />)}
+              {practiceByLesson[g.lessonSlug] && <PracticeBlock q={practiceByLesson[g.lessonSlug]!} />}
             </div>
           </section>
         ))}
