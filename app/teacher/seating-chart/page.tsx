@@ -8,12 +8,21 @@ interface ClassOption { id: string; name: string }
 interface ChartSummary { id: string; name: string; updatedAt: string }
 type Side = "top" | "bottom" | "left" | "right"
 type Step = "setup" | "layout" | "roster" | "result"
-type Selection = { kind: "desk"; key: string } | { kind: "pool"; id: string } | null
+type Selection = { kind: "seat"; key: string } | { kind: "pool"; id: string } | null
 
 const SIDE_LABEL: Record<Side, string> = { top: "למעלה", bottom: "למטה", left: "שמאל", right: "ימין" }
 const SIDES: Side[] = ["top", "bottom", "left", "right"]
 
-function deskKey(row: number, col: number) { return `${row}-${col}` }
+// Each desk seats two — seat 0 and seat 1 — so a key is "row-col-seat".
+function seatKey(row: number, col: number, seat: 0 | 1) { return `${row}-${col}-${seat}` }
+
+// "משה כהן" → "משה כ." — first name + first letter of last name, for the
+// seating chart's own display (grid + shared image), not the roster editor.
+function shortName(fullName: string) {
+  const parts = fullName.trim().split(/\s+/)
+  if (parts.length < 2) return parts[0] ?? ""
+  return `${parts[0]} ${parts[1][0]}.`
+}
 
 /* ── Small side picker (board / door) ─────────────────────────────────── */
 function SidePicker({ label, value, onChange, disabledSide }: {
@@ -192,33 +201,48 @@ function RosterStep({ roster, setRoster, onGenerate }: {
   )
 }
 
-/* ── Desk visual (interactive, editable) ──────────────────────────────── */
-function DeskCard({ name, empty, selected, onClick, onRemove }: {
-  name: string | null; empty: boolean; selected: boolean; onClick: () => void; onRemove?: () => void
+/* ── One seat within a shared desk ────────────────────────────────────── */
+function SeatSlot({ name, selected, onClick, onRemove }: {
+  name: string | null; selected: boolean; onClick: () => void; onRemove?: () => void
 }) {
+  const empty = !name
   return (
     <div onClick={onClick}
-      className={`relative flex items-center justify-center text-center rounded-lg border px-1.5 py-3 min-h-[56px] cursor-pointer interactive transition-all ${
-        selected ? "border-amber-400 bg-amber-400/15 ring-2 ring-amber-400/40"
-        : empty ? "border-dashed border-white/15 bg-white/[0.02] text-white/20"
-        : "border-white/25 bg-white/10 hover:bg-white/15"
+      className={`relative flex-1 flex items-center justify-center text-center px-1 py-2.5 cursor-pointer interactive transition-all ${
+        selected ? "bg-amber-400/20 ring-2 ring-amber-400/50 rounded-md"
+        : empty ? "text-white/15 hover:bg-white/5"
+        : "text-white/90 hover:bg-white/10"
       }`}>
-      <span className={`text-[11px] leading-tight font-medium ${empty ? "text-white/20" : "text-white/90"}`}>
-        {name ?? "פנוי"}
-      </span>
+      <span className="text-[10px] leading-tight font-medium truncate">{name ?? "פנוי"}</span>
       {!empty && onRemove && (
         <button onClick={e => { e.stopPropagation(); onRemove() }}
-          className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-black/70 text-white/70 text-[9px] flex items-center justify-center interactive">✕</button>
+          className="absolute -top-1 -left-1 w-3.5 h-3.5 rounded-full bg-black/70 text-white/70 text-[8px] flex items-center justify-center interactive">✕</button>
       )}
     </div>
   )
 }
 
+/* ── A desk — two seats side by side, sharing one outline ────────────── */
+function DeskPair({ nameA, nameB, selectedA, selectedB, onClickA, onClickB, onRemoveA, onRemoveB }: {
+  nameA: string | null; nameB: string | null; selectedA: boolean; selectedB: boolean
+  onClickA: () => void; onClickB: () => void; onRemoveA?: () => void; onRemoveB?: () => void
+}) {
+  const bothEmpty = !nameA && !nameB
+  return (
+    <div className={`flex rounded-lg border min-h-[52px] divide-x divide-white/10 overflow-hidden ${
+      bothEmpty ? "border-dashed border-white/15 bg-white/[0.02]" : "border-white/25 bg-white/8"
+    }`}>
+      <SeatSlot name={nameA} selected={selectedA} onClick={onClickA} onRemove={onRemoveA} />
+      <SeatSlot name={nameB} selected={selectedB} onClick={onClickB} onRemove={onRemoveB} />
+    </div>
+  )
+}
+
 /* ── Step 4: result grid — editable, with board/door markers ──────────── */
-function ResultStep({ rows, boardSide, doorSide, roster, assignments, selected, onDeskClick, onPoolClick, onRemove, onRegenerate }: {
+function ResultStep({ rows, boardSide, doorSide, roster, assignments, selected, onSeatClick, onPoolClick, onRemove, onRegenerate }: {
   rows: number[]; boardSide: Side; doorSide: Side; roster: RosterItem[]
   assignments: Record<string, string | null>; selected: Selection
-  onDeskClick: (key: string) => void; onPoolClick: (id: string) => void; onRemove: (key: string) => void
+  onSeatClick: (key: string) => void; onPoolClick: (id: string) => void; onRemove: (key: string) => void
   onRegenerate: () => void
 }) {
   const nameById = useMemo(() => new Map(roster.map(s => [s.id, s.name])), [roster])
@@ -252,16 +276,19 @@ function ResultStep({ rows, boardSide, doorSide, roster, assignments, selected, 
               {rows.map((count, r) => (
                 <div key={r} className="flex justify-center gap-2">
                   {Array.from({ length: count }).map((_, c) => {
-                    const key = deskKey(r, c)
-                    const studentId = assignments[key] ?? null
+                    const keyA = seatKey(r, c, 0), keyB = seatKey(r, c, 1)
+                    const idA = assignments[keyA] ?? null, idB = assignments[keyB] ?? null
                     return (
-                      <div key={key} style={{ width: `calc((100% - ${(maxCols - 1) * 8}px) / ${maxCols})`, maxWidth: 90 }}>
-                        <DeskCard
-                          name={studentId ? (nameById.get(studentId) ?? "?") : null}
-                          empty={!studentId}
-                          selected={selected?.kind === "desk" && selected.key === key}
-                          onClick={() => onDeskClick(key)}
-                          onRemove={studentId ? () => onRemove(key) : undefined}
+                      <div key={keyA} style={{ width: `calc((100% - ${(maxCols - 1) * 8}px) / ${maxCols})`, maxWidth: 130 }}>
+                        <DeskPair
+                          nameA={idA ? shortName(nameById.get(idA) ?? "?") : null}
+                          nameB={idB ? shortName(nameById.get(idB) ?? "?") : null}
+                          selectedA={selected?.kind === "seat" && selected.key === keyA}
+                          selectedB={selected?.kind === "seat" && selected.key === keyB}
+                          onClickA={() => onSeatClick(keyA)}
+                          onClickB={() => onSeatClick(keyB)}
+                          onRemoveA={idA ? () => onRemove(keyA) : undefined}
+                          onRemoveB={idB ? () => onRemove(keyB) : undefined}
                         />
                       </div>
                     )
@@ -294,7 +321,7 @@ function ResultStep({ rows, boardSide, doorSide, roster, assignments, selected, 
       )}
 
       <p className="text-white/30 text-xs text-center leading-relaxed">
-        הקישו על שולחן כדי לבחור אותו, ואז על שולחן אחר כדי להחליף ביניהם. אפשר גם לגרור תלמיד מהרשימה למעלה למקום פנוי.
+        כל שולחן משותף לשני תלמידים. הקישו על מקום כדי לבחור אותו, ואז על מקום אחר כדי להחליף ביניהם — או על תלמיד מהרשימה למעלה כדי לשבץ אותו למקום פנוי.
       </p>
 
       <button onClick={onRegenerate}
@@ -316,7 +343,7 @@ async function renderSeatingImage(opts: {
   const maxCols = Math.max(...rows, 1)
 
   const SCALE = 2
-  const deskW = 108, deskH = 64, gap = 14
+  const deskW = 176, deskH = 64, gap = 14
   const gridW = maxCols * deskW + (maxCols - 1) * gap
   const gridH = rows.length * deskH + (rows.length - 1) * gap
   const titleH = 64
@@ -380,7 +407,7 @@ async function renderSeatingImage(opts: {
   if (doorSide === "left") { ctx.textAlign = "center"; ctx.fillText(doorLabel, doorThick / 2, gridY + 16) }
   if (doorSide === "right") { ctx.textAlign = "center"; ctx.fillText(doorLabel, gridX + gridW + 10 + doorThick / 2, gridY + 16) }
 
-  // desks, row-centered
+  // desks, row-centered — each desk seats two, drawn as one box split in half
   ctx.textAlign = "center"
   rows.forEach((count, r) => {
     const rowW = count * deskW + (count - 1) * gap
@@ -388,13 +415,16 @@ async function renderSeatingImage(opts: {
     const y = gridY + r * (deskH + gap)
     for (let c = 0; c < count; c++) {
       const x = startX + c * (deskW + gap)
-      const studentId = assignments[deskKey(r, c)] ?? null
-      const name = studentId ? (nameById.get(studentId) ?? "") : null
+      const idA = assignments[seatKey(r, c, 0)] ?? null
+      const idB = assignments[seatKey(r, c, 1)] ?? null
+      const nameA = idA ? shortName(nameById.get(idA) ?? "") : null
+      const nameB = idB ? shortName(nameById.get(idB) ?? "") : null
+      const bothEmpty = !nameA && !nameB
 
       ctx.lineWidth = 1.5
-      ctx.strokeStyle = name ? "#3a3a3a" : "#c8c3b8"
-      ctx.fillStyle = name ? "#ffffff" : "#efece4"
-      if (!name) ctx.setLineDash([5, 4]); else ctx.setLineDash([])
+      ctx.strokeStyle = bothEmpty ? "#c8c3b8" : "#3a3a3a"
+      ctx.fillStyle = bothEmpty ? "#efece4" : "#ffffff"
+      if (bothEmpty) ctx.setLineDash([5, 4]); else ctx.setLineDash([])
       const radius = 10
       ctx.beginPath()
       ctx.roundRect(x, y, deskW, deskH, radius)
@@ -402,22 +432,27 @@ async function renderSeatingImage(opts: {
       ctx.stroke()
       ctx.setLineDash([])
 
-      if (name) {
+      if (!bothEmpty) {
+        ctx.strokeStyle = "#d8d4c8"
+        ctx.lineWidth = 1
+        ctx.beginPath()
+        ctx.moveTo(x + deskW / 2, y + 6)
+        ctx.lineTo(x + deskW / 2, y + deskH - 6)
+        ctx.stroke()
+      }
+
+      const halfW = deskW / 2
+      ;[[nameA, x + halfW / 2], [nameB, x + halfW + halfW / 2]].forEach(([name, cx]) => {
+        if (!name) return
         ctx.fillStyle = "#1c1c1c"
-        const parts = name.split(" ")
-        let fontSize = 15
+        let fontSize = 14
         ctx.font = `600 ${fontSize}px system-ui, sans-serif`
-        while (ctx.measureText(name).width > deskW - 14 && fontSize > 10) {
+        while (ctx.measureText(name as string).width > halfW - 10 && fontSize > 9) {
           fontSize -= 1
           ctx.font = `600 ${fontSize}px system-ui, sans-serif`
         }
-        if (parts.length > 1 && ctx.measureText(name).width > deskW - 14) {
-          ctx.fillText(parts[0], x + deskW / 2, y + deskH / 2 - 9)
-          ctx.fillText(parts.slice(1).join(" "), x + deskW / 2, y + deskH / 2 + 9)
-        } else {
-          ctx.fillText(name, x + deskW / 2, y + deskH / 2)
-        }
-      }
+        ctx.fillText(name as string, cx as number, y + deskH / 2)
+      })
     }
   })
 
@@ -473,8 +508,8 @@ export default function SeatingChartPage() {
         body: JSON.stringify({
           name: chartName, rows, boardSide, doorSide, roster,
           assignments: Object.entries(assignments).map(([k, v]) => {
-            const [row, col] = k.split("-").map(Number)
-            return { row, col, studentId: v }
+            const [row, col, seat] = k.split("-").map(Number)
+            return { row, col, seat, studentId: v }
           }),
         }),
       })
@@ -515,7 +550,7 @@ export default function SeatingChartPage() {
     setDoorSide(c.doorSide ?? "right")
     setRoster(c.roster ?? [])
     const a: Record<string, string | null> = {}
-    ;(c.assignments ?? []).forEach((x: any) => { a[deskKey(x.row, x.col)] = x.studentId })
+    ;(c.assignments ?? []).forEach((x: any) => { a[seatKey(x.row, x.col, x.seat === 1 ? 1 : 0)] = x.studentId })
     setAssignments(a)
     setSelected(null)
     setStep("result")
@@ -528,9 +563,12 @@ export default function SeatingChartPage() {
     setCharts(charts.filter(c => c.id !== id))
   }
 
+  // Fills desk by desk (both seats of desk 0, then both seats of desk 1, …)
+  // so pairs are packed first — a lone leftover student only lands on an
+  // otherwise-empty desk once every full pair has one.
   function generate() {
     const keys: string[] = []
-    rows.forEach((count, r) => { for (let c = 0; c < count; c++) keys.push(deskKey(r, c)) })
+    rows.forEach((count, r) => { for (let c = 0; c < count; c++) { keys.push(seatKey(r, c, 0)); keys.push(seatKey(r, c, 1)) } })
     const shuffled = [...roster].sort(() => Math.random() - 0.5)
     const next: Record<string, string | null> = {}
     keys.forEach((k, i) => { next[k] = shuffled[i]?.id ?? null })
@@ -539,7 +577,7 @@ export default function SeatingChartPage() {
     setStep("result")
   }
 
-  function swapDesks(a: string, b: string) {
+  function swapSeats(a: string, b: string) {
     setAssignments(prev => {
       const next = { ...prev }
       const tmp = next[a] ?? null
@@ -560,11 +598,11 @@ export default function SeatingChartPage() {
     })
   }
 
-  function onDeskClick(key: string) {
-    if (!selected) { setSelected({ kind: "desk", key }); return }
-    if (selected.kind === "desk") {
+  function onSeatClick(key: string) {
+    if (!selected) { setSelected({ kind: "seat", key }); return }
+    if (selected.kind === "seat") {
       if (selected.key === key) { setSelected(null); return }
-      swapDesks(selected.key, key); setSelected(null); return
+      swapSeats(selected.key, key); setSelected(null); return
     }
     if (selected.kind === "pool") { placeStudent(selected.id, key); setSelected(null) }
   }
@@ -572,7 +610,7 @@ export default function SeatingChartPage() {
   function onPoolClick(id: string) {
     if (!selected) { setSelected({ kind: "pool", id }); return }
     if (selected.kind === "pool") { setSelected(selected.id === id ? null : { kind: "pool", id }); return }
-    if (selected.kind === "desk") { placeStudent(id, selected.key); setSelected(null) }
+    if (selected.kind === "seat") { placeStudent(id, selected.key); setSelected(null) }
   }
 
   function onRemove(key: string) {
@@ -642,7 +680,7 @@ export default function SeatingChartPage() {
           <div className="space-y-5">
             <ResultStep rows={rows} boardSide={boardSide} doorSide={doorSide} roster={roster}
               assignments={assignments} selected={selected}
-              onDeskClick={onDeskClick} onPoolClick={onPoolClick} onRemove={onRemove}
+              onSeatClick={onSeatClick} onPoolClick={onPoolClick} onRemove={onRemove}
               onRegenerate={generate} />
 
             <div className="flex gap-2 pt-2">
