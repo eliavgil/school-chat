@@ -70,6 +70,7 @@ model User {
   teamPosts           TeamPost[]
   studyMaterialsAdded StudyMaterial[]
   lessonManualDones   LessonManualDone[]
+  seatingChartsMade   SeatingChart[]
   class               Class?             @relation(fields: [classId], references: [id])
   studentRecord       Student?           @relation(fields: [studentId], references: [id])
 }
@@ -118,6 +119,33 @@ model Class {
   students             Student[]
   teachers             User[]
   lessonManualDones    LessonManualDone[]
+  seatingCharts        SeatingChart[]
+}
+
+// Classroom seating-chart generator (סידור ישיבה כיתתי). rows holds the desk
+// count per row as a plain number[] — deliberately not a rigid rows×cols
+// grid, since a real classroom's desk counts per row are rarely uniform and
+// the teacher builds the layout by adding/removing individual desks. roster
+// is a chart-scoped student list (id/name pairs, including hand-added names
+// not in the Student table) so ad-hoc absences/additions never touch the
+// real class roster. assignments maps desk → student for the current
+// layout; both are edited freely after the random generation.
+model SeatingChart {
+  id          String   @id @default(cuid())
+  classId     String
+  createdById String
+  name        String   @default("")
+  rows        Json     // number[] — desk count per row, index = row
+  boardSide   String   @default("top")    // "top" | "bottom" | "left" | "right"
+  doorSide    String   @default("bottom")
+  roster      Json     // [{ id, name, manual }]
+  assignments Json     // [{ row, col, studentId }]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  class       Class    @relation(fields: [classId], references: [id])
+  createdBy   User     @relation(fields: [createdById], references: [id])
+
+  @@index([classId])
 }
 
 model Student {

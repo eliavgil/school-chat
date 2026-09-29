@@ -691,6 +691,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
     { label: "לוח KPI",           href: "/kpi",                    emoji: "📊", soon: false },
     { label: "מורה מקצועי",       href: "/teacher/subject",        emoji: "📚", soon: false },
     { label: "ניהול שכבה",        href: "/teacher/grade-hub",      emoji: "🏫", soon: false },
+    { label: "סידור ישיבה",       href: "/teacher/seating-chart",  emoji: "🪑", soon: false },
     { label: "מיסטר פקפקובי",      href: "/assistant",                emoji: "🤖", icon: "/mascot/face.png", soon: false },
     { label: "פקפקובי בוט - ניהול מאגר ידע", href: "/teacher/school-assistant", emoji: "🗂️", soon: false },
     { label: "פקפקובי בוט - מורה פרטי",      href: "#",                         emoji: "🧑‍🏫", soon: true },
@@ -778,6 +779,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                 { label: "מעקב רגשי-חברתי", href: "/teacher/emotional",      emoji: "💙" },
                 { label: "מורה מקצועי",      href: "/teacher/subject",        emoji: "📚" },
                 { label: "ניהול שכבה",       href: "/teacher/grade-hub",      emoji: "🏫" },
+                { label: "סידור ישיבה",      href: "/teacher/seating-chart",  emoji: "🪑" },
                 { label: "הגדרות",           href: "/manage",                 emoji: "⚙️" },
                 ...(isAdmin ? [{ label: "פרופיל", href: "/profile", emoji: "👤" }] : []),
               ] as { label: string; href: string; emoji: string; icon?: string }[]).map(item => (
@@ -1261,6 +1263,7 @@ function HomeroomTeacherHome({ session, data }: { session: any; data: HomeData |
     { label: "מערכת, לוז אירועים",        href: "/teacher/schedule",          emoji: "🗓️" },
     { label: "מיסטר פקפקובי",             href: "/assistant",                 emoji: "🤖", icon: "/mascot/face.png" },
     { label: "השכלה כללית חינוכית",       href: "/teacher/general-education", emoji: "📖" },
+    { label: "סידור ישיבה",               href: "/teacher/seating-chart",     emoji: "🪑" },
   ]
 
   return (
