@@ -267,9 +267,9 @@ export const slides: Slide[] = [
     eyebrow: "משוב",
     title: "איך היה השיעור?",
     questions: [
-      { id: "f1", text: "מידת הבנת ההבדל בין קניין חומרי לרוחני.", options: [], correct_index: null },
-      { id: "f2", text: 'עד כמה ברור המושג "הליך הוגן".', options: [], correct_index: null },
-      { id: "f3", text: "רמת העניין בשיעור.", options: [], correct_index: null },
+      { id: "f1", text: "באיזה מידה השיעור היה מוצלח מבחינתך?", options: [], correct_index: null },
+      { id: "f2", text: "באיזו מידה הרגשת שלמדת מהשיעור?", options: [], correct_index: null },
+      { id: "f3", text: "באיזו מידה נהנת מהשיעור?", options: [], correct_index: null },
     ],
   },
 

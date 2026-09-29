@@ -249,9 +249,9 @@ export const slides: Slide[] = [
     eyebrow: "משוב",
     title: "איך היה השיעור?",
     questions: [
-      { id: "f1", text: 'עד כמה הנושא של "ריבונות" ברור לך כעת?', options: [], correct_index: null },
-      { id: "f2", text: "עד כמה השימוש בדוגמאות מהעולם עזר לך להבין את החומר?", options: [], correct_index: null },
-      { id: "f3", text: "עד כמה הרגשת פעיל/ה בשיעור היום?", options: [], correct_index: null },
+      { id: "f1", text: "באיזה מידה השיעור היה מוצלח מבחינתך?", options: [], correct_index: null },
+      { id: "f2", text: "באיזו מידה הרגשת שלמדת מהשיעור?", options: [], correct_index: null },
+      { id: "f3", text: "באיזו מידה נהנת מהשיעור?", options: [], correct_index: null },
     ],
   },
 

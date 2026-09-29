@@ -271,9 +271,9 @@ export const slides: Slide[] = [
     eyebrow: "משוב",
     title: "איך היה השיעור?",
     questions: [
-      { id: "f1", text: "רמת העניין בנושא הזכויות.", options: [], correct_index: null },
-      { id: "f2", text: 'מידת ההבנה של המושג "זכות טבעית".', options: [], correct_index: null },
-      { id: "f3", text: "עד כמה הדיון על המתח בין חירות לשוויון היה ברור.", options: [], correct_index: null },
+      { id: "f1", text: "באיזה מידה השיעור היה מוצלח מבחינתך?", options: [], correct_index: null },
+      { id: "f2", text: "באיזו מידה הרגשת שלמדת מהשיעור?", options: [], correct_index: null },
+      { id: "f3", text: "באיזו מידה נהנת מהשיעור?", options: [], correct_index: null },
     ],
   },
 

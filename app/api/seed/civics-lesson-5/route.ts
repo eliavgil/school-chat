@@ -288,9 +288,9 @@ export const slides: Slide[] = [
     eyebrow: "משוב",
     title: "איך היה השיעור?",
     questions: [
-      { id: "f1", text: "עד כמה אתה מבין כעת את הקשר בין השבת בהלכה לחוק שעות עבודה ומנוחה?", options: [], correct_index: null },
-      { id: "f2", text: "עד כמה נושא הסדר הסטטוס-קוו נראה לך כפתרון הוגן למתח בין דתיים לחילוניים?", options: [], correct_index: null },
-      { id: "f3", text: "עד כמה המצגת והתרגול הכינו אותך למענה על שאלות בגרות בנושא זה?", options: [], correct_index: null },
+      { id: "f1", text: "באיזה מידה השיעור היה מוצלח מבחינתך?", options: [], correct_index: null },
+      { id: "f2", text: "באיזו מידה הרגשת שלמדת מהשיעור?", options: [], correct_index: null },
+      { id: "f3", text: "באיזו מידה נהנת מהשיעור?", options: [], correct_index: null },
     ],
   },
 

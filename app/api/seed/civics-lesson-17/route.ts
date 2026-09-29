@@ -264,9 +264,9 @@ export const slides: Slide[] = [
     eyebrow: "משוב",
     title: "איך היה השיעור?",
     questions: [
-      { id: "f1", text: 'עד כמה ראשי התיבות ט"ד חת"ר עזרו לזכור את החומר.', options: [], correct_index: null },
-      { id: "f2", text: "בהירות הקשר בין מדיניות כלכלית לזכויות.", options: [], correct_index: null },
-      { id: "f3", text: "רמת העניין בשיעור.", options: [], correct_index: null },
+      { id: "f1", text: "באיזה מידה השיעור היה מוצלח מבחינתך?", options: [], correct_index: null },
+      { id: "f2", text: "באיזו מידה הרגשת שלמדת מהשיעור?", options: [], correct_index: null },
+      { id: "f3", text: "באיזו מידה נהנת מהשיעור?", options: [], correct_index: null },
     ],
   },
 

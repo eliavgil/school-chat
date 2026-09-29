@@ -270,9 +270,9 @@ export const slides: Slide[] = [
     title: "איך היה השיעור?",
     animation: { name: "piggy", delay: 3, position: "top", loop: true },
     questions: [
-      { id: "f1", text: "עד כמה הנושא של חופש מדת ברור.", options: [], correct_index: null },
-      { id: "f2", text: "הבנת המושג חופש העיסוק.", options: [], correct_index: null },
-      { id: "f3", text: "מידת העניין בשיעור.", options: [], correct_index: null },
+      { id: "f1", text: "באיזה מידה השיעור היה מוצלח מבחינתך?", options: [], correct_index: null },
+      { id: "f2", text: "באיזו מידה הרגשת שלמדת מהשיעור?", options: [], correct_index: null },
+      { id: "f3", text: "באיזו מידה נהנת מהשיעור?", options: [], correct_index: null },
     ],
   },
 

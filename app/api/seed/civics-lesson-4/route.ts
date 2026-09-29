@@ -302,9 +302,9 @@ export const slides: Slide[] = [
     title: "איך היה השיעור?",
     animation: { name: "piggy", delay: 3, position: "top", loop: true },
     questions: [
-      { id: "f1", text: 'עד כמה אתה מבין את ההבדל בין מאפיין "יהודי" למאפיין "דמוקרטי" בהכרזה?', options: [], correct_index: null },
-      { id: "f2", text: "עד כמה ברור לך למי המדינה פנתה ב-1948 ומה היא הבטיחה להם?", options: [], correct_index: null },
-      { id: "f3", text: "עד כמה הרגשת שהמגילה רלוונטית למציאות החיים שלך היום?", options: [], correct_index: null },
+      { id: "f1", text: "באיזה מידה השיעור היה מוצלח מבחינתך?", options: [], correct_index: null },
+      { id: "f2", text: "באיזו מידה הרגשת שלמדת מהשיעור?", options: [], correct_index: null },
+      { id: "f3", text: "באיזו מידה נהנת מהשיעור?", options: [], correct_index: null },
     ],
   },
 

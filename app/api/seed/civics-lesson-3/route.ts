@@ -278,9 +278,9 @@ export const slides: Slide[] = [
     eyebrow: "משוב",
     title: "איך היה השיעור?",
     questions: [
-      { id: "f1", text: "עד כמה ציר הזמן עזר לך לעשות סדר באירועים שקדמו למדינה?", options: [], correct_index: null },
-      { id: "f2", text: 'עד כמה ברור לך ההבדל בין הצדקה "בינלאומית" להצדקה "טבעית"?', options: [], correct_index: null },
-      { id: "f3", text: "האם קריאת קטעי המגילה המקוריים עזרה לך להבין את החומר?", options: [], correct_index: null },
+      { id: "f1", text: "באיזה מידה השיעור היה מוצלח מבחינתך?", options: [], correct_index: null },
+      { id: "f2", text: "באיזו מידה הרגשת שלמדת מהשיעור?", options: [], correct_index: null },
+      { id: "f3", text: "באיזו מידה נהנת מהשיעור?", options: [], correct_index: null },
     ],
   },
 

@@ -283,9 +283,9 @@ export const slides: Slide[] = [
     title: "איך היה השיעור?",
     animation: { name: "death_dance", delay: 3, position: "corner-right", loop: true },
     questions: [
-      { id: "f1", text: "עד כמה השיעור עזר לך להבין מדוע אנחנו לא מחליטים הכל בעצמנו היום?", options: [], correct_index: null },
-      { id: "f2", text: "כמה עניין מצאת בסיפור על אתונה העתיקה?", options: [], correct_index: null },
-      { id: "f3", text: 'האם המושג "דמוקרטיה ישירה" ברור לך כעת?', options: [], correct_index: null },
+      { id: "f1", text: "באיזה מידה השיעור היה מוצלח מבחינתך?", options: [], correct_index: null },
+      { id: "f2", text: "באיזו מידה הרגשת שלמדת מהשיעור?", options: [], correct_index: null },
+      { id: "f3", text: "באיזו מידה נהנת מהשיעור?", options: [], correct_index: null },
     ],
   },
 

@@ -285,9 +285,9 @@ export const slides: Slide[] = [
     eyebrow: "משוב",
     title: "איך היה השיעור?",
     questions: [
-      { id: "f1", text: "עד כמה הבנת את ההבדל בין חוק יסוד לחוק רגיל?", options: [], correct_index: null },
-      { id: "f2", text: "עד כמה סעיפי חוק הלאום ברורים לך כעת?", options: [], correct_index: null },
-      { id: "f3", text: "עד כמה התרגול של שאלת הבגרות עזר לך להבין מה נדרש בבחינה?", options: [], correct_index: null },
+      { id: "f1", text: "באיזה מידה השיעור היה מוצלח מבחינתך?", options: [], correct_index: null },
+      { id: "f2", text: "באיזו מידה הרגשת שלמדת מהשיעור?", options: [], correct_index: null },
+      { id: "f3", text: "באיזו מידה נהנת מהשיעור?", options: [], correct_index: null },
     ],
   },
 

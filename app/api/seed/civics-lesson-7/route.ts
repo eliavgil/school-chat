@@ -329,9 +329,9 @@ export const slides: Slide[] = [
     eyebrow: "משוב",
     title: "איך היה השיעור?",
     questions: [
-      { id: "f1", text: 'עד כמה ברור לך כעת ההבדל בין דמוקרטיה כ"צורת ממשל" לבין דמוקרטיה כ"ערך"?', options: [], correct_index: null },
-      { id: "f2", text: 'עד כמה המושגים "האדם במרכז" ו"האדם כתבוני" נראים לך חשובים להבנת הדמוקרטיה?', options: [], correct_index: null },
-      { id: "f3", text: "איך היית מדרג את מידת העניין שלך בנושאים התיאורטיים שדיברנו עליהם היום?", options: [], correct_index: null },
+      { id: "f1", text: "באיזה מידה השיעור היה מוצלח מבחינתך?", options: [], correct_index: null },
+      { id: "f2", text: "באיזו מידה הרגשת שלמדת מהשיעור?", options: [], correct_index: null },
+      { id: "f3", text: "באיזו מידה נהנת מהשיעור?", options: [], correct_index: null },
     ],
   },
 

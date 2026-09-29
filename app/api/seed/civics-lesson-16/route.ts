@@ -260,9 +260,9 @@ export const slides: Slide[] = [
     eyebrow: "משוב",
     title: "איך היה השיעור?",
     questions: [
-      { id: "f1", text: "הבנת ההבדל בין אפליה להבחנה.", options: [], correct_index: null },
-      { id: "f2", text: "בהירות המושג העדפה מתקנת.", options: [], correct_index: null },
-      { id: "f3", text: "מידת העניין בשיעור.", options: [], correct_index: null },
+      { id: "f1", text: "באיזה מידה השיעור היה מוצלח מבחינתך?", options: [], correct_index: null },
+      { id: "f2", text: "באיזו מידה הרגשת שלמדת מהשיעור?", options: [], correct_index: null },
+      { id: "f3", text: "באיזו מידה נהנת מהשיעור?", options: [], correct_index: null },
     ],
   },
 

@@ -286,9 +286,9 @@ export const slides: Slide[] = [
     title: "איך היה השיעור?",
     animation: { name: "piggy", delay: 3, position: "top", loop: true },
     questions: [
-      { id: "f1", text: 'האם ראשי התיבות כ"ח מש"ה עזרו לך לזכור את החומר?', options: [], correct_index: null },
-      { id: "f2", text: "עד כמה ברור לך למה חשוב שהבחירות יהיו חשאיות?", options: [], correct_index: null },
-      { id: "f3", text: "רמת העניין שלך בשיעור.", options: [], correct_index: null },
+      { id: "f1", text: "באיזה מידה השיעור היה מוצלח מבחינתך?", options: [], correct_index: null },
+      { id: "f2", text: "באיזו מידה הרגשת שלמדת מהשיעור?", options: [], correct_index: null },
+      { id: "f3", text: "באיזו מידה נהנת מהשיעור?", options: [], correct_index: null },
     ],
   },
 
