@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json()
-  const { classId, name, rows, boardSide, doorSide, roster, assignments } = body
+  const { classId, name, rows, boardSide, doorSide, doorAtEnd, roster, assignments } = body
   if (!classId || !Array.isArray(rows) || !Array.isArray(roster) || !Array.isArray(assignments)) {
     return NextResponse.json({ error: "Invalid body" }, { status: 400 })
   }
@@ -44,6 +44,7 @@ export async function POST(req: NextRequest) {
       rows,
       boardSide: boardSide ?? "top",
       doorSide: doorSide ?? "bottom",
+      doorAtEnd: doorAtEnd ?? true,
       roster,
       assignments,
     },

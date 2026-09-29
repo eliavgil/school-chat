@@ -31,6 +31,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   if (body.rows !== undefined) data.rows = body.rows
   if (body.boardSide !== undefined) data.boardSide = body.boardSide
   if (body.doorSide !== undefined) data.doorSide = body.doorSide
+  if (body.doorAtEnd !== undefined) data.doorAtEnd = body.doorAtEnd
   if (body.roster !== undefined) data.roster = body.roster
   if (body.assignments !== undefined) data.assignments = body.assignments
 

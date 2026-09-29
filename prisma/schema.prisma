@@ -135,9 +135,10 @@ model SeatingChart {
   classId     String
   createdById String
   name        String   @default("")
-  rows        Json     // number[] — desk count per row, index = row
+  rows        Json     // number[] — desk depth per column, index = column (field kept as "rows" from the original row-based layout)
   boardSide   String   @default("top")    // "top" | "bottom" | "left" | "right"
   doorSide    String   @default("bottom")
+  doorAtEnd   Boolean  @default(true) // when boardSide == doorSide: door at the far end of that edge (right/bottom) vs the near end (left/top)
   roster      Json     // [{ id, name, manual }]
   assignments Json     // [{ row, col, studentId }]
   createdAt   DateTime @default(now())

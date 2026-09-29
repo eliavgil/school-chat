@@ -113,13 +113,44 @@ function SetupStep({ classes, classId, setClassId, charts, loadingCharts, onNew,
   )
 }
 
+/* ── Compact live preview of the desk layout + board/door placement ───── */
+function LayoutPreview({ cols, boardSide, doorSide, doorAtEnd }: {
+  cols: number[]; boardSide: Side; doorSide: Side; doorAtEnd: boolean
+}) {
+  return (
+    <div>
+      <p className="text-white/50 text-xs mb-1.5">תצוגה מקדימה</p>
+      <div className="glass rounded-2xl p-3 space-y-1.5" dir="ltr">
+        <EdgeStrip side="top" hasBoard={boardSide === "top"} hasDoor={doorSide === "top"} doorAtEnd={doorAtEnd} />
+        <div className="flex gap-1.5 items-stretch">
+          <EdgeStrip side="left" hasBoard={boardSide === "left"} hasDoor={doorSide === "left"} doorAtEnd={doorAtEnd} />
+          <div className="flex-1 flex gap-1.5">
+            {cols.map((count, c) => (
+              <div key={c} className="flex-1 flex flex-col gap-1">
+                {Array.from({ length: count }).map((_, depth) => (
+                  <div key={depth} className="rounded-md border border-dashed border-white/15 bg-white/[0.04] h-5" />
+                ))}
+              </div>
+            ))}
+          </div>
+          <EdgeStrip side="right" hasBoard={boardSide === "right"} hasDoor={doorSide === "right"} doorAtEnd={doorAtEnd} />
+        </div>
+        <EdgeStrip side="bottom" hasBoard={boardSide === "bottom"} hasDoor={doorSide === "bottom"} doorAtEnd={doorAtEnd} />
+      </div>
+    </div>
+  )
+}
+
 /* ── Step 2: desk layout editor — column by column, uneven depths ─────── */
-function LayoutStep({ cols, setCols, boardSide, setBoardSide, doorSide, setDoorSide, onNext }: {
+function LayoutStep({ cols, setCols, boardSide, setBoardSide, doorSide, setDoorSide, doorAtEnd, setDoorAtEnd, onNext }: {
   cols: number[]; setCols: (c: number[]) => void
   boardSide: Side; setBoardSide: (s: Side) => void
   doorSide: Side; setDoorSide: (s: Side) => void
+  doorAtEnd: boolean; setDoorAtEnd: (v: boolean) => void
   onNext: () => void
 }) {
+  const sameSide = boardSide === doorSide
+  const horizontal = boardSide === "top" || boardSide === "bottom"
   const total = cols.reduce((a, b) => a + b, 0)
 
   return (
@@ -159,6 +190,28 @@ function LayoutStep({ cols, setCols, boardSide, setBoardSide, doorSide, setDoorS
       </div>
       <p className="text-white/30 text-[11px] -mt-3">אפשר לבחור לדלת ולוח את אותו צד — הלוח יצטמצם כדי לפנות מקום לדלת.</p>
 
+      {sameSide && (
+        <div>
+          <p className="text-white/50 text-xs mb-1.5">מיקום הדלת לצד הלוח</p>
+          <div className="grid grid-cols-2 gap-1.5">
+            <button onClick={() => setDoorAtEnd(false)}
+              className={`py-2 rounded-xl text-xs font-medium interactive btn-press transition-colors ${
+                !doorAtEnd ? "bg-white text-black" : "bg-white/8 text-white/70 hover:bg-white/15"
+              }`}>
+              {horizontal ? "משמאל ללוח" : "מעל ללוח"}
+            </button>
+            <button onClick={() => setDoorAtEnd(true)}
+              className={`py-2 rounded-xl text-xs font-medium interactive btn-press transition-colors ${
+                doorAtEnd ? "bg-white text-black" : "bg-white/8 text-white/70 hover:bg-white/15"
+              }`}>
+              {horizontal ? "מימין ללוח" : "מתחת ללוח"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      <LayoutPreview cols={cols} boardSide={boardSide} doorSide={doorSide} doorAtEnd={doorAtEnd} />
+
       <button onClick={onNext}
         className="w-full py-3.5 rounded-2xl bg-white text-black font-semibold text-sm interactive btn-press">
         המשך לרשימת תלמידים →
@@ -167,17 +220,32 @@ function LayoutStep({ cols, setCols, boardSide, setBoardSide, doorSide, setDoorS
   )
 }
 
-/* ── Step 3: roster editor (add/remove students manually) ─────────────── */
+/* ── Step 3: roster editor (add/remove/rename students manually) ───────── */
 function RosterStep({ roster, setRoster, onGenerate }: {
   roster: RosterItem[]; setRoster: (r: RosterItem[]) => void; onGenerate: () => void
 }) {
   const [newName, setNewName] = useState("")
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editValue, setEditValue] = useState("")
 
   function add() {
     const name = newName.trim()
     if (!name) return
     setRoster([...roster, { id: crypto.randomUUID(), name, manual: true }])
     setNewName("")
+  }
+
+  function startEdit(s: RosterItem) {
+    setEditingId(s.id)
+    setEditValue(s.name)
+  }
+
+  function commitEdit() {
+    if (editingId) {
+      const name = editValue.trim()
+      if (name) setRoster(roster.map(x => x.id === editingId ? { ...x, name } : x))
+    }
+    setEditingId(null)
   }
 
   return (
@@ -197,10 +265,24 @@ function RosterStep({ roster, setRoster, onGenerate }: {
 
       <div className="space-y-1.5 max-h-[45vh] overflow-y-auto">
         {roster.map(s => (
-          <div key={s.id} className="glass rounded-xl px-3.5 py-2 flex items-center justify-between">
-            <span className="text-white/80 text-sm">{s.name}{s.manual && <span className="text-white/30 text-xs mr-1.5">(נוסף ידנית)</span>}</span>
-            <button onClick={() => setRoster(roster.filter(x => x.id !== s.id))}
-              className="text-white/30 hover:text-red-400 interactive px-1">✕</button>
+          <div key={s.id} className="glass rounded-xl px-3.5 py-2 flex items-center justify-between gap-2">
+            {editingId === s.id ? (
+              <input autoFocus value={editValue} onChange={e => setEditValue(e.target.value)}
+                onBlur={commitEdit}
+                onKeyDown={e => { if (e.key === "Enter") commitEdit(); if (e.key === "Escape") setEditingId(null) }}
+                className="flex-1 bg-white/10 border border-white/20 rounded-lg px-2 py-1 text-white text-sm outline-none" />
+            ) : (
+              <button onClick={() => startEdit(s)} className="flex-1 text-right interactive">
+                <span className="text-white/80 text-sm">{s.name}{s.manual && <span className="text-white/30 text-xs mr-1.5">(נוסף ידנית)</span>}</span>
+              </button>
+            )}
+            <div className="flex items-center gap-1 flex-shrink-0">
+              {editingId !== s.id && (
+                <button onClick={() => startEdit(s)} className="text-white/30 hover:text-white interactive px-1" aria-label="עריכת שם">✎</button>
+              )}
+              <button onClick={() => setRoster(roster.filter(x => x.id !== s.id))}
+                className="text-white/30 hover:text-red-400 interactive px-1">✕</button>
+            </div>
           </div>
         ))}
         {roster.length === 0 && (
@@ -256,30 +338,32 @@ function DeskPair({ nameA, nameB, selectedA, selectedB, onClickA, onClickB, onRe
 }
 
 /* ── Board/door strip along one edge of the grid — may hold both ──────── */
-function EdgeStrip({ side, hasBoard, hasDoor }: { side: Side; hasBoard: boolean; hasDoor: boolean }) {
+// Rendered inside an ltr-forced wrapper (see ResultStep) so DOM order maps
+// directly to left→right / top→bottom, matching the canvas export's pixel
+// coordinates — doorAtEnd picks whether the door sits at the far end
+// (right/bottom, DOM-last) or the near end (left/top, DOM-first).
+function EdgeStrip({ side, hasBoard, hasDoor, doorAtEnd }: { side: Side; hasBoard: boolean; hasDoor: boolean; doorAtEnd: boolean }) {
   if (!hasBoard && !hasDoor) return null
   const horizontal = side === "top" || side === "bottom"
-  return (
-    <div className={`flex ${horizontal ? "flex-row" : "flex-col h-full"} gap-2`}>
-      {hasBoard && (
-        <div className={`flex-1 bg-white/25 rounded-xl flex items-center justify-center text-white/90 text-xs font-bold tracking-wide ${horizontal ? "py-2.5" : "px-2.5"}`}
-          style={horizontal ? {} : { writingMode: "vertical-rl" }}>
-          🖊 לוח
-        </div>
-      )}
-      {hasDoor && (
-        <div className={`${hasBoard ? (horizontal ? "w-14" : "h-12") : "flex-1"} flex items-center justify-center text-white/40 text-[10px] font-medium`}
-          style={horizontal ? {} : { writingMode: "vertical-rl" }}>
-          🚪 דלת
-        </div>
-      )}
+  const board = hasBoard ? (
+    <div key="board" className={`flex-1 bg-white/25 rounded-xl flex items-center justify-center text-white/90 text-xs font-bold tracking-wide ${horizontal ? "py-2.5" : "px-2.5"}`}
+      style={horizontal ? {} : { writingMode: "vertical-rl" }}>
+      🖊 לוח
     </div>
-  )
+  ) : null
+  const door = hasDoor ? (
+    <div key="door" className={`${hasBoard ? (horizontal ? "w-14" : "h-12") : "flex-1"} flex items-center justify-center text-white/40 text-[10px] font-medium`}
+      style={horizontal ? {} : { writingMode: "vertical-rl" }}>
+      🚪 דלת
+    </div>
+  ) : null
+  const children = hasBoard && hasDoor ? (doorAtEnd ? [board, door] : [door, board]) : [board ?? door]
+  return <div className={`flex ${horizontal ? "flex-row" : "flex-col h-full"} gap-2`}>{children}</div>
 }
 
 /* ── Step 4: result grid — editable, with board/door markers ──────────── */
-function ResultStep({ cols, boardSide, doorSide, roster, assignments, selected, onSeatClick, onPoolClick, onRemove, onRegenerate }: {
-  cols: number[]; boardSide: Side; doorSide: Side; roster: RosterItem[]
+function ResultStep({ cols, boardSide, doorSide, doorAtEnd, roster, assignments, selected, onSeatClick, onPoolClick, onRemove, onRegenerate }: {
+  cols: number[]; boardSide: Side; doorSide: Side; doorAtEnd: boolean; roster: RosterItem[]
   assignments: Record<string, string | null>; selected: Selection
   onSeatClick: (key: string) => void; onPoolClick: (id: string) => void; onRemove: (key: string) => void
   onRegenerate: () => void
@@ -290,10 +374,13 @@ function ResultStep({ cols, boardSide, doorSide, roster, assignments, selected, 
 
   return (
     <div className="space-y-5">
-      <div className="glass rounded-2xl p-4 space-y-2">
-        <EdgeStrip side="top" hasBoard={boardSide === "top"} hasDoor={doorSide === "top"} />
+      {/* Forced ltr: keeps column order and board/door placement pinned to
+          fixed left/right, top/bottom positions matching the exported
+          image's pixel coordinates — independent of the page's RTL flow. */}
+      <div className="glass rounded-2xl p-4 space-y-2" dir="ltr">
+        <EdgeStrip side="top" hasBoard={boardSide === "top"} hasDoor={doorSide === "top"} doorAtEnd={doorAtEnd} />
         <div className="flex gap-2 items-stretch">
-          <EdgeStrip side="left" hasBoard={boardSide === "left"} hasDoor={doorSide === "left"} />
+          <EdgeStrip side="left" hasBoard={boardSide === "left"} hasDoor={doorSide === "left"} doorAtEnd={doorAtEnd} />
           <div className="flex-1 flex gap-2">
             {cols.map((count, c) => (
               <div key={c} className="flex flex-col gap-2" style={{ width: `calc((100% - ${(cols.length - 1) * 8}px) / ${cols.length})`, maxWidth: 130 }}>
@@ -316,9 +403,9 @@ function ResultStep({ cols, boardSide, doorSide, roster, assignments, selected, 
               </div>
             ))}
           </div>
-          <EdgeStrip side="right" hasBoard={boardSide === "right"} hasDoor={doorSide === "right"} />
+          <EdgeStrip side="right" hasBoard={boardSide === "right"} hasDoor={doorSide === "right"} doorAtEnd={doorAtEnd} />
         </div>
-        <EdgeStrip side="bottom" hasBoard={boardSide === "bottom"} hasDoor={doorSide === "bottom"} />
+        <EdgeStrip side="bottom" hasBoard={boardSide === "bottom"} hasDoor={doorSide === "bottom"} doorAtEnd={doorAtEnd} />
       </div>
 
       {pool.length > 0 && (
@@ -354,10 +441,11 @@ function ResultStep({ cols, boardSide, doorSide, roster, assignments, selected, 
 /* ── Canvas export — draws a clean floor-plan-style image for sharing ─── */
 async function renderSeatingImage(opts: {
   cols: number[]; boardSide: Side; doorSide: Side
+  doorAtEnd: boolean
   roster: RosterItem[]; assignments: Record<string, string | null>
   title: string
 }): Promise<Blob> {
-  const { cols, boardSide, doorSide, roster, assignments, title } = opts
+  const { cols, boardSide, doorSide, doorAtEnd, roster, assignments, title } = opts
   const displayNames = buildDisplayNames(roster)
   const maxDepth = Math.max(...cols, 1)
 
@@ -408,9 +496,13 @@ async function renderSeatingImage(opts: {
 
     let boardStart = 0, boardLen = 0, doorStart = 0, doorLen = 0
     if (hasBoard && hasDoor) {
-      boardLen = fullLen - doorSpan - 10
-      doorStart = boardLen + 10
-      doorLen = doorSpan
+      if (doorAtEnd) {
+        boardStart = 0; boardLen = fullLen - doorSpan - 10
+        doorStart = boardLen + 10; doorLen = doorSpan
+      } else {
+        doorStart = 0; doorLen = doorSpan
+        boardStart = doorLen + 10; boardLen = fullLen - doorSpan - 10
+      }
     } else if (hasBoard) {
       boardLen = fullLen
     } else {
@@ -516,6 +608,7 @@ export default function SeatingChartPage() {
   const [cols, setCols] = useState<number[]>([4, 4, 4, 4, 4, 4])
   const [boardSide, setBoardSide] = useState<Side>("top")
   const [doorSide, setDoorSide] = useState<Side>("right")
+  const [doorAtEnd, setDoorAtEnd] = useState(true)
   const [roster, setRoster] = useState<RosterItem[]>([])
   const [assignments, setAssignments] = useState<Record<string, string | null>>({})
   const [selected, setSelected] = useState<Selection>(null)
@@ -550,7 +643,7 @@ export default function SeatingChartPage() {
       await fetch(`/api/seating-charts/${chartId}`, {
         method: "PATCH", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: chartName, rows: cols, boardSide, doorSide, roster,
+          name: chartName, rows: cols, boardSide, doorSide, doorAtEnd, roster,
           assignments: Object.entries(assignments).map(([k, v]) => {
             const [row, col, seat] = k.split("-").map(Number)
             return { row, col, seat, studentId: v }
@@ -560,7 +653,7 @@ export default function SeatingChartPage() {
       setSaved(true)
     }, 700)
     return () => clearTimeout(t)
-  }, [chartId, chartName, cols, boardSide, doorSide, roster, assignments])
+  }, [chartId, chartName, cols, boardSide, doorSide, doorAtEnd, roster, assignments])
 
   async function startNew() {
     if (!classId) return
@@ -570,12 +663,12 @@ export default function SeatingChartPage() {
     const cols0 = [4, 4, 4, 4, 4, 4]
     const res = await fetch("/api/seating-charts", {
       method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ classId, name: "", rows: cols0, boardSide: "top", doorSide: "right", roster: roster0, assignments: [] }),
+      body: JSON.stringify({ classId, name: "", rows: cols0, boardSide: "top", doorSide: "right", doorAtEnd: true, roster: roster0, assignments: [] }),
     }).then(r => r.json())
     setChartId(res.chart.id)
     setChartName("")
     setCols(cols0)
-    setBoardSide("top"); setDoorSide("right")
+    setBoardSide("top"); setDoorSide("right"); setDoorAtEnd(true)
     setRoster(roster0)
     setAssignments({})
     setSelected(null)
@@ -592,6 +685,7 @@ export default function SeatingChartPage() {
     setCols(c.rows?.length ? c.rows : [4, 4, 4, 4, 4, 4])
     setBoardSide(c.boardSide ?? "top")
     setDoorSide(c.doorSide ?? "right")
+    setDoorAtEnd(c.doorAtEnd ?? true)
     setRoster(c.roster ?? [])
     const a: Record<string, string | null> = {}
     ;(c.assignments ?? []).forEach((x: any) => { a[seatKey(x.row, x.col, x.seat === 1 ? 1 : 0)] = x.studentId })
@@ -665,7 +759,7 @@ export default function SeatingChartPage() {
   async function handleShare() {
     setSharing(true)
     try {
-      const blob = await renderSeatingImage({ cols, boardSide, doorSide, roster, assignments, title: chartName || "סידור ישיבה" })
+      const blob = await renderSeatingImage({ cols, boardSide, doorSide, doorAtEnd, roster, assignments, title: chartName || "סידור ישיבה" })
       const file = new File([blob], `seating-chart.png`, { type: "image/png" })
       if (typeof navigator !== "undefined" && (navigator as any).canShare?.({ files: [file] })) {
         await (navigator as any).share({ files: [file], title: "סידור ישיבה", text: chartName || "סידור ישיבה" })
@@ -714,6 +808,7 @@ export default function SeatingChartPage() {
           <LayoutStep cols={cols} setCols={setCols}
             boardSide={boardSide} setBoardSide={setBoardSide}
             doorSide={doorSide} setDoorSide={setDoorSide}
+            doorAtEnd={doorAtEnd} setDoorAtEnd={setDoorAtEnd}
             onNext={() => setStep("roster")} />
         )}
 
@@ -723,7 +818,7 @@ export default function SeatingChartPage() {
 
         {!busy && step === "result" && (
           <div className="space-y-5">
-            <ResultStep cols={cols} boardSide={boardSide} doorSide={doorSide} roster={roster}
+            <ResultStep cols={cols} boardSide={boardSide} doorSide={doorSide} doorAtEnd={doorAtEnd} roster={roster}
               assignments={assignments} selected={selected}
               onSeatClick={onSeatClick} onPoolClick={onPoolClick} onRemove={onRemove}
               onRegenerate={generate} />
