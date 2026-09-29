@@ -278,6 +278,7 @@ function StudentHome({ session, data, isPreview }: { session: any; data: HomeDat
               {[
                 { label: "עמוד הבית", href: isPreview ? "/home?preview=student" : "/home", emoji: "🏠" },
                 { label: "בוט לימוד", href: "/student", emoji: "🤖" },
+                { label: "מילון מושגים", href: "/glossary", emoji: "📖" },
                 { label: "הגדרות אישיות", href: "/manage", emoji: "⚙️" },
               ].map(item => (
                 <Link key={item.href} href={item.href} onClick={() => setMenuOpen(false)}
@@ -379,8 +380,16 @@ function StudentHome({ session, data, isPreview }: { session: any; data: HomeDat
             </Link>
           </div>
 
+          {/* Glossary */}
+          <Link href="/glossary"
+            className="mt-3 glass rounded-2xl px-4 py-3 flex items-center gap-2.5 hover:bg-white/15 interactive btn-press transition-colors animate-fade-in stagger-3">
+            <span className="text-lg">📖</span>
+            <span className="text-white/80 text-sm font-medium">מילון מושגים</span>
+            <span className="text-white/30 text-xs mr-auto">כל המושגים מהשיעורים ←</span>
+          </Link>
+
           {/* Join lesson */}
-          <div className="mt-5 glass rounded-2xl px-4 py-3 flex items-center gap-2 animate-fade-in stagger-3">
+          <div className="mt-3 glass rounded-2xl px-4 py-3 flex items-center gap-2 animate-fade-in stagger-3">
             <span className="text-white/60 text-xs font-semibold whitespace-nowrap">📡 קוד שיעור</span>
             <input
               value={joinCode}
@@ -692,6 +701,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
     { label: "מורה מקצועי",       href: "/teacher/subject",        emoji: "📚", soon: false },
     { label: "ניהול שכבה",        href: "/teacher/grade-hub",      emoji: "🏫", soon: false },
     { label: "סידור ישיבה",       href: "/teacher/seating-chart",  emoji: "🪑", soon: false },
+    { label: "מילון מושגים",      href: "/glossary",               emoji: "📖", soon: false },
     { label: "מיסטר פקפקובי",      href: "/assistant",                emoji: "🤖", icon: "/mascot/face.png", soon: false },
     { label: "פקפקובי בוט - ניהול מאגר ידע", href: "/teacher/school-assistant", emoji: "🗂️", soon: false },
     { label: "פקפקובי בוט - מורה פרטי",      href: "#",                         emoji: "🧑‍🏫", soon: true },
@@ -780,6 +790,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                 { label: "מורה מקצועי",      href: "/teacher/subject",        emoji: "📚" },
                 { label: "ניהול שכבה",       href: "/teacher/grade-hub",      emoji: "🏫" },
                 { label: "סידור ישיבה",      href: "/teacher/seating-chart",  emoji: "🪑" },
+                { label: "מילון מושגים",     href: "/glossary",               emoji: "📖" },
                 { label: "הגדרות",           href: "/manage",                 emoji: "⚙️" },
                 ...(isAdmin ? [{ label: "פרופיל", href: "/profile", emoji: "👤" }] : []),
               ] as { label: string; href: string; emoji: string; icon?: string }[]).map(item => (
@@ -1264,6 +1275,7 @@ function HomeroomTeacherHome({ session, data }: { session: any; data: HomeData |
     { label: "מיסטר פקפקובי",             href: "/assistant",                 emoji: "🤖", icon: "/mascot/face.png" },
     { label: "השכלה כללית חינוכית",       href: "/teacher/general-education", emoji: "📖" },
     { label: "סידור ישיבה",               href: "/teacher/seating-chart",     emoji: "🪑" },
+    { label: "מילון מושגים",              href: "/glossary",                  emoji: "📕" },
   ]
 
   return (

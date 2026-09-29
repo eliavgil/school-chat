@@ -1,0 +1,46 @@
+[
+  {
+    "key": "democracy-popular-sovereignty-10__s9__def1",
+    "term": "עקרון שלטון העם",
+    "shortDefinition": "עקרון יסוד לפיו כלל האזרחים הם הריבון ומקור הסמכות. האזרחים בוחרים שלטון נציגים לזמן קצוב המוגדר בחוק.",
+    "extendedArticle": "",
+    "practiceSlideId": null,
+    "lessonSlug": "democracy-popular-sovereignty-10",
+    "lessonTitle": "שיעור 10: עקרון שלטון העם",
+    "lessonOrder": 10,
+    "order": 40
+  },
+  {
+    "key": "democracy-popular-sovereignty-10__s9__def2",
+    "term": "דמוקרטיה ישירה",
+    "shortDefinition": "מצב בו כלל האזרחים מקבלים את ההחלטות בענייני המדינה ללא מתווכים או נציגים.",
+    "extendedArticle": "",
+    "practiceSlideId": null,
+    "lessonSlug": "democracy-popular-sovereignty-10",
+    "lessonTitle": "שיעור 10: עקרון שלטון העם",
+    "lessonOrder": 10,
+    "order": 41
+  },
+  {
+    "key": "democracy-popular-sovereignty-10__s9__def3",
+    "term": "דמוקרטיה עקיפה / ייצוגית",
+    "shortDefinition": "האזרחים בוחרים נציגים שהם המקבלים את ההחלטות ומקדמים מדיניות.",
+    "extendedArticle": "",
+    "practiceSlideId": null,
+    "lessonSlug": "democracy-popular-sovereignty-10",
+    "lessonTitle": "שיעור 10: עקרון שלטון העם",
+    "lessonOrder": 10,
+    "order": 42
+  },
+  {
+    "key": "democracy-popular-sovereignty-10__s9__def4",
+    "term": "משאל עם",
+    "shortDefinition": "שאלה מוגדרת המופנית אל כלל ציבור הבוחרים. זהו כלי של דמוקרטיה ישירה שנועד לשקף ישירות את עמדות הציבור.",
+    "extendedArticle": "",
+    "practiceSlideId": "s11",
+    "lessonSlug": "democracy-popular-sovereignty-10",
+    "lessonTitle": "שיעור 10: עקרון שלטון העם",
+    "lessonOrder": 10,
+    "order": 43
+  }
+]

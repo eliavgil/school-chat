@@ -1,0 +1,46 @@
+[
+  {
+    "key": "civics-nation-nationalism-2__s9__d1",
+    "term": "קבוצה אתנית",
+    "shortDefinition": "קבוצה שלה יסודות משותפים אתניים-תרבותיים (מוצא, שפה, תרבות, היסטוריה ולעתים גם דת). קבוצה זו אינה בהכרח בעלת דרישות להגדרה עצמית או לריבונות.",
+    "extendedArticle": "",
+    "practiceSlideId": null,
+    "lessonSlug": "civics-nation-nationalism-2",
+    "lessonTitle": "שיעור 2: לאום ולאומיות",
+    "lessonOrder": 2,
+    "order": 7
+  },
+  {
+    "key": "civics-nation-nationalism-2__s9__d2",
+    "term": "לאום",
+    "shortDefinition": "קבוצה שלה יסודות משותפים (אתניים-תרבותיים ו/או פוליטיים), שיש לה מדינה ריבונית או אוטונומיה — או ששואפת לאחד מאלו.",
+    "extendedArticle": "",
+    "practiceSlideId": null,
+    "lessonSlug": "civics-nation-nationalism-2",
+    "lessonTitle": "שיעור 2: לאום ולאומיות",
+    "lessonOrder": 2,
+    "order": 8
+  },
+  {
+    "key": "civics-nation-nationalism-2__s9__d3",
+    "term": "לאומיות אתנית-תרבותית",
+    "shortDefinition": "שאיפה לשלטון עצמי במסגרת מדינה ריבונית, המבוססת על יסודות אתניים-תרבותיים (מוצא, שפה, תרבות, היסטוריה, ולפעמים גם דת). אין חפיפה בין לאומיות לאזרחות.",
+    "extendedArticle": "",
+    "practiceSlideId": null,
+    "lessonSlug": "civics-nation-nationalism-2",
+    "lessonTitle": "שיעור 2: לאום ולאומיות",
+    "lessonOrder": 2,
+    "order": 9
+  },
+  {
+    "key": "civics-nation-nationalism-2__s9__d4",
+    "term": "לאומיות פוליטית / אזרחית",
+    "shortDefinition": "שאיפה לשלטון עצמי במסגרת מדינה ריבונית, המבוססת על יסודות פוליטיים — שותפות ורצון משותף לחיות באותה מדינה ולקדם יחד ערכים ונורמות משותפים. קיימת חפיפה בין הלאומיות לאזרחות.",
+    "extendedArticle": "",
+    "practiceSlideId": "s11",
+    "lessonSlug": "civics-nation-nationalism-2",
+    "lessonTitle": "שיעור 2: לאום ולאומיות",
+    "lessonOrder": 2,
+    "order": 10
+  }
+]

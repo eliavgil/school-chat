@@ -10,7 +10,7 @@ const PRINT_CSS = `
   *{box-sizing:border-box;print-color-adjust:exact;-webkit-print-color-adjust:exact;}
   html,body{margin:0;padding:0;background:var(--paper)!important;font-family:'Heebo',Arial,sans-serif;direction:rtl;color:var(--ink)!important;}
   .no-print{background:var(--ink);padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:12px;position:sticky;top:0;z-index:10;}
-  .slide-page{background:var(--paper);padding:48px 64px 64px;position:relative;border-bottom:3px solid var(--gold);page-break-after:always;break-after:page;page-break-inside:avoid;min-height:100vh;}
+  .slide-page{background:var(--paper);padding:48px 64px 64px;position:relative;border-bottom:3px solid var(--gold);page-break-after:always;break-after:page;page-break-inside:avoid;min-height:100vh;scroll-margin-top:70px;}
   .slide-page:last-child{page-break-after:auto;break-after:auto;}
   .slide-num{position:absolute;top:20px;left:24px;width:36px;height:36px;border-radius:50%;background:var(--seal);color:var(--paper);display:flex;align-items:center;justify-content:center;font-family:'Frank Ruhl Libre',Georgia,serif;font-weight:900;font-size:16px;}
   .eyebrow{font-size:11px;letter-spacing:2.5px;color:var(--seal);font-weight:700;margin-bottom:6px;text-transform:uppercase;}
@@ -111,7 +111,7 @@ function PrintSlide({ slide, num }: { slide: Slide; num: number }) {
   const { type, eyebrow, title, body, questions } = slide
 
   return (
-    <div className="slide-page">
+    <div className="slide-page" id={slide.id}>
       <div className="slide-num">{num}</div>
       <span className="type-tag">{TYPE_LABELS[type] ?? type}</span>
       <div className="eyebrow">{eyebrow}</div>

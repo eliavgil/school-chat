@@ -1,0 +1,35 @@
+[
+  {
+    "key": "democracy-history-athens-8__s10__def1",
+    "term": "דמוקרטיה ישירה",
+    "shortDefinition": "שיטת ממשל בה כלל האזרחים מקבלים את ההחלטות בענייני המדינה באופן ישיר, ללא מתווכים או נציגים.",
+    "extendedArticle": "",
+    "practiceSlideId": "s12",
+    "lessonSlug": "democracy-history-athens-8",
+    "lessonTitle": "שיעור 8: היסטוריה של הדמוקרטיה",
+    "lessonOrder": 8,
+    "order": 33
+  },
+  {
+    "key": "democracy-history-athens-8__s10__def2",
+    "term": "דמוקרטיה עקיפה / ייצוגית",
+    "shortDefinition": "שיטת ממשל בה כלל האזרחים בוחרים נציגים לזמן קצוב, והם אלו שמקבלים את ההחלטות ומקדמים מדיניות בשם העם.",
+    "extendedArticle": "",
+    "practiceSlideId": null,
+    "lessonSlug": "democracy-history-athens-8",
+    "lessonTitle": "שיעור 8: היסטוריה של הדמוקרטיה",
+    "lessonOrder": 8,
+    "order": 34
+  },
+  {
+    "key": "democracy-history-athens-8__s10__def3",
+    "term": "זכות בחירה כללית",
+    "shortDefinition": "התנאי לפיו כל אזרח במדינה (בכפוף למגבלת גיל) זכאי לבחור ולהיבחר למוסדות השלטון ללא התניה ברכוש, דת או השכלה.",
+    "extendedArticle": "",
+    "practiceSlideId": null,
+    "lessonSlug": "democracy-history-athens-8",
+    "lessonTitle": "שיעור 8: היסטוריה של הדמוקרטיה",
+    "lessonOrder": 8,
+    "order": 35
+  }
+]

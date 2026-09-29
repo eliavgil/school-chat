@@ -1,0 +1,68 @@
+[
+  {
+    "key": "democracy-election-conditions-11__s10__def1",
+    "term": "בחירות דמוקרטיות",
+    "shortDefinition": "מאפיין בסיסי המאפשר חילופי שלטון.",
+    "extendedArticle": "",
+    "practiceSlideId": null,
+    "lessonSlug": "democracy-election-conditions-11",
+    "lessonTitle": "שיעור 11: תנאי יסוד לבחירות דמוקרטיות (כ\"ח מש\"ה)",
+    "lessonOrder": 11,
+    "order": 44
+  },
+  {
+    "key": "democracy-election-conditions-11__s10__def2",
+    "term": "כלליות",
+    "shortDefinition": "כל אזרח זכאי לבחור ולהיבחר במגבלות החוק.",
+    "extendedArticle": "",
+    "practiceSlideId": null,
+    "lessonSlug": "democracy-election-conditions-11",
+    "lessonTitle": "שיעור 11: תנאי יסוד לבחירות דמוקרטיות (כ\"ח מש\"ה)",
+    "lessonOrder": 11,
+    "order": 45
+  },
+  {
+    "key": "democracy-election-conditions-11__s10__def3",
+    "term": "חשאיות",
+    "shortDefinition": "מובטח שהבוחר לא ייחשף ולא יופעלו עליו לחצים.",
+    "extendedArticle": "",
+    "practiceSlideId": null,
+    "lessonSlug": "democracy-election-conditions-11",
+    "lessonTitle": "שיעור 11: תנאי יסוד לבחירות דמוקרטיות (כ\"ח מש\"ה)",
+    "lessonOrder": 11,
+    "order": 46
+  },
+  {
+    "key": "democracy-election-conditions-11__s10b__def4",
+    "term": "מחזוריות",
+    "shortDefinition": "בחירות במרווחי זמן קבועים בחוק.",
+    "extendedArticle": "",
+    "practiceSlideId": null,
+    "lessonSlug": "democracy-election-conditions-11",
+    "lessonTitle": "שיעור 11: תנאי יסוד לבחירות דמוקרטיות (כ\"ח מש\"ה)",
+    "lessonOrder": 11,
+    "order": 47
+  },
+  {
+    "key": "democracy-election-conditions-11__s10b__def5",
+    "term": "שוויוניות",
+    "shortDefinition": "קולו של כל מצביע שווה למשנהו.",
+    "extendedArticle": "",
+    "practiceSlideId": null,
+    "lessonSlug": "democracy-election-conditions-11",
+    "lessonTitle": "שיעור 11: תנאי יסוד לבחירות דמוקרטיות (כ\"ח מש\"ה)",
+    "lessonOrder": 11,
+    "order": 48
+  },
+  {
+    "key": "democracy-election-conditions-11__s10b__def6",
+    "term": "התמודדות חופשית / הוגנת",
+    "shortDefinition": "קיום תחרות הוגנת בין מועמדים על בסיס חירויות פוליטיות.",
+    "extendedArticle": "",
+    "practiceSlideId": "s12",
+    "lessonSlug": "democracy-election-conditions-11",
+    "lessonTitle": "שיעור 11: תנאי יסוד לבחירות דמוקרטיות (כ\"ח מש\"ה)",
+    "lessonOrder": 11,
+    "order": 49
+  }
+]

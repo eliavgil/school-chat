@@ -149,6 +149,32 @@ model SeatingChart {
   @@index([classId])
 }
 
+// Cross-lesson glossary (מילון מושגים) — one row per term that appears on a
+// "definitions" (להעתיק למחברת) slide in any civics lesson. Seeded from the
+// lesson seed files themselves (see /api/seed/glossary) so term/shortDefinition
+// start out matching the slide; teachers can then edit any field. `key` is a
+// stable identifier derived from lessonSlug+slideId+termId, used so re-running
+// the seed updates existing rows instead of duplicating them. `order` is a
+// single global sequence (assigned at seed time, matching the order terms are
+// taught across all 18 lessons) so the student-facing page can list every
+// term in one straightforward pass without re-deriving lesson/slide order.
+model GlossaryTerm {
+  id              String   @id @default(cuid())
+  key             String   @unique
+  term            String
+  shortDefinition String   @db.Text
+  extendedArticle String?  @db.Text // half-to-one-page explanation, markdown
+  practiceSlideId String?  // slide id within the lesson whose practice question relates to this term, if any
+  lessonSlug      String
+  lessonTitle     String
+  lessonOrder     Int
+  order           Int      // global display order across all lessons
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([lessonSlug])
+}
+
 model Student {
   id              String                 @id @default(cuid())
   name            String

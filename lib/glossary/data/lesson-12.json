@@ -1,0 +1,46 @@
+[
+  {
+    "key": "democracy-israel-election-system-12__s10__def1",
+    "term": "שיטת בחירות ארצית",
+    "shortDefinition": "כל הארץ מהווה אזור בחירה אחד לצורך חישוב התוצאות.",
+    "extendedArticle": "",
+    "practiceSlideId": "s12",
+    "lessonSlug": "democracy-israel-election-system-12",
+    "lessonTitle": "שיעור 12: שיטת הבחירות בישראל ומרכיביה",
+    "lessonOrder": 12,
+    "order": 50
+  },
+  {
+    "key": "democracy-israel-election-system-12__s10__def2",
+    "term": "שיטת בחירות יחסית",
+    "shortDefinition": "חלוקת המושבים בפרלמנט היא יחסית למספר הקולות שקיבלה המפלגה מכלל הקולות הכשרים.",
+    "extendedArticle": "",
+    "practiceSlideId": "s12",
+    "lessonSlug": "democracy-israel-election-system-12",
+    "lessonTitle": "שיעור 12: שיטת הבחירות בישראל ומרכיביה",
+    "lessonOrder": 12,
+    "order": 51
+  },
+  {
+    "key": "democracy-israel-election-system-12__s10__def3",
+    "term": "שיטת בחירות רשימתית",
+    "shortDefinition": "מצביעים למפלגה שלה רשימת מועמדים שנקבעה מראש.",
+    "extendedArticle": "",
+    "practiceSlideId": null,
+    "lessonSlug": "democracy-israel-election-system-12",
+    "lessonTitle": "שיעור 12: שיטת הבחירות בישראל ומרכיביה",
+    "lessonOrder": 12,
+    "order": 52
+  },
+  {
+    "key": "democracy-israel-election-system-12__s10__def4",
+    "term": "אחוז החסימה",
+    "shortDefinition": "אחוז מינימלי מכלל הקולות הדרוש כדי שמפלגה תזכה בייצוג בפרלמנט. בישראל: 3.25%.",
+    "extendedArticle": "",
+    "practiceSlideId": null,
+    "lessonSlug": "democracy-israel-election-system-12",
+    "lessonTitle": "שיעור 12: שיטת הבחירות בישראל ומרכיביה",
+    "lessonOrder": 12,
+    "order": 53
+  }
+]
