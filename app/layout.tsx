@@ -13,12 +13,21 @@ const heebo = Heebo({
 
 export const metadata: Metadata = {
   title: "פַקפֵק",
-  description: "מערכת תקשורת בית ספרית",
+  description: "אפליקציה כפר סילברית נסיונית",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
     title: "פַקפֵק",
+  },
+  // WhatsApp/Telegram/Facebook link previews read og:title/og:description
+  // first, falling back to the plain title/description above only when
+  // these are absent — set explicitly so the share-preview text is never
+  // at the mercy of a platform's fallback behavior.
+  openGraph: {
+    title: "פַקפֵק",
+    description: "אפליקציה כפר סילברית נסיונית",
+    locale: "he_IL",
   },
 }
 
