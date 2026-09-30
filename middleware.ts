@@ -98,6 +98,17 @@ export async function middleware(req: NextRequest) {
   return NextResponse.next()
 }
 
+// Static assets under /public that must be fetchable with no session —
+// a browser, OS or launcher requests these directly (tab favicon, PWA
+// manifest icons, apple-touch-icon, the service worker file itself) with
+// no cookie at all, and the login page's own logo needs to load before
+// anyone is authenticated. Without this exemption each one 307s to
+// /login (HTML) instead of the actual asset, which just breaks silently
+// (a "broken image" glyph, a missing favicon) — exactly what happened
+// when icon-192.svg was added to the login page without also adding it
+// here, since only favicon.ico itself was ever exempted.
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon\\.ico|icon-192\\.svg|icon-512\\.svg|manifest\\.json|sw\\.js|mascot/|animations/|file\\.svg|globe\\.svg|next\\.svg|vercel\\.svg|window\\.svg).*)",
+  ],
 }

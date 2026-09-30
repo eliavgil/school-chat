@@ -29,7 +29,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="theme-color" content="#0B0B0E" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-        <link rel="apple-touch-icon" href="/icon-192.svg" />
+        {/* Versioned query string forces browsers to refetch instead of
+            serving the old cached favicon/icon — bump it on the next
+            icon change too, not just this one. */}
+        <link rel="icon" href="/favicon.ico?v=2" sizes="any" />
+        <link rel="icon" type="image/svg+xml" href="/icon-192.svg?v=2" />
+        <link rel="apple-touch-icon" href="/icon-192.svg?v=2" />
       </head>
       <body className="min-h-screen bg-transparent">
         {/* Apply saved theme before first paint to avoid flash */}

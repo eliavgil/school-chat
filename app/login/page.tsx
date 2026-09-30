@@ -19,7 +19,7 @@ export default function LoginPage() {
 
       {/* Top brand bar */}
       <div className="px-6 pt-8 pb-4 flex items-center gap-2.5 animate-fade-in">
-        <img src="/icon-192.svg" alt="" className="w-8 h-8 rounded-xl shadow-sm" />
+        <img src="/icon-192.svg?v=2" alt="" className="w-8 h-8 rounded-xl shadow-sm" />
         <span className="text-stone-800 font-semibold text-sm tracking-tight">פַקפֵק</span>
       </div>
 
