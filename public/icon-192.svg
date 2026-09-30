@@ -10,5 +10,5 @@
     <circle cx="96" cy="96" r="44" stroke="#F5F0EB" stroke-width="5" fill="none" opacity="0.9"/>
   </g>
   <circle cx="96" cy="96" r="29" fill="#0B0B0E" stroke="#F5F0EB" stroke-width="7.5"/>
-  <rect x="83" y="83" width="20" height="20" rx="4.5" fill="#F2A33C"/>
+  <rect x="86" y="86" width="20" height="20" rx="4.5" fill="#F2A33C"/>
 </svg>
