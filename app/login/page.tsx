@@ -15,7 +15,7 @@ function GoogleIcon() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-canvas overflow-hidden" dir="rtl">
+    <div className="min-h-screen flex flex-col bg-canvas" dir="rtl">
 
       {/* Top brand bar */}
       <div className="px-6 pt-8 pb-4 flex items-center gap-2.5 animate-fade-in">
@@ -23,41 +23,52 @@ export default function LoginPage() {
         <span className="text-stone-800 font-semibold text-sm tracking-tight">פַקפֵק</span>
       </div>
 
-      {/* Hero area — takes most of screen */}
-      <div className="flex-1 flex flex-col justify-center px-6 pb-4">
-
-        {/* Pill announcement — Duna style */}
-        <div className="inline-flex items-center gap-2 bg-stone-900/85 text-white text-xs rounded-full px-3.5 py-1.5 w-fit mb-8 animate-fade-in stagger-1">
-          <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span>
-          כניסה עם חשבון Google של בית הספר
-        </div>
-
-        {/* Big editorial headline */}
-        <h1 className="font-bold text-stone-900 leading-[0.92] tracking-tight animate-fade-in stagger-2"
-          style={{ fontSize: "clamp(3.2rem, 14vw, 6rem)" }}>
-          האפליקציה<br />של הכיתה<br />שלך
+      {/* Hero area */}
+      <div className="px-6 pt-4 pb-6">
+        <h1 className="font-bold text-stone-900 leading-[0.95] tracking-tight animate-fade-in stagger-1"
+          style={{ fontSize: "clamp(2.6rem, 11vw, 4.2rem)" }}>
+          פַקפֵק
         </h1>
 
-        <p className="text-stone-500 text-base leading-relaxed mt-5 max-w-[18rem] animate-fade-in stagger-3">
-          תקשורת עם המחנך, ציונים, מערכת שעות ולוח שנה — במקום אחד.
+        <p className="text-stone-700 text-lg font-medium leading-snug mt-2 animate-fade-in stagger-2">
+          אפליקציה כפר סילברית לייעול החוויה הבית ספרית
         </p>
 
-        {/* Stats row — Duna numbers section */}
-        <div className="flex gap-6 mt-8 animate-fade-in stagger-4">
-          {[
-            { val: "3", label: "דרכי גישה" },
-            { val: "100%", label: "מאובטח" },
-            { val: "24/7", label: "זמין" },
-          ].map(s => (
-            <div key={s.label}>
-              <div className="text-2xl font-bold text-stone-900 nums">{s.val}</div>
-              <div className="text-xs text-stone-500 mt-0.5">{s.label}</div>
-            </div>
-          ))}
+        <p className="text-stone-500 text-sm leading-relaxed mt-4 max-w-sm animate-fade-in stagger-3">
+          האפליקציה נועדה לסייע בניהול שגרת היום-יום בבית הספר. ישנן גרסאות שונות לתלמידים, מורים והורים.
+        </p>
+      </div>
+
+      {/* Registration notes */}
+      <div className="px-6 pb-4 space-y-2.5 animate-fade-in stagger-4">
+        <div className="flex items-start gap-2.5 bg-stone-100 rounded-2xl px-4 py-3">
+          <span className="text-base leading-none mt-0.5">👥</span>
+          <p className="text-stone-600 text-sm leading-relaxed">הקפידו לציין בהרשמה לאיזו קבוצה אתם משתייכים.</p>
+        </div>
+        <div className="flex items-start gap-2.5 bg-stone-100 rounded-2xl px-4 py-3">
+          <span className="text-base leading-none mt-0.5">⏳</span>
+          <p className="text-stone-600 text-sm leading-relaxed">לאחר ההרשמה תתבקשו להמתין לאישור על ידי צוות האתר, ורק לאחר מכן תוכלו להיכנס.</p>
         </div>
       </div>
 
-      {/* Bottom CTA — pinned */}
+      {/* Important warnings */}
+      <div className="px-6 pb-6 space-y-2.5 animate-fade-in stagger-5">
+        <div className="bg-amber-50 border border-amber-300 rounded-2xl px-4 py-3">
+          <p className="text-amber-900 text-sm leading-relaxed">
+            <strong>חשוב</strong> — אין להירשם עם מייל ארגוני, אלא מייל פרטי בלבד!
+          </p>
+        </div>
+        <div className="bg-red-50 border border-red-300 rounded-2xl px-4 py-3 space-y-1.5">
+          <p className="text-red-900 text-sm leading-relaxed">
+            <strong>חשוב מאד</strong> — אפליקציה זו היא אפליקציה נסיונית, ואינה אפליקציה רשמית של משרד החינוך. ייתכן מאד ופרטים שמופיעים בה אינם מדויקים.
+          </p>
+          <p className="text-red-900 text-sm font-semibold leading-relaxed">
+            אין להסתמך על המידע באפליקציה בלבד, מבלי לוודא אותו מול צוות בית הספר.
+          </p>
+        </div>
+      </div>
+
+      {/* CTA */}
       <div className="px-6 pb-12 space-y-3 animate-fade-in stagger-5">
         <button
           onClick={() => signIn("google", { callbackUrl: "/home" })}
