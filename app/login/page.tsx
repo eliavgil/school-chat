@@ -19,14 +19,8 @@ export default function LoginPage() {
 
       {/* Top brand bar */}
       <div className="px-6 pt-8 pb-4 flex items-center gap-2.5 animate-fade-in">
-        <div className="w-8 h-8 bg-stone-900 rounded-xl flex items-center justify-center shadow-sm">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
-            <path d="M2 17l10 5 10-5"/>
-            <path d="M2 12l10 5 10-5"/>
-          </svg>
-        </div>
-        <span className="text-stone-800 font-semibold text-sm tracking-tight">מערכת הכיתה</span>
+        <img src="/icon-192.svg" alt="" className="w-8 h-8 rounded-xl shadow-sm" />
+        <span className="text-stone-800 font-semibold text-sm tracking-tight">פַקפֵק</span>
       </div>
 
       {/* Hero area — takes most of screen */}

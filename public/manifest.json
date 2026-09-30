@@ -1,12 +1,12 @@
 {
-  "name": "כפר סילבר",
-  "short_name": "כפר סילבר",
+  "name": "פַקפֵק",
+  "short_name": "פַקפֵק",
   "description": "מערכת תקשורת בית ספרית — כיתה י2 סילבר",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#1c1917",
-  "theme_color": "#1c1917",
+  "background_color": "#0B0B0E",
+  "theme_color": "#0B0B0E",
   "lang": "he",
   "dir": "rtl",
   "icons": [

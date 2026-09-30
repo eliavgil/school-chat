@@ -12,13 +12,13 @@ const heebo = Heebo({
 })
 
 export const metadata: Metadata = {
-  title: "מערכת הכיתה",
+  title: "פַקפֵק",
   description: "מערכת תקשורת בית ספרית",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "מערכת הכיתה",
+    title: "פַקפֵק",
   },
 }
 
@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="he" dir="rtl" className={heebo.variable}>
       <head>
-        <meta name="theme-color" content="#1c1917" />
+        <meta name="theme-color" content="#0B0B0E" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
         <link rel="apple-touch-icon" href="/icon-192.svg" />
