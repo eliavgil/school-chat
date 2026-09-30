@@ -6,6 +6,8 @@ const TILES: { label: string; href: string; emoji: string }[] = [
   { label: "אישורים",              href: "/student/logistics/permissions",   emoji: "✅" },
   { label: "הוראות הפעלה למשוב",   href: "/student/logistics/feedback-guide", emoji: "📝" },
   { label: "הודעות חשובות",        href: "/student/logistics/announcements", emoji: "📢" },
+  { label: "אירועים ומועדים",      href: "/student/logistics/events",        emoji: "📅" },
+  { label: "משימות אישיות",        href: "/student/logistics/tasks",         emoji: "🗒️" },
 ]
 
 export default function LogisticsPage() {
