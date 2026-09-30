@@ -24,11 +24,6 @@ export default function StudiesPage() {
             <span className="text-3xl">🏛️</span>
             <span className="text-white/75 text-xs font-medium text-center leading-tight">אזרחות</span>
           </Link>
-          <Link href="/student/studies/practice"
-            className="glass rounded-2xl py-6 flex flex-col items-center gap-2 hover:bg-white/15 interactive btn-press transition-colors">
-            <span className="text-3xl">✏️</span>
-            <span className="text-white/75 text-xs font-medium text-center leading-tight">תרגול שאלות</span>
-          </Link>
         </div>
       </div>
     </div>

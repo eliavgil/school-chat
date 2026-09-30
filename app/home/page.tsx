@@ -362,15 +362,15 @@ function StudentHome({ session, data, isPreview }: { session: any; data: HomeDat
 
           {/* 3 bot buttons */}
           <div className="flex gap-3 mt-8 animate-fade-in stagger-3">
+            <Link href="/student/logistics"
+              className="flex-1 glass rounded-2xl px-2 py-3 flex flex-col items-center gap-1.5 hover:bg-white/15 interactive btn-press transition-colors">
+              <span className="text-2xl">🍎</span>
+              <span className="text-white/80 text-[11px] font-medium text-center leading-tight">לוגיסטיקה<br/>ומיץ תפוחים</span>
+            </Link>
             <Link href="/assistant"
               className="flex-1 glass rounded-2xl px-2 py-3 flex flex-col items-center gap-1.5 hover:bg-white/15 interactive btn-press transition-colors">
               <img src="/mascot/face.png" alt="" className="w-7 h-7 object-contain" />
               <span className="text-white/80 text-[11px] font-medium text-center leading-tight">מיסטר<br/>פקפקובי</span>
-            </Link>
-            <Link href="/student/logistics"
-              className="flex-1 glass rounded-2xl px-2 py-3 flex flex-col items-center gap-1.5 hover:bg-white/15 interactive btn-press transition-colors">
-              <span className="text-2xl">🧃</span>
-              <span className="text-white/80 text-[11px] font-medium text-center leading-tight">לוגיסטיקה<br/>ומיץ תפוזים</span>
             </Link>
             <Link href="/student/studies"
               className="flex-1 glass rounded-2xl px-2 py-3 flex flex-col items-center gap-1.5 hover:bg-white/15 interactive btn-press transition-colors">

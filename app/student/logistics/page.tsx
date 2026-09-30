@@ -14,7 +14,7 @@ export default function LogisticsPage() {
       <header className="bg-black/30 backdrop-blur-md border-b border-white/10 px-5 header-pt pb-4 flex items-center gap-4 sticky top-0 z-10">
         <Link href="/home" className="text-white/60 hover:text-white text-xl interactive">←</Link>
         <div>
-          <h1 className="font-semibold text-lg text-white">לוגיסטיקה ומיץ תפוזים 🧃</h1>
+          <h1 className="font-semibold text-lg text-white">לוגיסטיקה ומיץ תפוחים 🍎</h1>
           <p className="text-white/40 text-xs">כל מה שצריך כדי שהיום יתנהל חלק</p>
         </div>
       </header>
