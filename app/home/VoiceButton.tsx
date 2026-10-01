@@ -138,7 +138,7 @@ export default function VoiceButton() {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
               <div className="flex items-center gap-2">
-                <span className="text-white/50 text-xs">עוזר קולי</span>
+                <span className="text-white/50 text-xs">בוטטר</span>
                 <Link
                   href="/voice-help"
                   className="text-[10px] text-white/30 hover:text-white/55 bg-white/8 hover:bg-white/12 rounded-full px-2 py-0.5 transition-colors"
@@ -239,6 +239,20 @@ export default function VoiceButton() {
         {isListening && (
           <span className="absolute w-24 h-24 rounded-full bg-red-400/20 animate-ping" />
         )}
+        {/* Small filling ring — sits on top of the button while בוטטר
+            thinks, doesn't take over the screen like the big assistant's
+            thinking overlay does. */}
+        {isProcessing && (
+          <svg className="absolute pointer-events-none botter-ring" width="78" height="78" viewBox="0 0 78 78" style={{ zIndex: 5 }}>
+            <circle cx="39" cy="39" r="34" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="3" />
+            <circle
+              cx="39" cy="39" r="34" fill="none" stroke="#ffffff" strokeWidth="3" strokeLinecap="round"
+              strokeDasharray={2 * Math.PI * 34}
+              className="botter-ring-fill"
+              transform="rotate(-90 39 39)"
+            />
+          </svg>
+        )}
         <button
           onPointerDown={!open ? handleMicPress : undefined}
           onClick={open ? handleMicPress : undefined}
@@ -252,28 +266,32 @@ export default function VoiceButton() {
           }`}
           aria-label="פקודה קולית"
         >
-          {isProcessing ? (
-            <svg className="animate-spin w-6 h-6 text-white/60" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
-            </svg>
-          ) : (
-            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}
-              className={isListening ? "text-white" : "text-white/65"}>
-              <path strokeLinecap="round" strokeLinejoin="round"
-                d="M12 1a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V4a3 3 0 0 1 3-3z"/>
-              <path strokeLinecap="round" strokeLinejoin="round"
-                d="M19 10a7 7 0 0 1-14 0M12 19v4M8 23h8"/>
-            </svg>
-          )}
+          <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}
+            className={isListening ? "text-white" : isProcessing ? "text-white/40" : "text-white/65"}>
+            <path strokeLinecap="round" strokeLinejoin="round"
+              d="M12 1a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V4a3 3 0 0 1 3-3z"/>
+            <path strokeLinecap="round" strokeLinejoin="round"
+              d="M19 10a7 7 0 0 1-14 0M12 19v4M8 23h8"/>
+          </svg>
         </button>
       </div>
 
       <p className={`text-xs transition-colors duration-200 ${
         isListening ? "text-red-300" : "text-white/30"
       }`}>
-        {isListening ? "מאזין... (לחץ לעצור)" : isProcessing ? "מעבד..." : "לחץ לפקודה קולית"}
+        {isListening ? "מאזין... (לחץ לעצור)" : isProcessing ? "בוטטר חושב..." : "לחץ לפקודה קולית"}
       </p>
+
+      <style jsx>{`
+        .botter-ring-fill {
+          animation: botter-ring-fill 1.1s ease-in-out infinite;
+        }
+        @keyframes botter-ring-fill {
+          0% { stroke-dashoffset: ${2 * Math.PI * 34}; opacity: 0.4; }
+          55% { stroke-dashoffset: 0; opacity: 1; }
+          100% { stroke-dashoffset: 0; opacity: 0; }
+        }
+      `}</style>
     </div>
   )
 }

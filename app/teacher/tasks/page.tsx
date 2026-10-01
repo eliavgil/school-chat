@@ -18,7 +18,7 @@ export default function TasksPage() {
       <div className="flex gap-2 px-4 pt-4">
         <button onClick={() => setTab("personal")}
           className={`px-4 py-2 rounded-xl text-sm font-medium interactive btn-press transition-colors ${tab === "personal" ? "bg-white/20 text-white" : "text-white/40 hover:text-white/70"}`}>
-          המשימות שלי
+          משימות לראש הפרטי
         </button>
         <button onClick={() => setTab("staff")}
           className={`px-4 py-2 rounded-xl text-sm font-medium interactive btn-press transition-colors ${tab === "staff" ? "bg-white/20 text-white" : "text-white/40 hover:text-white/70"}`}>

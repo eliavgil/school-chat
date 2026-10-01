@@ -11,6 +11,25 @@ interface Section {
 
 const COMMANDS: Section[] = [
   {
+    title: "משימות לראש הפרטי (ברירת מחדל)",
+    emoji: "✅",
+    items: [
+      { label: "תוסיף משימה להחזיר עבודות" },
+      { label: "תזכיר לי לתאם עם יועץ מחר ב-8" },
+      { label: "תוסיף משימה — לדון עם דנה על התנהגות, עם תזכורת ביום ראשון בצהריים" },
+      { label: "תרשום לעדכן הורים של רון", desc: "כל משימה שלא נאמר עליה אחרת — אישית, רק בשבילך" },
+    ],
+  },
+  {
+    title: "משימות צוות (רק כשמבקשים במפורש)",
+    emoji: "👥",
+    items: [
+      { label: "משימת צוות — להכין מצגת לישיבה, לשייך לדנה ולרון" },
+      { label: "משימה צוותית לצוות המחנכים — לאסוף טפסי הסכמה, עד יום חמישי" },
+      { label: "תגיד \"משימת צוות\" או \"משימה צוותית\"", desc: "ותציין למי לשייך — אחרת תמיד תיפתח משימה אישית" },
+    ],
+  },
+  {
     title: "יצירת אירועים בלוח",
     emoji: "📅",
     items: [
@@ -21,22 +40,14 @@ const COMMANDS: Section[] = [
     ],
   },
   {
-    title: "יצירת משימות אישיות",
-    emoji: "✅",
-    items: [
-      { label: "תוסיף משימה להחזיר עבודות" },
-      { label: "תזכיר לי לתאם עם יועץ" },
-      { label: "תוסיף משימה — לדון עם דנה על התנהגות" },
-      { label: "תרשום לעדכן הורים של רון" },
-    ],
-  },
-  {
     title: "ניווט מהיר",
     emoji: "🗺️",
     items: [
       { label: "עבור למערכת שעות" },
       { label: "פתח לוח שנה" },
       { label: "תעבור למשימות" },
+      { label: "פתח את מילון המושגים" },
+      { label: "עבור לניהול שכבה" },
       { label: "חזור לדף הבית" },
     ],
   },
@@ -45,8 +56,8 @@ const COMMANDS: Section[] = [
 const TIPS = [
   "דבר בבירור ובמהירות טבעית — אין צורך לאט מידי",
   "ציין תאריך מדויק כשאפשר (\"ב-15 ליולי\" עדיף על \"בחודש הבא\")",
-  "כל מורה משתמש בשפה שלו — הבוט מבין וריאציות",
-  "אחרי ההקלטה תראה מה הבוט הבין, ותוכל לתקן בטקסט",
+  "בוטטר מבין ביטויי זמן טבעיים לתזכורות — \"מחר ב-8\", \"בעוד שעה\", \"ביום ראשון בצהריים\"",
+  "אחרי ההקלטה תראה מה בוטטר הבין, ותוכל לתקן בטקסט",
   "אפשר להמשיך שיחה בתוך הכרטיס — לשאול שאלות ולהוסיף פרטים",
 ]
 
@@ -74,8 +85,8 @@ export default function VoiceHelpPage() {
           </svg>
         </button>
         <div>
-          <h1 className="text-white text-base font-semibold leading-none">הוראות הפעלה — בוט קולי</h1>
-          <p className="text-white/40 text-xs mt-0.5">מה הבוט יכול לעשות ואיך לעבוד איתו</p>
+          <h1 className="text-white text-base font-semibold leading-none">הוראות הפעלה — בוטטר</h1>
+          <p className="text-white/40 text-xs mt-0.5">מה בוטטר יכול לעשות ואיך לעבוד איתו</p>
         </div>
       </div>
 
@@ -87,10 +98,10 @@ export default function VoiceHelpPage() {
             <span className="text-2xl">🎙️</span>
             <div>
               <p className="text-white/80 text-sm leading-relaxed">
-                הבוט הקולי מאפשר לבצע פעולות באפליקציה בעברית דבורה — בלי לדפדף בתפריטים.
+                בוטטר מאפשר לבצע פעולות באפליקציה בעברית דבורה — בלי לדפדף בתפריטים.
               </p>
               <p className="text-white/45 text-xs mt-1.5 leading-relaxed">
-                לחץ על כפתור המיקרופון, תן פקודה, ותראה מה הבוט הבין ומה ביצע.
+                לחץ על כפתור המיקרופון, תן פקודה, ותראה מה בוטטר הבין ומה ביצע.
               </p>
             </div>
           </div>
@@ -137,7 +148,7 @@ export default function VoiceHelpPage() {
         <div className="bg-white/4 rounded-2xl overflow-hidden border border-white/8">
           <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8">
             <span className="text-base">⚠️</span>
-            <span className="text-white/50 text-sm font-medium">מה הבוט לא יכול לעשות</span>
+            <span className="text-white/50 text-sm font-medium">מה בוטטר לא יכול לעשות</span>
           </div>
           <div className="divide-y divide-white/5">
             {LIMITATIONS.map((item, i) => (

@@ -15,6 +15,7 @@ import {
 } from "@/app/components/personalStore"
 import PushManager from "@/app/components/PushManager"
 import { ROLE_DEFAULTS } from "@/app/components/NatureBackground"
+import VoiceButton from "./VoiceButton"
 
 // ── Types ─────────────────────────────────────────────────
 interface ClassProfile { displayName: string; teacherDisplayName: string; schoolName: string }
@@ -916,6 +917,12 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                       )
                     })}
                   </div>
+                </div>
+              )}
+
+              {showGlossary && (
+                <div className="mt-2">
+                  <VoiceButton />
                 </div>
               )}
 
