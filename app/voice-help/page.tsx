@@ -56,8 +56,8 @@ const COMMANDS: Section[] = [
 const TIPS = [
   "דבר בבירור ובמהירות טבעית — אין צורך לאט מידי",
   "ציין תאריך מדויק כשאפשר (\"ב-15 ליולי\" עדיף על \"בחודש הבא\")",
-  "בוטטר מבין ביטויי זמן טבעיים לתזכורות — \"מחר ב-8\", \"בעוד שעה\", \"ביום ראשון בצהריים\"",
-  "אחרי ההקלטה תראה מה בוטטר הבין, ותוכל לתקן בטקסט",
+  "בוטאתר מבין ביטויי זמן טבעיים לתזכורות — \"מחר ב-8\", \"בעוד שעה\", \"ביום ראשון בצהריים\"",
+  "אחרי ההקלטה תראה מה בוטאתר הבין, ותוכל לתקן בטקסט",
   "אפשר להמשיך שיחה בתוך הכרטיס — לשאול שאלות ולהוסיף פרטים",
 ]
 
@@ -85,8 +85,8 @@ export default function VoiceHelpPage() {
           </svg>
         </button>
         <div>
-          <h1 className="text-white text-base font-semibold leading-none">הוראות הפעלה — בוטטר</h1>
-          <p className="text-white/40 text-xs mt-0.5">מה בוטטר יכול לעשות ואיך לעבוד איתו</p>
+          <h1 className="text-white text-base font-semibold leading-none">הוראות הפעלה — בוטאתר</h1>
+          <p className="text-white/40 text-xs mt-0.5">מה בוטאתר יכול לעשות ואיך לעבוד איתו</p>
         </div>
       </div>
 
@@ -98,10 +98,10 @@ export default function VoiceHelpPage() {
             <span className="text-2xl">🎙️</span>
             <div>
               <p className="text-white/80 text-sm leading-relaxed">
-                בוטטר מאפשר לבצע פעולות באפליקציה בעברית דבורה — בלי לדפדף בתפריטים.
+                בוטאתר מאפשר לבצע פעולות באפליקציה בעברית דבורה — בלי לדפדף בתפריטים.
               </p>
               <p className="text-white/45 text-xs mt-1.5 leading-relaxed">
-                לחץ על כפתור המיקרופון, תן פקודה, ותראה מה בוטטר הבין ומה ביצע.
+                לחץ על כפתור המיקרופון, תן פקודה, ותראה מה בוטאתר הבין ומה ביצע.
               </p>
             </div>
           </div>
@@ -148,7 +148,7 @@ export default function VoiceHelpPage() {
         <div className="bg-white/4 rounded-2xl overflow-hidden border border-white/8">
           <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8">
             <span className="text-base">⚠️</span>
-            <span className="text-white/50 text-sm font-medium">מה בוטטר לא יכול לעשות</span>
+            <span className="text-white/50 text-sm font-medium">מה בוטאתר לא יכול לעשות</span>
           </div>
           <div className="divide-y divide-white/5">
             {LIMITATIONS.map((item, i) => (

@@ -8,7 +8,7 @@ import { sendPushToClassMembers } from "@/lib/push"
 
 const client = new Anthropic()
 
-// בוטטר — a voice assistant for site actions, eliavgil-only while it's
+// בוטאתר — a voice assistant for site actions, eliavgil-only while it's
 // being trialed (not role-gated like the rest of the app; a hard email
 // check, same pattern used for the glossary nav gate).
 function isOwner(session: any) {
@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
     response = await client.messages.create({
       model: "claude-haiku-4-5-20251001",
       max_tokens: 400,
-      system: `אתה בוטטר — עוזר קולי אישי לביצוע פעולות באתר, בשימוש פרטי בלבד.
+      system: `אתה בוטאתר — עוזר קולי אישי לביצוע פעולות באתר, בשימוש פרטי בלבד.
 עכשיו: ${nowIL} (שעון ישראל). תאריך היום: ${today}.
 
 כשהמשתמש מבקש לפתוח משימה — ברירת המחדל היא תמיד משימה אישית (create_personal_task), גם אם לא נאמר "אישית" במפורש. עבור ל-create_team_task רק כשנאמר במפורש "משימת צוות" או "משימה צוותית", ואז יש לוודא שצוין למי לשייך אותה (אם לא צוין — שאל).
@@ -243,7 +243,7 @@ export async function POST(req: NextRequest) {
         const follow = await client.messages.create({
           model: "claude-haiku-4-5-20251001",
           max_tokens: 150,
-          system: `אתה בוטטר, עוזר קולי. ענה קצר בעברית.`,
+          system: `אתה בוטאתר, עוזר קולי. ענה קצר בעברית.`,
           messages,
           tools: TOOLS,
         })

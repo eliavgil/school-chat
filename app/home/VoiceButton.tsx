@@ -42,7 +42,7 @@ export default function VoiceButton() {
     return () => recognitionRef.current?.abort()
   }, [])
 
-  // Launched from the phone's home-screen app-shortcut ("בוטטר — הקלטה",
+  // Launched from the phone's home-screen app-shortcut ("בוטאתר — הקלטה",
   // long-press the icon on Android) straight into listening mode — the
   // shortcut's url is /home?botter=listen (see public/manifest.json).
   useEffect(() => {
@@ -150,7 +150,7 @@ export default function VoiceButton() {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
               <div className="flex items-center gap-2">
-                <span className="text-white/50 text-xs">בוטטר</span>
+                <span className="text-white/50 text-xs">בוטאתר</span>
                 <Link
                   href="/voice-help"
                   className="text-[10px] text-white/30 hover:text-white/55 bg-white/8 hover:bg-white/12 rounded-full px-2 py-0.5 transition-colors"
@@ -251,7 +251,7 @@ export default function VoiceButton() {
         {isListening && (
           <span className="absolute w-24 h-24 rounded-full bg-red-400/20 animate-ping" />
         )}
-        {/* Small filling ring — sits on top of the button while בוטטר
+        {/* Small filling ring — sits on top of the button while בוטאתר
             thinks, doesn't take over the screen like the big assistant's
             thinking overlay does. */}
         {isProcessing && (
@@ -291,7 +291,7 @@ export default function VoiceButton() {
       <p className={`text-xs transition-colors duration-200 ${
         isListening ? "text-red-300" : "text-white/30"
       }`}>
-        {isListening ? "מאזין... (לחץ לעצור)" : isProcessing ? "בוטטר חושב..." : "לחץ לפקודה קולית"}
+        {isListening ? "מאזין... (לחץ לעצור)" : isProcessing ? "בוטאתר חושב..." : "לחץ לפקודה קולית"}
       </p>
 
       <style jsx>{`

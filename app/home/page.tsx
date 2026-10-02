@@ -1196,7 +1196,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
         </div>
       </main>
 
-      {/* בוטטר — floating above the content, not inside the swipeable
+      {/* בוטאתר — floating above the content, not inside the swipeable
           pages (that container is `transform`-ed for the swipe animation,
           which would hijack `position: fixed` into being relative to it
           instead of the viewport). Shown on every page, no scrolling needed. */}

@@ -25,9 +25,9 @@
   ],
   "shortcuts": [
     {
-      "name": "פקודה קולית לבוטטר",
-      "short_name": "בוטטר",
-      "description": "פתיחת הקלטה קולית לבוטטר ישירות",
+      "name": "פקודה קולית לבוטאתר",
+      "short_name": "בוטאתר",
+      "description": "פתיחת הקלטה קולית לבוטאתר ישירות",
       "url": "/home?botter=listen",
       "icons": [
         {
