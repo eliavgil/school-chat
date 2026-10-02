@@ -3,15 +3,12 @@
 import { useEffect, useState } from "react"
 import { type Importance, IMPORTANCE_OPTIONS, fmtDate, isPast, dotFor } from "@/app/components/StaffTasksTab"
 
-// <input type="datetime-local"> works in the browser's local time with no
-// timezone info at all — sending that raw string straight to the server let
-// Node parse it as UTC (the server runs in UTC), silently shifting every
-// reminder by the local UTC offset (e.g. 09:41 saved, then shown back as
-// 12:41 in Israel's UTC+3). Converting explicitly at each boundary keeps the
-// wall-clock time typed the one that actually fires.
-function localInputToIso(local: string): string {
-  return new Date(local).toISOString()
-}
+// <input type="datetime-local"> gives a raw "YYYY-MM-DDTHH:mm" with no
+// timezone info — sent to the server as-is, /api/tasks/personal's own
+// israelLocalToUtc() does the one-and-only Israel-local → UTC conversion
+// (same pattern StaffTasksTab and the voice assistant use). Converting it
+// to an ISO string here too, on top of that, double-applied the offset and
+// silently shifted every personal-task reminder ~3 hours off.
 function isoToLocalInput(iso: string): string {
   const d = new Date(iso)
   const pad = (n: number) => String(n).padStart(2, "0")
@@ -63,7 +60,7 @@ export function PersonalTasksTab() {
   async function save() {
     if (!title.trim()) return
     setSaving(true)
-    const body = { title, link: link || null, deadline: deadline || null, importance, reminderAt: reminderAt ? localInputToIso(reminderAt) : null }
+    const body = { title, link: link || null, deadline: deadline || null, importance, reminderAt: reminderAt || null }
     if (editId) {
       await fetch("/api/tasks/personal", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: editId, ...body }) })
     } else {
