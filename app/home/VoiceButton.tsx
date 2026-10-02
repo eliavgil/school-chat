@@ -102,7 +102,14 @@ export default function VoiceButton() {
     recognitionRef.current = rec
 
     rec.onstart = () => { setS("listening"); setOpen(true) }
-    rec.onresult = (e: any) => sendText(e.results[0][0].transcript)
+    rec.onresult = (e: any) => {
+      // A final result doesn't always auto-release the mic on iOS Safari —
+      // stop the session explicitly instead of waiting on the implicit
+      // continuous:false behavior, or the mic/recording indicator can stay
+      // on in the status bar after the reply comes back.
+      try { rec.stop() } catch {}
+      sendText(e.results[0][0].transcript)
+    }
     rec.onerror = (e: any) => {
       if (e.error === "no-speech") { setS("idle"); return }
       const isStandalone = window.matchMedia("(display-mode: standalone)").matches || (window.navigator as any).standalone === true
@@ -111,7 +118,10 @@ export default function VoiceButton() {
         : "לא הצלחתי לשמוע, נסה שוב")
       setS("idle")
     }
-    rec.onend = () => { if (stateRef.current === "listening") setS("idle") }
+    rec.onend = () => {
+      if (recognitionRef.current === rec) recognitionRef.current = null
+      if (stateRef.current === "listening") setS("idle")
+    }
     rec.start()
   }
 
@@ -121,6 +131,7 @@ export default function VoiceButton() {
   }
 
   function handleClose() {
+    try { recognitionRef.current?.abort() } catch {}
     setOpen(false)
     setMessages([])
     setApiHistory([])
