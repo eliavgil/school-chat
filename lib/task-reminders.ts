@@ -28,14 +28,30 @@ export async function runTaskReminders(): Promise<{ sent: number }> {
     }
   }
 
+  let failed = 0
+  let skippedNoSub = 0
+
   const personalDue = await prisma.personalTask.findMany({
     where: { reminderAt: { lte: now }, reminderSent: false, done: false },
     select: { id: true, userId: true, title: true, link: true },
   })
   for (const t of personalDue) {
-    await sendPushToUser(t.userId, { title: "תזכורת למשימה", body: t.title, url: t.link || "/teacher/tasks" })
-    await prisma.personalTask.update({ where: { id: t.id }, data: { reminderSent: true } })
-    sent++
+    const result = await sendPushToUser(t.userId, { title: "תזכורת למשימה", body: t.title, url: t.link || "/teacher/tasks" })
+    // Only mark as sent once a push actually went out — otherwise a user
+    // with no active subscription yet (or a transient send failure) would
+    // have this reminder silently and permanently dropped: reminderSent
+    // would flip to true here regardless, and the cron's where-clause
+    // excludes anything already marked sent, so it could never fire again
+    // even after the user turns push on. Leaving it false means every
+    // future run (cron or opportunistic) retries it until it actually lands.
+    if (result.sent > 0) {
+      await prisma.personalTask.update({ where: { id: t.id }, data: { reminderSent: true } })
+      sent++
+    } else if (result.failed > 0) {
+      failed++
+    } else {
+      skippedNoSub++
+    }
   }
 
   const staffDue = await prisma.staffTaskAssignee.findMany({
@@ -43,9 +59,19 @@ export async function runTaskReminders(): Promise<{ sent: number }> {
     select: { id: true, userId: true, staffTask: { select: { title: true, link: true } } },
   })
   for (const a of staffDue) {
-    await sendPushToUser(a.userId!, { title: "תזכורת למשימת צוות", body: a.staffTask.title, url: a.staffTask.link || "/teacher/tasks" })
-    await prisma.staffTaskAssignee.update({ where: { id: a.id }, data: { reminderSent: true } })
-    sent++
+    const result = await sendPushToUser(a.userId!, { title: "תזכורת למשימת צוות", body: a.staffTask.title, url: a.staffTask.link || "/teacher/tasks" })
+    if (result.sent > 0) {
+      await prisma.staffTaskAssignee.update({ where: { id: a.id }, data: { reminderSent: true } })
+      sent++
+    } else if (result.failed > 0) {
+      failed++
+    } else {
+      skippedNoSub++
+    }
+  }
+
+  if (failed > 0 || skippedNoSub > 0) {
+    console.error(`[task-reminders] sent=${sent} failed=${failed} skipped-no-subscription=${skippedNoSub}`)
   }
 
   return { sent }

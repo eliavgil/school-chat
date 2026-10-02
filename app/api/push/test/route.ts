@@ -40,19 +40,29 @@ export async function POST(req: NextRequest) {
         select: { classId: true },
       })
       if (!user?.classId) return NextResponse.json({ success: false, error: "No classId on user" })
-      await sendPushToClassMembers(user.classId, {
+      const { sent, failed } = await sendPushToClassMembers(user.classId, {
         title: "בדיקה כיתה ✅",
         body: "הודעה שנשלחה לכל המורים בכיתה",
         url: "/home",
       }, ["TEACHER", "ADMIN"])
-      return NextResponse.json({ success: true, mode: "class", classId: user.classId })
+      // Not throwing is not the same as delivering — a stale/invalid
+      // subscription fails "successfully" (a rejected promise, caught and
+      // logged, not an exception here), so only report success once a push
+      // actually went out to at least one subscription.
+      return NextResponse.json({
+        success: sent > 0, mode: "class", classId: user.classId, sent, failed,
+        error: sent === 0 ? (failed > 0 ? `${failed} שליחות נכשלו, אף לא אחת הצליחה` : "אין מנוי Push פעיל לאף מורה בכיתה") : undefined,
+      })
     } else {
-      await sendPushToUser(session.user.id, {
+      const { sent, failed } = await sendPushToUser(session.user.id, {
         title: "בדיקה ✅",
         body: "אם אתה רואה את זה — Push עובד!",
         url: "/home",
       })
-      return NextResponse.json({ success: true, mode: "direct" })
+      return NextResponse.json({
+        success: sent > 0, mode: "direct", sent, failed,
+        error: sent === 0 ? (failed > 0 ? `${failed} שליחות נכשלו — בדוק לוגים` : "אין מנוי Push פעיל למשתמש הזה") : undefined,
+      })
     }
   } catch (err: any) {
     return NextResponse.json({ success: false, error: err?.message ?? String(err) })
