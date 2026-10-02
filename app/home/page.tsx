@@ -16,6 +16,8 @@ import {
 import PushManager from "@/app/components/PushManager"
 import { ROLE_DEFAULTS } from "@/app/components/NatureBackground"
 import VoiceButton from "./VoiceButton"
+import { PersonalTasksTab } from "@/app/components/PersonalTasksTab"
+import { StaffTasksTab } from "@/app/components/StaffTasksTab"
 
 // ── Types ─────────────────────────────────────────────────
 interface ClassProfile { displayName: string; teacherDisplayName: string; schoolName: string }
@@ -622,14 +624,10 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
   const router = useRouter()
   const { bgId, customUrl } = useBg("teacher")
   const [menuOpen, setMenuOpen] = useState(false)
-  const [page, setPage] = useState(0)
+  const [page, setPage] = useState(2) // בית — index 2 of the 5-page carousel (אזרחות, לטיפול, בית, תפריט, הגדרות)
   const [dragging, setDragging] = useState(false)
   const [dragDelta, setDragDelta] = useState(0)
   const touchStart = useRef<{ x: number; y: number } | null>(null)
-  const [studentNotes, setStudentNotes] = useState<Record<string, string>>(() => {
-    if (typeof window === "undefined") return {}
-    try { return JSON.parse(localStorage.getItem("teacher-student-notes") ?? "{}") } catch { return {} }
-  })
   const [personalName] = useState(() => {
     if (typeof window === "undefined") return ""
     return getPersonalDisplayName()
@@ -640,62 +638,20 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
   const timeStr = now.toLocaleTimeString("he-IL", { hour: "2-digit", minute: "2-digit" })
   const dateStr = now.toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "long" })
 
-  const classStudents = data?.classStudents ?? []
   const todaySlots    = data?.todaySchedule ?? []
-  const upcomingEvents = (data?.upcomingEvents ?? []).filter(e => !isHolidayEvent(e)).slice(0, 5)
-  const remainingDays = getRemainingSchoolDays()
-  const daysToSummer  = getDaysUntilSummer()
-  const nextVac       = getNextVacation()
-  const daysToVac     = getDaysUntilNextVacation()
   const bellSlots     = data?.bellSlots ?? []
   const timeline      = buildTimeline(todaySlots, bellSlots)
   const nowNext       = getNowNext(timeline, now, bellSlots.length > 0)
 
-  // A real per-class schedule (not the teacher's own) — same source /teacher/schedule
-  // uses, shown here compactly so this quick-glance tab doesn't stay a static placeholder.
-  const [classScheduleSlots, setClassScheduleSlots] = useState<(ScheduleSlot & { dayHeb: string })[]>([])
-  const [classScheduleName, setClassScheduleName] = useState<string>("")
-  useEffect(() => {
-    if (!data?.classId) return // wait for /api/home to resolve which class is actually this teacher's own
-    (async () => {
-      const classesRes = await fetch("/api/admin/schedule-classes").then(r => r.json()).catch(() => ({ classes: [] }))
-      // Show *this* teacher's own class, not just whichever class happens to
-      // have data first — a different teacher's class showing up here under
-      // your name would be actively misleading, not just imprecise.
-      const own = (classesRes.classes ?? []).find((c: { id: string }) => c.id === data.classId)
-      if (!own) { setClassScheduleName(""); setClassScheduleSlots([]); return }
-      setClassScheduleName(own.name)
-      const cs = await fetch(`/api/schedule?classId=${encodeURIComponent(own.id)}`).then(r => r.json()).catch(() => ({ slots: [] }))
-      setClassScheduleSlots(cs.slots ?? [])
-    })()
-  }, [data?.classId])
-  // /api/schedule returns the whole week for that class, not just today —
-  // and bellSlots above is only today's bell pattern (empty on Fri/Sat, when
-  // there's no bell schedule at all), so building the timeline from the
-  // unfiltered week mixed every day's "period 1" together and, on a day
-  // with no bell pattern, silently dropped every single lesson (no time to
-  // match against) and showed "no schedule" even though the class has one.
-  const todayClassSlots = classScheduleSlots.filter(s => s.dayHeb === data?.todayHeb)
-  const classTimeline = buildTimeline(todayClassSlots, bellSlots)
-
-  function saveNote(studentId: string, val: string) {
-    const updated = { ...studentNotes, [studentId]: val }
-    setStudentNotes(updated)
-    try { localStorage.setItem("teacher-student-notes", JSON.stringify(updated)) } catch {}
-  }
-
-  const NUM_PAGES = 6
-  const NUM_LABELS = ["בית", "יומן", "תפריט", "כיתה"] // kept for accessibility/future use
+  const NUM_PAGES = 5
   const MENU_LINKS: { label: string; href: string; emoji: string; icon?: string; soon: boolean }[] = [
     { label: "אזרחות מלאכותית",      href: "/lessons",                emoji: "🎓", soon: false },
-    { label: "שאלונים",           href: "/teacher/surveys",        emoji: "📋", soon: false },
     { label: "צוות מחנכים",       href: "/teacher/team",           emoji: "🧑‍🏫", soon: false },
-    { label: "מענים אישיים",     href: "/teacher/accommodations", emoji: "🧩", soon: false },
-    { label: "מעקב רגשי-חברתי",  href: "/teacher/emotional",      emoji: "💙", soon: false },
-    { label: "לוח KPI",           href: "/kpi",                    emoji: "📊", soon: false },
+    { label: "חינוך כיתה",        href: "/teacher/class-education", emoji: "🧑‍🎓", soon: false },
+    { label: "תלמידי חינוך",      href: "/teacher/students",       emoji: "👥", soon: false },
+    { label: "מערכות וארועים",    href: "/teacher/systems-events", emoji: "🗓️", soon: false },
     { label: "מורה מקצועי",       href: "/teacher/subject",        emoji: "📚", soon: false },
-    { label: "ניהול שכבה",        href: "/teacher/grade-hub",      emoji: "🏫", soon: false },
-    { label: "סידור ישיבה",       href: "/teacher/seating-chart",  emoji: "🪑", soon: false },
+    { label: "ריכוז שכבה",        href: "/teacher/grade-hub",      emoji: "🏫", soon: false },
     ...(showGlossary ? [{ label: "מילון מושגים", href: "/glossary", emoji: "📖", soon: false }] : []),
     { label: "מיסטר פקפקובי",      href: "/assistant",                emoji: "🤖", icon: "/mascot/face.png", soon: false },
     { label: "פקפקובי בוט - ניהול מאגר ידע", href: "/teacher/school-assistant", emoji: "🗂️", soon: false },
@@ -774,17 +730,16 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
               {([
                 { label: "עמוד הבית",       href: "/home",                   emoji: "🏠" },
                 { label: "אזרחות מלאכותית",     href: "/lessons",                emoji: "🎓" },
-                { label: "שאלונים",          href: "/teacher/surveys",        emoji: "📋" },
                 { label: "צוות מחנכים",      href: "/teacher/team",           emoji: "🧑‍🏫" },
                 { label: "שיחות הורים",      href: "/dashboard",              emoji: "💬" },
                 { label: "משימות",           href: "/teacher/tasks",          emoji: "✅" },
                 { label: "מיסטר פקפקובי",      href: "/assistant",              emoji: "🤖", icon: "/mascot/face.png" },
                 { label: "פקפקובי בוט - ניהול מאגר ידע", href: "/teacher/school-assistant", emoji: "🗂️" },
-                { label: "מענים אישיים",     href: "/teacher/accommodations", emoji: "🧩" },
-                { label: "מעקב רגשי-חברתי", href: "/teacher/emotional",      emoji: "💙" },
                 { label: "מורה מקצועי",      href: "/teacher/subject",        emoji: "📚" },
-                { label: "ניהול שכבה",       href: "/teacher/grade-hub",      emoji: "🏫" },
-                { label: "סידור ישיבה",      href: "/teacher/seating-chart",  emoji: "🪑" },
+                { label: "ריכוז שכבה",       href: "/teacher/grade-hub",      emoji: "🏫" },
+                { label: "חינוך כיתה",       href: "/teacher/class-education", emoji: "🧑‍🎓" },
+                { label: "תלמידי חינוך",     href: "/teacher/students",       emoji: "👥" },
+                { label: "מערכות וארועים",   href: "/teacher/systems-events", emoji: "🗓️" },
                 ...(showGlossary ? [{ label: "מילון מושגים", href: "/glossary", emoji: "📖" }] : []),
                 { label: "הגדרות",           href: "/manage",                 emoji: "⚙️" },
                 ...(isAdmin ? [{ label: "פרופיל", href: "/profile", emoji: "👤" }] : []),
@@ -809,12 +764,11 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
       {/* ── Page tabs ── */}
       <div className="relative z-10 flex items-center justify-center gap-1 pb-1.5 flex-shrink-0 px-4">
         {([
-          { i: 0, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12L12 3l9 9M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"/></svg> },
-          { i: 1, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> },
-          { i: 2, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg> },
-          { i: 3, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path strokeLinecap="round" strokeLinejoin="round" d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg> },
-          { i: 4, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="3"/><path strokeLinecap="round" strokeLinejoin="round" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg> },
-          { i: 5, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path strokeLinecap="round" strokeLinejoin="round" d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18"/><path strokeLinecap="round" strokeLinejoin="round" d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg> },
+          { i: 0, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path strokeLinecap="round" strokeLinejoin="round" d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/><path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10"/><path strokeLinecap="round" strokeLinejoin="round" d="M12 3v18"/><path strokeLinecap="round" strokeLinejoin="round" d="M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2"/></svg> }, // אזרחות
+          { i: 1, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="9"/><path strokeLinecap="round" strokeLinejoin="round" d="m8.5 12.5 2.5 2.5 5-5"/></svg> }, // לטיפול
+          { i: 2, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12L12 3l9 9M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"/></svg> }, // בית
+          { i: 3, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg> }, // תפריט
+          { i: 4, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="3"/><path strokeLinecap="round" strokeLinejoin="round" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg> }, // הגדרות
         ] as const).map(({ i, icon }) => (
           <button key={i} onClick={() => setPage(i)}
             className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all btn-press ${
@@ -843,7 +797,68 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
           }}
         >
 
-          {/* ══ PAGE 1: מערכת היום — the default landing view ══ */}
+          {/* ══ אזרחות ══ */}
+          <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
+            <div className="px-4 pt-3 pb-28 space-y-3">
+              <h2 className="text-white/70 text-sm font-semibold px-1">אזרחות</h2>
+
+              <Link href="/lessons"
+                className="glass rounded-2xl p-4 flex items-center gap-3 interactive btn-press hover:bg-white/15 transition-colors">
+                <span className="text-2xl flex-shrink-0">🎓</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-medium text-sm">אזרחות מלאכותית</p>
+                  <p className="text-white/40 text-xs">גישה לשיעורים החיים</p>
+                </div>
+                <span className="text-white/30 flex-shrink-0">←</span>
+              </Link>
+
+              <Link href="/lessons/results"
+                className="glass rounded-2xl p-4 flex items-center gap-3 interactive btn-press hover:bg-white/15 transition-colors">
+                <span className="text-2xl flex-shrink-0">📊</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-medium text-sm">תוצאות</p>
+                  <p className="text-white/40 text-xs">ציוני התלמידים בשיעורים</p>
+                </div>
+                <span className="text-white/30 flex-shrink-0">←</span>
+              </Link>
+
+              <Link href="/teacher/link-check"
+                className="glass rounded-2xl p-4 flex items-center gap-3 interactive btn-press hover:bg-white/15 transition-colors">
+                <span className="text-2xl flex-shrink-0">🔗</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-medium text-sm">בדיקת קישור תלמידים</p>
+                  <p className="text-white/40 text-xs">מי עוד לא מקושר, לפני שיעור חי</p>
+                </div>
+                <span className="text-white/30 flex-shrink-0">←</span>
+              </Link>
+
+              <Link href="/teacher/civics-materials"
+                className="glass rounded-2xl p-4 flex items-center gap-3 interactive btn-press hover:bg-white/15 transition-colors">
+                <span className="text-2xl flex-shrink-0">📚</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-medium text-sm">חומר לימודי</p>
+                  <p className="text-white/40 text-xs">קישורים לחומרי עזר</p>
+                </div>
+                <span className="text-white/30 flex-shrink-0">←</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* ══ לטיפול — open personal + team tasks, visible immediately ══ */}
+          <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
+            <div className="px-4 pt-3 pb-28 space-y-5">
+              <div>
+                <h2 className="text-white/70 text-sm font-semibold px-1 mb-2">משימות לראש הפרטי</h2>
+                <PersonalTasksTab />
+              </div>
+              <div>
+                <h2 className="text-white/70 text-sm font-semibold px-1 mb-2">משימות צוות</h2>
+                <StaffTasksTab />
+              </div>
+            </div>
+          </div>
+
+          {/* ══ בית — מערכת היום, הנחיתה ══ */}
           <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
             <div className="flex flex-col px-5 pt-3 pb-28 gap-4 min-h-full justify-center">
 
@@ -923,113 +938,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
             </div>
           </div>
 
-          {/* ══ PAGE 2: מערכות ══ */}
-          <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
-            <div className="px-4 pt-2 pb-28 space-y-3">
-
-              {/* Class schedule */}
-              <div className="glass rounded-2xl overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
-                  <span className="text-white/65 text-sm font-medium">
-                    מערכת הכיתה{classScheduleName ? ` — ${classScheduleName}` : ""}
-                  </span>
-                  <Link href="/teacher/schedule" className="text-white/30 text-[11px] interactive">כל המערכות ←</Link>
-                </div>
-                <div className="divide-y divide-white/5">
-                  {classTimeline.length > 0 ? classTimeline.map((t, i) => (
-                    <div key={i} className="flex items-center gap-3 px-4 py-2">
-                      <span className="text-[10px] font-mono w-4 flex-shrink-0 text-white/30">{t.period ?? ""}</span>
-                      <span className={`flex-1 text-[12px] truncate ${t.isBreak ? "text-white/35 italic" : "text-white/65"}`}>{t.label}</span>
-                      <span className="text-white/25 text-[10px]" dir="ltr">{t.start}–{t.end}</span>
-                    </div>
-                  )) : (
-                    <div className="px-4 py-4 text-white/25 text-sm text-center">
-                      {classScheduleSlots.length > 0 ? "אין שיעורים היום" : "אין עדיין מערכת כיתתית טעונה"}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Events */}
-              <div className="glass rounded-2xl overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
-                  <span className="text-white/65 text-sm font-medium">לוח אירועים</span>
-                  <Link href="/teacher/calendar" className="text-white/30 text-[11px] interactive">כולם ←</Link>
-                </div>
-                <div className="divide-y divide-white/5">
-                  {upcomingEvents.length > 0 ? upcomingEvents.map(ev => (
-                    <div key={ev.id} className="flex items-center gap-3 px-4 py-2">
-                      <div className="text-white/35 text-[10px] font-mono w-10 flex-shrink-0">
-                        {new Date(ev.date).toLocaleDateString("he-IL", { day: "numeric", month: "numeric" })}
-                      </div>
-                      <div className="text-white/70 text-[12px] flex-1 truncate">{ev.description}</div>
-                    </div>
-                  )) : (
-                    <div className="px-4 py-4 text-white/25 text-sm text-center">אין אירועים קרובים</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Teacher schedule */}
-              <div className="glass rounded-2xl overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
-                  <span className="text-white/65 text-sm font-medium">מערכת המורה — היום</span>
-                  <Link href="/teacher/schedule" className="text-white/30 text-[11px] interactive">כל המערכת ←</Link>
-                </div>
-                <div className="divide-y divide-white/5">
-                  {timeline.length > 0 ? timeline.map((t, i) => {
-                    const isCurrent = nowNext.state === "now" && nowNext.current === t
-                    const isNext    = nowNext.next === t
-                    return (
-                      <div key={i} className={`flex items-center gap-3 px-4 py-2 ${isCurrent ? "bg-white/10" : ""}`}>
-                        <span className={`text-[10px] font-mono w-4 flex-shrink-0 ${isCurrent ? "text-white" : "text-white/30"}`}>{t.period ?? ""}</span>
-                        <span className={`flex-1 text-[12px] truncate ${isCurrent ? "text-white font-medium" : t.isBreak ? "text-white/35 italic" : "text-white/65"}`}>{t.label}</span>
-                        <span className="text-white/25 text-[10px]" dir="ltr">{t.start}–{t.end}</span>
-                        {isCurrent && <span className="text-[9px] bg-green-500/30 text-green-300 px-1.5 py-0.5 rounded-full">עכשיו</span>}
-                        {isNext    && <span className="text-[9px] bg-amber-500/30 text-amber-300 px-1.5 py-0.5 rounded-full">הבא</span>}
-                      </div>
-                    )
-                  }) : (
-                    <div className="px-4 py-4 text-white/25 text-sm text-center">אין שיעורים היום</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Countdowns */}
-              <div className="space-y-2">
-                <p className="text-white/30 text-[10px] font-semibold uppercase tracking-widest text-center">ספירה לאחור</p>
-                {nextVac && daysToVac > 0 && (
-                  <div className="glass rounded-2xl px-4 py-3 flex items-center gap-4">
-                    <div className="text-2xl" style={{ animation: "wiggle 2s ease-in-out infinite" }}>☕</div>
-                    <div className="flex-1">
-                      <div className="text-white/45 text-xs">ימים עד</div>
-                      <div className="text-white text-sm font-medium">{nextVac.name}</div>
-                    </div>
-                    <div className="text-white text-3xl font-light nums">{daysToVac}</div>
-                  </div>
-                )}
-                <div className="glass rounded-2xl px-4 py-3 flex items-center gap-4">
-                  <div className="text-2xl">🏖️</div>
-                  <div className="flex-1">
-                    <div className="text-white/45 text-xs">ימים עד</div>
-                    <div className="text-white text-sm font-medium">החופש הגדול</div>
-                  </div>
-                  <div className="text-white text-3xl font-light nums">{daysToSummer}</div>
-                </div>
-                <div className="glass rounded-2xl px-4 py-3 flex items-center gap-4">
-                  <div className="text-2xl">📝</div>
-                  <div className="flex-1">
-                    <div className="text-white/45 text-xs">ימי לימוד</div>
-                    <div className="text-white text-sm font-medium">שנותרו השנה</div>
-                  </div>
-                  <div className="text-white text-3xl font-light nums">{remainingDays}</div>
-                </div>
-              </div>
-
-            </div>
-          </div>
-
-          {/* ══ PAGE 3: תפריט ══ */}
+          {/* ══ תפריט ══ */}
           <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
             <div className="px-4 pt-3 pb-28">
               <div className="grid grid-cols-2 gap-3">
@@ -1052,144 +961,10 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
             </div>
           </div>
 
-          {/* ══ PAGE 4: ניהול כיתה ══ */}
-          <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
-            <div className="px-4 pt-2 pb-28 space-y-3">
-
-              {/* 2-col student grid */}
-              <div className="glass rounded-2xl overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
-                  <span className="text-white/65 text-sm font-medium">תלמידי הכיתה</span>
-                  <span className="text-white/30 text-xs">{classStudents.length} תלמידים</span>
-                </div>
-                {classStudents.length > 0 ? (
-                  <div className="grid grid-cols-2 divide-x divide-x-reverse divide-white/5">
-                    {classStudents.map((s, i) => (
-                      <div key={s.id} className={`flex items-center gap-2 px-3 py-2.5 ${i % 2 === 0 ? "border-b border-white/5" : "border-b border-white/5"}`}>
-                        <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white/50 text-[10px] font-medium flex-shrink-0">
-                          {s.name.slice(0, 1)}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="text-white/80 text-[11px] truncate">{s.name}</div>
-                          <input
-                            value={studentNotes[s.id] ?? ""}
-                            onChange={e => saveNote(s.id, e.target.value)}
-                            placeholder="הערה..."
-                            className="w-full bg-transparent text-white/40 text-[10px] placeholder:text-white/15 focus:outline-none focus:text-white/70"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="px-4 py-6 text-white/25 text-sm text-center">אין תלמידים</div>
-                )}
-              </div>
-
-              {/* Tests/assignments board — placeholder */}
-              <div className="glass rounded-2xl overflow-hidden border border-dashed border-white/10">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/10">
-                  <span className="text-2xl">📋</span>
-                  <span className="text-white/40 text-sm font-medium">לוח מבחנים ומשימות</span>
-                  <span className="text-[9px] bg-white/10 text-white/35 px-1.5 py-0.5 rounded-full">בקרוב</span>
-                </div>
-                <div className="px-4 py-4 text-white/20 text-xs text-center">מבחנים ומשימות כיתתיות יופיעו כאן</div>
-              </div>
-
-              {/* Events (class) */}
-              <div className="glass rounded-2xl overflow-hidden">
-                <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
-                  <span className="text-white/65 text-sm font-medium">אירועי כיתה</span>
-                  <Link href="/teacher/calendar" className="text-white/30 text-[11px] interactive">כולם ←</Link>
-                </div>
-                <div className="divide-y divide-white/5">
-                  {upcomingEvents.length > 0 ? upcomingEvents.slice(0, 5).map(ev => (
-                    <div key={ev.id} className="flex items-center gap-3 px-4 py-2">
-                      <div className="text-white/35 text-[10px] font-mono w-10 flex-shrink-0">
-                        {new Date(ev.date).toLocaleDateString("he-IL", { day: "numeric", month: "numeric" })}
-                      </div>
-                      <div className="text-white/70 text-[12px] flex-1 truncate">{ev.description}</div>
-                    </div>
-                  )) : (
-                    <div className="px-4 py-3 text-white/25 text-xs text-center">אין אירועים</div>
-                  )}
-                </div>
-              </div>
-
-              {/* Forum placeholder */}
-              <div className="glass rounded-2xl overflow-hidden border border-dashed border-white/10">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/10">
-                  <span className="text-2xl">📢</span>
-                  <span className="text-white/40 text-sm font-medium">פורום כיתתי</span>
-                  <span className="text-[9px] bg-white/10 text-white/35 px-1.5 py-0.5 rounded-full">בקרוב</span>
-                </div>
-                <div className="px-4 py-4 text-white/20 text-xs text-center">הודעות, טפסים וקבצים משותפים</div>
-              </div>
-
-              {/* Seating placeholder */}
-              <div className="glass rounded-2xl overflow-hidden border border-dashed border-white/10">
-                <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/10">
-                  <span className="text-2xl">🪑</span>
-                  <span className="text-white/40 text-sm font-medium">תצוגת כיתה</span>
-                  <span className="text-[9px] bg-white/10 text-white/35 px-1.5 py-0.5 rounded-full">בקרוב</span>
-                </div>
-                <div className="px-4 py-4 text-white/20 text-xs text-center">סידור ישיבה עם שמות התלמידים</div>
-              </div>
-
-            </div>
-          </div>
-
-          {/* ══ PAGE 5: הגדרות ══ */}
+          {/* ══ הגדרות ══ */}
           <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
             <div className="px-4 pt-3 pb-28">
               <SettingsPanel isAdmin={isAdmin} />
-            </div>
-          </div>
-
-          {/* ══ PAGE 6: אזרחות ══ */}
-          <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
-            <div className="px-4 pt-3 pb-28 space-y-3">
-              <h2 className="text-white/70 text-sm font-semibold px-1">אזרחות</h2>
-
-              <Link href="/lessons"
-                className="glass rounded-2xl p-4 flex items-center gap-3 interactive btn-press hover:bg-white/15 transition-colors">
-                <span className="text-2xl flex-shrink-0">🎓</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium text-sm">אזרחות מלאכותית</p>
-                  <p className="text-white/40 text-xs">גישה לשיעורים החיים</p>
-                </div>
-                <span className="text-white/30 flex-shrink-0">←</span>
-              </Link>
-
-              <Link href="/lessons/results"
-                className="glass rounded-2xl p-4 flex items-center gap-3 interactive btn-press hover:bg-white/15 transition-colors">
-                <span className="text-2xl flex-shrink-0">📊</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium text-sm">תוצאות</p>
-                  <p className="text-white/40 text-xs">ציוני התלמידים בשיעורים</p>
-                </div>
-                <span className="text-white/30 flex-shrink-0">←</span>
-              </Link>
-
-              <Link href="/teacher/link-check"
-                className="glass rounded-2xl p-4 flex items-center gap-3 interactive btn-press hover:bg-white/15 transition-colors">
-                <span className="text-2xl flex-shrink-0">🔗</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium text-sm">בדיקת קישור תלמידים</p>
-                  <p className="text-white/40 text-xs">מי עוד לא מקושר, לפני שיעור חי</p>
-                </div>
-                <span className="text-white/30 flex-shrink-0">←</span>
-              </Link>
-
-              <Link href="/teacher/civics-materials"
-                className="glass rounded-2xl p-4 flex items-center gap-3 interactive btn-press hover:bg-white/15 transition-colors">
-                <span className="text-2xl flex-shrink-0">📚</span>
-                <div className="flex-1 min-w-0">
-                  <p className="text-white font-medium text-sm">חומר לימודי</p>
-                  <p className="text-white/40 text-xs">קישורים לחומרי עזר</p>
-                </div>
-                <span className="text-white/30 flex-shrink-0">←</span>
-              </Link>
             </div>
           </div>
 

@@ -34,6 +34,8 @@ const NAV_TABS: { href: string; label: string }[] = [
   { href: "/teacher/grade-hub", label: "חיסורים" },
   { href: "/teacher/grade-hub/discipline", label: "הפרות משמעת" },
   { href: "/teacher/grade-hub/positive", label: "הערות חיוביות" },
+  { href: "/teacher/surveys", label: "שאלונים" },
+  { href: "/kpi", label: "לוח KPI" },
 ]
 
 function fmtDay(iso: string) {
