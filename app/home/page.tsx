@@ -5,13 +5,15 @@ import { useSession, signOut } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import BottomNav from "@/app/components/BottomNav"
-import { NatureBackground } from "@/app/components/NatureBackground"
+import { NatureBackground, BG_OPTIONS } from "@/app/components/NatureBackground"
 import {
   getRemainingSchoolDays, getDaysUntilSummer, getNextVacation, getDaysUntilNextVacation,
 } from "@/lib/school-calendar"
 import {
   getPersonalEvents, getPersonalDisplayName, getPersonalBackground, getCustomBgUrl,
+  setPersonalBackground as storeSaveBg, setPersonalDisplayName as storeSaveName,
 } from "@/app/components/personalStore"
+import PushManager from "@/app/components/PushManager"
 import { ROLE_DEFAULTS } from "@/app/components/NatureBackground"
 import VoiceButton from "./VoiceButton"
 import { PersonalTasksTab } from "@/app/components/PersonalTasksTab"
@@ -490,6 +492,128 @@ function StudentHome({ session, data, isPreview }: { session: any; data: HomeDat
 }
 
 // ══════════════════════════════════════════════════════════
+// SETTINGS PANEL (carousel page, teacher swipe flow)
+// ══════════════════════════════════════════════════════════
+function SettingsPanel({ isAdmin }: { isAdmin: boolean }) {
+  const [displayName, setDisplayNameState] = useState(() =>
+    typeof window !== "undefined" ? getPersonalDisplayName() : ""
+  )
+  const [selectedBg, setSelectedBg] = useState(() =>
+    typeof window !== "undefined" ? getPersonalBackground() : ""
+  )
+  const [bgMenuOpen, setBgMenuOpen] = useState(false)
+
+  function saveName(val: string) {
+    storeSaveName(val.trim())
+  }
+
+  function pickBg(id: string) {
+    setSelectedBg(id)
+    storeSaveBg(id)
+    window.dispatchEvent(new CustomEvent("bg-changed", { detail: id }))
+  }
+
+  return (
+    <div className="space-y-3">
+
+      {/* Profile */}
+      <div className="glass rounded-2xl p-4 space-y-3">
+        <p className="text-white/50 text-[10px] font-semibold uppercase tracking-widest">פרופיל</p>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white text-base font-semibold flex-shrink-0">
+            {displayName ? displayName.slice(0, 1) : "?"}
+          </div>
+          <input
+            value={displayName}
+            onChange={e => setDisplayNameState(e.target.value)}
+            onBlur={e => saveName(e.target.value)}
+            placeholder="שם תצוגה"
+            dir="rtl"
+            className="flex-1 bg-white/10 rounded-xl px-3 py-2 text-white text-sm placeholder:text-white/30 focus:outline-none focus:bg-white/15 transition-colors"
+          />
+        </div>
+      </div>
+
+      {/* Push notifications */}
+      <div className="glass rounded-2xl p-4 space-y-3">
+        <p className="text-white/50 text-[10px] font-semibold uppercase tracking-widest">התראות</p>
+        <PushManager />
+      </div>
+
+      {/* Admin-only links */}
+      {isAdmin && (
+        <>
+          <Link href="/manage?tab=import"
+            className="glass rounded-2xl px-4 py-3.5 flex items-center gap-3 hover:bg-white/15 interactive btn-press transition-colors">
+            <span className="text-2xl">📋</span>
+            <div className="flex-1">
+              <div className="text-white/80 text-sm font-medium">ייבוא נתונים</div>
+              <div className="text-white/40 text-xs">מערכת, אירועים, ציונים</div>
+            </div>
+            <span className="text-white/30">←</span>
+          </Link>
+          <Link href="/manage?tab=users"
+            className="glass rounded-2xl px-4 py-3.5 flex items-center gap-3 hover:bg-white/15 interactive btn-press transition-colors">
+            <span className="text-2xl">👥</span>
+            <div className="flex-1">
+              <div className="text-white/80 text-sm font-medium">ניהול משתמשים</div>
+              <div className="text-white/40 text-xs">תלמידים, הורים, מורים</div>
+            </div>
+            <span className="text-white/30">←</span>
+          </Link>
+        </>
+      )}
+
+      {/* Background — collapsed to one button; the very bottom of settings */}
+      <button
+        onClick={() => setBgMenuOpen(true)}
+        className="w-full glass rounded-2xl px-4 py-3.5 flex items-center gap-3 hover:bg-white/15 interactive btn-press transition-colors">
+        <span className="text-2xl">🎨</span>
+        <span className="flex-1 text-right text-white/80 text-sm font-medium">רקע</span>
+        <span className="text-white/30">←</span>
+      </button>
+
+      {/* Sign out */}
+      <button
+        onClick={() => signOut({ callbackUrl: "/login" })}
+        className="w-full glass rounded-2xl px-4 py-3.5 flex items-center gap-3 hover:bg-white/10 interactive btn-press transition-colors">
+        <span className="text-xl">🚪</span>
+        <span className="text-white/50 text-sm">יציאה</span>
+      </button>
+
+      {/* Background menu */}
+      {bgMenuOpen && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50" onClick={() => setBgMenuOpen(false)}>
+          <div className="w-full max-w-md bg-stone-900 rounded-t-3xl p-5 pb-8 animate-fade-in" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-white/70 text-sm font-semibold">בחר/י רקע</p>
+              <button onClick={() => setBgMenuOpen(false)} className="text-white/40 hover:text-white interactive text-xl leading-none px-1">×</button>
+            </div>
+            <div className="grid grid-cols-4 gap-2">
+              {BG_OPTIONS.map(bg => (
+                <button
+                  key={bg.id}
+                  onClick={() => { pickBg(bg.id); setBgMenuOpen(false) }}
+                  className={`flex flex-col items-center gap-1 py-2.5 rounded-xl transition-all ${
+                    selectedBg === bg.id
+                      ? "bg-white/25 ring-1 ring-white/40"
+                      : "bg-white/5 hover:bg-white/15"
+                  }`}
+                >
+                  <span className="text-xl">{bg.emoji}</span>
+                  <span className="text-white/50 text-[9px] text-center leading-tight px-0.5">{bg.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+    </div>
+  )
+}
+
+// ══════════════════════════════════════════════════════════
 // TEACHER HOME
 // ══════════════════════════════════════════════════════════
 function TeacherHome({ session, data }: { session: any; data: HomeData | null }) {
@@ -500,7 +624,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
   const router = useRouter()
   const { bgId, customUrl } = useBg("teacher")
   const [menuOpen, setMenuOpen] = useState(false)
-  const [page, setPage] = useState(2) // בית — index 2 of the 4-page carousel (אזרחות, לטיפול, בית, תפריט)
+  const [page, setPage] = useState(2) // בית — index 2 of the 5-page carousel (אזרחות, לטיפול, בית, תפריט, הגדרות)
   const [dragging, setDragging] = useState(false)
   const [dragDelta, setDragDelta] = useState(0)
   const touchStart = useRef<{ x: number; y: number } | null>(null)
@@ -519,7 +643,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
   const timeline      = buildTimeline(todaySlots, bellSlots)
   const nowNext       = getNowNext(timeline, now, bellSlots.length > 0)
 
-  const NUM_PAGES = 4
+  const NUM_PAGES = 5
   const MENU_LINKS: { label: string; href: string; emoji: string; icon?: string; soon: boolean }[] = [
     { label: "צוות מחנכים",       href: "/teacher/team",           emoji: "🧑‍🏫", soon: false },
     { label: "חינוך כיתה",        href: "/teacher/class-education", emoji: "🧑‍🎓", soon: false },
@@ -528,7 +652,6 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
     { label: "ריכוז שכבה",        href: "/teacher/grade-hub",      emoji: "🏫", soon: false },
     { label: "ניהול בוטים",       href: "/teacher/bots",           emoji: "🤖", soon: false },
     { label: "פקפקובי בוט - מורה פרטי",      href: "#",                         emoji: "🧑‍🏫", soon: true },
-    { label: "הגדרות",            href: "/manage",                 emoji: "⚙️", soon: false },
   ]
 
   // Swipe handlers — distinguish horizontal (page) from vertical (scroll)
@@ -639,6 +762,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
           { i: 1, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="9"/><path strokeLinecap="round" strokeLinejoin="round" d="m8.5 12.5 2.5 2.5 5-5"/></svg> }, // לטיפול
           { i: 2, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 12L12 3l9 9M5 10v9a1 1 0 001 1h4v-5h4v5h4a1 1 0 001-1v-9"/></svg> }, // בית
           { i: 3, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg> }, // תפריט
+          { i: 4, icon: <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="3"/><path strokeLinecap="round" strokeLinejoin="round" d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg> }, // הגדרות
         ] as const).map(({ i, icon }) => (
           <button key={i} onClick={() => setPage(i)}
             className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all btn-press ${
@@ -828,6 +952,13 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                   )
                 ))}
               </div>
+            </div>
+          </div>
+
+          {/* ══ הגדרות ══ */}
+          <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
+            <div className="px-4 pt-3 pb-28">
+              <SettingsPanel isAdmin={isAdmin} />
             </div>
           </div>
 
