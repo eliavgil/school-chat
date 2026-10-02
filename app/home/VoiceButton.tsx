@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 
 type State = "idle" | "listening" | "processing"
@@ -18,6 +18,8 @@ interface ApiHistory {
 
 export default function VoiceButton() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const autoStartedRef = useRef(false)
   const [isMobile, setIsMobile] = useState(false)
   const [state, setState] = useState<State>("idle")
   const stateRef = useRef<State>("idle")
@@ -39,6 +41,16 @@ export default function VoiceButton() {
   useEffect(() => {
     return () => recognitionRef.current?.abort()
   }, [])
+
+  // Launched from the phone's home-screen app-shortcut ("בוטטר — הקלטה",
+  // long-press the icon on Android) straight into listening mode — the
+  // shortcut's url is /home?botter=listen (see public/manifest.json).
+  useEffect(() => {
+    if (searchParams.get("botter") !== "listen" || autoStartedRef.current) return
+    autoStartedRef.current = true
+    startListening()
+    router.replace("/home", { scroll: false })
+  }, [searchParams])
 
   function setS(s: State) {
     stateRef.current = s

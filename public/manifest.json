@@ -22,5 +22,20 @@
       "type": "image/svg+xml",
       "purpose": "any maskable"
     }
+  ],
+  "shortcuts": [
+    {
+      "name": "פקודה קולית לבוטטר",
+      "short_name": "בוטטר",
+      "description": "פתיחת הקלטה קולית לבוטטר ישירות",
+      "url": "/home?botter=listen",
+      "icons": [
+        {
+          "src": "/icon-192.svg",
+          "sizes": "192x192",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
   ]
 }
