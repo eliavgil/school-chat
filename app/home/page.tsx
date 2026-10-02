@@ -845,7 +845,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
           {/* ══ PAGE 1: מערכת היום — the default landing view ══ */}
           <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
-            <div className="flex flex-col px-5 pt-3 pb-10 gap-4 min-h-full justify-center">
+            <div className="flex flex-col px-5 pt-3 pb-28 gap-4 min-h-full justify-center">
 
               <p className="text-white/50 text-sm font-medium">{dateStr}</p>
 
@@ -920,18 +920,12 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                 </div>
               )}
 
-              {showGlossary && (
-                <div className="mt-2">
-                  <VoiceButton />
-                </div>
-              )}
-
             </div>
           </div>
 
           {/* ══ PAGE 2: מערכות ══ */}
           <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
-            <div className="px-4 pt-2 pb-10 space-y-3">
+            <div className="px-4 pt-2 pb-28 space-y-3">
 
               {/* Class schedule */}
               <div className="glass rounded-2xl overflow-hidden">
@@ -1037,7 +1031,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
           {/* ══ PAGE 3: תפריט ══ */}
           <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
-            <div className="px-4 pt-3 pb-10">
+            <div className="px-4 pt-3 pb-28">
               <div className="grid grid-cols-2 gap-3">
                 {MENU_LINKS.map(l => (
                   l.soon ? (
@@ -1060,7 +1054,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
           {/* ══ PAGE 4: ניהול כיתה ══ */}
           <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
-            <div className="px-4 pt-2 pb-10 space-y-3">
+            <div className="px-4 pt-2 pb-28 space-y-3">
 
               {/* 2-col student grid */}
               <div className="glass rounded-2xl overflow-hidden">
@@ -1147,14 +1141,14 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
           {/* ══ PAGE 5: הגדרות ══ */}
           <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
-            <div className="px-4 pt-3 pb-10">
+            <div className="px-4 pt-3 pb-28">
               <SettingsPanel isAdmin={isAdmin} />
             </div>
           </div>
 
           {/* ══ PAGE 6: אזרחות ══ */}
           <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
-            <div className="px-4 pt-3 pb-10 space-y-3">
+            <div className="px-4 pt-3 pb-28 space-y-3">
               <h2 className="text-white/70 text-sm font-semibold px-1">אזרחות</h2>
 
               <Link href="/lessons"
@@ -1201,6 +1195,21 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
         </div>
       </main>
+
+      {/* בוטטר — floating above the content, not inside the swipeable
+          pages (that container is `transform`-ed for the swipe animation,
+          which would hijack `position: fixed` into being relative to it
+          instead of the viewport). Shown on every page, no scrolling needed. */}
+      {showGlossary && (
+        <div
+          className="fixed inset-x-5 z-30 flex justify-center pointer-events-none"
+          style={{ bottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+        >
+          <div className="w-full max-w-sm pointer-events-auto">
+            <VoiceButton />
+          </div>
+        </div>
+      )}
     </div>
   )
 }
