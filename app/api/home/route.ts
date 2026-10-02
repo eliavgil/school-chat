@@ -221,9 +221,10 @@ export async function GET(req: NextRequest) {
     // Derived from the class's own homeroom teacher's personal schedule
     // (each teacher now has their own bucket, not one shared one) — if this
     // class has no linked homeroom-teacher account yet, there's nothing to
-    // derive from.
+    // derive from. A homeroom teacher can also be the coordinator (ADMIN
+    // role), so this isn't restricted to plain TEACHER accounts.
     const homeroomTeacher = await prisma.user.findFirst({
-      where: { classId, role: "TEACHER" },
+      where: { classId, role: { in: ["TEACHER", "ADMIN"] } },
       select: { id: true },
     })
     if (homeroomTeacher) {
