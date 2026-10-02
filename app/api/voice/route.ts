@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db/prisma"
 import { israelLocalToUtc } from "@/lib/israel-time"
 import Anthropic from "@anthropic-ai/sdk"
 import { sendPushToClassMembers } from "@/lib/push"
+import { matchTeacherUsersByName } from "@/lib/teacher-name-match"
 
 const client = new Anthropic()
 
@@ -189,11 +190,7 @@ export async function POST(req: NextRequest) {
         toolResultContent = "error: no assignees given"
       } else {
         const reminderDate = input.reminderAt ? israelLocalToUtc(input.reminderAt) : null
-        const existingTeachers = await prisma.user.findMany({
-          where: { name: { in: names }, role: { in: ["TEACHER", "ADMIN"] } },
-          select: { id: true, name: true },
-        })
-        const userIdByName = new Map(existingTeachers.map(u => [u.name, u.id]))
+        const userIdByName = await matchTeacherUsersByName(names)
         const task = await prisma.staffTask.create({
           data: {
             createdById: session.user.id,

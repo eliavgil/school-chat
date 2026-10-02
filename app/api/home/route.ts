@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db/prisma"
 import { dayTypeForWeekday, teacherOwnScheduleId } from "@/lib/bellSchedule"
+import { runTaskRemindersOpportunistically } from "@/lib/task-reminders"
 
 const DAY_TO_HEB = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"]
 
@@ -15,6 +16,12 @@ function nextSchoolDay(jsDay: number): number {
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  // Opportunistic piggyback — the dedicated cron can sit unfired for hours
+  // on GitHub's free scheduled-runs tier, so every real home-page load also
+  // nudges the same due-reminders check (throttled to once a minute, fire
+  // and forget — never slows this request down).
+  runTaskRemindersOpportunistically()
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
