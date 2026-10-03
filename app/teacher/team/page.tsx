@@ -39,7 +39,7 @@ export default function TeamPage() {
         {tab === "tasks" && (
           <div className="space-y-5">
             <div>
-              <h2 className="text-white/70 text-sm font-semibold px-1 mb-2">משימות לראש הפרטי</h2>
+              <h2 className="text-white/70 text-sm font-semibold px-1 mb-2">משימות אישיות</h2>
               <PersonalTasksTab />
             </div>
             <div>

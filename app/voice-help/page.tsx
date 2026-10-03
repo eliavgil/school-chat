@@ -11,7 +11,7 @@ interface Section {
 
 const COMMANDS: Section[] = [
   {
-    title: "משימות לראש הפרטי (ברירת מחדל)",
+    title: "משימות אישיות (ברירת מחדל)",
     emoji: "✅",
     items: [
       { label: "תוסיף משימה להחזיר עבודות" },

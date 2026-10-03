@@ -845,7 +845,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
           <div dir="rtl" className="overflow-y-auto" style={{ width: "100vw" }}>
             <div className="px-4 pt-3 pb-28 space-y-5">
               <div>
-                <h2 className="text-white/70 text-sm font-semibold px-1 mb-2">משימות לראש הפרטי</h2>
+                <h2 className="text-white/70 text-sm font-semibold px-1 mb-2">משימות אישיות</h2>
                 <PersonalTasksTab />
               </div>
               <div>
