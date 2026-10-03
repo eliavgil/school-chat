@@ -1054,6 +1054,7 @@ function HomeroomTeacherHome({ session, data }: { session: any; data: HomeData |
   // Glossary is still eliavgil-only while it's being trialed.
   const showGlossary = session?.user?.email === "eliavgil@gmail.com"
   const LINKS: { label: string; href: string; emoji: string; icon?: string }[] = [
+    { label: "משימות",                   href: "/teacher/tasks",             emoji: "✅" },
     { label: "צוות מחנכי י",              href: "/teacher/team",              emoji: "🧑‍🏫" },
     { label: "מערכת, לוז אירועים",        href: "/teacher/schedule",          emoji: "🗓️" },
     { label: "מיסטר פקפקובי",             href: "/assistant",                 emoji: "🤖", icon: "/mascot/face.png" },
