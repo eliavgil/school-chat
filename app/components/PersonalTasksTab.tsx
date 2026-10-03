@@ -71,9 +71,13 @@ export function PersonalTasksTab() {
     fetchTasks()
   }
 
-  async function toggleDone(t: PersonalTaskT) {
-    await fetch("/api/tasks/personal", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: t.id, done: !t.done }) })
+  function toggleDone(t: PersonalTaskT) {
+    // Update immediately — waiting on the network round-trip before
+    // showing anything meant tapping the checkbox did nothing for a beat,
+    // then the task abruptly vanished into the (collapsed by default)
+    // "הושלמו" section, which read as the task having been deleted.
     setTasks(prev => prev.map(x => x.id === t.id ? { ...x, done: !x.done } : x))
+    fetch("/api/tasks/personal", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id: t.id, done: !t.done }) })
   }
 
   async function remove(id: string) {
