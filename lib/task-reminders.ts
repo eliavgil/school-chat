@@ -8,7 +8,15 @@ import { matchTeacherUsersByName } from "@/lib/teacher-name-match"
 // from /api/home (hit on every real page load) — whichever fires first
 // catches a given due reminder, so real usage of the app covers the gaps
 // between the unreliable scheduled runs.
-export async function runTaskReminders(): Promise<{ sent: number }> {
+export interface RunResult {
+  sent: number
+  failed: number
+  skippedNoSub: number
+  due: number
+  stillUnlinked: number // staff-task assignees with a reminder due that still have no matching User — their name doesn't match any account, so no push is even attempted
+}
+
+export async function runTaskReminders(): Promise<RunResult> {
   const now = new Date()
   let sent = 0
 
@@ -20,11 +28,13 @@ export async function runTaskReminders(): Promise<{ sent: number }> {
     where: { userId: null, reminderAt: { not: null }, reminderSent: false },
     select: { id: true, teacherLabel: true },
   })
+  let stillUnlinked = 0
   if (unlinked.length) {
     const userIdByName = await matchTeacherUsersByName(unlinked.map(a => a.teacherLabel))
     for (const a of unlinked) {
       const userId = userIdByName.get(a.teacherLabel)
       if (userId) await prisma.staffTaskAssignee.update({ where: { id: a.id }, data: { userId } })
+      else stillUnlinked++
     }
   }
 
@@ -70,11 +80,12 @@ export async function runTaskReminders(): Promise<{ sent: number }> {
     }
   }
 
-  if (failed > 0 || skippedNoSub > 0) {
-    console.error(`[task-reminders] sent=${sent} failed=${failed} skipped-no-subscription=${skippedNoSub}`)
+  const due = personalDue.length + staffDue.length
+  if (failed > 0 || skippedNoSub > 0 || stillUnlinked > 0) {
+    console.error(`[task-reminders] due=${due} sent=${sent} failed=${failed} skipped-no-subscription=${skippedNoSub} still-unlinked=${stillUnlinked}`)
   }
 
-  return { sent }
+  return { sent, failed, skippedNoSub, due, stillUnlinked }
 }
 
 // In-memory, per-serverless-instance throttle for the opportunistic

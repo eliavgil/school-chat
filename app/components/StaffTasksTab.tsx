@@ -259,7 +259,16 @@ export function StaffTasksTab() {
           {selected.length > 0 && (
             <div>
               <label className="text-white/40 text-xs mb-1.5 block">תזכורת (אופציונלי)</label>
-              <input type="datetime-local" dir="ltr" value={reminderAt} onChange={e => setReminderAt(e.target.value)}
+              <input type="datetime-local" dir="ltr" value={reminderAt}
+                onChange={e => {
+                  setReminderAt(e.target.value)
+                  // Typing a time is the obvious "remind them" signal — requiring a
+                  // *second*, easy-to-miss tap on each name below (on top of already
+                  // picking them as assignees) silently dropped the reminder for
+                  // anyone who stopped at just the time. Default to everyone already
+                  // assigned; the chips below still let you narrow it down.
+                  if (e.target.value && reminderTeachers.length === 0) setReminderTeachers(selected)
+                }}
                 className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white/30" />
               {reminderAt && (
                 <div className="mt-2 space-y-1.5">
@@ -326,7 +335,19 @@ export function StaffTasksTab() {
                   <div>
                     <label className="text-white/40 text-xs mb-1.5 block">תזכורת (אופציונלי)</label>
                     <input type="datetime-local" dir="ltr" value={draft.reminderAt}
-                      onChange={e => setEditingTask(prev => ({ ...prev, [t.id]: { ...draft, reminderAt: e.target.value } }))}
+                      onChange={e => setEditingTask(prev => ({
+                        ...prev,
+                        [t.id]: {
+                          ...draft,
+                          reminderAt: e.target.value,
+                          // Same default-to-everyone-assigned as the new-task form —
+                          // typing a time without also tapping every name chip below
+                          // silently sent the reminder to no one.
+                          reminderTeachers: e.target.value && draft.reminderTeachers.length === 0
+                            ? t.assignees.map(a => a.teacherLabel)
+                            : draft.reminderTeachers,
+                        },
+                      }))}
                       className="w-full bg-white/10 border border-white/20 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-white/30" />
                     {draft.reminderAt && (
                       <div className="mt-2 space-y-1.5">

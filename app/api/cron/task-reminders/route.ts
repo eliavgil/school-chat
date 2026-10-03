@@ -14,6 +14,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const { sent } = await runTaskReminders()
-  return NextResponse.json({ ok: true, sent })
+  const result = await runTaskReminders()
+  return NextResponse.json({ ok: true, ...result })
 }
