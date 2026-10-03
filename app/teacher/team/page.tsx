@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
 import { StaffTasksTab } from "@/app/components/StaffTasksTab"
+import { PersonalTasksTab } from "@/app/components/PersonalTasksTab"
 import { driveIconFor } from "@/lib/driveIcon"
 
 type Tab = "tasks" | "files" | "events" | "forum"
@@ -35,7 +36,18 @@ export default function TeamPage() {
       </div>
 
       <div className="max-w-2xl mx-auto px-4 py-5">
-        {tab === "tasks" && <StaffTasksTab />}
+        {tab === "tasks" && (
+          <div className="space-y-5">
+            <div>
+              <h2 className="text-white/70 text-sm font-semibold px-1 mb-2">משימות לראש הפרטי</h2>
+              <PersonalTasksTab />
+            </div>
+            <div>
+              <h2 className="text-white/70 text-sm font-semibold px-1 mb-2">משימות צוות</h2>
+              <StaffTasksTab />
+            </div>
+          </div>
+        )}
         {tab === "files" && <FilesTab />}
         {tab === "events" && <EventsTab />}
         {tab === "forum" && <ForumTab />}
