@@ -645,7 +645,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
 
   const NUM_PAGES = 5
   const MENU_LINKS: { label: string; href: string; emoji: string; icon?: string; soon: boolean }[] = [
-    { label: "צוות מחנכים",       href: "/teacher/team",           emoji: "🧑‍🏫", soon: false },
+    { label: "צוות מחנכים",       href: "/teacher/team",           emoji: "👨‍🏫👩‍🏫🧑‍🏫", soon: false },
     { label: "חינוך כיתה",        href: "/teacher/class-education", emoji: "🧑‍🎓", soon: false },
     { label: "מערכות וארועים",    href: "/teacher/systems-events", emoji: "🗓️", soon: false },
     { label: "מורה מקצועי",       href: "/teacher/subject",        emoji: "📚", soon: false },
