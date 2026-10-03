@@ -1,8 +1,9 @@
 import Link from "next/link"
 
-const LINKS: { label: string; desc: string; href: string; emoji: string; icon?: string }[] = [
+const LINKS: { label: string; desc: string; href: string; emoji: string; icon?: string; soon?: boolean }[] = [
   { label: "מיסטר פקפקובי", desc: "העוזר הכיתתי — שיחה חיה", href: "/assistant", emoji: "🤖", icon: "/mascot/face.png" },
   { label: "פקפקובי בוט - ניהול מאגר ידע", desc: "ניהול מאגר הידע של הבוט", href: "/teacher/school-assistant", emoji: "🗂️" },
+  { label: "פקפקובי בוט - מורה פרטי", desc: "בוט לימודי אישי לתלמידים", href: "#", emoji: "🧑‍🏫", soon: true },
 ]
 
 export default function BotsManagementPage() {
@@ -14,7 +15,17 @@ export default function BotsManagementPage() {
       </header>
 
       <div className="max-w-2xl mx-auto px-4 py-5 space-y-3">
-        {LINKS.map(l => (
+        {LINKS.map(l => l.soon ? (
+          <div key={l.href}
+            className="glass rounded-2xl p-4 flex items-center gap-3 opacity-40 relative border border-dashed border-white/20">
+            {l.icon ? <img src={l.icon} alt="" className="w-8 h-8 object-contain flex-shrink-0" /> : <span className="text-2xl flex-shrink-0">{l.emoji}</span>}
+            <div className="flex-1 min-w-0">
+              <p className="text-white font-medium text-sm">{l.label}</p>
+              <p className="text-white/40 text-xs">{l.desc}</p>
+            </div>
+            <span className="text-[9px] bg-white/10 text-white/40 px-1.5 py-0.5 rounded-full flex-shrink-0">בקרוב</span>
+          </div>
+        ) : (
           <Link key={l.href} href={l.href}
             className="glass rounded-2xl p-4 flex items-center gap-3 interactive btn-press hover:bg-white/15 transition-colors">
             {l.icon ? <img src={l.icon} alt="" className="w-8 h-8 object-contain flex-shrink-0" /> : <span className="text-2xl flex-shrink-0">{l.emoji}</span>}
