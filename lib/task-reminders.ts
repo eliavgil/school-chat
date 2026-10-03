@@ -13,7 +13,9 @@ export interface RunResult {
   failed: number
   skippedNoSub: number
   due: number
-  stillUnlinked: number // staff-task assignees with a reminder due that still have no matching User — their name doesn't match any account, so no push is even attempted
+  stillUnlinked: number // staff-task assignees with a reminder set that still have no matching User — their name doesn't match any account, so no push is even attempted
+  unlinkedDetail?: { teacherLabel: string; taskTitle: string }[] // only populated when stillUnlinked > 0 — exactly which names don't match, for diagnosing why
+  knownTeacherNames?: string[] // current roster of TEACHER/ADMIN account names, for comparison against unlinkedDetail
 }
 
 export async function runTaskReminders(): Promise<RunResult> {
@@ -26,15 +28,28 @@ export async function runTaskReminders(): Promise<RunResult> {
   // pushed to them. Cheap to re-check every run.
   const unlinked = await prisma.staffTaskAssignee.findMany({
     where: { userId: null, reminderAt: { not: null }, reminderSent: false },
-    select: { id: true, teacherLabel: true },
+    select: { id: true, teacherLabel: true, staffTask: { select: { title: true } } },
   })
   let stillUnlinked = 0
+  const unlinkedDetail: { teacherLabel: string; taskTitle: string }[] = []
+  let knownTeacherNames: string[] | undefined
   if (unlinked.length) {
     const userIdByName = await matchTeacherUsersByName(unlinked.map(a => a.teacherLabel))
     for (const a of unlinked) {
       const userId = userIdByName.get(a.teacherLabel)
-      if (userId) await prisma.staffTaskAssignee.update({ where: { id: a.id }, data: { userId } })
-      else stillUnlinked++
+      if (userId) {
+        await prisma.staffTaskAssignee.update({ where: { id: a.id }, data: { userId } })
+      } else {
+        stillUnlinked++
+        unlinkedDetail.push({ teacherLabel: a.teacherLabel, taskTitle: a.staffTask.title })
+      }
+    }
+    if (stillUnlinked > 0) {
+      const teachers = await prisma.user.findMany({
+        where: { role: { in: ["TEACHER", "ADMIN"] }, name: { not: null } },
+        select: { name: true },
+      })
+      knownTeacherNames = teachers.map(t => t.name!).sort()
     }
   }
 
@@ -85,7 +100,7 @@ export async function runTaskReminders(): Promise<RunResult> {
     console.error(`[task-reminders] due=${due} sent=${sent} failed=${failed} skipped-no-subscription=${skippedNoSub} still-unlinked=${stillUnlinked}`)
   }
 
-  return { sent, failed, skippedNoSub, due, stillUnlinked }
+  return { sent, failed, skippedNoSub, due, stillUnlinked, unlinkedDetail: unlinkedDetail.length ? unlinkedDetail : undefined, knownTeacherNames }
 }
 
 // In-memory, per-serverless-instance throttle for the opportunistic
