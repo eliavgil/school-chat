@@ -3,28 +3,38 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 
-interface ClassStudent { id: string; name: string }
-interface CalendarEvent { id: string; date: string; description: string }
+interface RosterStudent {
+  id: string
+  name: string
+  track: string | null
+  mathUnits: number | null
+  englishUnits: number | null
+  city: string | null
+}
 
-export default function StudentsPage() {
-  const [classStudents, setClassStudents] = useState<ClassStudent[]>([])
-  const [upcomingEvents, setUpcomingEvents] = useState<CalendarEvent[]>([])
+const TABS = [
+  { id: "students", label: "תלמידי הכיתה" },
+  // More tabs (מבחנים ומשימות, פורום כיתתי, סידור ישיבה...) land here later.
+] as const
+
+export default function ClassManagementPage() {
+  const [tab, setTab] = useState<typeof TABS[number]["id"]>("students")
+  const [students, setStudents] = useState<RosterStudent[]>([])
   const [loading, setLoading] = useState(true)
-  const [studentNotes, setStudentNotes] = useState<Record<string, string>>(() => {
+  const [openNoteFor, setOpenNoteFor] = useState<string | null>(null)
+  const [notes, setNotes] = useState<Record<string, string>>(() => {
     if (typeof window === "undefined") return {}
     try { return JSON.parse(localStorage.getItem("teacher-student-notes") ?? "{}") } catch { return {} }
   })
 
   useEffect(() => {
-    fetch("/api/home").then(r => r.json()).then(d => {
-      setClassStudents(d.classStudents ?? [])
-      setUpcomingEvents(d.upcomingEvents ?? [])
-    }).catch(() => {}).finally(() => setLoading(false))
+    fetch("/api/class/roster").then(r => r.json()).then(d => setStudents(d.students ?? []))
+      .catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   function saveNote(studentId: string, val: string) {
-    const updated = { ...studentNotes, [studentId]: val }
-    setStudentNotes(updated)
+    const updated = { ...notes, [studentId]: val }
+    setNotes(updated)
     try { localStorage.setItem("teacher-student-notes", JSON.stringify(updated)) } catch {}
   }
 
@@ -32,93 +42,70 @@ export default function StudentsPage() {
     <div className="min-h-screen bg-black/50 backdrop-blur-sm" dir="rtl">
       <header className="bg-black/30 backdrop-blur-md border-b border-white/10 px-5 header-pt pb-4 flex items-center gap-4 sticky top-0 z-10">
         <Link href="/home" className="text-white/60 hover:text-white text-xl interactive">←</Link>
-        <h1 className="font-semibold text-lg text-white">תלמידי חינוך</h1>
+        <h1 className="font-semibold text-lg text-white">ניהול כיתה</h1>
       </header>
 
-      <div className="max-w-2xl mx-auto px-4 py-5 space-y-3">
+      <div className="flex gap-2 px-4 pt-4">
+        {TABS.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)}
+            className={`px-4 py-2 rounded-xl text-sm font-medium interactive btn-press transition-colors ${tab === t.id ? "bg-white/20 text-white" : "text-white/40 hover:text-white/70"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-        {/* 2-col student grid */}
-        <div className="glass rounded-2xl overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
-            <span className="text-white/65 text-sm font-medium">תלמידי הכיתה</span>
-            <span className="text-white/30 text-xs">{classStudents.length} תלמידים</span>
-          </div>
-          {loading ? (
-            <div className="px-4 py-6 text-white/25 text-sm text-center">טוען...</div>
-          ) : classStudents.length > 0 ? (
-            <div className="grid grid-cols-2 divide-x divide-x-reverse divide-white/5">
-              {classStudents.map((s, i) => (
-                <div key={s.id} className="flex items-center gap-2 px-3 py-2.5 border-b border-white/5">
-                  <div className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center text-white/50 text-[10px] font-medium flex-shrink-0">
-                    {s.name.slice(0, 1)}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-white/80 text-[11px] truncate">{s.name}</div>
-                    <input
-                      value={studentNotes[s.id] ?? ""}
-                      onChange={e => saveNote(s.id, e.target.value)}
-                      placeholder="הערה..."
-                      className="w-full bg-transparent text-white/40 text-[10px] placeholder:text-white/15 focus:outline-none focus:text-white/70"
-                    />
-                  </div>
-                </div>
-              ))}
+      <div className="max-w-2xl mx-auto px-4 py-5">
+        {tab === "students" && (
+          <div className="glass rounded-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
+              <span className="text-white/65 text-sm font-medium">תלמידי הכיתה</span>
+              <span className="text-white/30 text-xs">{students.length} תלמידים</span>
             </div>
-          ) : (
-            <div className="px-4 py-6 text-white/25 text-sm text-center">אין תלמידים</div>
-          )}
-        </div>
 
-        {/* Tests/assignments board — placeholder */}
-        <div className="glass rounded-2xl overflow-hidden border border-dashed border-white/10">
-          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/10">
-            <span className="text-2xl">📋</span>
-            <span className="text-white/40 text-sm font-medium">לוח מבחנים ומשימות</span>
-            <span className="text-[9px] bg-white/10 text-white/35 px-1.5 py-0.5 rounded-full">בקרוב</span>
-          </div>
-          <div className="px-4 py-4 text-white/20 text-xs text-center">מבחנים ומשימות כיתתיות יופיעו כאן</div>
-        </div>
-
-        {/* Events (class) */}
-        <div className="glass rounded-2xl overflow-hidden">
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/10">
-            <span className="text-white/65 text-sm font-medium">אירועי כיתה</span>
-            <Link href="/teacher/calendar" className="text-white/30 text-[11px] interactive">כולם ←</Link>
-          </div>
-          <div className="divide-y divide-white/5">
-            {upcomingEvents.length > 0 ? upcomingEvents.slice(0, 5).map(ev => (
-              <div key={ev.id} className="flex items-center gap-3 px-4 py-2">
-                <div className="text-white/35 text-[10px] font-mono w-10 flex-shrink-0">
-                  {new Date(ev.date).toLocaleDateString("he-IL", { day: "numeric", month: "numeric" })}
-                </div>
-                <div className="text-white/70 text-[12px] flex-1 truncate">{ev.description}</div>
+            {loading ? (
+              <div className="px-4 py-6 text-white/25 text-sm text-center">טוען...</div>
+            ) : students.length === 0 ? (
+              <div className="px-4 py-6 text-white/25 text-sm text-center">אין תלמידים בכיתה</div>
+            ) : (
+              <div className="divide-y divide-white/5">
+                {students.map((s, i) => (
+                  <div key={s.id} className="px-4 py-3">
+                    <div className="flex items-start gap-3">
+                      <span className="w-6 h-6 rounded-md bg-white/10 flex items-center justify-center text-white/50 text-[11px] font-bold flex-shrink-0 mt-0.5">
+                        {i + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white text-sm font-medium">{s.name}</p>
+                        <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-white/40 text-[11px]">
+                          {s.track && <span>מגמה: {s.track}</span>}
+                          {s.mathUnits != null && <span>יח״ל מתמטיקה: {s.mathUnits}</span>}
+                          {s.englishUnits != null && <span>יח״ל אנגלית: {s.englishUnits}</span>}
+                          {s.city && <span>מקום מגורים: {s.city}</span>}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => setOpenNoteFor(openNoteFor === s.id ? null : s.id)}
+                        className="text-white/30 hover:text-white/60 text-[11px] flex-shrink-0 interactive flex items-center gap-1"
+                      >
+                        {notes[s.id] ? "✏️" : "💬"} הערה
+                      </button>
+                    </div>
+                    {openNoteFor === s.id && (
+                      <input
+                        autoFocus
+                        value={notes[s.id] ?? ""}
+                        onChange={e => saveNote(s.id, e.target.value)}
+                        placeholder="הערה על התלמיד/ה..."
+                        dir="rtl"
+                        className="mt-2 w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm text-white placeholder:text-white/25 focus:outline-none focus:border-white/30"
+                      />
+                    )}
+                  </div>
+                ))}
               </div>
-            )) : (
-              <div className="px-4 py-3 text-white/25 text-xs text-center">אין אירועים</div>
             )}
           </div>
-        </div>
-
-        {/* Forum placeholder */}
-        <div className="glass rounded-2xl overflow-hidden border border-dashed border-white/10">
-          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/10">
-            <span className="text-2xl">📢</span>
-            <span className="text-white/40 text-sm font-medium">פורום כיתתי</span>
-            <span className="text-[9px] bg-white/10 text-white/35 px-1.5 py-0.5 rounded-full">בקרוב</span>
-          </div>
-          <div className="px-4 py-4 text-white/20 text-xs text-center">הודעות, טפסים וקבצים משותפים</div>
-        </div>
-
-        {/* Seating placeholder */}
-        <div className="glass rounded-2xl overflow-hidden border border-dashed border-white/10">
-          <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/10">
-            <span className="text-2xl">🪑</span>
-            <span className="text-white/40 text-sm font-medium">תצוגת כיתה</span>
-            <span className="text-[9px] bg-white/10 text-white/35 px-1.5 py-0.5 rounded-full">בקרוב</span>
-          </div>
-          <div className="px-4 py-4 text-white/20 text-xs text-center">סידור ישיבה עם שמות התלמידים</div>
-        </div>
-
+        )}
       </div>
     </div>
   )

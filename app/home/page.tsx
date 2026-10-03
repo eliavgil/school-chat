@@ -735,7 +735,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                 { label: "מורה מקצועי",      href: "/teacher/subject",        emoji: "📚" },
                 { label: "ריכוז שכבה",       href: "/teacher/grade-hub",      emoji: "🏫" },
                 { label: "חינוך כיתה",       href: "/teacher/class-education", emoji: "🧑‍🎓" },
-                { label: "תלמידי חינוך",     href: "/teacher/students",       emoji: "👥" },
+                { label: "ניהול כיתה",       href: "/teacher/students",       emoji: "👥" },
                 { label: "מערכות וארועים",   href: "/teacher/systems-events", emoji: "🗓️" },
                 ...(showGlossary ? [{ label: "מילון מושגים", href: "/glossary", emoji: "📖" }] : []),
                 { label: "הגדרות",           href: "/manage",                 emoji: "⚙️" },
@@ -1055,6 +1055,7 @@ function HomeroomTeacherHome({ session, data }: { session: any; data: HomeData |
   const showGlossary = session?.user?.email === "eliavgil@gmail.com"
   const LINKS: { label: string; href: string; emoji: string; icon?: string }[] = [
     { label: "משימות",                   href: "/teacher/tasks",             emoji: "✅" },
+    { label: "ניהול כיתה",                href: "/teacher/students",          emoji: "👥" },
     { label: "צוות מחנכי י",              href: "/teacher/team",              emoji: "🧑‍🏫" },
     { label: "מערכת, לוז אירועים",        href: "/teacher/schedule",          emoji: "🗓️" },
     { label: "מיסטר פקפקובי",             href: "/assistant",                 emoji: "🤖", icon: "/mascot/face.png" },
