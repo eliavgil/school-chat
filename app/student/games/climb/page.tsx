@@ -12,11 +12,14 @@ const MOVE_SPEED = 4.2
 const PLAYER_SIZE = 30
 const PLATFORM_W = 56
 const PLATFORM_H = 12
-const QUESTION_INTERVAL_MS = 45_000
+const QUESTION_INTERVAL_MS = 30_000
+const OBSTACLE_SIZE = 26
+const OBSTACLE_EMOJIS = ["🪨", "☄️", "⚡", "💥", "🧨"]
 // More than can ever be on-screen at once (≈640 / ~90px average vertical
 // gap ≈ 8, plus slack) — a fixed pool of real DOM nodes, repositioned via
 // direct style writes every frame instead of going through React state.
 const PLATFORM_POOL_SIZE = 16
+const OBSTACLE_POOL_SIZE = 8
 
 const CHARACTERS: { id: string; emoji: string; label: string }[] = [
   { id: "frog", emoji: "🐸", label: "צפרדע" },
@@ -25,7 +28,8 @@ const CHARACTERS: { id: string; emoji: string; label: string }[] = [
   { id: "rocket", emoji: "🚀", label: "רקטה" },
 ]
 
-interface Platform { x: number; y: number }
+interface Platform { x: number; y: number; scale: number }
+interface Obstacle { x: number; y: number; vy: number; emoji: string }
 interface Question {
   id: string
   subject: string
@@ -39,11 +43,29 @@ interface Question {
 
 type Screen = "select" | "playing" | "gameover"
 
+function shuffleArray<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
+function formatTime(ms: number) {
+  const totalSec = Math.max(0, Math.floor(ms / 1000))
+  const m = Math.floor(totalSec / 60).toString().padStart(2, "0")
+  const s = (totalSec % 60).toString().padStart(2, "0")
+  return `${m}:${s}`
+}
+
 export default function ClimbGamePage() {
   const [screen, setScreen] = useState<Screen>("select")
   const [character, setCharacter] = useState<string>("frog")
   const [displayScore, setDisplayScore] = useState(0)
+  const [displayTime, setDisplayTime] = useState("00:00")
   const [finalScore, setFinalScore] = useState(0)
+  const [disqualified, setDisqualified] = useState(false)
   const [activeQuestion, setActiveQuestion] = useState<Question | null>(null)
   const [answerFeedback, setAnswerFeedback] = useState<"correct" | "wrong" | null>(null)
   const [leaderboard, setLeaderboard] = useState<{ name: string; score: number; characterId: string }[]>([])
@@ -55,23 +77,29 @@ export default function ClimbGamePage() {
   const game = useRef({
     player: { x: CANVAS_W / 2, y: CANVAS_H - 80, vx: 0, vy: 0 },
     platforms: [] as Platform[],
+    obstacles: [] as Obstacle[],
+    questionQueue: [] as Question[],
     cameraTop: 0, // world-y that maps to screen-y 0; only ever decreases
     maxClimb: 0,
     paused: false,
     nextQuestionAt: 0,
+    nextObstacleAt: 0,
+    startTime: 0,
     rafId: 0,
     running: false,
     lastScoreUpdate: 0,
   })
 
-  // DOM sprite refs — character + trees are plain positioned <div>s with
-  // real emoji text in them (not canvas fillText, which doesn't reliably
-  // render emoji glyphs on iOS Safari — the gradient background and the
-  // score counter are normal DOM/React, so only canvas-drawn emoji were
-  // ever invisible). Positions are written directly via style.transform in
-  // the game loop, bypassing React entirely so this stays smooth at 60fps.
+  // DOM sprite refs — character, book platforms and falling obstacles are
+  // plain positioned <div>s with real emoji text in them (not canvas
+  // fillText, which doesn't reliably render emoji glyphs on iOS Safari —
+  // the gradient background and the score counter are normal DOM/React, so
+  // only canvas-drawn emoji were ever invisible). Positions are written
+  // directly via style.transform in the game loop, bypassing React
+  // entirely so this stays smooth at 60fps.
   const playerElRef = useRef<HTMLDivElement>(null)
   const platformElRefs = useRef<(HTMLDivElement | null)[]>([])
+  const obstacleElRefs = useRef<(HTMLDivElement | null)[]>([])
 
   const questionsRef = useRef<Question[]>([])
   useEffect(() => {
@@ -84,7 +112,9 @@ export default function ClimbGamePage() {
   useEffect(() => { movingRightRef.current = movingRight }, [movingRight])
 
   function makePlatform(y: number): Platform {
-    return { x: 20 + Math.random() * (CANVAS_W - 40 - PLATFORM_W), y }
+    const scale = 0.7 + Math.random() * 0.8
+    const effW = PLATFORM_W * scale
+    return { x: 20 + Math.random() * (CANVAS_W - 40 - effW), y, scale }
   }
 
   function ensurePlatformsAbove(topWorldY: number) {
@@ -97,12 +127,24 @@ export default function ClimbGamePage() {
     g.platforms = g.platforms.filter(p => p.y < g.cameraTop + CANVAS_H + 200)
   }
 
-  function endGame() {
+  function spawnObstacle() {
+    const g = game.current
+    g.obstacles.push({
+      x: Math.random() * (CANVAS_W - OBSTACLE_SIZE),
+      y: g.cameraTop - 40,
+      vy: 2.6 + Math.random() * 1.8,
+      emoji: OBSTACLE_EMOJIS[Math.floor(Math.random() * OBSTACLE_EMOJIS.length)],
+    })
+    g.nextObstacleAt = performance.now() + (3200 + Math.random() * 2600)
+  }
+
+  function endGame(reason: "fell" | "hit") {
     const g = game.current
     g.running = false
     if (g.rafId) cancelAnimationFrame(g.rafId)
     const score = Math.max(0, Math.floor(g.maxClimb / 10))
     setFinalScore(score)
+    setDisqualified(reason === "hit")
     setScreen("gameover")
     fetch("/api/game/scores", {
       method: "POST", headers: { "Content-Type": "application/json" },
@@ -112,10 +154,16 @@ export default function ClimbGamePage() {
   }
 
   function triggerQuestion() {
-    const qs = questionsRef.current
-    if (qs.length === 0) return
-    game.current.paused = true
-    setActiveQuestion(qs[Math.floor(Math.random() * qs.length)])
+    const g = game.current
+    if (g.questionQueue.length === 0) {
+      const pool = questionsRef.current
+      if (pool.length === 0) return
+      g.questionQueue = shuffleArray(pool)
+    }
+    const q = g.questionQueue.shift()
+    if (!q) return
+    g.paused = true
+    setActiveQuestion(q)
   }
 
   function answerQuestion(idx: number) {
@@ -147,12 +195,13 @@ export default function ClimbGamePage() {
       if (p.x < -PLAYER_SIZE / 2) p.x = CANVAS_W + PLAYER_SIZE / 2
       if (p.x > CANVAS_W + PLAYER_SIZE / 2) p.x = -PLAYER_SIZE / 2
 
-      // Landing: falling, and within a platform's x-range at its y.
+      // Landing: falling, and within a platform's (scaled) x-range at its y.
       if (p.vy > 0) {
         for (const plat of g.platforms) {
+          const effW = PLATFORM_W * plat.scale
           if (
             p.y + PLAYER_SIZE / 2 >= plat.y && p.y + PLAYER_SIZE / 2 <= plat.y + PLATFORM_H + Math.abs(p.vy) &&
-            p.x + PLAYER_SIZE / 2 > plat.x && p.x - PLAYER_SIZE / 2 < plat.x + PLATFORM_W
+            p.x + PLAYER_SIZE / 2 > plat.x && p.x - PLAYER_SIZE / 2 < plat.x + effW
           ) {
             p.vy = JUMP_VELOCITY
             break
@@ -167,19 +216,35 @@ export default function ClimbGamePage() {
       ensurePlatformsAbove(g.cameraTop)
 
       if (p.y - g.cameraTop > CANVAS_H + PLAYER_SIZE) {
-        endGame()
+        endGame("fell")
         return
       }
 
-      if (performance.now() >= g.nextQuestionAt) triggerQuestion()
+      if (performance.now() >= g.nextObstacleAt) spawnObstacle()
+      for (const ob of g.obstacles) ob.y += ob.vy
+      g.obstacles = g.obstacles.filter(ob => ob.y - g.cameraTop < CANVAS_H + 60)
 
-      // Throttled — updating React state every animation frame (60/s) to
-      // move a number in the header is unnecessary re-render churn.
-      const now = performance.now()
-      if (now - g.lastScoreUpdate > 150) {
-        g.lastScoreUpdate = now
-        setDisplayScore(Math.floor(g.maxClimb / 10))
+      for (const ob of g.obstacles) {
+        if (
+          p.x + PLAYER_SIZE / 2 > ob.x && p.x - PLAYER_SIZE / 2 < ob.x + OBSTACLE_SIZE &&
+          p.y + PLAYER_SIZE / 2 > ob.y && p.y - PLAYER_SIZE / 2 < ob.y + OBSTACLE_SIZE
+        ) {
+          endGame("hit")
+          return
+        }
       }
+
+      if (performance.now() >= g.nextQuestionAt) triggerQuestion()
+    }
+
+    // Throttled — updating React state every animation frame (60/s) to
+    // move a number in the header is unnecessary re-render churn. The
+    // stopwatch keeps running even through a paused question overlay.
+    const now = performance.now()
+    if (now - g.lastScoreUpdate > 150) {
+      g.lastScoreUpdate = now
+      setDisplayTime(formatTime(now - g.startTime))
+      if (!g.paused) setDisplayScore(Math.floor(g.maxClimb / 10))
     }
 
     // ── position the DOM sprites (runs even while paused, so nothing jumps
@@ -197,12 +262,31 @@ export default function ClimbGamePage() {
       const el = pool[shown]
       if (el) {
         el.style.display = "flex"
-        el.style.transform = `translate(${plat.x}px, ${sy}px)`
+        el.style.transform = `translate(${plat.x}px, ${sy}px) scale(${plat.scale})`
       }
       shown++
     }
     for (let i = shown; i < PLATFORM_POOL_SIZE; i++) {
       const el = pool[i]
+      if (el) el.style.display = "none"
+    }
+
+    const obPool = obstacleElRefs.current
+    let obShown = 0
+    for (const ob of game.current.obstacles) {
+      const sy = ob.y - game.current.cameraTop
+      if (sy < -40 || sy > CANVAS_H + 40) continue
+      if (obShown >= OBSTACLE_POOL_SIZE) break
+      const el = obPool[obShown]
+      if (el) {
+        el.style.display = "flex"
+        el.style.transform = `translate(${ob.x}px, ${sy}px)`
+        if (el.textContent !== ob.emoji) el.textContent = ob.emoji
+      }
+      obShown++
+    }
+    for (let i = obShown; i < OBSTACLE_POOL_SIZE; i++) {
+      const el = obPool[i]
       if (el) el.style.display = "none"
     }
 
@@ -212,15 +296,21 @@ export default function ClimbGamePage() {
   function startGame() {
     const g = game.current
     g.player = { x: CANVAS_W / 2, y: CANVAS_H - 80, vx: 0, vy: 0 }
-    g.platforms = [{ x: CANVAS_W / 2 - PLATFORM_W / 2, y: CANVAS_H - 30 }]
+    g.platforms = [{ x: CANVAS_W / 2 - PLATFORM_W / 2, y: CANVAS_H - 30, scale: 1 }]
+    g.obstacles = []
+    g.questionQueue = []
     g.cameraTop = 0
     g.maxClimb = 0
     g.paused = false
     g.nextQuestionAt = performance.now() + QUESTION_INTERVAL_MS
+    g.nextObstacleAt = performance.now() + (3200 + Math.random() * 2600)
+    g.startTime = performance.now()
     g.lastScoreUpdate = 0
     g.running = true
     ensurePlatformsAbove(0)
     setDisplayScore(0)
+    setDisplayTime("00:00")
+    setDisqualified(false)
     setScreen("playing")
     g.rafId = requestAnimationFrame(loop)
   }
@@ -254,7 +344,13 @@ export default function ClimbGamePage() {
       <header className="w-full max-w-md flex items-center gap-4 px-4 header-pt pb-3">
         <Link href="/student/games" className="text-white/60 hover:text-white text-xl interactive">←</Link>
         <h1 className="font-semibold text-white flex-1">טיפוס האילנות</h1>
-        {screen === "playing" && <span className="text-white/70 text-sm font-mono">{displayScore}מ׳</span>}
+        {screen === "playing" && (
+          <div className="flex items-center gap-2 text-white/70 text-sm font-mono">
+            <span>{displayTime}</span>
+            <span className="text-white/30">·</span>
+            <span>{displayScore}מ׳</span>
+          </div>
+        )}
       </header>
 
       {screen === "select" && (
@@ -287,12 +383,21 @@ export default function ClimbGamePage() {
         <div className="relative overflow-hidden" dir="ltr" style={{ width: CANVAS_W, height: CANVAS_H, maxWidth: "100vw" }}>
           <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, #1e3a5f, #0b1a2e)" }} />
 
+          {/* Platforms render as rows of books — scale varies per-platform via
+              CSS transform scale() (anchored top-left to match the collision
+              box math in loop()), not font-size, so one div handles any size. */}
           {Array.from({ length: PLATFORM_POOL_SIZE }).map((_, i) => (
             <div key={i} ref={el => { platformElRefs.current[i] = el }}
-              className="absolute top-0 left-0 items-center justify-center text-[32px] leading-none select-none"
-              style={{ width: PLATFORM_W, height: 36, display: "none" }}>
-              🌳
+              className="absolute top-0 left-0 items-center justify-center text-[16px] leading-none select-none tracking-tighter"
+              style={{ width: PLATFORM_W, height: 34, display: "none", transformOrigin: "0 0" }}>
+              📚📚📚
             </div>
+          ))}
+
+          {Array.from({ length: OBSTACLE_POOL_SIZE }).map((_, i) => (
+            <div key={i} ref={el => { obstacleElRefs.current[i] = el }}
+              className="absolute top-0 left-0 flex items-center justify-center text-[22px] leading-none select-none"
+              style={{ width: OBSTACLE_SIZE, height: OBSTACLE_SIZE, display: "none" }} />
           ))}
 
           <div ref={playerElRef}
@@ -340,9 +445,10 @@ export default function ClimbGamePage() {
 
       {screen === "gameover" && (
         <div className="flex-1 flex flex-col items-center justify-center gap-5 px-6 w-full max-w-md">
-          <span className="text-5xl">🏁</span>
-          <p className="text-white text-xl font-light">נפלת!</p>
+          <span className="text-5xl">{disqualified ? "💥" : "🏁"}</span>
+          <p className="text-white text-xl font-light">{disqualified ? "נפסלת! נפגעת מעצם נופל" : "נפלת!"}</p>
           <p className="text-white/70 text-3xl font-semibold">{finalScore} מטר</p>
+          <p className="text-white/40 text-sm font-mono">זמן: {displayTime}</p>
 
           <div className="w-full glass rounded-2xl overflow-hidden mt-2">
             <div className="px-4 py-2.5 border-b border-white/10 text-white/60 text-xs font-medium">טבלת הניקוד השכבתית — Top 20</div>

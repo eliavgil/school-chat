@@ -22,6 +22,36 @@ const STARTER_QUESTIONS: { subject: string; text: string; optionA: string; optio
   { subject: "english", text: "\"They ___ happy.\" — fill in", optionA: "is", optionB: "am", optionC: "are", optionD: "be", correctIndex: 2 },
   { subject: "english", text: "Plural of \"child\"?", optionA: "childs", optionB: "children", optionC: "childes", optionD: "childrens", correctIndex: 1 },
   { subject: "english", text: "\"I have ___ apple.\" — fill in", optionA: "a", optionB: "an", optionC: "the", optionD: "—", correctIndex: 1 },
+  { subject: "math", text: "6 × 7 = ?", optionA: "42", optionB: "36", optionC: "48", optionD: "35", correctIndex: 0 },
+  { subject: "math", text: "100 ÷ 4 = ?", optionA: "20", optionB: "25", optionC: "30", optionD: "15", correctIndex: 1 },
+  { subject: "math", text: "20% מ-150 = ?", optionA: "20", optionB: "25", optionC: "30", optionD: "35", correctIndex: 2 },
+  { subject: "math", text: "2³ = ?", optionA: "6", optionB: "8", optionC: "9", optionD: "4", correctIndex: 1 },
+  { subject: "math", text: "¾ - ¼ = ?", optionA: "½", optionB: "¼", optionC: "1", optionD: "⅓", correctIndex: 0 },
+  { subject: "math", text: "11 × 11 = ?", optionA: "111", optionB: "121", optionC: "110", optionD: "122", correctIndex: 1 },
+  { subject: "math", text: "√64 = ?", optionA: "6", optionB: "7", optionC: "8", optionD: "9", correctIndex: 2 },
+  { subject: "math", text: "90 ÷ 3 = ?", optionA: "27", optionB: "30", optionC: "33", optionD: "28", correctIndex: 1 },
+  { subject: "math", text: "5² - 3² = ?", optionA: "16", optionB: "10", optionC: "25", optionD: "9", correctIndex: 0 },
+  { subject: "math", text: "⅕ + ⅕ = ?", optionA: "⅖", optionB: "⅗", optionC: "1", optionD: "⅒", correctIndex: 0 },
+  { subject: "math", text: "13 × 4 = ?", optionA: "42", optionB: "52", optionC: "48", optionD: "44", correctIndex: 1 },
+  { subject: "math", text: "60% מ-50 = ?", optionA: "20", optionB: "25", optionC: "30", optionD: "35", correctIndex: 2 },
+  { subject: "math", text: "8 × 8 = ?", optionA: "72", optionB: "64", optionC: "68", optionD: "56", correctIndex: 1 },
+  { subject: "math", text: "150 ÷ 5 = ?", optionA: "20", optionB: "25", optionC: "30", optionD: "35", correctIndex: 2 },
+  { subject: "math", text: "4² + 2² = ?", optionA: "18", optionB: "20", optionC: "16", optionD: "22", correctIndex: 1 },
+  { subject: "english", text: "Opposite of \"big\"?", optionA: "Small", optionB: "Tall", optionC: "Huge", optionD: "Wide", correctIndex: 0 },
+  { subject: "english", text: "Past tense of \"eat\"?", optionA: "eated", optionB: "ate", optionC: "eaten", optionD: "eating", correctIndex: 1 },
+  { subject: "english", text: "\"She ___ to school every day.\" — fill in", optionA: "go", optionB: "goes", optionC: "going", optionD: "gone", correctIndex: 1 },
+  { subject: "english", text: "Plural of \"mouse\"?", optionA: "mouses", optionB: "mice", optionC: "mouse", optionD: "mices", correctIndex: 1 },
+  { subject: "english", text: "\"Quickly\" is a...", optionA: "Noun", optionB: "Verb", optionC: "Adjective", optionD: "Adverb", correctIndex: 3 },
+  { subject: "english", text: "Opposite of \"hot\"?", optionA: "Warm", optionB: "Cold", optionC: "Mild", optionD: "Dry", correctIndex: 1 },
+  { subject: "english", text: "\"I ___ a book yesterday.\" — fill in", optionA: "read", optionB: "reads", optionC: "reading", optionD: "readed", correctIndex: 0 },
+  { subject: "english", text: "Comparative of \"good\"?", optionA: "gooder", optionB: "best", optionC: "better", optionD: "more good", correctIndex: 2 },
+  { subject: "english", text: "\"Happiness\" is a...", optionA: "Verb", optionB: "Adjective", optionC: "Noun", optionD: "Adverb", correctIndex: 2 },
+  { subject: "english", text: "Plural of \"foot\"?", optionA: "foots", optionB: "feet", optionC: "footes", optionD: "feets", correctIndex: 1 },
+  { subject: "english", text: "\"They have ___ car.\" — fill in", optionA: "a", optionB: "an", optionC: "the", optionD: "—", correctIndex: 0 },
+  { subject: "english", text: "Opposite of \"easy\"?", optionA: "Simple", optionB: "Hard", optionC: "Light", optionD: "Fast", correctIndex: 1 },
+  { subject: "english", text: "\"Run\" in past tense?", optionA: "runned", optionB: "ran", optionC: "running", optionD: "runs", correctIndex: 1 },
+  { subject: "english", text: "\"Carefully\" describes a...", optionA: "Noun", optionB: "Verb", optionC: "Adverb", optionD: "Adjective", correctIndex: 2 },
+  { subject: "english", text: "\"He is taller ___ me.\" — fill in", optionA: "then", optionB: "that", optionC: "than", optionD: "so", correctIndex: 2 },
 ]
 
 export async function GET(req: NextRequest) {
@@ -31,9 +61,15 @@ export async function GET(req: NextRequest) {
   const admin = req.nextUrl.searchParams.get("admin") === "1"
   if (admin && !isOwner(session)) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
-  const count = await prisma.gameQuestion.count()
-  if (count === 0) {
-    await prisma.gameQuestion.createMany({ data: STARTER_QUESTIONS })
+  // Insert any starter question whose exact text isn't in the bank yet —
+  // not just on first run — so growing STARTER_QUESTIONS (e.g. adding more
+  // questions later) backfills into an already-seeded production DB
+  // without touching or duplicating existing rows.
+  const existing = await prisma.gameQuestion.findMany({ select: { text: true } })
+  const existingTexts = new Set(existing.map(q => q.text))
+  const missing = STARTER_QUESTIONS.filter(q => !existingTexts.has(q.text))
+  if (missing.length > 0) {
+    await prisma.gameQuestion.createMany({ data: missing })
   }
 
   const questions = await prisma.gameQuestion.findMany({
