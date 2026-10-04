@@ -76,6 +76,7 @@ model User {
   duelsHosted         TriviaDuel[]       @relation("DuelHost")
   duelsJoined         TriviaDuel[]       @relation("DuelGuest")
   mastermindScores    MastermindScore[]
+  wordleScores        WordleScore[]
   class               Class?             @relation(fields: [classId], references: [id])
   studentRecord       Student?           @relation(fields: [studentId], references: [id])
 }
@@ -831,6 +832,23 @@ model MastermindScore {
   difficulty  String // "easy" | "medium" | "hard"
   guessesUsed Int
   maxGuesses  Int
+  timeMs      Int
+  score       Int
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([score])
+}
+
+// ── "מילה" — the Hebrew word-guessing game (Wordle-style) ───────────────
+// Same "no server-side secret needed" shape as Mastermind: the target
+// word is picked client-side from a fixed list baked into the page, and
+// only the result of a solved round is submitted.
+model WordleScore {
+  id          String   @id @default(cuid())
+  userId      String
+  guessesUsed Int
   timeMs      Int
   score       Int
   createdAt   DateTime @default(now())

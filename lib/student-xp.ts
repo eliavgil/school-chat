@@ -17,6 +17,7 @@ export interface XpBreakdown {
   trivia: number
   duel: number
   mastermind: number
+  wordle: number
   surveys: number
   total: number
 }
@@ -48,14 +49,15 @@ export async function computeAllStudentXp(): Promise<XpBreakdown[]> {
   const students = await prisma.user.findMany({ where: { role: "STUDENT" }, select: { id: true, name: true, studentId: true } })
   const byUser = new Map<string, XpBreakdown>()
   for (const s of students) {
-    byUser.set(s.id, { userId: s.id, name: s.name ?? "תלמיד/ה", climb: 0, trivia: 0, duel: 0, mastermind: 0, surveys: 0, total: 0 })
+    byUser.set(s.id, { userId: s.id, name: s.name ?? "תלמיד/ה", climb: 0, trivia: 0, duel: 0, mastermind: 0, wordle: 0, surveys: 0, total: 0 })
   }
   if (byUser.size === 0) return []
 
-  const [climbBests, triviaBests, mmBests, duels, surveyCounts] = await Promise.all([
+  const [climbBests, triviaBests, mmBests, wordleBests, duels, surveyCounts] = await Promise.all([
     prisma.gameScore.groupBy({ by: ["userId"], _max: { score: true } }),
     prisma.triviaScore.groupBy({ by: ["userId"], _max: { score: true } }),
     prisma.mastermindScore.groupBy({ by: ["userId", "difficulty"], _max: { score: true } }),
+    prisma.wordleScore.groupBy({ by: ["userId"], _max: { score: true } }),
     prisma.triviaDuel.findMany({ where: { status: "done", guestId: { not: null } }, select: { hostId: true, guestId: true, hostScore: true, guestScore: true } }),
     prisma.surveyCompletion.groupBy({ by: ["studentId"], _count: { _all: true } }),
   ])
@@ -71,6 +73,10 @@ export async function computeAllStudentXp(): Promise<XpBreakdown[]> {
   for (const row of mmBests) {
     const e = byUser.get(row.userId)
     if (e) e.mastermind += row._max.score ?? 0
+  }
+  for (const row of wordleBests) {
+    const e = byUser.get(row.userId)
+    if (e) e.wordle = row._max.score ?? 0
   }
   for (const d of duels) {
     const hostEntry = byUser.get(d.hostId)
@@ -90,6 +96,6 @@ export async function computeAllStudentXp(): Promise<XpBreakdown[]> {
     if (e) e.surveys = row._count._all * SURVEY_XP
   }
 
-  for (const e of byUser.values()) e.total = e.climb + e.trivia + e.duel + e.mastermind + e.surveys
+  for (const e of byUser.values()) e.total = e.climb + e.trivia + e.duel + e.mastermind + e.wordle + e.surveys
   return Array.from(byUser.values())
 }

@@ -13,7 +13,7 @@ interface XpData {
   xp: number
   rank?: number
   outOf?: number
-  breakdown: { climb: number; trivia: number; duel: number; mastermind: number; surveys: number }
+  breakdown: { climb: number; trivia: number; duel: number; mastermind: number; wordle: number; surveys: number }
 }
 
 const CARDS = [
@@ -21,6 +21,7 @@ const CARDS = [
   { key: "trivia", emoji: "🧠", label: "חידון ידע כללי", href: "/student/games/trivia" },
   { key: "duel", emoji: "⚔️", label: "דו-קרב טריוויה", href: "/student/games/trivia/duel" },
   { key: "mastermind", emoji: "🧩", label: "שובר קוד", href: "/student/games/mastermind" },
+  { key: "wordle", emoji: "🔤", label: "מילה", href: "/student/games/wordle" },
   { key: "surveys", emoji: "📋", label: "שאלונים שמולאו", href: "/student" },
 ] as const
 
