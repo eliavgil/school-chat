@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState, useCallback } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 
 const CANVAS_W = 360
@@ -13,6 +13,10 @@ const PLAYER_SIZE = 30
 const PLATFORM_W = 56
 const PLATFORM_H = 12
 const QUESTION_INTERVAL_MS = 45_000
+// More than can ever be on-screen at once (≈640 / ~90px average vertical
+// gap ≈ 8, plus slack) — a fixed pool of real DOM nodes, repositioned via
+// direct style writes every frame instead of going through React state.
+const PLATFORM_POOL_SIZE = 16
 
 const CHARACTERS: { id: string; emoji: string; label: string }[] = [
   { id: "frog", emoji: "🐸", label: "צפרדע" },
@@ -36,7 +40,6 @@ interface Question {
 type Screen = "select" | "playing" | "gameover"
 
 export default function ClimbGamePage() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
   const [screen, setScreen] = useState<Screen>("select")
   const [character, setCharacter] = useState<string>("frog")
   const [displayScore, setDisplayScore] = useState(0)
@@ -61,14 +64,15 @@ export default function ClimbGamePage() {
     lastScoreUpdate: 0,
   })
 
-  // A plain ref, not state — the loop below is a useCallback with a fixed
-  // dependency array ([character]), so a plain function it calls (like
-  // triggerQuestion) closes over whatever `questions` *state* existed at
-  // the moment that callback was created. If the user never touches the
-  // character buttons, that's mount time — before this fetch resolves —
-  // so the question bank would stay permanently empty from the loop's
-  // point of view even after setQuestions fires. A ref has no such
-  // staleness: .current is always the latest value, read fresh every time.
+  // DOM sprite refs — character + trees are plain positioned <div>s with
+  // real emoji text in them (not canvas fillText, which doesn't reliably
+  // render emoji glyphs on iOS Safari — the gradient background and the
+  // score counter are normal DOM/React, so only canvas-drawn emoji were
+  // ever invisible). Positions are written directly via style.transform in
+  // the game loop, bypassing React entirely so this stays smooth at 60fps.
+  const playerElRef = useRef<HTMLDivElement>(null)
+  const platformElRefs = useRef<(HTMLDivElement | null)[]>([])
+
   const questionsRef = useRef<Question[]>([])
   useEffect(() => {
     fetch("/api/game/questions").then(r => r.json()).then(d => { questionsRef.current = d.questions ?? [] }).catch(() => {})
@@ -127,12 +131,9 @@ export default function ClimbGamePage() {
     }, 1100)
   }
 
-  const loop = useCallback(() => {
+  function loop() {
     const g = game.current
     if (!g.running) return
-    const canvas = canvasRef.current
-    const ctx = canvas?.getContext("2d")
-    if (!canvas || !ctx) { g.rafId = requestAnimationFrame(loop); return }
 
     if (!g.paused) {
       const p = g.player
@@ -181,28 +182,32 @@ export default function ClimbGamePage() {
       }
     }
 
-    // ── draw ──
-    ctx.clearRect(0, 0, CANVAS_W, CANVAS_H)
-    const grad = ctx.createLinearGradient(0, 0, 0, CANVAS_H)
-    grad.addColorStop(0, "#1e3a5f")
-    grad.addColorStop(1, "#0b1a2e")
-    ctx.fillStyle = grad
-    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H)
-
-    ctx.font = "32px sans-serif"
-    ctx.textAlign = "center"
-    for (const plat of g.platforms) {
-      const sy = plat.y - g.cameraTop
+    // ── position the DOM sprites (runs even while paused, so nothing jumps
+    // when a question overlay closes) ──
+    const playerEl = playerElRef.current
+    if (playerEl) {
+      playerEl.style.transform = `translate(${game.current.player.x - PLAYER_SIZE / 2}px, ${game.current.player.y - game.current.cameraTop - PLAYER_SIZE / 2}px)`
+    }
+    const pool = platformElRefs.current
+    let shown = 0
+    for (const plat of game.current.platforms) {
+      const sy = plat.y - game.current.cameraTop
       if (sy < -40 || sy > CANVAS_H + 40) continue
-      ctx.fillText("🌳", plat.x + PLATFORM_W / 2, sy + 28)
+      if (shown >= PLATFORM_POOL_SIZE) break
+      const el = pool[shown]
+      if (el) {
+        el.style.display = "flex"
+        el.style.transform = `translate(${plat.x}px, ${sy}px)`
+      }
+      shown++
+    }
+    for (let i = shown; i < PLATFORM_POOL_SIZE; i++) {
+      const el = pool[i]
+      if (el) el.style.display = "none"
     }
 
-    const char = CHARACTERS.find(c => c.id === character)?.emoji ?? "🐸"
-    ctx.font = "30px sans-serif"
-    ctx.fillText(char, g.player.x, g.player.y - g.cameraTop + 10)
-
-    g.rafId = requestAnimationFrame(loop)
-  }, [character])
+    game.current.rafId = requestAnimationFrame(loop)
+  }
 
   function startGame() {
     const g = game.current
@@ -242,6 +247,8 @@ export default function ClimbGamePage() {
     return () => { if (game.current.rafId) cancelAnimationFrame(game.current.rafId) }
   }, [])
 
+  const characterEmoji = CHARACTERS.find(c => c.id === character)?.emoji ?? "🐸"
+
   return (
     <div className="min-h-screen bg-black flex flex-col items-center" dir="rtl">
       <header className="w-full max-w-md flex items-center gap-4 px-4 header-pt pb-3">
@@ -274,14 +281,28 @@ export default function ClimbGamePage() {
         </div>
       )}
 
+      {/* Mounted while playing — a dir="ltr" wrapper so translate(x,y) always
+          means screen-physical pixels, never mirrored by the page's own RTL. */}
       {screen === "playing" && (
-        <div className="relative" style={{ width: CANVAS_W, maxWidth: "100vw" }}>
-          <canvas
-            ref={canvasRef} width={CANVAS_W} height={CANVAS_H}
-            style={{ width: "100%", height: "auto", display: "block", touchAction: "none" }}
-          />
+        <div className="relative overflow-hidden" dir="ltr" style={{ width: CANVAS_W, height: CANVAS_H, maxWidth: "100vw" }}>
+          <div className="absolute inset-0" style={{ background: "linear-gradient(to bottom, #1e3a5f, #0b1a2e)" }} />
+
+          {Array.from({ length: PLATFORM_POOL_SIZE }).map((_, i) => (
+            <div key={i} ref={el => { platformElRefs.current[i] = el }}
+              className="absolute top-0 left-0 items-center justify-center text-[32px] leading-none select-none"
+              style={{ width: PLATFORM_W, height: 36, display: "none" }}>
+              🌳
+            </div>
+          ))}
+
+          <div ref={playerElRef}
+            className="absolute top-0 left-0 flex items-center justify-center text-[28px] leading-none select-none"
+            style={{ width: PLAYER_SIZE, height: PLAYER_SIZE }}>
+            {characterEmoji}
+          </div>
+
           {activeQuestion && (
-            <div className="absolute inset-0 bg-black/80 flex items-center justify-center p-5">
+            <div className="absolute inset-0 bg-black/80 flex items-center justify-center p-5" dir="rtl">
               <div className="w-full space-y-3">
                 <p className="text-white/50 text-xs text-center">
                   {activeQuestion.subject === "english" ? "אנגלית" : "מתמטיקה"} — ענה נכון לבוסט!
@@ -305,7 +326,7 @@ export default function ClimbGamePage() {
             </div>
           )}
           {!activeQuestion && (
-            <div className="absolute bottom-4 left-0 right-0 flex justify-between px-4">
+            <div className="absolute bottom-4 left-0 right-0 flex justify-between px-4" dir="ltr">
               <button
                 onPointerDown={() => setMovingLeft(true)} onPointerUp={() => setMovingLeft(false)} onPointerLeave={() => setMovingLeft(false)}
                 className="w-16 h-16 rounded-full bg-white/15 flex items-center justify-center text-white text-2xl select-none touch-none">←</button>
