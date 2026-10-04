@@ -71,6 +71,7 @@ model User {
   studyMaterialsAdded StudyMaterial[]
   lessonManualDones   LessonManualDone[]
   seatingChartsMade   SeatingChart[]
+  gameScores          GameScore[]
   class               Class?             @relation(fields: [classId], references: [id])
   studentRecord       Student?           @relation(fields: [studentId], references: [id])
 }
@@ -721,4 +722,36 @@ model MashovBehaveEvent {
   @@index([classCode, classNum])
   @@index([achvaCode])
   @@map("MashovAbsenceEvent")
+}
+
+// ── "טיפוס האילנות" — the student arcade climbing game ────────────────
+// A short multiple-choice bank the teacher edits from /teacher/game-questions
+// (eliavgil-only while trialed, same gate as the glossary). subject is
+// "math" | "english"; correctIndex picks which of the four options is right.
+model GameQuestion {
+  id           String   @id @default(cuid())
+  subject      String
+  text         String   @db.Text
+  optionA      String
+  optionB      String
+  optionC      String
+  optionD      String
+  correctIndex Int
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// One row per completed run — characterId is just the cosmetic pick
+// ("frog" | "cat" | "ninja" | "rocket"), kept for fun stats, not gameplay.
+model GameScore {
+  id          String   @id @default(cuid())
+  userId      String
+  score       Int
+  characterId String
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([score])
 }
