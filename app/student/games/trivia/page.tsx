@@ -192,9 +192,14 @@ export default function TriviaGamePage() {
             className="w-full bg-white/20 hover:bg-white/30 disabled:opacity-40 text-white font-medium py-3 rounded-xl interactive btn-press transition-colors">
             {questionsLoaded ? "התחל חידון" : "טוען שאלות..."}
           </button>
-          <Link href="/student/games/trivia/leaderboard" className="text-white/40 text-xs underline underline-offset-2">
-            טבלת הניקוד השכבתית
-          </Link>
+          <div className="flex items-center gap-4">
+            <Link href="/student/games/trivia/duel" className="text-white/40 text-xs underline underline-offset-2">
+              דו-קרב מול חבר/ה ⚔️
+            </Link>
+            <Link href="/student/games/trivia/leaderboard" className="text-white/40 text-xs underline underline-offset-2">
+              טבלת הניקוד השכבתית
+            </Link>
+          </div>
         </div>
       )}
 

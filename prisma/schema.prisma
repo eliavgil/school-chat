@@ -73,6 +73,8 @@ model User {
   seatingChartsMade   SeatingChart[]
   gameScores          GameScore[]
   triviaScores        TriviaScore[]
+  duelsHosted         TriviaDuel[]       @relation("DuelHost")
+  duelsJoined         TriviaDuel[]       @relation("DuelGuest")
   class               Class?             @relation(fields: [classId], references: [id])
   studentRecord       Student?           @relation(fields: [studentId], references: [id])
 }
@@ -786,4 +788,34 @@ model TriviaScore {
 
   @@index([userId])
   @@index([score])
+}
+
+// ── trivia 1v1 duel — two students answer the same synced questions ────
+// No websocket infra in this app, so both players' clients just poll
+// GET /api/trivia/duel/[code] every ~1.2s; the poll itself (and each POST
+// answer) is what advances the round — see resolveAndAdvance() in the API
+// route. questionIdsJson is a fixed JSON array of TriviaQuestion ids
+// chosen once at room creation. hostAnswerIndex/guestAnswerIndex are null
+// until that player answers the *current* round, reset to null again each
+// time the round advances; -1 means "timed out, didn't answer."
+model TriviaDuel {
+  id                String    @id @default(cuid())
+  code              String    @unique
+  status            String    @default("waiting") // "waiting" | "active" | "done"
+  questionIdsJson   String    @db.Text
+  currentIndex      Int       @default(0)
+  questionStartedAt DateTime?
+  revealedAt        DateTime?
+  hostScore         Int       @default(0)
+  guestScore        Int       @default(0)
+  hostAnswerIndex   Int?
+  guestAnswerIndex  Int?
+  hostId            String
+  guestId           String?
+  createdAt         DateTime  @default(now())
+  host              User      @relation("DuelHost", fields: [hostId], references: [id], onDelete: Cascade)
+  guest             User?     @relation("DuelGuest", fields: [guestId], references: [id], onDelete: Cascade)
+
+  @@index([hostId])
+  @@index([guestId])
 }
