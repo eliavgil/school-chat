@@ -206,6 +206,8 @@ function StudentHome({ session, data, isPreview }: { session: any; data: HomeDat
   const { bgId, customUrl } = useBg("student")
   const [menuOpen, setMenuOpen] = useState(false)
   const [joinCode, setJoinCode] = useState("")
+  const [xp, setXp] = useState<{ name: string; icon: string; xp: number; preview: boolean } | null>(null)
+  useEffect(() => { fetch("/api/student/xp").then(r => r.json()).then(setXp).catch(() => {}) }, [])
   const [personalName] = useState(() => {
     if (typeof window === "undefined") return ""
     return getPersonalDisplayName()
@@ -390,6 +392,22 @@ function StudentHome({ session, data, isPreview }: { session: any; data: HomeDat
               <span className="text-white/80 text-[11px] font-medium text-center leading-tight">משחקים</span>
             </Link>
           </div>
+
+          {/* Level badge — aggregates XP across all games + surveys, see /api/student/xp */}
+          {xp && !xp.preview && (
+            <div className="flex gap-2 mt-2 animate-fade-in stagger-3">
+              <Link href="/student/scoreboard"
+                className="flex-1 glass rounded-2xl px-4 py-2.5 flex items-center gap-2 hover:bg-white/15 interactive btn-press transition-colors">
+                <span className="text-xl">{xp.icon}</span>
+                <span className="text-white/80 text-xs font-medium">{xp.name}</span>
+                <span className="text-white/40 text-xs font-mono mr-auto">{xp.xp} נק׳</span>
+              </Link>
+              <Link href="/student/scoreboard/leaderboard"
+                className="glass rounded-2xl px-3.5 py-2.5 flex items-center justify-center hover:bg-white/15 interactive btn-press transition-colors">
+                <span className="text-lg">🏆</span>
+              </Link>
+            </div>
+          )}
 
           {/* Join lesson */}
           <div className="mt-5 glass rounded-2xl px-4 py-3 flex items-center gap-2 animate-fade-in stagger-3">
