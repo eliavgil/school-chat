@@ -75,6 +75,7 @@ model User {
   triviaScores        TriviaScore[]
   duelsHosted         TriviaDuel[]       @relation("DuelHost")
   duelsJoined         TriviaDuel[]       @relation("DuelGuest")
+  mastermindScores    MastermindScore[]
   class               Class?             @relation(fields: [classId], references: [id])
   studentRecord       Student?           @relation(fields: [studentId], references: [id])
 }
@@ -818,4 +819,23 @@ model TriviaDuel {
 
   @@index([hostId])
   @@index([guestId])
+}
+
+// ── "שובר קוד" — the Mastermind-style logic game ───────────────────────
+// Entirely client-side gameplay (the secret code never needs to be hidden
+// from a server — there's no opponent to cheat against) — only the final
+// result of a solved round gets submitted here, for the leaderboard.
+model MastermindScore {
+  id          String   @id @default(cuid())
+  userId      String
+  difficulty  String // "easy" | "medium" | "hard"
+  guessesUsed Int
+  maxGuesses  Int
+  timeMs      Int
+  score       Int
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([score])
 }
