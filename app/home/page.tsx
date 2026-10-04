@@ -661,6 +661,7 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
     { label: "ריכוז שכבה",        href: "/teacher/grade-hub",      emoji: "🏫", soon: false },
     { label: "ניהול בוטים",       href: "/teacher/bots",           emoji: "🤖", soon: false },
     ...(showGlossary ? [{ label: "שאלות למשחק", href: "/teacher/game-questions", emoji: "🎮", soon: false }] : []),
+    ...(showGlossary ? [{ label: "שאלות לחידון", href: "/teacher/trivia-questions", emoji: "🧠", soon: false }] : []),
   ]
 
   // Swipe handlers — distinguish horizontal (page) from vertical (scroll)

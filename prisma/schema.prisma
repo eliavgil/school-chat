@@ -72,6 +72,7 @@ model User {
   lessonManualDones   LessonManualDone[]
   seatingChartsMade   SeatingChart[]
   gameScores          GameScore[]
+  triviaScores        TriviaScore[]
   class               Class?             @relation(fields: [classId], references: [id])
   studentRecord       Student?           @relation(fields: [studentId], references: [id])
 }
@@ -751,6 +752,37 @@ model GameScore {
   characterId String
   createdAt   DateTime @default(now())
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([score])
+}
+
+// ── "חידון ידע כללי" — the general-knowledge trivia game ───────────────
+// A larger multiple-choice bank the teacher edits from /teacher/trivia-questions
+// (eliavgil-only, same gate as the climbing game's bank). category is a
+// free label (geography/history/science/culture/sports/israel/tech/general);
+// correctIndex picks which of the four options is right.
+model TriviaQuestion {
+  id           String   @id @default(cuid())
+  category     String
+  text         String   @db.Text
+  optionA      String
+  optionB      String
+  optionC      String
+  optionD      String
+  correctIndex Int
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// One row per completed run.
+model TriviaScore {
+  id        String   @id @default(cuid())
+  userId    String
+  score     Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([score])
