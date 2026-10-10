@@ -49,6 +49,7 @@ interface HomeData {
   classStudents: ClassStudent[]
   todaySchedule: ScheduleSlot[]
   tomorrowSchedule: ScheduleSlot[]
+  classTodaySchedule: ScheduleSlot[]
   bellSlots: BellSlotT[]
   todayHeb: string
   tomorrowHeb: string
@@ -670,6 +671,12 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
   const timeline      = buildTimeline(todaySlots, bellSlots)
   const nowNext       = getNowNext(timeline, now, bellSlots.length > 0)
 
+  // "todaySchedule" above is this teacher's own personal teaching timetable
+  // (whatever classes they teach each period) — this is their homeroom
+  // class's actual day, which can differ, shown separately below it.
+  const classTimeline = buildTimeline(data?.classTodaySchedule ?? [], bellSlots)
+  const classNowNext  = getNowNext(classTimeline, now, bellSlots.length > 0)
+
   const NUM_PAGES = 5
   const MENU_LINKS: { label: string; href: string; emoji: string; icon?: string; soon: boolean }[] = [
     { label: "צוות מחנכים",       href: "/teacher/team",           emoji: "👨‍🏫👩‍🏫🧑‍🏫", soon: false },
@@ -957,6 +964,34 @@ function TeacherHome({ session, data }: { session: any; data: HomeData | null })
                 </div>
               )}
 
+              <p className="text-white/50 text-sm font-medium mt-2">מערכת הכיתה שלי</p>
+
+              {classTimeline.length > 0 ? (
+                <div className="glass rounded-2xl overflow-hidden">
+                  <div className="divide-y divide-white/5">
+                    {classTimeline.map((t, i) => {
+                      const isCurrent = classNowNext.state === "now" && classNowNext.current === t
+                      const isNext = classNowNext.next === t
+                      return (
+                        <div key={i} className={`flex items-center gap-3 px-4 py-2 ${isCurrent ? "bg-white/10" : ""}`}>
+                          {!t.isBreak && (
+                            <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${isCurrent ? "bg-white/25 text-white" : "bg-white/10 text-white/50"}`}>
+                              {t.period}
+                            </span>
+                          )}
+                          <span className={`text-[13px] font-semibold font-mono flex-shrink-0 ${t.isBreak ? "w-24" : "w-[76px]"} ${isCurrent ? "text-white" : "text-white/45"}`} dir="ltr">{t.start}–{t.end}</span>
+                          <span className={`flex-1 text-[13px] truncate ${isCurrent ? "text-white font-medium" : t.isBreak ? "text-white/40 italic" : "text-white/70"}`}>{t.label}</span>
+                          {isCurrent && <span className="text-[9px] bg-green-500/30 text-green-300 px-1.5 py-0.5 rounded-full flex-shrink-0">עכשיו</span>}
+                          {isNext && <span className="text-[9px] bg-amber-500/30 text-amber-300 px-1.5 py-0.5 rounded-full flex-shrink-0">הבא</span>}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <p className="text-white/30 text-xs text-center py-4">אין מערכת שעות זמינה לכיתה</p>
+              )}
+
             </div>
           </div>
 
@@ -1075,6 +1110,12 @@ function HomeroomTeacherHome({ session, data }: { session: any; data: HomeData |
   const bellSlots = data?.bellSlots ?? []
   const timeline = buildTimeline(todaySlots, bellSlots)
   const nowNext = getNowNext(timeline, now, bellSlots.length > 0)
+
+  // The teacher's own schedule above is their personal teaching timetable
+  // (whatever classes they teach each period) — this is the homeroom
+  // class's actual day, which can differ.
+  const classTimeline = buildTimeline(data?.classTodaySchedule ?? [], bellSlots)
+  const classNowNext = getNowNext(classTimeline, now, bellSlots.length > 0)
 
   // Glossary is still eliavgil-only while it's being trialed.
   const showGlossary = session?.user?.email === "eliavgil@gmail.com"
@@ -1217,6 +1258,34 @@ function HomeroomTeacherHome({ session, data }: { session: any; data: HomeData |
           )}
           {timeline.length === 0 && nowNext.state !== "no-school" && nowNext.state !== "done" && (
             <p className="text-white/30 text-xs text-center py-4">אין מערכת שעות זמינה</p>
+          )}
+
+          <p className="text-white/50 text-sm font-medium mt-2">מערכת הכיתה שלי</p>
+
+          {classTimeline.length > 0 ? (
+            <div className="glass rounded-2xl overflow-hidden">
+              <div className="divide-y divide-white/5">
+                {classTimeline.map((t, i) => {
+                  const isCurrent = classNowNext.state === "now" && classNowNext.current === t
+                  const isNext = classNowNext.next === t
+                  return (
+                    <div key={i} className={`flex items-center gap-3 px-4 py-2 ${isCurrent ? "bg-white/10" : ""}`}>
+                      {!t.isBreak && (
+                        <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${isCurrent ? "bg-white/25 text-white" : "bg-white/10 text-white/50"}`}>
+                          {t.period}
+                        </span>
+                      )}
+                      <span className={`text-[13px] font-semibold font-mono flex-shrink-0 ${t.isBreak ? "w-24" : "w-[76px]"} ${isCurrent ? "text-white" : "text-white/45"}`} dir="ltr">{t.start}–{t.end}</span>
+                      <span className={`flex-1 text-[13px] truncate ${isCurrent ? "text-white font-medium" : t.isBreak ? "text-white/40 italic" : "text-white/70"}`}>{t.label}</span>
+                      {isCurrent && <span className="text-[9px] bg-green-500/30 text-green-300 px-1.5 py-0.5 rounded-full flex-shrink-0">עכשיו</span>}
+                      {isNext && <span className="text-[9px] bg-amber-500/30 text-amber-300 px-1.5 py-0.5 rounded-full flex-shrink-0">הבא</span>}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <p className="text-white/30 text-xs text-center py-4">אין מערכת שעות זמינה לכיתה</p>
           )}
         </div>
       </main>

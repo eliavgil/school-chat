@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
     classProfile, upcomingEvents, openTasks, recentMessages,
     todaySchedule, tomorrowSchedule, upcomingExams, attendance,
     parentAttendance, grades, recentTasks, teacherTasks, classStudents,
-    bellSlots,
+    bellSlots, classTodaySchedule,
   ] = await Promise.all([
     prisma.class.findUnique({
       where: { id: classId },
@@ -206,6 +206,19 @@ export async function GET(req: NextRequest) {
           select: { period: true, startTime: true, endTime: true },
         })
       : Promise.resolve([]),
+    // A homeroom teacher's own schedule (above) is their personal teaching
+    // timetable across whatever classes they teach each period — not
+    // necessarily the same as their homeroom class's actual school day, so
+    // fetch that class's real schedule separately for the home page to show
+    // underneath. Students already get their class's own schedule as
+    // todaySchedule above, so this is only needed for teachers.
+    isTeacher
+      ? prisma.scheduleSlot.findMany({
+          where: { classId, dayHeb: todayHeb },
+          orderBy: { period: "asc" },
+          select: { period: true, content: true },
+        })
+      : Promise.resolve([]),
   ])
 
   // Bootstrap: a handful of classes don't have their own uploaded class
@@ -249,6 +262,7 @@ export async function GET(req: NextRequest) {
     classStudents,
     todaySchedule: derivedToday.length ? derivedToday : todaySchedule,
     tomorrowSchedule: derivedTomorrow.length ? derivedTomorrow : tomorrowSchedule,
+    classTodaySchedule,
     todayHeb,
     tomorrowHeb,
     bellSlots,
