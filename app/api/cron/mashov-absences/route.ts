@@ -30,6 +30,21 @@ const TRACKED: Record<number, { name: string; pushTitle: string; requireUnjustif
 }
 const GRADE_COORDINATOR_EMAIL = "eliavgil@gmail.com"
 
+// Absence pushes (achvaCode 1) are scoped down further, per explicit
+// request — everything still gets *recorded* (the daily list stays
+// complete for the whole grade), only which absences trigger an instant
+// push is narrower:
+//   - י4: every unjustified absence, same as before.
+//   - every other grade-י class: only when the student skipped a specific
+//     lesson but was otherwise at school that day ("הבריזו משיעור"), not
+//     when they were out the whole day — approximated by comparing how
+//     many of today's lessons (ScheduleSlot rows for that class/day) this
+//     student has an absence event for vs. the day's total lesson count.
+//     If that total can't be determined (no schedule uploaded for that
+//     class today), falls back to pushing anyway rather than going silent.
+const ALWAYS_PUSH_CLASS_NUM = 4
+const DAY_TO_HEB = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"]
+
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization")
   if (!process.env.CRON_SECRET || auth !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -45,6 +60,7 @@ export async function GET(req: NextRequest) {
   })
 
   const todayStr = new Date().toISOString().slice(0, 10)
+  const todayHeb = DAY_TO_HEB[new Date().getDay()]
   let totalEvents = 0
   let newEvents = 0
   let notified = 0
@@ -112,6 +128,11 @@ export async function GET(req: NextRequest) {
     const homeroomTeacher = cls
       ? await prisma.user.findFirst({ where: { classId: cls.id, role: "TEACHER" }, select: { id: true } })
       : null
+    // 0 means "couldn't determine" (no schedule uploaded for this class
+    // today) — treated as "push anyway" below, not as "zero lessons."
+    const totalLessonsToday = cls
+      ? await prisma.scheduleSlot.count({ where: { classId: cls.id, dayHeb: todayHeb } })
+      : 0
 
     await prisma.mashovBehaveEvent.createMany({
       data: fresh.map(p => ({
@@ -145,6 +166,22 @@ export async function GET(req: NextRequest) {
         const cfg = TRACKED[p.achvaCode]
         if (cfg.requireUnjustified && p.justified) continue
         if (p.lessonDate.toISOString().slice(0, 10) !== todayStr) continue
+
+        // Absence-specific scoping: see the ALWAYS_PUSH_CLASS_NUM comment
+        // above. Discipline/positive notes (101/105) are unaffected.
+        let skippedOneLesson = false
+        if (p.achvaCode === 1 && num !== ALWAYS_PUSH_CLASS_NUM) {
+          if (totalLessonsToday > 0) {
+            const absencesTodayForStudent = parsed.filter(x =>
+              x.achvaCode === 1 && x.studentId === p.studentId
+              && x.lessonDate.toISOString().slice(0, 10) === todayStr
+            ).length
+            if (absencesTodayForStudent >= totalLessonsToday) continue // out the whole day — not what we want pushed
+            skippedOneLesson = true
+          }
+          // totalLessonsToday === 0 (no schedule data) — can't tell, push anyway.
+        }
+
         // Total events of THIS SAME TYPE this student has had since the
         // start of the year — the studentId is recoverable from any
         // event's mashovKey (its "studentId:lessonId:eventCode" prefix).
@@ -154,7 +191,7 @@ export async function GET(req: NextRequest) {
         for (const userId of uniqueRecipients) {
           await sendPushToUser(userId, {
             title: cfg.pushTitle,
-            body: `${p.studentName} — ${p.subjectName} (${code}${num}, שיעור ${p.lessonNum}) · סה״כ ${yearTotal} ${cfg.name} השנה`,
+            body: `${p.studentName} — ${p.subjectName} (${code}${num}, שיעור ${p.lessonNum})${skippedOneLesson ? " · הגיע/ה לבי״ס אך הבריז/ה משיעור" : ""} · סה״כ ${yearTotal} ${cfg.name} השנה`,
           })
           notified++
         }
