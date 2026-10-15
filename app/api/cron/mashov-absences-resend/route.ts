@@ -14,8 +14,11 @@ import { sendPushToUser } from "@/lib/push"
 // CRON_SECRET, same as the recurring cron.
 //
 // Coordinator-only for now, not each class's homeroom teacher — matches
-// /api/cron/mashov-absences, per explicit request.
+// /api/cron/mashov-absences, per explicit request. Also scoped to the
+// same PUSH_CLASS_NUM-only rule as that route — this just resends what
+// the main cron would have pushed, so it needs to respect the same scope.
 const GRADE_COORDINATOR_EMAIL = "eliavgil@gmail.com"
+const PUSH_CLASS_NUM = 4
 
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization")
@@ -33,7 +36,7 @@ export async function GET(req: NextRequest) {
   const dayEnd = new Date(`${todayStr}T23:59:59.999`)
 
   const events = await prisma.mashovBehaveEvent.findMany({
-    where: { lessonDate: { gte: dayStart, lte: dayEnd }, achvaCode: 1, justified: false },
+    where: { lessonDate: { gte: dayStart, lte: dayEnd }, achvaCode: 1, justified: false, classNum: PUSH_CLASS_NUM },
   })
 
   let notified = 0

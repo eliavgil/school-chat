@@ -30,34 +30,14 @@ const TRACKED: Record<number, { name: string; pushTitle: string; requireUnjustif
 }
 const GRADE_COORDINATOR_EMAIL = "eliavgil@gmail.com"
 
-// Absence pushes (achvaCode 1) are scoped down further, per explicit
-// request — everything still gets *recorded* (the daily list stays
-// complete for the whole grade), only which absences trigger an instant
-// push is narrower:
-//   - י4: every unjustified absence, same as before.
-//   - every other grade-י class: only when the student skipped a specific
-//     lesson but was otherwise at school that day ("הבריזו משיעור"), not
-//     when they were out the whole day. Approximated by comparing today's
-//     absence count for that student against how many of the class's
-//     lessons have *already ended* by the time this cron runs (not the
-//     whole day's lesson count — this cron fires throughout the day, so
-//     right after period 1 there's only ever one absence either way; that
-//     was the original bug here, flagged by the "still getting pushed for
-//     a single first-period absence" report). Only once a lesson has
-//     actually concluded without a matching absence is there real evidence
-//     the student was at school. If today's schedule can't be parsed at
-//     all (not uploaded, or no row has an embedded time range), falls back
-//     to pushing anyway rather than going silent.
-const ALWAYS_PUSH_CLASS_NUM = 4
-const DAY_TO_HEB = ["ראשון", "שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת"]
-
-// ScheduleSlot.period embeds its own time range as raw text, e.g.
-// "1, 08:45 - 09:30" (same convention/regex as parsePeriodStr in
-// app/home/page.tsx, duplicated here since that file is a client page).
-function periodEndTime(period: string): string | null {
-  const m = period.match(/^(\d+),\s*(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/)
-  return m ? m[3] : null
-}
+// Pushes (any TRACKED type — absence, discipline, positive note) only go
+// out for י4, per explicit request. Every other grade-י class's events
+// are still fully *recorded* (MashovBehaveEvent, and therefore the
+// grade-hub's daily lists, stay complete for the whole grade) — they just
+// never trigger an instant push to the coordinator. Earlier attempts at a
+// fancier "only push if they skipped a specific lesson" heuristic for the
+// other classes were replaced by this flat rule.
+const PUSH_CLASS_NUM = 4
 
 export async function GET(req: NextRequest) {
   const auth = req.headers.get("authorization")
@@ -73,10 +53,7 @@ export async function GET(req: NextRequest) {
     select: { id: true },
   })
 
-  const now = new Date()
-  const todayStr = now.toISOString().slice(0, 10)
-  const todayHeb = DAY_TO_HEB[now.getDay()]
-  const nowHHMM = now.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Jerusalem" })
+  const todayStr = new Date().toISOString().slice(0, 10)
   let totalEvents = 0
   let newEvents = 0
   let notified = 0
@@ -144,17 +121,6 @@ export async function GET(req: NextRequest) {
     const homeroomTeacher = cls
       ? await prisma.user.findFirst({ where: { classId: cls.id, role: "TEACHER" }, select: { id: true } })
       : null
-    // How many of today's lessons have already ended, by clock time — not
-    // the day's total lesson count (see the comment on ALWAYS_PUSH_CLASS_NUM
-    // above for why that was wrong). -1 means "couldn't determine" (no
-    // schedule uploaded, or no row has a parseable time range) — treated
-    // as "push anyway" below, not as "zero lessons elapsed."
-    let lessonsElapsedSoFar = -1
-    if (cls) {
-      const slots = await prisma.scheduleSlot.findMany({ where: { classId: cls.id, dayHeb: todayHeb }, select: { period: true } })
-      const endTimes = slots.map(s => periodEndTime(s.period)).filter((t): t is string => t !== null)
-      if (endTimes.length > 0) lessonsElapsedSoFar = endTimes.filter(t => t <= nowHHMM).length
-    }
 
     await prisma.mashovBehaveEvent.createMany({
       data: fresh.map(p => ({
@@ -182,29 +148,14 @@ export async function GET(req: NextRequest) {
     // teacher — per explicit request, until per-teacher notifications are
     // actually wanted. homeroomTeacher is still looked up (used for
     // notifiedAt) so re-enabling this later is a one-line change.
-    const uniqueRecipients = Array.from(new Set([coordinator?.id].filter((id): id is string => !!id)))
+    const uniqueRecipients = num === PUSH_CLASS_NUM
+      ? Array.from(new Set([coordinator?.id].filter((id): id is string => !!id)))
+      : []
     if (uniqueRecipients.length) {
       for (const p of fresh) {
         const cfg = TRACKED[p.achvaCode]
         if (cfg.requireUnjustified && p.justified) continue
         if (p.lessonDate.toISOString().slice(0, 10) !== todayStr) continue
-
-        // Absence-specific scoping: see the ALWAYS_PUSH_CLASS_NUM comment
-        // above. Discipline/positive notes (101/105) are unaffected.
-        let skippedOneLesson = false
-        if (p.achvaCode === 1 && num !== ALWAYS_PUSH_CLASS_NUM) {
-          if (lessonsElapsedSoFar >= 0) {
-            const absencesTodayForStudent = parsed.filter(x =>
-              x.achvaCode === 1 && x.studentId === p.studentId
-              && x.lessonDate.toISOString().slice(0, 10) === todayStr
-            ).length
-            // Not yet real evidence they attended anything else today —
-            // every lesson that's happened so far has an absence recorded.
-            if (absencesTodayForStudent >= lessonsElapsedSoFar) continue
-            skippedOneLesson = true
-          }
-          // lessonsElapsedSoFar === -1 (no schedule data) — can't tell, push anyway.
-        }
 
         // Total events of THIS SAME TYPE this student has had since the
         // start of the year — the studentId is recoverable from any
@@ -215,7 +166,7 @@ export async function GET(req: NextRequest) {
         for (const userId of uniqueRecipients) {
           await sendPushToUser(userId, {
             title: cfg.pushTitle,
-            body: `${p.studentName} — ${p.subjectName} (${code}${num}, שיעור ${p.lessonNum})${skippedOneLesson ? " · הגיע/ה לבי״ס אך הבריז/ה משיעור" : ""} · סה״כ ${yearTotal} ${cfg.name} השנה`,
+            body: `${p.studentName} — ${p.subjectName} (${code}${num}, שיעור ${p.lessonNum}) · סה״כ ${yearTotal} ${cfg.name} השנה`,
           })
           notified++
         }
