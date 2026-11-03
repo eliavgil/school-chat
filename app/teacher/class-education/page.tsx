@@ -2,6 +2,7 @@ import Link from "next/link"
 
 const LINKS: { label: string; desc: string; href: string; emoji: string }[] = [
   { label: "ניהול כיתה",      desc: "רשימת תלמידי הכיתה והערות",   href: "/teacher/students",      emoji: "👥" },
+  { label: "שיעורי חינוך",    desc: "מצגות לשיעור חינוך — זהות וערכים", href: "/lessons?subject=חינוך", emoji: "🧭" },
   { label: "מענים אישיים",    desc: "התאמות ומענים לתלמידים",   href: "/teacher/accommodations", emoji: "🧩" },
   { label: "שאלונים",         desc: "שאלוני כיתה ומעקב מענה",    href: "/teacher/surveys",         emoji: "📋" },
   { label: "מעקב רגשי-חברתי", desc: "מצב רגשי וחברתי של התלמידים", href: "/teacher/emotional",     emoji: "💙" },
