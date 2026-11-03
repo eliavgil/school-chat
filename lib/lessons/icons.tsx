@@ -4,6 +4,7 @@ import {
   Vote, Gavel, BookOpen, FileText, Flag, Mountain, Waves, Plane, Layers,
   Building2, Newspaper, Megaphone, CalendarDays, Languages, Scroll,
   MessageSquareQuote, Gauge, Fingerprint, Lock, Siren, UtensilsCrossed, Heart,
+  TreeDeciduous, Compass, Star, Sparkles,
 } from "lucide-react"
 
 // Icon vocabulary for concept-grid slides. Keep keys short & topic-agnostic
@@ -39,6 +40,11 @@ export const CONCEPT_ICONS: Record<string, ComponentType<{ size?: number; stroke
   alert: Siren,           // חירום / משבר
   food: UtensilsCrossed,  // כשרות / מזון
   family: Heart,          // נישואין / משפחה / מעמד אישי
+  heart: Heart,           // אהבה / חמלה / נתינה
+  tree: TreeDeciduous,    // שורשים / צמיחה / עץ הערכים
+  compass: Compass,       // זהות / בחירה / כיוון אישי
+  star: Star,             // הערצה / שאיפה / דמות מופת
+  sparkles: Sparkles,     // ייחודיות / יצירתיות / מקוריות
 }
 
 export function ConceptIcon({ name, size = 22 }: { name?: string; size?: number }) {
