@@ -1,8 +1,9 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import Link from "next/link"
 import { useSession } from "next-auth/react"
+import { useSearchParams } from "next/navigation"
 import { StaffTasksTab } from "@/app/components/StaffTasksTab"
 import { PersonalTasksTab } from "@/app/components/PersonalTasksTab"
 import { driveIconFor } from "@/lib/driveIcon"
@@ -17,7 +18,19 @@ const TABS: [Tab, string][] = [
 ]
 
 export default function TeamPage() {
-  const [tab, setTab] = useState<Tab>("tasks")
+  return (
+    <Suspense fallback={null}>
+      <TeamPageInner />
+    </Suspense>
+  )
+}
+
+function TeamPageInner() {
+  const searchParams = useSearchParams()
+  const initialTab = searchParams.get("tab")
+  const [tab, setTab] = useState<Tab>(
+    initialTab === "files" || initialTab === "events" || initialTab === "forum" ? initialTab : "tasks"
+  )
 
   return (
     <div className="min-h-screen bg-black/50 backdrop-blur-sm" dir="rtl">

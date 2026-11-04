@@ -65,6 +65,7 @@ model User {
   pushSubscriptions   PushSubscription[]
   personalTasks       PersonalTask[]
   staffTasksCreated   StaffTask[]
+  coordinatorRequestsCreated CoordinatorRequest[]
   teamFilesAdded      TeamFile[]
   teamEventsAdded     TeamEvent[]
   teamPosts           TeamPost[]
@@ -490,10 +491,72 @@ model TeacherTask {
   deadline    DateTime?
   note        String?   @db.Text
   done        Boolean   @default(false)
+  // When true, this task also tracks a per-student checkbox (e.g. "who's
+  // brought their trip permission slip") — see TeacherTaskCheck. The class
+  // roster itself isn't duplicated here; checks are created lazily, one row
+  // per student the homeroom teacher has actually ticked.
+  perStudent  Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  checks      TeacherTaskCheck[]
 
   @@index([classId, done])
+}
+
+// Per-student checkbox state for a TeacherTask with perStudent=true. A row
+// only exists once a student has been checked — "not checked yet" is simply
+// the absence of a row, not a row with checked=false, so turning perStudent
+// on for an existing task never needs to backfill the whole roster.
+model TeacherTaskCheck {
+  id        String      @id @default(cuid())
+  taskId    String
+  studentId String
+  checkedAt DateTime    @default(now())
+  task      TeacherTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@unique([taskId, studentId])
+  @@index([taskId])
+}
+
+// A freestanding, ad-hoc checklist of a class's students — e.g. physically
+// confirming who's present during an activity. Deliberately not tied to any
+// particular task or date: a row's mere existence means "checked"; "נקה הכל"
+// just deletes every row for the class in one call so the board resets to
+// all-unchecked without a separate boolean to flip back.
+model StudentChecklistMark {
+  id        String   @id @default(cuid())
+  classId   String
+  studentId String   @unique
+  checkedAt DateTime @default(now())
+
+  @@index([classId])
+}
+
+enum RequestUrgency {
+  LOW
+  NORMAL
+  HIGH
+}
+
+// A homeroom teacher's own request to the רכז (grade coordinator) — the
+// reverse direction from StaffTask (coordinator → teacher). Deliberately
+// simple: no assignee fan-out, since each request already belongs to one
+// teacher/class; the coordinator and the creator both just see it and can
+// mark it handled.
+model CoordinatorRequest {
+  id          String         @id @default(cuid())
+  classId     String
+  createdById String
+  title       String         @db.Text
+  note        String?        @db.Text
+  urgency     RequestUrgency @default(NORMAL)
+  done        Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  createdBy   User           @relation(fields: [createdById], references: [id], onDelete: Cascade)
+
+  @@index([classId, done])
+  @@index([createdById])
 }
 
 enum TaskImportance {

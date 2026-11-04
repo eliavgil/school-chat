@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
     classProfile, upcomingEvents, openTasks, recentMessages,
     todaySchedule, tomorrowSchedule, upcomingExams, attendance,
     parentAttendance, grades, recentTasks, teacherTasks, classStudents,
-    bellSlots, classTodaySchedule,
+    bellSlots, classTodaySchedule, teamPosts, openCoordinatorRequests,
   ] = await Promise.all([
     prisma.class.findUnique({
       where: { id: classId },
@@ -180,12 +180,15 @@ export async function GET(req: NextRequest) {
           },
         })
       : Promise.resolve([]),
-    // Teacher: teacher-entered tasks (open only, recent 3)
+    // Teacher: open class tasks, soonest deadline first (Postgres sorts
+    // NULLs last on ASC, so undated tasks naturally fall to the end) — the
+    // home page's "משימות בוערות" picks the top 2 off this list.
     isTeacher
       ? prisma.teacherTask.findMany({
           where: { classId, done: false },
-          orderBy: { createdAt: "desc" },
-          take: 6,
+          orderBy: [{ deadline: "asc" }, { createdAt: "desc" }],
+          take: 8,
+          include: { checks: { select: { studentId: true } } },
         })
       : Promise.resolve([]),
     // Teacher: class students for below-fold list
@@ -219,6 +222,20 @@ export async function GET(req: NextRequest) {
           select: { period: true, content: true },
         })
       : Promise.resolve([]),
+    // Latest school-wide homeroom-teacher announcements (TeamPost, the
+    // "פורום" tab on /teacher/team) — the home page's "הודעות" preview.
+    isTeacher
+      ? prisma.teamPost.findMany({
+          orderBy: { createdAt: "desc" },
+          take: 2,
+          select: { id: true, content: true, createdAt: true, author: { select: { name: true } } },
+        })
+      : Promise.resolve([]),
+    // Open count only (not the rows) — just enough for a home-page badge;
+    // the full list lives on /teacher/coordinator-requests.
+    isTeacher
+      ? prisma.coordinatorRequest.count({ where: { classId, done: false } })
+      : Promise.resolve(0),
   ])
 
   // Bootstrap: a handful of classes don't have their own uploaded class
@@ -263,6 +280,8 @@ export async function GET(req: NextRequest) {
     todaySchedule: derivedToday.length ? derivedToday : todaySchedule,
     tomorrowSchedule: derivedTomorrow.length ? derivedTomorrow : tomorrowSchedule,
     classTodaySchedule,
+    teamPosts,
+    openCoordinatorRequests,
     todayHeb,
     tomorrowHeb,
     bellSlots,
