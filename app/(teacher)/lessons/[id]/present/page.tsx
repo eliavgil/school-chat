@@ -148,6 +148,55 @@ const CSS = `
   @keyframes winner-pop{0%{transform:scale(0.5);opacity:0}60%{transform:scale(1.15)}100%{transform:scale(1);opacity:1}}
 `
 
+interface BellSlotT { period: string; startTime: string; endTime: string }
+
+// Countdown to the end of whatever bell-schedule period/break covers the
+// current moment — ticks independently (its own 1s interval) so the rest of
+// PresentPage's fairly heavy tree doesn't re-render every second. Hidden
+// entirely when there's no bell schedule for today (Fri/Sat) or the current
+// moment falls outside every known slot (e.g. presenting outside school
+// hours) — silently absent rather than showing something misleading.
+function LessonCountdown({ bellSlots }: { bellSlots: BellSlotT[] }) {
+  const [now, setNow] = useState(() => new Date())
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000)
+    return () => clearInterval(t)
+  }, [])
+
+  if (bellSlots.length === 0) return null
+
+  const toToday = (hhmm: string) => {
+    const [h, m] = hhmm.split(":").map(Number)
+    const d = new Date(now)
+    d.setHours(h, m, 0, 0)
+    return d
+  }
+
+  const active = bellSlots.find(b => now >= toToday(b.startTime) && now < toToday(b.endTime))
+  if (!active) return null
+
+  const totalSec = Math.max(0, Math.round((toToday(active.endTime).getTime() - now.getTime()) / 1000))
+  const mm = String(Math.floor(totalSec / 60)).padStart(2, "0")
+  const ss = String(totalSec % 60).padStart(2, "0")
+  const urgent = totalSec <= 300 // last 5 minutes — flip to the red seal color as a heads-up
+
+  return (
+    <div style={{
+      position: "absolute", bottom: 82, right: 28, zIndex: 7,
+      display: "flex", alignItems: "center", gap: 6,
+      background: urgent ? "var(--seal)" : "rgba(27,42,74,0.9)",
+      border: `1.5px solid ${urgent ? "rgba(245,241,230,0.6)" : "var(--gold)"}`,
+      borderRadius: 20, padding: "6px 14px",
+      color: "var(--paper)", fontFamily: "'Heebo',sans-serif", fontWeight: 700,
+      fontSize: 15, boxShadow: "0 2px 10px rgba(0,0,0,0.25)",
+    }} title="זמן שנותר עד סוף השיעור">
+      <span style={{ fontSize: 14 }}>⏳</span>
+      <span style={{ direction: "ltr", fontVariantNumeric: "tabular-nums" }}>{mm}:{ss}</span>
+    </div>
+  )
+}
+
 function extractYouTubeId(url: string): string | null {
   const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/)
   return m ? m[1] : null
@@ -699,6 +748,17 @@ export default function PresentPage({ params }: Props) {
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [availableClasses, setAvailableClasses] = useState<{ id: string; name: string }[]>([])
   const [rosterClassId, setRosterClassId] = useState<string | null>(null)
+  const [bellSlots, setBellSlots] = useState<BellSlotT[]>([])
+
+  // Today's bell schedule, for the end-of-lesson countdown — fetched once;
+  // "today" is the presenting device's own local weekday (Israel time for a
+  // teacher actually in the building), not something resolved server-side.
+  useEffect(() => {
+    fetch(`/api/bell-schedule/today?weekday=${new Date().getDay()}`)
+      .then(r => r.ok ? r.json() : { slots: [] })
+      .then(d => setBellSlots(d.slots ?? []))
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     const update = () => setIsMobile(window.innerWidth < 768)
@@ -1023,6 +1083,7 @@ export default function PresentPage({ params }: Props) {
               <AnimOverlay anim={slide.animation} lottieDivRef={lottieDivRef} />
             )}
             <div className="seal-stamp">{idx + 1}</div>
+            <LessonCountdown bellSlots={bellSlots} />
             <div className="navbtns">
               <button className="navbtn" disabled={idx === 0} onClick={() => go(idx - 1)}>›</button>
               <button className="navbtn" disabled={idx === total - 1} onClick={() => go(idx + 1)}>‹</button>
@@ -1058,6 +1119,7 @@ export default function PresentPage({ params }: Props) {
             )}
 
             <div className="seal-stamp">{idx + 1}</div>
+            <LessonCountdown bellSlots={bellSlots} />
             <div className="navbtns">
               <button className="navbtn" disabled={idx === 0} onClick={() => go(idx - 1)}>›</button>
               <button className="navbtn" disabled={idx === total - 1} onClick={() => go(idx + 1)}>‹</button>
