@@ -28,7 +28,9 @@ const SYSTEM_PROMPT = `אתה מחלץ נתוני תלמידים מתוך הכת
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
+  const role = (session?.user as any)?.role
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (role !== "TEACHER" && role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { text } = await req.json()
   if (!text?.trim()) return NextResponse.json({ error: "No text" }, { status: 400 })

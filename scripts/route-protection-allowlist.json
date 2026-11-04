@@ -1,0 +1,23 @@
+[
+  { "method": "POST", "path": "/api/assistant/escalate", "reason": "Any signed-in role can escalate their own assistant conversation to a human — self-scoped to the caller." },
+  { "method": "POST", "path": "/api/auth/request-access", "reason": "The onboarding flow itself — sets the caller's own role/accessStatus to PENDING; grants nothing until an admin approves (middleware blocks every PENDING user regardless of role)." },
+  { "method": "POST", "path": "/api/feature-interest", "reason": "Any signed-in role expressing interest in a trial feature — self-scoped, no cross-user access." },
+  { "method": "POST", "path": "/api/game/scores", "reason": "A student submitting their own game score." },
+  { "method": "POST", "path": "/api/mastermind/scores", "reason": "A student submitting their own game score." },
+  { "method": "POST", "path": "/api/wordle/scores", "reason": "A student submitting their own game score." },
+  { "method": "POST", "path": "/api/trivia/scores", "reason": "A student submitting their own game score." },
+  { "method": "POST", "path": "/api/trivia/duel", "reason": "Creating a trivia duel room — a student game feature, open to any signed-in role." },
+  { "method": "POST", "path": "/api/trivia/duel/join", "reason": "Joining a trivia duel by room code — a student game feature." },
+  { "method": "POST", "path": "/api/trivia/duel/[code]/answer", "reason": "Answering within a trivia duel the caller already joined." },
+  { "method": "POST", "path": "/api/messages/flag", "reason": "Scoped to messages the caller themselves sent (where senderId = caller)." },
+  { "method": "POST", "path": "/api/messages", "reason": "Checks the caller has a real ParentStudent link to the studentId before sending — self-scoped, not role-based." },
+  { "method": "POST", "path": "/api/push/test", "reason": "Diagnostic endpoint scoped to the caller's own subscriptions/classId — any signed-in role may test their own push setup." },
+  { "method": "POST", "path": "/api/responses", "reason": "Live-poll answer submission — intentionally open to anyone in a session, including unauthenticated/anonymous students (student_id defaults to \"anonymous\")." },
+  { "method": "PATCH", "path": "/api/student/profile", "reason": "Scoped via getStudentId(session) to the caller's own linked Student record — can't edit anyone else's." },
+  { "method": "POST", "path": "/api/student/surveys", "reason": "Scoped via getStudentId() to the caller's own linked Student record." },
+  { "method": "DELETE", "path": "/api/student/surveys", "reason": "Scoped via getStudentId() to the caller's own linked Student record." },
+  { "method": "POST", "path": "/api/tasks/personal", "reason": "A user's own personal to-do list, scoped to session.user.id — any role." },
+  { "method": "PATCH", "path": "/api/tasks/personal", "reason": "A user's own personal to-do list, scoped to session.user.id — any role." },
+  { "method": "DELETE", "path": "/api/tasks/personal", "reason": "A user's own personal to-do list, scoped to session.user.id — any role." },
+  { "method": "POST", "path": "/api/upload", "reason": "Generic image upload to the shared lesson-images bucket, used from the (teacher-only, middleware-gated) lesson editor — low-risk if called directly by another signed-in role (storage use, not a data leak), left open rather than over-restricting a shared asset endpoint." }
+]

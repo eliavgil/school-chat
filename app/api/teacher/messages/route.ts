@@ -6,7 +6,13 @@ import { prisma } from "@/lib/db/prisma"
 // GET /api/teacher/messages?studentId=xxx — get all messages for a student and mark as seen
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions)
+  const role = (session?.user as any)?.role
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  // With no studentId this returns every student's messages across the
+  // whole school (sender name/email included) — found while auditing this
+  // file for the write-method gap below; only /dashboard (teacher-only)
+  // ever calls this route, so there's no legitimate student/parent case.
+  if (role !== "TEACHER" && role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { searchParams } = new URL(req.url)
   const studentId = searchParams.get("studentId")
@@ -42,7 +48,9 @@ export async function GET(req: NextRequest) {
 // PATCH /api/teacher/messages — approve bot answer or mark as task
 export async function PATCH(req: NextRequest) {
   const session = await getServerSession(authOptions)
+  const role = (session?.user as any)?.role
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (role !== "TEACHER" && role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { messageId, action } = await req.json()
   if (!messageId || !action) return NextResponse.json({ error: "Missing fields" }, { status: 400 })
@@ -60,7 +68,9 @@ export async function PATCH(req: NextRequest) {
 // POST /api/teacher/messages — teacher reply to a specific message thread
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions)
+  const role = (session?.user as any)?.role
   if (!session?.user?.id) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (role !== "TEACHER" && role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { messageId, response } = await req.json()
   if (!messageId || !response) return NextResponse.json({ error: "Missing fields" }, { status: 400 })

@@ -70,7 +70,15 @@ export async function middleware(req: NextRequest) {
   }
 
   // --- Route guards ---
-  const teacherRoutes = ["/dashboard", "/admin", "/profile"]
+  // /teacher wasn't here until today's /lessons incident (see the /lessons
+  // check below) prompted checking the rest of the app for the same gap:
+  // every /teacher/* page was relying entirely on its own APIs rejecting a
+  // non-teacher caller, with nothing stopping the page shell itself from
+  // loading for anyone signed in. The APIs mostly did check role, so this
+  // wasn't an active data leak the way /lessons was — but it's the same
+  // root cause (a folder name that looks protected but isn't), so it's
+  // closed here too rather than left as a second near-miss.
+  const teacherRoutes = ["/dashboard", "/admin", "/profile", "/teacher"]
   const parentRoutes = ["/chat"]
   const studentRoutes = ["/student"]
 

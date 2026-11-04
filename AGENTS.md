@@ -4,6 +4,42 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+# Security: every route needs an explicit, intentional access check
+
+In Nov 2026, `/lessons/[id]/present` (the live-presentation teacher screen)
+had no role check anywhere — not in `middleware.ts`, not in the APIs under
+it — so any signed-in student who loaded that URL got full presenter
+control: moving slides, ending the session, seeing live aggregated results
+with none of the reveal-gating the real student view has. The folder name
+`(teacher)` was a Next.js route-group convention, not actual protection — it
+never checked who was asking. `/teacher/*` had the same gap (caught in the
+same pass, not yet exploited).
+
+**Two durable things exist now so this doesn't quietly happen again:**
+
+1. `npm run build` (and therefore every Vercel deploy, preview or
+   production) runs `scripts/check-route-protection.mjs` first and **fails
+   the build** if any `POST`/`PUT`/`PATCH`/`DELETE` handler under `app/api/`
+   has no recognizable auth check (`getServerSession` + a role comparison,
+   or a known helper like `isOwner()`/`requireTeacherClassId()`) and isn't
+   explicitly listed in `scripts/route-protection-allowlist.json` with a
+   one-line reason. Run it directly with `npm run check:routes`.
+2. `middleware.ts` gates whole page trees by role (`teacherRoutes`, plus a
+   dedicated check for `/lessons/*`). When you add a new page tree that only
+   one role should ever load — not just a button nobody links to, the literal
+   URL — add its prefix there too. A page that merely *renders* data from a
+   properly-gated API is usually fine without this; a page that gives
+   control over shared state (starting/ending sessions, moving slides,
+   editing someone else's data) needs the belt-and-suspenders of both.
+
+**When adding a new API route that mutates anything:** ask who should be
+allowed to call it — not just "is someone logged in," but *which role*, and
+does it need to additionally verify the caller owns the specific row it's
+touching (a Prisma `where` scoped to `session.user.id`, not just a
+`role` check). If the answer is genuinely "any signed-in user, self-scoped,"
+that's fine — say so, in the allowlist, rather than leaving it undecided.
+`npm run build` will refuse to let you forget either way.
+
 ---
 name: lesson-design
 description: Pedagogical guidelines for building civics lesson slide decks. Apply whenever creating or editing lesson seed files (app/api/seed/civics-lesson-*/route.ts).
