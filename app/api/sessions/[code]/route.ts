@@ -1,4 +1,6 @@
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { adminClient } from "@/lib/lessons/supabase"
 
 export async function GET(_req: Request, { params }: { params: Promise<{ code: string }> }) {
@@ -17,6 +19,15 @@ export async function GET(_req: Request, { params }: { params: Promise<{ code: s
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ code: string }> }) {
+  // Previously had no auth check at all — anyone, even signed out, could
+  // PATCH any room code's state (most importantly is_active, which ends the
+  // session). Only the teacher presenting needs this; students only ever
+  // read session state (GET, left open above for the join flow).
+  const session = await getServerSession(authOptions)
+  const role = (session?.user as any)?.role
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (role !== "TEACHER" && role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+
   const { code } = await params
   const body = await req.json()
   const sb = adminClient()

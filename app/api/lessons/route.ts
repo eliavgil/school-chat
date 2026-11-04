@@ -20,7 +20,9 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
+  const role = (session?.user as any)?.role
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (role !== "TEACHER" && role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { title, subject } = await req.json()
   if (!title) return NextResponse.json({ error: "title required" }, { status: 400 })

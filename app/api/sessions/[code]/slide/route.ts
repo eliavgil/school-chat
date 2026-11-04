@@ -5,7 +5,9 @@ import { adminClient } from "@/lib/lessons/supabase"
 
 export async function POST(req: Request, { params }: { params: Promise<{ code: string }> }) {
   const session = await getServerSession(authOptions)
+  const role = (session?.user as any)?.role
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (role !== "TEACHER" && role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { code } = await params
   const { index } = await req.json()

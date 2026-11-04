@@ -20,7 +20,9 @@ function currentSchoolYear(): number {
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
+  const role = (session?.user as any)?.role
   if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  if (role !== "TEACHER" && role !== "ADMIN") return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const { lesson_id, class_id: roster_class_id } = await req.json()
   if (!lesson_id) return NextResponse.json({ error: "lesson_id required" }, { status: 400 })

@@ -80,6 +80,18 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // /lessons/* is the live-presentation app (list, edit, present, results)
+  // — teacher/admin only, since /lessons/[id]/present hands out full
+  // presenter control (slide navigation, ending the session) to whoever
+  // loads it. The one exception is /lessons/[id]/print, a read-only export
+  // that student lesson-browse pages link to directly for studying — that
+  // one stays open to any signed-in role.
+  if (pathname.startsWith("/lessons") && !/^\/lessons\/[^/]+\/print$/.test(pathname)) {
+    if (role !== "TEACHER" && role !== "ADMIN") {
+      return NextResponse.redirect(new URL("/", req.url))
+    }
+  }
+
   if (parentRoutes.some((r) => pathname.startsWith(r))) {
     if (role !== "PARENT") {
       return NextResponse.redirect(new URL("/", req.url))
